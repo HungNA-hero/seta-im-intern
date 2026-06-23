@@ -1,0 +1,70 @@
+name: seta-dam
+
+services:
+  asset-db:
+    image: postgres:16-alpine
+    container_name: seta-asset-db
+    environment:
+      POSTGRES_DB: ${ASSET_DB_NAME:-asset_db}
+      POSTGRES_USER: ${ASSET_DB_USER:-asset_user}
+      POSTGRES_PASSWORD: ${ASSET_DB_PASSWORD:-asset_password}
+    ports:
+      - "${ASSET_DB_PORT:-5433}:5432"
+    volumes:
+      - asset_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  access-db:
+    image: postgres:16-alpine
+    container_name: seta-access-db
+    environment:
+      POSTGRES_DB: ${ACCESS_DB_NAME:-access_db}
+      POSTGRES_USER: ${ACCESS_DB_USER:-access_user}
+      POSTGRES_PASSWORD: ${ACCESS_DB_PASSWORD:-access_password}
+    ports:
+      - "${ACCESS_DB_PORT:-5434}:5432"
+    volumes:
+      - access_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  flyway-asset:
+    image: flyway/flyway:10-alpine
+    profiles: ["migration"]
+    depends_on:
+      asset-db:
+        condition: service_healthy
+    environment:
+      FLYWAY_URL: jdbc:postgresql://asset-db:5432/${ASSET_DB_NAME:-asset_db}
+      FLYWAY_USER: ${ASSET_DB_USER:-asset_user}
+      FLYWAY_PASSWORD: ${ASSET_DB_PASSWORD:-asset_password}
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+    volumes:
+      - ./db/asset/migrations:/flyway/sql:ro
+    command: -connectRetries=60 migrate
+
+  flyway-access:
+    image: flyway/flyway:10-alpine
+    profiles: ["migration"]
+    depends_on:
+      access-db:
+        condition: service_healthy
+    environment:
+      FLYWAY_URL: jdbc:postgresql://access-db:5432/${ACCESS_DB_NAME:-access_db}
+      FLYWAY_USER: ${ACCESS_DB_USER:-access_user}
+      FLYWAY_PASSWORD: ${ACCESS_DB_PASSWORD:-access_password}
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+    volumes:
+      - ./db/access/migrations:/flyway/sql:ro
+    command: -connectRetries=60 migrate
+
+volumes:
+  asset_db_data:
+  access_db_data:
