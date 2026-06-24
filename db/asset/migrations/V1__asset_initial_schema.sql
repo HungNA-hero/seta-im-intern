@@ -18,11 +18,50 @@ CREATE TABLE folders (
     updated_at timestamptz NOT NULL DEFAULT now(),
     deleted_at timestamptz,
     CONSTRAINT chk_folders_name_not_blank CHECK (btrim(name) <> ''),
+    -- Fast-path guard: blocks the trivial A→A self-loop at the row level.
+    -- Multi-hop cycles (A→B→A etc.) are caught by trg_folders_no_cycle below.
     CONSTRAINT chk_folders_not_parent_of_self CHECK (parent_id IS NULL OR parent_id <> id)
 );
 
 COMMENT ON TABLE folders IS
     'Folder tree owned by Go Asset Core. parent_id NULL means root folder.';
+
+-- Cycle detection: blocks multi-hop cycles such as A→B→A that the single-row
+-- CHECK constraint (chk_folders_not_parent_of_self) cannot catch.
+-- Walks the full ancestor chain of NEW.parent_id; raises if NEW.id appears in it.
+CREATE OR REPLACE FUNCTION folders_no_cycle()
+RETURNS trigger AS $$
+BEGIN
+    -- Only run when parent_id is set and actually changed
+    IF NEW.parent_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    -- Walk the ancestor chain of NEW.parent_id upward
+    IF EXISTS (
+        WITH RECURSIVE ancestors AS (
+            SELECT parent_id AS ancestor_id
+            FROM folders
+            WHERE id = NEW.parent_id
+
+            UNION ALL
+
+            SELECT f.parent_id
+            FROM folders f
+            INNER JOIN ancestors a ON f.id = a.ancestor_id
+            WHERE a.ancestor_id IS NOT NULL
+        )
+        SELECT 1 FROM ancestors WHERE ancestor_id = NEW.id
+    ) THEN
+        RAISE EXCEPTION
+            'Cycle detected: setting parent_id = % on folder % would create a circular reference',
+            NEW.parent_id, NEW.id
+            USING ERRCODE = 'check_violation';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE UNIQUE INDEX uq_folders_active_sibling_name
     ON folders (COALESCE(parent_id, '00000000-0000-0000-0000-000000000000'::uuid), name)
@@ -82,6 +121,12 @@ CREATE INDEX idx_metadata_items_labels
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS trigger AS $$
 BEGIN
+    -- Skip updated_at stamp when the row is being soft-deleted,
+    -- so consumers polling (updated_at > X AND deleted_at IS NULL) 
+    -- won't miss the deletion event in the same sync window.
+    IF OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
     NEW.updated_at = now();
     RETURN NEW;
 END;
@@ -96,3 +141,50 @@ CREATE TRIGGER trg_metadata_items_set_updated_at
 BEFORE UPDATE ON metadata_items
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
+
+-- Cycle detection trigger: fires on every INSERT and on UPDATE when parent_id changes.
+-- Calls folders_no_cycle() which walks the full ancestor chain to block A→B→A cycles.
+CREATE TRIGGER trg_folders_no_cycle
+BEFORE INSERT OR UPDATE OF parent_id ON folders
+FOR EACH ROW
+EXECUTE FUNCTION folders_no_cycle();
+
+CREATE OR REPLACE FUNCTION chk_parent_folder_active()
+RETURNS trigger AS $$
+BEGIN
+    IF NEW.parent_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM folders
+        WHERE id = NEW.parent_id AND deleted_at IS NOT NULL
+    ) THEN
+        RAISE EXCEPTION
+            'Cannot set parent to soft-deleted folder %', NEW.parent_id
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_folders_parent_active
+BEFORE INSERT OR UPDATE OF parent_id ON folders
+FOR EACH ROW
+EXECUTE FUNCTION chk_parent_folder_active();
+
+CREATE OR REPLACE FUNCTION chk_metadata_folder_active()
+RETURNS trigger AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM folders
+        WHERE id = NEW.folder_id AND deleted_at IS NOT NULL
+    ) THEN
+        RAISE EXCEPTION
+            'Cannot assign metadata item to soft-deleted folder %', NEW.folder_id
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_metadata_items_folder_active
+BEFORE INSERT OR UPDATE OF folder_id ON metadata_items
+FOR EACH ROW
+EXECUTE FUNCTION chk_metadata_folder_active();
