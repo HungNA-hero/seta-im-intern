@@ -1,0 +1,7 @@
+Ticket: KAN-20, KAN-51, KAN-53
+
+Changes: Refactored Asset DB to use `ltree` for folder hierarchy instead of `parent_id` to prevent cycles naturally and allow subtree queries. Added `organization_ref` to Asset DB to isolate resources by organization context. Removed old cycle-detection triggers. Updated demo seed data to use `root.animals.dogs` ltree paths. Initialized `go-asset-core` Go module, implemented GORM models (`OrganizationRef`, `Folder`, `MetadataItem`), and created the initial API skeleton (`main.go`, `api.go`) exposing an internal folder tree endpoint that filters by `org_id`.
+
+How did we test these changes:
+- `cd go-asset-core && go mod tidy && go build ./cmd/server/main.go` (Verified successful compilation of Go Service and GORM setup).
+- Code reviews against Mentor Feedback DBML and Architecture models.

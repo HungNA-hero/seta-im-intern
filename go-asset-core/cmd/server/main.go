@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -8,57 +9,28 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"seta-im-intern/go-asset-core/api"
-	"seta-im-intern/go-asset-core/models"
+	httpDelivery "seta-im-intern/go-asset-core/internal/delivery/http"
+	"seta-im-intern/go-asset-core/internal/repository"
+	"seta-im-intern/go-asset-core/internal/usecase"
 )
 
 func main() {
 	// 1. Setup Database Connection
-	// In production, use environment variables. For now, hardcode to match Docker Compose defaults.
-	dsn := "host=localhost user=asset_user password=asset_pass dbname=asset_db port=5433 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := openAssetDB(assetDSNFromEnv())
 	if err != nil {
 		log.Printf("Failed to connect to database: %v. Server will start but DB queries will fail.", err)
 	} else {
 		log.Println("Connected to Asset DB successfully")
-		// Optional: AutoMigrate if not using Flyway. We use Flyway, so we skip AutoMigrate.
-		_ = db.AutoMigrate(&models.OrganizationRef{}, &models.Folder{}, &models.MetadataItem{})
 	}
 
-	// 2. Initialize API Server
-	server := api.NewServer(db)
+	// 2. Setup Clean Architecture Layers
+	assetRepo := repository.NewAssetRepository(db)
+	assetUsecase := usecase.NewAssetUsecase(assetRepo)
 
-	// 3. Setup Routes
-	mux := http.NewServeMux()
+	// 3. Setup Routes and Handlers
+	muxPtr := http.NewServeMux()
 	
-	// Example endpoint for GetFolderTree
-	// Route: GET /internal/api/v1/folders
-	// Requires query params: orgId and rootPath
-	mux.HandleFunc("/internal/api/v1/folders", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		orgID := r.URL.Query().Get("orgId")
-		rootPath := r.URL.Query().Get("rootPath")
-
-		if orgID == "" || rootPath == "" {
-			http.Error(w, "Missing orgId or rootPath", http.StatusBadRequest)
-			return
-		}
-
-		folders, err := server.GetFolderTree(orgID, rootPath)
-		if err != nil {
-			http.Error(w, "Database error", http.StatusInternalServerError)
-			return
-		}
-
-		// Simple JSON response (in a real app, use json.NewEncoder)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status": "success", "count": ` + string(len(folders)) + `}`))
-	})
+	httpDelivery.NewAssetHandler(muxPtr, assetUsecase, db)
 
 	// 4. Start Server
 	port := os.Getenv("PORT")
@@ -67,7 +39,44 @@ func main() {
 	}
 
 	log.Printf("Go Asset Core Internal API listening on port %s", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
+	if err := http.ListenAndServe(":"+port, muxPtr); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+}
+
+func openAssetDB(dsn string) (*gorm.DB, error) {
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+	if err := sqlDB.Ping(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func assetDSNFromEnv() string {
+	return fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+		getenv("ASSET_DB_HOST", "localhost"),
+		getenv("ASSET_DB_USER", "asset_user"),
+		getenv("ASSET_DB_PASSWORD", "asset_password"),
+		getenv("ASSET_DB_NAME", "asset_db"),
+		getenv("ASSET_DB_PORT", "5433"),
+		getenv("ASSET_DB_SSLMODE", "disable"),
+	)
+}
+
+func getenv(key string, fallback string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	return value
 }
