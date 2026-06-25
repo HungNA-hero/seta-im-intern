@@ -9,10 +9,13 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"seta-im-intern/go-asset-core/api"
+	httpDelivery "seta-im-intern/go-asset-core/internal/delivery/http"
+	"seta-im-intern/go-asset-core/internal/repository"
+	"seta-im-intern/go-asset-core/internal/usecase"
 )
 
 func main() {
+	// 1. Setup Database Connection
 	db, err := openAssetDB(assetDSNFromEnv())
 	if err != nil {
 		log.Printf("Failed to connect to database: %v. Server will start but DB queries will fail.", err)
@@ -20,18 +23,23 @@ func main() {
 		log.Println("Connected to Asset DB successfully")
 	}
 
-	server := api.NewServer(db)
+	// 2. Setup Clean Architecture Layers
+	assetRepo := repository.NewAssetRepository(db)
+	assetUsecase := usecase.NewAssetUsecase(assetRepo)
 
-	mux := http.NewServeMux()
-	server.RegisterRoutes(mux)
+	// 3. Setup Routes and Handlers
+	muxPtr := http.NewServeMux()
+	
+	httpDelivery.NewAssetHandler(muxPtr, assetUsecase, db)
 
+	// 4. Start Server
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
 	log.Printf("Go Asset Core Internal API listening on port %s", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
+	if err := http.ListenAndServe(":"+port, muxPtr); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
