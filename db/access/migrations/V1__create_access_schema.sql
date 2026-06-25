@@ -1,7 +1,16 @@
--- Access schema: RBAC + object-level permission model (S1-007)
--- UC-PERM-001, UC-PERM-002
+-- Access schema: organization-scoped RBAC + object-level permissions.
+-- Owned by Node Access Policy service. No cross-database joins or foreign keys.
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE SCHEMA IF NOT EXISTS access;
+
+CREATE TYPE access.permission_action_code AS ENUM (
+    'read',
+    'write',
+    'delete',
+    'manage_permissions'
+);
 
 CREATE TYPE access.resource_type AS ENUM ('folder', 'metadata_item');
 
@@ -14,11 +23,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TABLE access.users (
-    id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    username     VARCHAR(255) NOT NULL UNIQUE,
-    email        VARCHAR(255) NOT NULL UNIQUE,
-    created_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
-    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now()
+    id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    email        varchar(255) NOT NULL UNIQUE,
+    display_name varchar(255) NOT NULL,
+    is_active    boolean     NOT NULL DEFAULT true,
+    created_at   timestamptz NOT NULL DEFAULT now(),
+    updated_at   timestamptz NOT NULL DEFAULT now(),
+    deleted_at   timestamptz
 );
 
 CREATE TRIGGER trg_users_set_updated_at
@@ -26,84 +37,130 @@ BEFORE UPDATE ON access.users
 FOR EACH ROW
 EXECUTE FUNCTION access.set_updated_at();
 
-CREATE TABLE access.roles (
-    id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    name         VARCHAR(100) NOT NULL UNIQUE,
-    display_name VARCHAR(255),
-    created_at   TIMESTAMPTZ  NOT NULL DEFAULT now()
+CREATE TABLE access.organizations (
+    id          uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    code        varchar(100) NOT NULL UNIQUE,
+    name        varchar(255) NOT NULL,
+    olp_enabled boolean      NOT NULL DEFAULT false,
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    updated_at  timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT chk_organizations_code_not_blank CHECK (btrim(code) <> ''),
+    CONSTRAINT chk_organizations_name_not_blank CHECK (btrim(name) <> '')
 );
 
+CREATE TRIGGER trg_organizations_set_updated_at
+BEFORE UPDATE ON access.organizations
+FOR EACH ROW
+EXECUTE FUNCTION access.set_updated_at();
+
+CREATE TABLE access.organization_members (
+    id        uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id    uuid        NOT NULL REFERENCES access.organizations(id) ON DELETE CASCADE,
+    user_id   uuid        NOT NULL REFERENCES access.users(id) ON DELETE CASCADE,
+    joined_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (org_id, user_id)
+);
+
+CREATE TABLE access.roles (
+    id          uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id      uuid         NOT NULL REFERENCES access.organizations(id) ON DELETE CASCADE,
+    code        varchar(100) NOT NULL,
+    name        varchar(255) NOT NULL,
+    description text,
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    updated_at  timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT chk_roles_code_not_blank CHECK (btrim(code) <> ''),
+    CONSTRAINT chk_roles_name_not_blank CHECK (btrim(name) <> ''),
+    UNIQUE (org_id, code),
+    UNIQUE (org_id, id)
+);
+
+CREATE TRIGGER trg_roles_set_updated_at
+BEFORE UPDATE ON access.roles
+FOR EACH ROW
+EXECUTE FUNCTION access.set_updated_at();
+
 CREATE TABLE access.user_roles (
-    user_id    UUID        NOT NULL REFERENCES access.users(id) ON DELETE CASCADE,
-    role_id    UUID        NOT NULL REFERENCES access.roles(id) ON DELETE CASCADE,
-    granted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    granted_by UUID        REFERENCES access.users(id),
-    PRIMARY KEY (user_id, role_id)
+    id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id      uuid        NOT NULL REFERENCES access.organizations(id) ON DELETE CASCADE,
+    user_id     uuid        NOT NULL REFERENCES access.users(id) ON DELETE CASCADE,
+    role_id     uuid        NOT NULL REFERENCES access.roles(id) ON DELETE CASCADE,
+    assigned_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (org_id, user_id, role_id),
+    FOREIGN KEY (org_id, user_id)
+        REFERENCES access.organization_members (org_id, user_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (org_id, role_id)
+        REFERENCES access.roles (org_id, id)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE access.permission_actions (
-    id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-    name        VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT
+    id          uuid                          PRIMARY KEY DEFAULT gen_random_uuid(),
+    code        access.permission_action_code NOT NULL UNIQUE,
+    description text
 );
 
--- RBAC layer: capability ceiling — what a role may do on a resource type
 CREATE TABLE access.role_permissions (
-    role_id       UUID                 NOT NULL REFERENCES access.roles(id) ON DELETE CASCADE,
-    action_id     UUID                 NOT NULL REFERENCES access.permission_actions(id) ON DELETE CASCADE,
+    id            uuid                 PRIMARY KEY DEFAULT gen_random_uuid(),
+    role_id       uuid                 NOT NULL REFERENCES access.roles(id) ON DELETE CASCADE,
+    action_id     uuid                 NOT NULL REFERENCES access.permission_actions(id) ON DELETE CASCADE,
     resource_type access.resource_type NOT NULL,
-    PRIMARY KEY (role_id, action_id, resource_type)
+    UNIQUE (role_id, action_id, resource_type)
 );
 
--- OLP layer: folder-level object grants
--- Exactly one of grantee_user_id / grantee_role_id must be set.
--- Partial unique indexes handle NULLs correctly (standard UNIQUE cannot).
-CREATE TABLE access.folder_permissions (
-    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    folder_id       UUID        NOT NULL,
-    grantee_user_id UUID        REFERENCES access.users(id) ON DELETE CASCADE,
-    grantee_role_id UUID        REFERENCES access.roles(id) ON DELETE CASCADE,
-    action_id       UUID        NOT NULL REFERENCES access.permission_actions(id) ON DELETE CASCADE,
-    granted_by      UUID        REFERENCES access.users(id),
-    granted_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT chk_folder_perm_grantee CHECK (
+-- OLP grants are evaluated only when organizations.olp_enabled = true.
+-- resource_id is a logical ID from Asset DB; no cross-DB FK is enforced.
+CREATE TABLE access.object_permissions (
+    id              uuid                 PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id          uuid                 NOT NULL REFERENCES access.organizations(id) ON DELETE CASCADE,
+    resource_type   access.resource_type NOT NULL,
+    resource_id     uuid                 NOT NULL,
+    grantee_user_id uuid                 REFERENCES access.users(id) ON DELETE CASCADE,
+    grantee_role_id uuid                 REFERENCES access.roles(id) ON DELETE CASCADE,
+    action_id       uuid                 NOT NULL REFERENCES access.permission_actions(id) ON DELETE CASCADE,
+    granted_by      uuid                 NOT NULL REFERENCES access.users(id) ON DELETE RESTRICT,
+    granted_at      timestamptz          NOT NULL DEFAULT now(),
+    CONSTRAINT chk_object_perm_grantee CHECK (
         (grantee_user_id IS NOT NULL AND grantee_role_id IS NULL) OR
-        (grantee_user_id IS NULL     AND grantee_role_id IS NOT NULL)
-    )
+        (grantee_user_id IS NULL AND grantee_role_id IS NOT NULL)
+    ),
+    FOREIGN KEY (org_id, grantee_role_id)
+        REFERENCES access.roles (org_id, id)
+        ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX uniq_folder_perm_user
-    ON access.folder_permissions (folder_id, grantee_user_id, action_id)
+CREATE UNIQUE INDEX uniq_object_perm_user
+    ON access.object_permissions (
+        org_id,
+        resource_type,
+        resource_id,
+        grantee_user_id,
+        action_id
+    )
     WHERE grantee_user_id IS NOT NULL;
 
-CREATE UNIQUE INDEX uniq_folder_perm_role
-    ON access.folder_permissions (folder_id, grantee_role_id, action_id)
-    WHERE grantee_role_id IS NOT NULL;
-
--- OLP layer: metadata-item-level object grants
-CREATE TABLE access.metadata_permissions (
-    id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    metadata_item_id UUID        NOT NULL,
-    grantee_user_id  UUID        REFERENCES access.users(id) ON DELETE CASCADE,
-    grantee_role_id  UUID        REFERENCES access.roles(id) ON DELETE CASCADE,
-    action_id        UUID        NOT NULL REFERENCES access.permission_actions(id) ON DELETE CASCADE,
-    granted_by       UUID        REFERENCES access.users(id),
-    granted_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT chk_metadata_perm_grantee CHECK (
-        (grantee_user_id IS NOT NULL AND grantee_role_id IS NULL) OR
-        (grantee_user_id IS NULL     AND grantee_role_id IS NOT NULL)
+CREATE UNIQUE INDEX uniq_object_perm_role
+    ON access.object_permissions (
+        org_id,
+        resource_type,
+        resource_id,
+        grantee_role_id,
+        action_id
     )
-);
-
-CREATE UNIQUE INDEX uniq_metadata_perm_user
-    ON access.metadata_permissions (metadata_item_id, grantee_user_id, action_id)
-    WHERE grantee_user_id IS NOT NULL;
-
-CREATE UNIQUE INDEX uniq_metadata_perm_role
-    ON access.metadata_permissions (metadata_item_id, grantee_role_id, action_id)
     WHERE grantee_role_id IS NOT NULL;
 
--- Supporting indexes
-CREATE INDEX idx_user_roles_role        ON access.user_roles (role_id);
-CREATE INDEX idx_folder_perm_folder     ON access.folder_permissions (folder_id);
-CREATE INDEX idx_metadata_perm_item     ON access.metadata_permissions (metadata_item_id);
+CREATE INDEX idx_organization_members_user
+    ON access.organization_members (user_id);
+
+CREATE INDEX idx_roles_org_id
+    ON access.roles (org_id);
+
+CREATE INDEX idx_user_roles_user_org
+    ON access.user_roles (user_id, org_id);
+
+CREATE INDEX idx_role_permissions_role
+    ON access.role_permissions (role_id);
+
+CREATE INDEX idx_object_permissions_resource
+    ON access.object_permissions (org_id, resource_type, resource_id);
