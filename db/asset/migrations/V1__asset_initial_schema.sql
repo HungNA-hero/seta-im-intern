@@ -36,6 +36,19 @@ CREATE UNIQUE INDEX uq_folders_active_path
     ON folders (org_id, path)
     WHERE deleted_at IS NULL;
 
+CREATE UNIQUE INDEX uq_folders_active_sibling_name
+    ON folders (
+        org_id,
+        (
+            CASE
+                WHEN nlevel(path) > 1 THEN subpath(path, 0, nlevel(path) - 1)::text
+                ELSE ''
+            END
+        ),
+        name
+    )
+    WHERE deleted_at IS NULL;
+
 CREATE INDEX idx_folders_path_gist
     ON folders USING GIST (path);
 
