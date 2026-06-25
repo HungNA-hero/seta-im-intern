@@ -65,6 +65,24 @@ services:
       - ./db/access/migrations:/flyway/sql:ro
     command: -connectRetries=60 migrate
 
+  node-access-core:
+    build:
+      context: ./node-access-core
+    container_name: seta-node-access-core
+    environment:
+      PORT: 4000
+      HOST: 0.0.0.0
+      ACCESS_DB_HOST: access-db
+      ACCESS_DB_PORT: 5432
+      ACCESS_DB_NAME: ${ACCESS_DB_NAME:-access_db}
+      ACCESS_DB_USER: ${ACCESS_DB_USER:-access_user}
+      ACCESS_DB_PASSWORD: ${ACCESS_DB_PASSWORD:-access_password}
+    ports:
+      - "${NODE_ACCESS_CORE_PORT:-4000}:4000"
+    depends_on:
+      access-db:
+        condition: service_healthy
+
 volumes:
   asset_db_data:
   access_db_data:
