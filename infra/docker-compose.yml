@@ -65,10 +65,10 @@ services:
       - ./db/access/migrations:/flyway/sql:ro
     command: -connectRetries=60 migrate
 
-  node-access-core:
+  access-core:
     build:
-      context: ./node-access-core
-    container_name: seta-node-access-core
+      context: ../services/access-core
+    container_name: seta-access-core
     environment:
       PORT: 4000
       HOST: 0.0.0.0
