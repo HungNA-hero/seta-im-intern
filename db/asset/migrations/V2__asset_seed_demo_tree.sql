@@ -1,11 +1,16 @@
+INSERT INTO organization_ref (org_id)
+VALUES ('00000000-0000-0000-0000-000000000010')
+ON CONFLICT (org_id) DO NOTHING;
+
 INSERT INTO user_ref (user_id)
 VALUES ('00000000-0000-0000-0000-000000000001')
 ON CONFLICT (user_id) DO NOTHING;
 
-INSERT INTO folders (id, parent_id, name, description, created_by, updated_by)
+INSERT INTO folders (id, org_id, path, name, description, created_by, updated_by)
 VALUES (
     '10000000-0000-0000-0000-000000000000',
-    NULL,
+    '00000000-0000-0000-0000-000000000010',
+    'root',
     'Root',
     'Demo root folder for local development.',
     '00000000-0000-0000-0000-000000000001',
@@ -13,10 +18,11 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO folders (id, parent_id, name, description, created_by, updated_by)
+INSERT INTO folders (id, org_id, path, name, description, created_by, updated_by)
 VALUES (
     '10000000-0000-0000-0000-000000000001',
-    '10000000-0000-0000-0000-000000000000',
+    '00000000-0000-0000-0000-000000000010',
+    'root.animals',
     'Animals',
     'Demo folder matching the architecture example.',
     '00000000-0000-0000-0000-000000000001',
@@ -24,10 +30,11 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO folders (id, parent_id, name, description, created_by, updated_by)
+INSERT INTO folders (id, org_id, path, name, description, created_by, updated_by)
 VALUES (
     '10000000-0000-0000-0000-000000000002',
-    '10000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000010',
+    'root.animals.dogs',
     'Dogs',
     'Demo child folder for tree and metadata checks.',
     '00000000-0000-0000-0000-000000000001',
