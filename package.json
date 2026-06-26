@@ -1,0 +1,19 @@
+{
+  "name": "seta-im-intern",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev:all": "npm run docker:up && concurrently -k -n ACCESS,ASSET -c blue,green \"npm run dev:access\" \"npm run dev:asset\"",
+    "dev:access": "npm --prefix services/access-core run dev",
+    "dev:asset": "cd services/asset-core && go run ./cmd/server/main.go",
+    "docker:up": "docker compose -f infra/docker-compose.yml up -d asset-db access-db",
+    "docker:migrate": "docker compose -f infra/docker-compose.yml --profile migration run --rm flyway-asset && docker compose -f infra/docker-compose.yml --profile migration run --rm flyway-access",
+    "docker:down": "docker compose -f infra/docker-compose.yml down",
+    "docker:logs": "docker compose -f infra/docker-compose.yml logs -f",
+    "shut:all": "docker compose -f infra/docker-compose.yml stop",
+    "clean:all": "docker compose -f infra/docker-compose.yml down -v"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
