@@ -1,5 +1,10 @@
 import { config } from '../../config';
 import { GraphQLError } from 'graphql';
+import type {
+  GraphQLContext,
+  PolicyGuard,
+  RequesterContext,
+} from '../schema';
 
 // Types mapping what Go Asset Core returns
 interface GoFolder {
@@ -34,29 +39,19 @@ function toFolder(f: GoFolder) {
 // Requester Context and Policy Guard Contract (AG-KAN28-INDEPENDENT-C2)
 // ---------------------------------------------------------
 
-export interface RequesterContext {
-  userId: string;
-  currentOrgId: string;
-}
-
-export interface PolicyGuard {
-  checkFolderAccess(ctx: RequesterContext, action: string, orgId: string): Promise<boolean>;
-}
-
 // Fail-closed default implementation (Integration wait for KAN-25/KAN-27)
 export const defaultPolicyGuard: PolicyGuard = {
-  async checkFolderAccess(ctx, action, orgId) {
-    return true; // Allow for test/positive path (KAN-28 requirement)
+  async checkFolderAccess() {
+    return false;
   }
 };
 
 // Policy guard will be supplied via GraphQLContext.
 // If absent, we fail closed.
 
-function getRequesterContext(context: any): RequesterContext {
-  const req = context.request as Request | undefined;
-  const userId = req?.headers?.get('x-user-id');
-  const currentOrgId = req?.headers?.get('x-org-id');
+function getRequesterContext(context: GraphQLContext): RequesterContext {
+  const userId = context.requester;
+  const currentOrgId = context.currentOrg;
 
   if (!userId || !currentOrgId) {
     throw new GraphQLError('UNAUTHENTICATED', {
@@ -74,14 +69,18 @@ function getHeaders(ctx: RequesterContext) {
   };
 }
 
-async function validateAccess(ctx: RequesterContext, targetOrgId: string, context: any) {
+async function validateAccess(
+  ctx: RequesterContext,
+  targetOrgId: string,
+  context: GraphQLContext,
+) {
   if (ctx.currentOrgId !== targetOrgId) {
     throw new GraphQLError('FORBIDDEN: Organization mismatch', {
       extensions: { code: 'FORBIDDEN' },
     });
   }
 
-  const guard: PolicyGuard = context.policyGuard || defaultPolicyGuard;
+  const guard = context.policyGuard ?? defaultPolicyGuard;
   const allowed = await guard.checkFolderAccess(ctx, 'read', targetOrgId);
   if (!allowed) {
     throw new GraphQLError('FORBIDDEN: Policy deny', {
@@ -96,7 +95,7 @@ async function validateAccess(ctx: RequesterContext, targetOrgId: string, contex
 
 export const folderResolvers = {
   Query: {
-    folderTree: async (_: unknown, args: { orgId: string; rootPath?: string }, context: any) => {
+    folderTree: async (_: unknown, args: { orgId: string; rootPath?: string }, context: GraphQLContext) => {
       const ctx = getRequesterContext(context);
       await validateAccess(ctx, args.orgId, context);
 
@@ -116,7 +115,7 @@ export const folderResolvers = {
       return (data.folders || []).map(toFolder);
     },
 
-    folder: async (_: unknown, args: { orgId: string; id: string }, context: any) => {
+    folder: async (_: unknown, args: { orgId: string; id: string }, context: GraphQLContext) => {
       const ctx = getRequesterContext(context);
       await validateAccess(ctx, args.orgId, context);
 
@@ -136,7 +135,7 @@ export const folderResolvers = {
       return data.folder ? toFolder(data.folder) : null;
     },
 
-    folderChildren: async (_: unknown, args: { orgId: string; parentPath: string }, context: any) => {
+    folderChildren: async (_: unknown, args: { orgId: string; parentPath: string }, context: GraphQLContext) => {
       const ctx = getRequesterContext(context);
       await validateAccess(ctx, args.orgId, context);
 
@@ -155,7 +154,7 @@ export const folderResolvers = {
   },
 
   Folder: {
-    children: async (parent: any, _: unknown, context: any) => {
+    children: async (parent: { orgId: string; path: string }, _: unknown, context: GraphQLContext) => {
       const ctx = getRequesterContext(context);
       const orgId = parent.orgId;
       const parentPath = parent.path;

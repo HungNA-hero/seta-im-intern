@@ -2,10 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert';
 import { folderResolvers } from './folderResolvers';
 import { GraphQLError } from 'graphql';
+import type { GraphQLContext } from '../schema';
+
+const allowGuard = { async checkFolderAccess() { return true; } };
 
 test('folderResolvers - missing context throws UNAUTHENTICATED', async () => {
-  const context = { request: { headers: new Map() } }; // no x-user-id or x-org-id
-  
+  const context: GraphQLContext = { requester: null, currentOrg: null };
+
   try {
     await folderResolvers.Query.folderTree(null, { orgId: 'org-1' }, context);
     assert.fail('Expected error');
@@ -16,12 +19,12 @@ test('folderResolvers - missing context throws UNAUTHENTICATED', async () => {
 });
 
 test('folderResolvers - org mismatch throws FORBIDDEN', async () => {
-  const headers = new Map([
-    ['x-user-id', 'user-1'],
-    ['x-org-id', 'org-1']
-  ]);
-  const context = { request: { headers } };
-  
+  const context: GraphQLContext = {
+    requester: 'user-1',
+    currentOrg: 'org-1',
+    policyGuard: allowGuard,
+  };
+
   try {
     // Requesting data for org-2 while context is org-1
     await folderResolvers.Query.folderTree(null, { orgId: 'org-2' }, context);
@@ -33,16 +36,12 @@ test('folderResolvers - org mismatch throws FORBIDDEN', async () => {
   }
 });
 
-test('folderResolvers - policy deny throws FORBIDDEN', async () => {
-  const headers = new Map([
-    ['x-user-id', 'user-1'],
-    ['x-org-id', 'org-1']
-  ]);
-  const context = {
-    request: { headers },
-    policyGuard: { async checkFolderAccess() { return false; } }
+test('folderResolvers - missing policy guard fails closed', async () => {
+  const context: GraphQLContext = {
+    requester: 'user-1',
+    currentOrg: 'org-1',
   };
-  
+
   try {
     await folderResolvers.Query.folderTree(null, { orgId: 'org-1' }, context);
     assert.fail('Expected error');
@@ -54,20 +53,17 @@ test('folderResolvers - policy deny throws FORBIDDEN', async () => {
 });
 
 test('folderResolvers - mapping snake_case to camelCase and exact forwarded headers', async () => {
-  const headers = new Map([
-    ['x-user-id', 'user-1'],
-    ['x-org-id', 'org-1']
-  ]);
-  const context = {
-    request: { headers },
-    policyGuard: { async checkFolderAccess() { return true; } }
+  const context: GraphQLContext = {
+    requester: 'user-1',
+    currentOrg: 'org-1',
+    policyGuard: allowGuard,
   };
-  
+
   // Mock fetch
   const originalFetch = global.fetch;
   let fetchUrl = '';
   let fetchHeaders: any = {};
-  
+
   global.fetch = async (url: any, options: any) => {
     fetchUrl = url;
     fetchHeaders = options.headers;
@@ -89,7 +85,7 @@ test('folderResolvers - mapping snake_case to camelCase and exact forwarded head
       })
     } as any;
   };
-  
+
   try {
     const res = await folderResolvers.Query.folder(null, { orgId: 'org-1', id: 'f-1' }, context);
     assert.strictEqual(res?.id, 'f-1');
@@ -104,15 +100,12 @@ test('folderResolvers - mapping snake_case to camelCase and exact forwarded head
 });
 
 test('folderResolvers - Go 404 returns null', async () => {
-  const headers = new Map([
-    ['x-user-id', 'user-1'],
-    ['x-org-id', 'org-1']
-  ]);
-  const context = {
-    request: { headers },
-    policyGuard: { async checkFolderAccess() { return true; } }
+  const context: GraphQLContext = {
+    requester: 'user-1',
+    currentOrg: 'org-1',
+    policyGuard: allowGuard,
   };
-  
+
   const originalFetch = global.fetch;
   global.fetch = async () => ({ ok: false, status: 404, statusText: 'Not Found' }) as any;
   
@@ -125,15 +118,12 @@ test('folderResolvers - Go 404 returns null', async () => {
 });
 
 test('folderResolvers - Go 500 throws GraphQLError', async () => {
-  const headers = new Map([
-    ['x-user-id', 'user-1'],
-    ['x-org-id', 'org-1']
-  ]);
-  const context = {
-    request: { headers },
-    policyGuard: { async checkFolderAccess() { return true; } }
+  const context: GraphQLContext = {
+    requester: 'user-1',
+    currentOrg: 'org-1',
+    policyGuard: allowGuard,
   };
-  
+
   const originalFetch = global.fetch;
   global.fetch = async () => ({ ok: false, status: 500, statusText: 'Internal Server Error' }) as any;
   
