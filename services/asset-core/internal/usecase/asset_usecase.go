@@ -20,3 +20,7 @@ func (u *assetUsecase) GetFolderTree(ctx context.Context, orgID string, rootPath
 	// For now, it simply delegates to the repository.
 	return u.repo.GetFolderTree(ctx, orgID, rootPath)
 }
+
+func (u *assetUsecase) EnsureRefs(ctx context.Context, userID, orgID string) error {
+	return u.repo.EnsureRefs(ctx, userID, orgID)
+}
