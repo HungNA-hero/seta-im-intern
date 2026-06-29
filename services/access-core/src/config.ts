@@ -1,3 +1,6 @@
+import { config as loadEnv } from 'dotenv';
+loadEnv();
+
 const dbHost     = process.env.ACCESS_DB_HOST     ?? 'localhost';
 const dbPort     = process.env.ACCESS_DB_PORT     ?? '5434';
 const dbName     = process.env.ACCESS_DB_NAME     ?? 'access_db';

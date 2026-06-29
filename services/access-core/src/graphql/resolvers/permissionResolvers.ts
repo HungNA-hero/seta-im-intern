@@ -1,6 +1,6 @@
 import { listRolePermissions, RolePermission } from '../../db/queries/rolePermissions';
 import { listObjectPermissions, ObjectPermission } from '../../db/queries/objectPermissions';
-import { ResourceType } from '@prisma/client';
+import { resource_type } from '@prisma/client';
 
 export const permissionResolvers = {
   Query: {
@@ -18,7 +18,7 @@ export const permissionResolvers = {
       _: unknown,
       { orgId, resourceType, resourceId }: { orgId: string; resourceType: string; resourceId: string }
     ) => {
-      const rows = await listObjectPermissions(orgId, resourceType as ResourceType, resourceId);
+      const rows = await listObjectPermissions(orgId, resourceType as resource_type, resourceId);
       return rows.map((r: ObjectPermission) => ({
         id:            r.id,
         orgId:         r.orgId,
