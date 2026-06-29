@@ -1,21 +1,19 @@
-import { listUsers, getUserById, User } from '../../db/queries/users';
-import { serializeDates } from './utils';
+import { listUsers, getUserById, User } from "../../db/queries/users";
+import { serializeDates } from "./utils";
+import { assertAuthenticated, GraphQLContext } from "../context";
 
 function toUser(u: User) {
-  return serializeDates({
-    id: u.id,
-    email: u.email,
-    displayName: u.displayName,
-    isActive: u.isActive,
-    createdAt: u.createdAt,
-    updatedAt: u.updatedAt,
-  });
+  return serializeDates(u);
 }
 
 export const userResolvers = {
   Query: {
-    users: async () => (await listUsers()).map(toUser),
-    user:  async (_: unknown, { id }: { id: string }) => {
+    users: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
+      assertAuthenticated(ctx);
+      return (await listUsers()).map(toUser);
+    },
+    user: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
+      assertAuthenticated(ctx);
       const u = await getUserById(id);
       return u ? toUser(u) : null;
     },

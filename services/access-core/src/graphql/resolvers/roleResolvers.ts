@@ -6,24 +6,20 @@ import {
   Role,
 } from "../../db/queries/roles";
 import { serializeDates } from './utils';
+import { assertAuthenticated, assertOrgMember, GraphQLContext } from '../context';
 
 function toRole(r: Role) {
-  return serializeDates({
-    id: r.id,
-    orgId: r.orgId,
-    code: r.code,
-    name: r.name,
-    description: r.description ?? null,
-    createdAt: r.createdAt,
-    updatedAt: r.updatedAt,
-  });
+  return serializeDates(r);
 }
 
 export const roleResolvers = {
   Query: {
-    roles: async (_: unknown, { orgId }: { orgId: string }) =>
-      (await listRolesByOrg(orgId)).map(toRole),
-    role: async (_: unknown, { id }: { id: string }) => {
+    roles: async (_: unknown, { orgId }: { orgId: string }, ctx: GraphQLContext) => {
+      assertOrgMember(ctx);
+      return (await listRolesByOrg(orgId)).map(toRole);
+    },
+    role: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
+      assertAuthenticated(ctx);
       const r = await getRoleById(id);
       return r ? toRole(r) : null;
     },
@@ -37,7 +33,11 @@ export const roleResolvers = {
         name,
         description,
       }: { orgId: string; code: string; name: string; description?: string },
-    ) => toRole(await createRole(orgId, code, name, description)),
+      ctx: GraphQLContext,
+    ) => {
+      assertOrgMember(ctx);
+      return toRole(await createRole(orgId, code, name, description));
+    },
     updateRole: async (
       _: unknown,
       {
@@ -45,6 +45,10 @@ export const roleResolvers = {
         name,
         description,
       }: { id: string; name?: string; description?: string },
-    ) => toRole(await updateRole(id, name, description)),
+      ctx: GraphQLContext,
+    ) => {
+      assertOrgMember(ctx);
+      return toRole(await updateRole(id, name, description));
+    },
   },
 };

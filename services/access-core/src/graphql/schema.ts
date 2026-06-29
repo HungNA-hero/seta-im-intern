@@ -1,6 +1,6 @@
-import { createSchema } from 'graphql-yoga';
-import { typeDefs }     from './typeDefs';
-import { resolvers }    from './resolvers';
+import { createSchema } from "graphql-yoga";
+import { typeDefs }     from "./typeDefs";
+import { resolvers }    from "./resolvers";
 
 export interface RequesterContext {
   userId: string;

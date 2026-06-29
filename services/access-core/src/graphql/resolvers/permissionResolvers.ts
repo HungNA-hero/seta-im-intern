@@ -1,23 +1,17 @@
-import {
-  listRolePermissions,
-  RolePermission,
-} from "../../db/queries/rolePermissions";
-import {
-  listObjectPermissions,
-  ObjectPermission,
-} from "../../db/queries/objectPermissions";
-import { resource_type } from "@prisma/client";
+import { listRolePermissions } from "../../db/queries/rolePermissions";
+import { listObjectPermissions } from "../../db/queries/objectPermissions";
+import { ResourceType } from "@prisma/client";
+import { assertOrgMember, GraphQLContext } from "../context";
 
 export const permissionResolvers = {
   Query: {
-    rolePermissions: async (_: unknown, { roleId }: { roleId: string }) => {
-      const rows = await listRolePermissions(roleId);
-      return rows.map((r: RolePermission) => ({
-        id: r.id,
-        roleId: r.roleId,
-        actionId: r.actionId,
-        resourceType: r.resourceType,
-      }));
+    rolePermissions: async (
+      _: unknown,
+      { roleId }: { roleId: string },
+      ctx: GraphQLContext,
+    ) => {
+      assertOrgMember(ctx);
+      return listRolePermissions(roleId);
     },
 
     objectPermissions: async (
@@ -26,24 +20,12 @@ export const permissionResolvers = {
         orgId,
         resourceType,
         resourceId,
-      }: { orgId: string; resourceType: resource_type; resourceId: string },
+      }: { orgId: string; resourceType: ResourceType; resourceId: string },
+      ctx: GraphQLContext,
     ) => {
-      const rows = await listObjectPermissions(
-        orgId,
-        resourceType as resource_type,
-        resourceId,
-      );
-      return rows.map((r: ObjectPermission) => ({
-        id: r.id,
-        orgId: r.orgId,
-        resourceType: r.resourceType,
-        resourceId: r.resourceId,
-        granteeUserId: r.granteeUserId,
-        granteeRoleId: r.granteeRoleId,
-        actionId: r.actionId,
-        grantedBy: r.grantedBy,
-        grantedAt: r.grantedAt.toISOString(),
-      }));
+      assertOrgMember(ctx);
+      const rows = await listObjectPermissions(orgId, resourceType, resourceId);
+      return rows.map((r) => ({ ...r, grantedAt: r.grantedAt.toISOString() }));
     },
   },
 };
