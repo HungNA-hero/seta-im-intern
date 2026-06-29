@@ -1,8 +1,14 @@
 import Fastify, { FastifyInstance } from "fastify";
 import { createYoga } from "graphql-yoga";
-import { schema, GraphQLContext } from "./graphql/schema";
+import { schema, GraphQLContext, PolicyGuard } from "./graphql/schema";
 
-export async function buildServer(): Promise<FastifyInstance> {
+export type ServerDependencies = {
+  policyGuard?: PolicyGuard;
+};
+
+export async function buildServer(
+  dependencies: ServerDependencies = {},
+): Promise<FastifyInstance> {
   const fastify = Fastify({ logger: true });
 
   const yoga = createYoga<GraphQLContext>({
@@ -13,6 +19,7 @@ export async function buildServer(): Promise<FastifyInstance> {
       return {
         requester: req.request.headers.get("x-user-id"),
         currentOrg: req.request.headers.get("x-org-id"),
+        policyGuard: dependencies.policyGuard,
       };
     },
   });

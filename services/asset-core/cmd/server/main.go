@@ -29,7 +29,7 @@ func main() {
 
 	// 3. Setup Routes and Handlers
 	muxPtr := http.NewServeMux()
-	
+
 	httpDelivery.NewAssetHandler(muxPtr, assetUsecase, db)
 
 	// 4. Start Server

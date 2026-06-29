@@ -58,6 +58,19 @@ export const typeDefs = /* GraphQL */ `
     grantedAt:     String!
   }
 
+  type Folder {
+    id:          ID!
+    orgId:       ID!
+    path:        String!
+    name:        String!
+    description: String
+    createdBy:   ID!
+    updatedBy:   ID
+    createdAt:   String!
+    updatedAt:   String!
+    children:    [Folder!]
+  }
+
   type Mutation {
     createRole(orgId: ID!, code: String!, name: String!, description: String): Role!
     updateRole(id: ID!, name: String, description: String): Role!
@@ -79,5 +92,8 @@ export const typeDefs = /* GraphQL */ `
       resourceType: ResourceType!
       resourceId:   ID!
     ):                                                   [ObjectPermission!]!
+    folderTree(orgId: ID!, rootPath: String):              [Folder!]!
+    folder(orgId: ID!, id: ID!):                          Folder
+    folderChildren(orgId: ID!, parentPath: String!):      [Folder!]!
   }
 `;
