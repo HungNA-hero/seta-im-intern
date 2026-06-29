@@ -1,0 +1,110 @@
+{
+  "projectRoot": "c:/Users/admin/Downloads/Seta Im Intern/seta-im-intern",
+  "batchFiles": [
+    {
+      "path": "services/asset-core/cmd/server/main.go",
+      "language": "go",
+      "sizeLines": 82,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/asset_handler.go",
+      "language": "go",
+      "sizeLines": 102,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "language": "go",
+      "sizeLines": 81,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/middleware.go",
+      "language": "go",
+      "sizeLines": 39,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/middleware_test.go",
+      "language": "go",
+      "sizeLines": 106,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/domain/asset.go",
+      "language": "go",
+      "sizeLines": 83,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/repository/asset_repository.go",
+      "language": "go",
+      "sizeLines": 47,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "language": "go",
+      "sizeLines": 134,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/requestcontext/context.go",
+      "language": "go",
+      "sizeLines": 29,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/usecase/asset_usecase.go",
+      "language": "go",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    }
+  ],
+  "batchImportData": {
+    "services/asset-core/cmd/server/main.go": [
+      "services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "services/asset-core/internal/delivery/http/asset_handler.go",
+      "services/asset-core/internal/delivery/http/middleware_test.go",
+      "services/asset-core/internal/delivery/http/middleware.go",
+      "services/asset-core/internal/repository/asset_repository_test.go",
+      "services/asset-core/internal/repository/asset_repository.go",
+      "services/asset-core/internal/usecase/asset_usecase.go"
+    ],
+    "services/asset-core/internal/delivery/http/asset_handler.go": [
+      "services/asset-core/internal/domain/asset.go",
+      "services/asset-core/internal/requestcontext/context.go"
+    ],
+    "services/asset-core/internal/delivery/http/asset_handler_test.go": [
+      "services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "services/asset-core/internal/delivery/http/asset_handler.go",
+      "services/asset-core/internal/delivery/http/middleware_test.go",
+      "services/asset-core/internal/delivery/http/middleware.go",
+      "services/asset-core/internal/domain/asset.go"
+    ],
+    "services/asset-core/internal/delivery/http/middleware.go": [
+      "services/asset-core/internal/requestcontext/context.go"
+    ],
+    "services/asset-core/internal/delivery/http/middleware_test.go": [
+      "services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "services/asset-core/internal/delivery/http/asset_handler.go",
+      "services/asset-core/internal/delivery/http/middleware_test.go",
+      "services/asset-core/internal/delivery/http/middleware.go",
+      "services/asset-core/internal/requestcontext/context.go"
+    ],
+    "services/asset-core/internal/domain/asset.go": [],
+    "services/asset-core/internal/repository/asset_repository.go": [
+      "services/asset-core/internal/domain/asset.go"
+    ],
+    "services/asset-core/internal/repository/asset_repository_test.go": [
+      "services/asset-core/internal/repository/asset_repository_test.go",
+      "services/asset-core/internal/repository/asset_repository.go"
+    ],
+    "services/asset-core/internal/requestcontext/context.go": [],
+    "services/asset-core/internal/usecase/asset_usecase.go": [
+      "services/asset-core/internal/domain/asset.go"
+    ]
+  },
+  "neighborMap": {}
+}

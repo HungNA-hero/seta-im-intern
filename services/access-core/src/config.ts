@@ -12,6 +12,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 export const config = {
+  goAssetUrl: process.env.GO_ASSET_URL || "http://localhost:8080",
   port: parseInt(process.env.PORT ?? "4000", 10),
   host: process.env.HOST ?? "0.0.0.0",
   db: {

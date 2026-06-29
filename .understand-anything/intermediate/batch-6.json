@@ -1,0 +1,65 @@
+{
+  "nodes": [
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "path": "README.md",
+      "summary": "Main project README detailing local database baseline setup, prerequisites, quick start npm scripts, manual setup commands, and environment overrides for the SETA IM intern project.",
+      "tags": [
+        "readme",
+        "documentation",
+        "setup",
+        "getting-started"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:package.json",
+      "type": "config",
+      "name": "package.json",
+      "path": "package.json",
+      "summary": "Root NPM package configuration containing scripts for local development setup, orchestrating databases, migrations, and microservices.",
+      "tags": [
+        "npm",
+        "package-json",
+        "scripts",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:pr_body.txt",
+      "type": "document",
+      "name": "pr_body.txt",
+      "path": "pr_body.txt",
+      "summary": "Template or default text for a Pull Request body (KAN-24) describing root package.json additions and README updates.",
+      "tags": [
+        "pull-request",
+        "documentation",
+        "template"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:README.md",
+      "target": "config:package.json",
+      "type": "documents",
+      "weight": 1
+    },
+    {
+      "source": "document:pr_body.txt",
+      "target": "document:README.md",
+      "type": "related",
+      "weight": 1
+    },
+    {
+      "source": "document:pr_body.txt",
+      "target": "config:package.json",
+      "type": "related",
+      "weight": 1
+    }
+  ]
+}

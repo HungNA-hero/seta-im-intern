@@ -5,7 +5,7 @@ export async function assignRole(
   userId: string,
   roleId: string,
 ): Promise<void> {
-  await prisma.userRole.create({ data: { orgId, userId, roleId } });
+  await prisma.user_roles.create({ data: { org_id: orgId, user_id: userId, role_id: roleId } });
 }
 
 export async function revokeRole(
@@ -13,5 +13,5 @@ export async function revokeRole(
   userId: string,
   roleId: string,
 ): Promise<void> {
-  await prisma.userRole.delete({ where: { orgId_userId_roleId: { orgId, userId, roleId } } });
+  await prisma.user_roles.delete({ where: { org_id_user_id_role_id: { org_id: orgId, user_id: userId, role_id: roleId } } });
 }

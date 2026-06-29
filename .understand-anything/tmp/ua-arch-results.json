@@ -1,0 +1,365 @@
+{
+  "scriptCompleted": true,
+  "directoryGroups": {
+    "services": [
+      "file:services/asset-core/cmd/server/main.go",
+      "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "file:services/asset-core/internal/delivery/http/middleware.go",
+      "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "file:services/asset-core/internal/domain/asset.go",
+      "file:services/asset-core/internal/repository/asset_repository.go",
+      "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "file:services/asset-core/internal/requestcontext/context.go",
+      "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "file:services/access-core/src/db/queries/roles.ts",
+      "file:services/access-core/src/db/queries/users.ts",
+      "file:services/access-core/src/graphql/resolvers/index.ts",
+      "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "file:services/access-core/src/graphql/schema.ts",
+      "file:services/access-core/src/graphql/typeDefs.ts",
+      "file:services/access-core/src/server.ts",
+      "file:services/access-core/src/config.ts",
+      "file:services/access-core/src/db/prisma.ts",
+      "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "file:services/access-core/src/index.ts",
+      "config:services/access-core/package.json",
+      "file:services/access-core/prisma.config.ts",
+      "schema:services/access-core/prisma/schema.prisma",
+      "config:services/access-core/tsconfig.json",
+      "config:services/asset-core/go.mod",
+      "config:services/asset-core/go.sum"
+    ],
+    "infra": [
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
+      "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:organization_ref",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items",
+      "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql:asset-seed-migration",
+      "file:infra/db/asset/seed/.gitkeep",
+      "service:infra/docker-compose.yml"
+    ],
+    "documentation": [
+      "document:README.md"
+    ],
+    "config": [
+      "config:package.json"
+    ],
+    "root": [
+      "document:pr_body.txt"
+    ],
+    ".understand-anything": [
+      "file:.understand-anything/.understandignore",
+      "config:.understand-anything/config.json"
+    ]
+  },
+  "nodeTypeGroups": {
+    "file": [
+      "file:services/asset-core/cmd/server/main.go",
+      "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "file:services/asset-core/internal/delivery/http/middleware.go",
+      "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "file:services/asset-core/internal/domain/asset.go",
+      "file:services/asset-core/internal/repository/asset_repository.go",
+      "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "file:services/asset-core/internal/requestcontext/context.go",
+      "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "file:services/access-core/src/db/queries/roles.ts",
+      "file:services/access-core/src/db/queries/users.ts",
+      "file:services/access-core/src/graphql/resolvers/index.ts",
+      "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "file:services/access-core/src/graphql/schema.ts",
+      "file:services/access-core/src/graphql/typeDefs.ts",
+      "file:services/access-core/src/server.ts",
+      "file:services/access-core/src/config.ts",
+      "file:services/access-core/src/db/prisma.ts",
+      "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "file:services/access-core/src/index.ts",
+      "file:.understand-anything/.understandignore",
+      "file:infra/db/asset/seed/.gitkeep",
+      "file:services/access-core/prisma.config.ts"
+    ],
+    "table": [
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
+      "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:organization_ref",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items",
+      "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql:asset-seed-migration"
+    ],
+    "document": [
+      "document:README.md",
+      "document:pr_body.txt"
+    ],
+    "config": [
+      "config:package.json",
+      "config:.understand-anything/config.json",
+      "config:services/access-core/package.json",
+      "config:services/access-core/tsconfig.json",
+      "config:services/asset-core/go.mod",
+      "config:services/asset-core/go.sum"
+    ],
+    "service": [
+      "service:infra/docker-compose.yml"
+    ],
+    "schema": [
+      "schema:services/access-core/prisma/schema.prisma"
+    ]
+  },
+  "crossCategoryEdges": [
+    {
+      "fromType": "document",
+      "toType": "config",
+      "edgeType": "documents",
+      "count": 2
+    },
+    {
+      "fromType": "config",
+      "toType": "file",
+      "edgeType": "related",
+      "count": 1
+    },
+    {
+      "fromType": "service",
+      "toType": "config",
+      "edgeType": "deploys",
+      "count": 1
+    },
+    {
+      "fromType": "config",
+      "toType": "file",
+      "edgeType": "configures",
+      "count": 2
+    },
+    {
+      "fromType": "config",
+      "toType": "schema",
+      "edgeType": "configures",
+      "count": 1
+    },
+    {
+      "fromType": "file",
+      "toType": "schema",
+      "edgeType": "depends_on",
+      "count": 1
+    }
+  ],
+  "interGroupImports": [],
+  "intraGroupDensity": {
+    "services": {
+      "internalEdges": 39,
+      "totalEdges": 39,
+      "density": 1.0
+    },
+    "infra": {
+      "internalEdges": 0,
+      "totalEdges": 0,
+      "density": 0
+    },
+    "documentation": {
+      "internalEdges": 0,
+      "totalEdges": 0,
+      "density": 0
+    },
+    "config": {
+      "internalEdges": 0,
+      "totalEdges": 0,
+      "density": 0
+    },
+    "root": {
+      "internalEdges": 0,
+      "totalEdges": 0,
+      "density": 0
+    },
+    ".understand-anything": {
+      "internalEdges": 0,
+      "totalEdges": 0,
+      "density": 0
+    }
+  },
+  "patternMatches": {
+    "services": "service",
+    "infra": "infrastructure",
+    "documentation": "documentation",
+    "config": "config"
+  },
+  "deploymentTopology": {
+    "hasDockerfile": false,
+    "hasCompose": true,
+    "hasK8s": false,
+    "hasTerraform": false,
+    "hasCI": false,
+    "infraFiles": [
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V2__seed_access_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql",
+      "infra/db/asset/seed/.gitkeep",
+      "infra/docker-compose.yml"
+    ]
+  },
+  "dataPipeline": {
+    "schemaFiles": [
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V2__seed_access_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "services/access-core/prisma/schema.prisma"
+    ],
+    "migrationFiles": [
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V1__create_access_schema.sql",
+      "infra/db/access/migrations/V2__seed_access_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql"
+    ],
+    "dataModelFiles": [
+      "services/asset-core/internal/domain/asset.go"
+    ],
+    "apiHandlerFiles": [
+      "services/access-core/src/graphql/resolvers/index.ts",
+      "services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "services/access-core/src/graphql/resolvers/permissionResolvers.ts"
+    ]
+  },
+  "docCoverage": {
+    "groupsWithDocs": 2,
+    "totalGroups": 6,
+    "coverageRatio": 0.3333333333333333,
+    "undocumentedGroups": [
+      "services",
+      "infra",
+      "config",
+      ".understand-anything"
+    ]
+  },
+  "dependencyDirection": [],
+  "fileStats": {
+    "totalFileNodes": 53,
+    "filesPerGroup": {
+      "services": 30,
+      "infra": 18,
+      "documentation": 1,
+      "config": 1,
+      "root": 1,
+      ".understand-anything": 2
+    },
+    "nodeTypeCounts": {
+      "file": 27,
+      "table": 16,
+      "document": 2,
+      "config": 6,
+      "service": 1,
+      "schema": 1
+    }
+  },
+  "fileFanIn": {
+    "file:services/asset-core/internal/delivery/http/asset_handler_test.go": 2,
+    "file:services/asset-core/internal/delivery/http/asset_handler.go": 3,
+    "file:services/asset-core/internal/delivery/http/middleware_test.go": 2,
+    "file:services/asset-core/internal/delivery/http/middleware.go": 3,
+    "file:services/asset-core/internal/repository/asset_repository_test.go": 1,
+    "file:services/asset-core/internal/repository/asset_repository.go": 2,
+    "file:services/asset-core/internal/usecase/asset_usecase.go": 1,
+    "file:services/asset-core/internal/domain/asset.go": 4,
+    "file:services/asset-core/internal/requestcontext/context.go": 3,
+    "file:services/access-core/src/db/prisma.ts": 5,
+    "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts": 1,
+    "file:services/access-core/src/graphql/resolvers/roleResolvers.ts": 1,
+    "file:services/access-core/src/graphql/resolvers/userResolvers.ts": 1,
+    "file:services/access-core/src/db/queries/roles.ts": 1,
+    "file:services/access-core/src/db/queries/users.ts": 1,
+    "file:services/access-core/src/graphql/resolvers/index.ts": 1,
+    "file:services/access-core/src/graphql/typeDefs.ts": 1,
+    "file:services/access-core/src/graphql/schema.ts": 1,
+    "file:services/access-core/src/config.ts": 2,
+    "file:services/access-core/src/db/queries/objectPermissions.ts": 1,
+    "file:services/access-core/src/db/queries/rolePermissions.ts": 1,
+    "file:services/access-core/src/server.ts": 1
+  },
+  "fileFanOut": {
+    "file:services/asset-core/cmd/server/main.go": 7,
+    "file:services/asset-core/internal/delivery/http/asset_handler.go": 2,
+    "file:services/asset-core/internal/delivery/http/asset_handler_test.go": 4,
+    "file:services/asset-core/internal/delivery/http/middleware.go": 1,
+    "file:services/asset-core/internal/delivery/http/middleware_test.go": 4,
+    "file:services/asset-core/internal/repository/asset_repository.go": 1,
+    "file:services/asset-core/internal/repository/asset_repository_test.go": 1,
+    "file:services/asset-core/internal/usecase/asset_usecase.go": 1,
+    "file:services/access-core/src/db/queries/roles.ts": 1,
+    "file:services/access-core/src/db/queries/users.ts": 1,
+    "file:services/access-core/src/graphql/resolvers/index.ts": 3,
+    "file:services/access-core/src/graphql/resolvers/roleResolvers.ts": 1,
+    "file:services/access-core/src/graphql/resolvers/userResolvers.ts": 1,
+    "file:services/access-core/src/graphql/schema.ts": 2,
+    "file:services/access-core/src/server.ts": 1,
+    "file:services/access-core/src/db/prisma.ts": 1,
+    "file:services/access-core/src/db/queries/objectPermissions.ts": 1,
+    "file:services/access-core/src/db/queries/rolePermissions.ts": 1,
+    "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts": 2,
+    "file:services/access-core/src/index.ts": 3
+  }
+}

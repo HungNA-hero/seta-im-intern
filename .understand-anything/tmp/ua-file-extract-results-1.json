@@ -1,0 +1,3225 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 10,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "services/asset-core/cmd/server/main.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 82,
+      "nonEmptyLines": 68,
+      "functions": [
+        {
+          "name": "main",
+          "startLine": 17,
+          "endLine": 45,
+          "params": []
+        },
+        {
+          "name": "openAssetDB",
+          "startLine": 47,
+          "endLine": 62,
+          "params": [
+            "dsn"
+          ]
+        },
+        {
+          "name": "assetDSNFromEnv",
+          "startLine": 64,
+          "endLine": 74,
+          "params": []
+        },
+        {
+          "name": "getenv",
+          "startLine": 76,
+          "endLine": 82,
+          "params": [
+            "key",
+            "fallback"
+          ]
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "main",
+          "callee": "openAssetDB",
+          "lineNumber": 19
+        },
+        {
+          "caller": "main",
+          "callee": "assetDSNFromEnv",
+          "lineNumber": 19
+        },
+        {
+          "caller": "main",
+          "callee": "log.Printf",
+          "lineNumber": 21
+        },
+        {
+          "caller": "main",
+          "callee": "log.Println",
+          "lineNumber": 23
+        },
+        {
+          "caller": "main",
+          "callee": "repository.NewAssetRepository",
+          "lineNumber": 27
+        },
+        {
+          "caller": "main",
+          "callee": "usecase.NewAssetUsecase",
+          "lineNumber": 28
+        },
+        {
+          "caller": "main",
+          "callee": "http.NewServeMux",
+          "lineNumber": 31
+        },
+        {
+          "caller": "main",
+          "callee": "httpDelivery.NewAssetHandler",
+          "lineNumber": 33
+        },
+        {
+          "caller": "main",
+          "callee": "os.Getenv",
+          "lineNumber": 36
+        },
+        {
+          "caller": "main",
+          "callee": "log.Printf",
+          "lineNumber": 41
+        },
+        {
+          "caller": "main",
+          "callee": "http.ListenAndServe",
+          "lineNumber": 42
+        },
+        {
+          "caller": "main",
+          "callee": "log.Fatalf",
+          "lineNumber": 43
+        },
+        {
+          "caller": "openAssetDB",
+          "callee": "gorm.Open",
+          "lineNumber": 48
+        },
+        {
+          "caller": "openAssetDB",
+          "callee": "postgres.Open",
+          "lineNumber": 48
+        },
+        {
+          "caller": "openAssetDB",
+          "callee": "db.DB",
+          "lineNumber": 53
+        },
+        {
+          "caller": "openAssetDB",
+          "callee": "sqlDB.Ping",
+          "lineNumber": 57
+        },
+        {
+          "caller": "assetDSNFromEnv",
+          "callee": "fmt.Sprintf",
+          "lineNumber": 65
+        },
+        {
+          "caller": "assetDSNFromEnv",
+          "callee": "getenv",
+          "lineNumber": 67
+        },
+        {
+          "caller": "assetDSNFromEnv",
+          "callee": "getenv",
+          "lineNumber": 68
+        },
+        {
+          "caller": "assetDSNFromEnv",
+          "callee": "getenv",
+          "lineNumber": 69
+        },
+        {
+          "caller": "assetDSNFromEnv",
+          "callee": "getenv",
+          "lineNumber": 70
+        },
+        {
+          "caller": "assetDSNFromEnv",
+          "callee": "getenv",
+          "lineNumber": 71
+        },
+        {
+          "caller": "assetDSNFromEnv",
+          "callee": "getenv",
+          "lineNumber": 72
+        },
+        {
+          "caller": "getenv",
+          "callee": "os.Getenv",
+          "lineNumber": 77
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 0,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/asset_handler.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 154,
+      "nonEmptyLines": 130,
+      "functions": [
+        {
+          "name": "NewAssetHandler",
+          "startLine": 21,
+          "endLine": 30,
+          "params": [
+            "mux",
+            "usecase",
+            "db"
+          ]
+        },
+        {
+          "name": "HandleHealth",
+          "startLine": 32,
+          "endLine": 48,
+          "params": [
+            "w",
+            "r"
+          ]
+        },
+        {
+          "name": "HandleFolders",
+          "startLine": 56,
+          "endLine": 134,
+          "params": [
+            "w",
+            "r"
+          ]
+        },
+        {
+          "name": "HandleMetadataItems",
+          "startLine": 136,
+          "endLine": 146,
+          "params": [
+            "w",
+            "r"
+          ]
+        },
+        {
+          "name": "writeJSON",
+          "startLine": 148,
+          "endLine": 154,
+          "params": [
+            "w",
+            "statusCode",
+            "payload"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "AssetHandler",
+          "startLine": 15,
+          "endLine": 18,
+          "methods": [
+            "HandleHealth",
+            "HandleFolders",
+            "HandleMetadataItems"
+          ],
+          "properties": [
+            "usecase",
+            "db"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AssetHandler",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "NewAssetHandler",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "HandleHealth",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "HandleFolders",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "HandleMetadataItems",
+          "line": 136,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "NewAssetHandler",
+          "callee": "mux.HandleFunc",
+          "lineNumber": 27
+        },
+        {
+          "caller": "NewAssetHandler",
+          "callee": "mux.HandleFunc",
+          "lineNumber": 28
+        },
+        {
+          "caller": "NewAssetHandler",
+          "callee": "RequireActor",
+          "lineNumber": 28
+        },
+        {
+          "caller": "NewAssetHandler",
+          "callee": "mux.HandleFunc",
+          "lineNumber": 29
+        },
+        {
+          "caller": "NewAssetHandler",
+          "callee": "RequireActor",
+          "lineNumber": 29
+        },
+        {
+          "caller": "HandleHealth",
+          "callee": "http.Error",
+          "lineNumber": 34
+        },
+        {
+          "caller": "HandleHealth",
+          "callee": "writeJSON",
+          "lineNumber": 44
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "http.Error",
+          "lineNumber": 58
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "requestcontext.GetActor",
+          "lineNumber": 62
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.Context",
+          "lineNumber": 62
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "http.Error",
+          "lineNumber": 64
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 68
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.URL.Query",
+          "lineNumber": 68
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 69
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.URL.Query",
+          "lineNumber": 69
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "http.Error",
+          "lineNumber": 73
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "uuid.Validate",
+          "lineNumber": 79
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "http.Error",
+          "lineNumber": 80
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "h.usecase.GetFolderByID",
+          "lineNumber": 84
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.Context",
+          "lineNumber": 84
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "errors.Is",
+          "lineNumber": 86
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "http.Error",
+          "lineNumber": 87
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "http.Error",
+          "lineNumber": 90
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "writeJSON",
+          "lineNumber": 94
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "http.Error",
+          "lineNumber": 103
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 107
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.URL.Query",
+          "lineNumber": 107
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 108
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.URL.Query",
+          "lineNumber": 108
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "http.Error",
+          "lineNumber": 114
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "h.usecase.GetFolderChildren",
+          "lineNumber": 117
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.Context",
+          "lineNumber": 117
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "h.usecase.GetFolderTree",
+          "lineNumber": 119
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.Context",
+          "lineNumber": 119
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "h.usecase.GetRootFolders",
+          "lineNumber": 121
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.Context",
+          "lineNumber": 121
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "http.Error",
+          "lineNumber": 125
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "writeJSON",
+          "lineNumber": 129
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "len",
+          "lineNumber": 131
+        },
+        {
+          "caller": "HandleMetadataItems",
+          "callee": "http.Error",
+          "lineNumber": 138
+        },
+        {
+          "caller": "HandleMetadataItems",
+          "callee": "writeJSON",
+          "lineNumber": 142
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "w.Header().Set",
+          "lineNumber": 149
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "w.Header",
+          "lineNumber": 149
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "w.WriteHeader",
+          "lineNumber": 150
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "json.NewEncoder(w).Encode",
+          "lineNumber": 151
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "json.NewEncoder",
+          "lineNumber": 151
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "http.Error",
+          "lineNumber": 152
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 356,
+      "nonEmptyLines": 295,
+      "functions": [
+        {
+          "name": "GetFolderTree",
+          "startLine": 27,
+          "endLine": 32,
+          "params": [
+            "_",
+            "orgID",
+            "_"
+          ]
+        },
+        {
+          "name": "GetRootFolders",
+          "startLine": 34,
+          "endLine": 42,
+          "params": [
+            "_",
+            "orgID"
+          ]
+        },
+        {
+          "name": "GetFolderByID",
+          "startLine": 44,
+          "endLine": 55,
+          "params": [
+            "_",
+            "orgID",
+            "folderID"
+          ]
+        },
+        {
+          "name": "GetFolderChildren",
+          "startLine": 57,
+          "endLine": 65,
+          "params": [
+            "_",
+            "orgID",
+            "parentPath"
+          ]
+        },
+        {
+          "name": "EnsureRefs",
+          "startLine": 67,
+          "endLine": 69,
+          "params": [
+            "_",
+            "_",
+            "_"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "startLine": 75,
+          "endLine": 101,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "startLine": 103,
+          "endLine": 128,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListMissingOrgId",
+          "startLine": 130,
+          "endLine": 152,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "startLine": 154,
+          "endLine": 179,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListChildrenOnly",
+          "startLine": 181,
+          "endLine": 210,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "startLine": 212,
+          "endLine": 234,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFolderDetailValidRequest",
+          "startLine": 240,
+          "endLine": 273,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFolderDetailNotFound",
+          "startLine": 275,
+          "endLine": 300,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFolderDetailInvalidUUID",
+          "startLine": 302,
+          "endLine": 327,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFolderDetailOrgMismatch",
+          "startLine": 329,
+          "endLine": 356,
+          "params": [
+            "t"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "fakeAssetUsecase",
+          "startLine": 15,
+          "endLine": 25,
+          "methods": [
+            "GetFolderTree",
+            "GetRootFolders",
+            "GetFolderByID",
+            "GetFolderChildren",
+            "EnsureRefs"
+          ],
+          "properties": [
+            "called",
+            "methodCalled",
+            "orgID",
+            "folderByID",
+            "folderByErr",
+            "childrenResp",
+            "childrenErr",
+            "rootResp",
+            "rootErr"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GetFolderTree",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "GetRootFolders",
+          "line": 34,
+          "isDefault": false
+        },
+        {
+          "name": "GetFolderByID",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "GetFolderChildren",
+          "line": 57,
+          "isDefault": false
+        },
+        {
+          "name": "EnsureRefs",
+          "line": 67,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "line": 75,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "line": 103,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListMissingOrgId",
+          "line": 130,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "line": 154,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListChildrenOnly",
+          "line": 181,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "line": 212,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFolderDetailValidRequest",
+          "line": 240,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFolderDetailNotFound",
+          "line": 275,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFolderDetailInvalidUUID",
+          "line": 302,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFolderDetailOrgMismatch",
+          "line": 329,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "http.NewServeMux",
+          "lineNumber": 81
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 82
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 84
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "req.Header.Set",
+          "lineNumber": 89
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "req.Header.Set",
+          "lineNumber": 90
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 92
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 93
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "t.Fatalf",
+          "lineNumber": 96
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "t.Fatal",
+          "lineNumber": 99
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "http.NewServeMux",
+          "lineNumber": 108
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 109
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 111
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "req.Header.Set",
+          "lineNumber": 116
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "req.Header.Set",
+          "lineNumber": 117
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 119
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 120
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "t.Fatalf",
+          "lineNumber": 123
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "t.Fatalf",
+          "lineNumber": 126
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "http.NewServeMux",
+          "lineNumber": 135
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 136
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 138
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "req.Header.Set",
+          "lineNumber": 143
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "req.Header.Set",
+          "lineNumber": 144
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 146
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 147
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "t.Fatalf",
+          "lineNumber": 150
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "http.NewServeMux",
+          "lineNumber": 159
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 160
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 162
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "req.Header.Set",
+          "lineNumber": 167
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "req.Header.Set",
+          "lineNumber": 168
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 170
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 171
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "t.Fatalf",
+          "lineNumber": 174
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "t.Fatal",
+          "lineNumber": 177
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "http.NewServeMux",
+          "lineNumber": 190
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 191
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 193
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "req.Header.Set",
+          "lineNumber": 198
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "req.Header.Set",
+          "lineNumber": 199
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 201
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 202
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "t.Fatalf",
+          "lineNumber": 205
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "t.Fatal",
+          "lineNumber": 208
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "http.NewServeMux",
+          "lineNumber": 217
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 218
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 220
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "req.Header.Set",
+          "lineNumber": 225
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "req.Header.Set",
+          "lineNumber": 226
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 228
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 229
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "t.Fatalf",
+          "lineNumber": 232
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "http.NewServeMux",
+          "lineNumber": 253
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 254
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 256
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "req.Header.Set",
+          "lineNumber": 261
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "req.Header.Set",
+          "lineNumber": 262
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 264
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 265
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "t.Fatalf",
+          "lineNumber": 268
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "response.Body.String",
+          "lineNumber": 268
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "t.Fatal",
+          "lineNumber": 271
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "http.NewServeMux",
+          "lineNumber": 283
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 284
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 286
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "req.Header.Set",
+          "lineNumber": 291
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "req.Header.Set",
+          "lineNumber": 292
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 294
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 295
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "t.Fatalf",
+          "lineNumber": 298
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "http.NewServeMux",
+          "lineNumber": 307
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 308
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 310
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "req.Header.Set",
+          "lineNumber": 315
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "req.Header.Set",
+          "lineNumber": 316
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 318
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 319
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "t.Fatalf",
+          "lineNumber": 322
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "t.Fatal",
+          "lineNumber": 325
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "http.NewServeMux",
+          "lineNumber": 336
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 337
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 339
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "req.Header.Set",
+          "lineNumber": 344
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "req.Header.Set",
+          "lineNumber": 345
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 347
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 348
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "t.Fatalf",
+          "lineNumber": 351
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "t.Fatal",
+          "lineNumber": 354
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 15,
+        "functionCount": 15,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/middleware.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 31,
+      "functions": [
+        {
+          "name": "RequireActor",
+          "startLine": 11,
+          "endLine": 39,
+          "params": [
+            "next"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "RequireActor",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "RequireActor",
+          "callee": "r.Header.Get",
+          "lineNumber": 13
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "r.Header.Get",
+          "lineNumber": 14
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "http.Error",
+          "lineNumber": 17
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "uuid.Validate",
+          "lineNumber": 21
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "http.Error",
+          "lineNumber": 22
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "uuid.Validate",
+          "lineNumber": 26
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "http.Error",
+          "lineNumber": 27
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "requestcontext.WithActor",
+          "lineNumber": 36
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "r.Context",
+          "lineNumber": 36
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "next",
+          "lineNumber": 37
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "r.WithContext",
+          "lineNumber": 37
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/middleware_test.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 106,
+      "nonEmptyLines": 96,
+      "functions": [
+        {
+          "name": "TestRequireActor",
+          "startLine": 13,
+          "endLine": 106,
+          "params": [
+            "t"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "TestRequireActor",
+          "line": 13,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 23
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 24
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 31
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 37
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 45
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 51
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Run",
+          "lineNumber": 59
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "http.HandlerFunc",
+          "lineNumber": 63
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "requestcontext.GetActor",
+          "lineNumber": 64
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "r.Context",
+          "lineNumber": 64
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "w.WriteHeader",
+          "lineNumber": 69
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "assetHttp.RequireActor",
+          "lineNumber": 72
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 74
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "req.Header.Set",
+          "lineNumber": 76
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "req.Header.Set",
+          "lineNumber": 79
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 82
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "handler.ServeHTTP",
+          "lineNumber": 83
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Errorf",
+          "lineNumber": 86
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Errorf",
+          "lineNumber": 91
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Errorf",
+          "lineNumber": 94
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Errorf",
+          "lineNumber": 97
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Errorf",
+          "lineNumber": 101
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/asset-core/internal/domain/asset.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 89,
+      "nonEmptyLines": 77,
+      "functions": [
+        {
+          "name": "TableName",
+          "startLine": 15,
+          "endLine": 17,
+          "params": []
+        },
+        {
+          "name": "TableName",
+          "startLine": 24,
+          "endLine": 26,
+          "params": []
+        },
+        {
+          "name": "TableName",
+          "startLine": 42,
+          "endLine": 44,
+          "params": []
+        },
+        {
+          "name": "TableName",
+          "startLine": 69,
+          "endLine": 71,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "OrganizationRef",
+          "startLine": 11,
+          "endLine": 13,
+          "methods": [
+            "TableName"
+          ],
+          "properties": [
+            "OrgID"
+          ]
+        },
+        {
+          "name": "UserRef",
+          "startLine": 20,
+          "endLine": 22,
+          "methods": [
+            "TableName"
+          ],
+          "properties": [
+            "UserID"
+          ]
+        },
+        {
+          "name": "Folder",
+          "startLine": 29,
+          "endLine": 40,
+          "methods": [
+            "TableName"
+          ],
+          "properties": [
+            "ID",
+            "OrgID",
+            "Path",
+            "Name",
+            "Description",
+            "CreatedBy",
+            "UpdatedBy",
+            "CreatedAt",
+            "UpdatedAt",
+            "DeletedAt"
+          ]
+        },
+        {
+          "name": "MetadataItem",
+          "startLine": 47,
+          "endLine": 67,
+          "methods": [
+            "TableName"
+          ],
+          "properties": [
+            "ID",
+            "FolderID",
+            "Title",
+            "Description",
+            "Labels",
+            "Category",
+            "ExternalSource",
+            "ExternalID",
+            "SourceURL",
+            "ThumbnailURL",
+            "License",
+            "Author",
+            "MetadataJSON",
+            "Notes",
+            "CreatedBy",
+            "UpdatedBy",
+            "CreatedAt",
+            "UpdatedAt",
+            "DeletedAt"
+          ]
+        },
+        {
+          "name": "AssetRepository",
+          "startLine": 74,
+          "endLine": 80,
+          "methods": [
+            "GetFolderTree",
+            "GetFolderByID",
+            "GetFolderChildren",
+            "GetRootFolders",
+            "EnsureRefs"
+          ],
+          "properties": []
+        },
+        {
+          "name": "AssetUsecase",
+          "startLine": 83,
+          "endLine": 89,
+          "methods": [
+            "GetFolderTree",
+            "GetFolderByID",
+            "GetFolderChildren",
+            "GetRootFolders",
+            "EnsureRefs"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "OrganizationRef",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "TableName",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "UserRef",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "TableName",
+          "line": 24,
+          "isDefault": false
+        },
+        {
+          "name": "Folder",
+          "line": 29,
+          "isDefault": false
+        },
+        {
+          "name": "TableName",
+          "line": 42,
+          "isDefault": false
+        },
+        {
+          "name": "MetadataItem",
+          "line": 47,
+          "isDefault": false
+        },
+        {
+          "name": "TableName",
+          "line": 69,
+          "isDefault": false
+        },
+        {
+          "name": "AssetRepository",
+          "line": 74,
+          "isDefault": false
+        },
+        {
+          "name": "AssetUsecase",
+          "line": 83,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 10,
+        "functionCount": 4,
+        "classCount": 6
+      }
+    },
+    {
+      "path": "services/asset-core/internal/repository/asset_repository.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 84,
+      "nonEmptyLines": 65,
+      "functions": [
+        {
+          "name": "NewAssetRepository",
+          "startLine": 15,
+          "endLine": 17,
+          "params": [
+            "db"
+          ]
+        },
+        {
+          "name": "GetFolderTree",
+          "startLine": 19,
+          "endLine": 30,
+          "params": [
+            "ctx",
+            "orgID",
+            "rootPath"
+          ]
+        },
+        {
+          "name": "GetFolderByID",
+          "startLine": 32,
+          "endLine": 40,
+          "params": [
+            "ctx",
+            "orgID",
+            "folderID"
+          ]
+        },
+        {
+          "name": "GetFolderChildren",
+          "startLine": 42,
+          "endLine": 54,
+          "params": [
+            "ctx",
+            "orgID",
+            "parentPath"
+          ]
+        },
+        {
+          "name": "GetRootFolders",
+          "startLine": 56,
+          "endLine": 66,
+          "params": [
+            "ctx",
+            "orgID"
+          ]
+        },
+        {
+          "name": "EnsureRefs",
+          "startLine": 68,
+          "endLine": 84,
+          "params": [
+            "ctx",
+            "userID",
+            "orgID"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "assetRepository",
+          "startLine": 10,
+          "endLine": 12,
+          "methods": [
+            "GetFolderTree",
+            "GetFolderByID",
+            "GetFolderChildren",
+            "GetRootFolders",
+            "EnsureRefs"
+          ],
+          "properties": [
+            "db"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "NewAssetRepository",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "GetFolderTree",
+          "line": 19,
+          "isDefault": false
+        },
+        {
+          "name": "GetFolderByID",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "GetFolderChildren",
+          "line": 42,
+          "isDefault": false
+        },
+        {
+          "name": "GetRootFolders",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "EnsureRefs",
+          "line": 68,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GetFolderTree",
+          "callee": "r.db.WithContext(ctx).\n\t\tWhere(\"org_id = ? AND path <@ ?\", orgID, rootPath).\n\t\tOrder(\"path ASC\").\n\t\tFind",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GetFolderTree",
+          "callee": "r.db.WithContext(ctx).\n\t\tWhere(\"org_id = ? AND path <@ ?\", orgID, rootPath).\n\t\tOrder",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GetFolderTree",
+          "callee": "r.db.WithContext(ctx).\n\t\tWhere",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GetFolderTree",
+          "callee": "r.db.WithContext",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GetFolderByID",
+          "callee": "r.db.WithContext(ctx).\n\t\tWhere(\"id = ? AND org_id = ?\", folderID, orgID).\n\t\tFirst",
+          "lineNumber": 35
+        },
+        {
+          "caller": "GetFolderByID",
+          "callee": "r.db.WithContext(ctx).\n\t\tWhere",
+          "lineNumber": 35
+        },
+        {
+          "caller": "GetFolderByID",
+          "callee": "r.db.WithContext",
+          "lineNumber": 35
+        },
+        {
+          "caller": "GetFolderChildren",
+          "callee": "r.db.WithContext(ctx).\n\t\tWhere(\"org_id = ? AND path <@ ? AND nlevel(path) = nlevel(?::ltree) + 1\",\n\t\t\torgID, parentPath, parentPath).\n\t\tOrder(\"name ASC\").\n\t\tFind",
+          "lineNumber": 47
+        },
+        {
+          "caller": "GetFolderChildren",
+          "callee": "r.db.WithContext(ctx).\n\t\tWhere(\"org_id = ? AND path <@ ? AND nlevel(path) = nlevel(?::ltree) + 1\",\n\t\t\torgID, parentPath, parentPath).\n\t\tOrder",
+          "lineNumber": 47
+        },
+        {
+          "caller": "GetFolderChildren",
+          "callee": "r.db.WithContext(ctx).\n\t\tWhere",
+          "lineNumber": 47
+        },
+        {
+          "caller": "GetFolderChildren",
+          "callee": "r.db.WithContext",
+          "lineNumber": 47
+        },
+        {
+          "caller": "GetRootFolders",
+          "callee": "r.db.WithContext(ctx).\n\t\tWhere(\"org_id = ? AND nlevel(path) = 1\", orgID).\n\t\tOrder(\"name ASC\").\n\t\tFind",
+          "lineNumber": 60
+        },
+        {
+          "caller": "GetRootFolders",
+          "callee": "r.db.WithContext(ctx).\n\t\tWhere(\"org_id = ? AND nlevel(path) = 1\", orgID).\n\t\tOrder",
+          "lineNumber": 60
+        },
+        {
+          "caller": "GetRootFolders",
+          "callee": "r.db.WithContext(ctx).\n\t\tWhere",
+          "lineNumber": 60
+        },
+        {
+          "caller": "GetRootFolders",
+          "callee": "r.db.WithContext",
+          "lineNumber": 60
+        },
+        {
+          "caller": "EnsureRefs",
+          "callee": "r.db.WithContext(ctx).Exec",
+          "lineNumber": 70
+        },
+        {
+          "caller": "EnsureRefs",
+          "callee": "r.db.WithContext",
+          "lineNumber": 70
+        },
+        {
+          "caller": "EnsureRefs",
+          "callee": "r.db.WithContext(ctx).Exec",
+          "lineNumber": 77
+        },
+        {
+          "caller": "EnsureRefs",
+          "callee": "r.db.WithContext",
+          "lineNumber": 77
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 380,
+      "nonEmptyLines": 308,
+      "functions": [
+        {
+          "name": "TestEnsureRefs_Success_RepeatedCall",
+          "startLine": 14,
+          "endLine": 63,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestEnsureRefs_OrganizationFailurePropagated",
+          "startLine": 65,
+          "endLine": 98,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestEnsureRefs_DBFailurePropagated",
+          "startLine": 100,
+          "endLine": 134,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestGetFolderByID_Success",
+          "startLine": 136,
+          "endLine": 170,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "startLine": 172,
+          "endLine": 200,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestGetFolderByID_SoftDeleted",
+          "startLine": 202,
+          "endLine": 231,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestGetFolderChildren_Success",
+          "startLine": 233,
+          "endLine": 271,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestGetRootFolders_Success",
+          "startLine": 273,
+          "endLine": 307,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestGetFolderChildren_Empty",
+          "startLine": 309,
+          "endLine": 342,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestGetFolderTree_Success",
+          "startLine": 344,
+          "endLine": 380,
+          "params": [
+            "t"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "TestEnsureRefs_Success_RepeatedCall",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "TestEnsureRefs_OrganizationFailurePropagated",
+          "line": 65,
+          "isDefault": false
+        },
+        {
+          "name": "TestEnsureRefs_DBFailurePropagated",
+          "line": 100,
+          "isDefault": false
+        },
+        {
+          "name": "TestGetFolderByID_Success",
+          "line": 136,
+          "isDefault": false
+        },
+        {
+          "name": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "line": 172,
+          "isDefault": false
+        },
+        {
+          "name": "TestGetFolderByID_SoftDeleted",
+          "line": 202,
+          "isDefault": false
+        },
+        {
+          "name": "TestGetFolderChildren_Success",
+          "line": 233,
+          "isDefault": false
+        },
+        {
+          "name": "TestGetRootFolders_Success",
+          "line": 273,
+          "isDefault": false
+        },
+        {
+          "name": "TestGetFolderChildren_Empty",
+          "line": 309,
+          "isDefault": false
+        },
+        {
+          "name": "TestGetFolderTree_Success",
+          "line": 344,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "sqlmock.New",
+          "lineNumber": 15
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "t.Fatalf",
+          "lineNumber": 17
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "db.Close",
+          "lineNumber": 19
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "gorm.Open",
+          "lineNumber": 21
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "postgres.New",
+          "lineNumber": 21
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "t.Fatalf",
+          "lineNumber": 25
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "repository.NewAssetRepository",
+          "lineNumber": 28
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec(\"INSERT INTO user_ref \\\\(user_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(user_id\\\\) DO NOTHING\").\n\t\tWithArgs(userID).\n\t\tWillReturnResult",
+          "lineNumber": 34
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec(\"INSERT INTO user_ref \\\\(user_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(user_id\\\\) DO NOTHING\").\n\t\tWithArgs",
+          "lineNumber": 34
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec",
+          "lineNumber": 34
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "sqlmock.NewResult",
+          "lineNumber": 36
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec(\"INSERT INTO organization_ref \\\\(org_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(org_id\\\\) DO NOTHING\").\n\t\tWithArgs(orgID).\n\t\tWillReturnResult",
+          "lineNumber": 38
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec(\"INSERT INTO organization_ref \\\\(org_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(org_id\\\\) DO NOTHING\").\n\t\tWithArgs",
+          "lineNumber": 38
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec",
+          "lineNumber": 38
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "sqlmock.NewResult",
+          "lineNumber": 40
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "repo.EnsureRefs",
+          "lineNumber": 42
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "context.Background",
+          "lineNumber": 42
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "t.Errorf",
+          "lineNumber": 44
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec(\"INSERT INTO user_ref \\\\(user_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(user_id\\\\) DO NOTHING\").\n\t\tWithArgs(userID).\n\t\tWillReturnResult",
+          "lineNumber": 48
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec(\"INSERT INTO user_ref \\\\(user_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(user_id\\\\) DO NOTHING\").\n\t\tWithArgs",
+          "lineNumber": 48
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec",
+          "lineNumber": 48
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "sqlmock.NewResult",
+          "lineNumber": 50
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec(\"INSERT INTO organization_ref \\\\(org_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(org_id\\\\) DO NOTHING\").\n\t\tWithArgs(orgID).\n\t\tWillReturnResult",
+          "lineNumber": 52
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec(\"INSERT INTO organization_ref \\\\(org_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(org_id\\\\) DO NOTHING\").\n\t\tWithArgs",
+          "lineNumber": 52
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectExec",
+          "lineNumber": 52
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "sqlmock.NewResult",
+          "lineNumber": 54
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "repo.EnsureRefs",
+          "lineNumber": 56
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "context.Background",
+          "lineNumber": 56
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "t.Errorf",
+          "lineNumber": 57
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "mock.ExpectationsWereMet",
+          "lineNumber": 60
+        },
+        {
+          "caller": "TestEnsureRefs_Success_RepeatedCall",
+          "callee": "t.Errorf",
+          "lineNumber": 61
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "sqlmock.New",
+          "lineNumber": 66
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "t.Fatalf",
+          "lineNumber": 68
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "db.Close",
+          "lineNumber": 70
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "gorm.Open",
+          "lineNumber": 72
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "postgres.New",
+          "lineNumber": 72
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "t.Fatalf",
+          "lineNumber": 76
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "repository.NewAssetRepository",
+          "lineNumber": 79
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "errors.New",
+          "lineNumber": 82
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "mock.ExpectExec(\"INSERT INTO user_ref \\\\(user_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(user_id\\\\) DO NOTHING\").\n\t\tWithArgs(userID).\n\t\tWillReturnResult",
+          "lineNumber": 84
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "mock.ExpectExec(\"INSERT INTO user_ref \\\\(user_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(user_id\\\\) DO NOTHING\").\n\t\tWithArgs",
+          "lineNumber": 84
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "mock.ExpectExec",
+          "lineNumber": 84
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "sqlmock.NewResult",
+          "lineNumber": 86
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "mock.ExpectExec(\"INSERT INTO organization_ref \\\\(org_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(org_id\\\\) DO NOTHING\").\n\t\tWithArgs(orgID).\n\t\tWillReturnError",
+          "lineNumber": 87
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "mock.ExpectExec(\"INSERT INTO organization_ref \\\\(org_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(org_id\\\\) DO NOTHING\").\n\t\tWithArgs",
+          "lineNumber": 87
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "mock.ExpectExec",
+          "lineNumber": 87
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "repo.EnsureRefs",
+          "lineNumber": 91
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "context.Background",
+          "lineNumber": 91
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "errors.Is",
+          "lineNumber": 92
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "t.Errorf",
+          "lineNumber": 93
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "mock.ExpectationsWereMet",
+          "lineNumber": 95
+        },
+        {
+          "caller": "TestEnsureRefs_OrganizationFailurePropagated",
+          "callee": "t.Errorf",
+          "lineNumber": 96
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "sqlmock.New",
+          "lineNumber": 101
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "t.Fatalf",
+          "lineNumber": 103
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "db.Close",
+          "lineNumber": 105
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "gorm.Open",
+          "lineNumber": 107
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "postgres.New",
+          "lineNumber": 107
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "t.Fatalf",
+          "lineNumber": 111
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "repository.NewAssetRepository",
+          "lineNumber": 114
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "errors.New",
+          "lineNumber": 118
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "mock.ExpectExec(\"INSERT INTO user_ref \\\\(user_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(user_id\\\\) DO NOTHING\").\n\t\tWithArgs(userID).\n\t\tWillReturnError",
+          "lineNumber": 120
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "mock.ExpectExec(\"INSERT INTO user_ref \\\\(user_id\\\\) VALUES \\\\(\\\\$1\\\\) ON CONFLICT \\\\(user_id\\\\) DO NOTHING\").\n\t\tWithArgs",
+          "lineNumber": 120
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "mock.ExpectExec",
+          "lineNumber": 120
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "repo.EnsureRefs",
+          "lineNumber": 124
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "context.Background",
+          "lineNumber": 124
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "t.Errorf",
+          "lineNumber": 126
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "t.Errorf",
+          "lineNumber": 128
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "mock.ExpectationsWereMet",
+          "lineNumber": 131
+        },
+        {
+          "caller": "TestEnsureRefs_DBFailurePropagated",
+          "callee": "t.Errorf",
+          "lineNumber": 132
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "sqlmock.New",
+          "lineNumber": 137
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "t.Fatalf",
+          "lineNumber": 139
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "db.Close",
+          "lineNumber": 141
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "gorm.Open",
+          "lineNumber": 143
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "postgres.New",
+          "lineNumber": 143
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "t.Fatalf",
+          "lineNumber": 145
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "repository.NewAssetRepository",
+          "lineNumber": 148
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "sqlmock.NewRows([]string{\"id\", \"org_id\", \"path\", \"name\", \"created_by\"}).\n\t\tAddRow",
+          "lineNumber": 153
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "sqlmock.NewRows",
+          "lineNumber": 153
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(id = \\\\$1 AND org_id = \\\\$2\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY \\\"folders\\\".\\\"id\\\" LIMIT \\\\$3$\").\n\t\tWithArgs(folderID, orgID, 1).\n\t\tWillReturnRows",
+          "lineNumber": 156
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(id = \\\\$1 AND org_id = \\\\$2\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY \\\"folders\\\".\\\"id\\\" LIMIT \\\\$3$\").\n\t\tWithArgs",
+          "lineNumber": 156
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "mock.ExpectQuery",
+          "lineNumber": 156
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "repo.GetFolderByID",
+          "lineNumber": 160
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "context.Background",
+          "lineNumber": 160
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 162
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 165
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "mock.ExpectationsWereMet",
+          "lineNumber": 167
+        },
+        {
+          "caller": "TestGetFolderByID_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 168
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "sqlmock.New",
+          "lineNumber": 173
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "t.Fatalf",
+          "lineNumber": 175
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "db.Close",
+          "lineNumber": 177
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "gorm.Open",
+          "lineNumber": 179
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "postgres.New",
+          "lineNumber": 179
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "t.Fatalf",
+          "lineNumber": 181
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "repository.NewAssetRepository",
+          "lineNumber": 184
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(id = \\\\$1 AND org_id = \\\\$2\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY \\\"folders\\\".\\\"id\\\" LIMIT \\\\$3$\").\n\t\tWithArgs(folderID, orgID, 1).\n\t\tWillReturnError",
+          "lineNumber": 189
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(id = \\\\$1 AND org_id = \\\\$2\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY \\\"folders\\\".\\\"id\\\" LIMIT \\\\$3$\").\n\t\tWithArgs",
+          "lineNumber": 189
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "mock.ExpectQuery",
+          "lineNumber": 189
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "repo.GetFolderByID",
+          "lineNumber": 193
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "context.Background",
+          "lineNumber": 193
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "errors.Is",
+          "lineNumber": 194
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "t.Errorf",
+          "lineNumber": 195
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "mock.ExpectationsWereMet",
+          "lineNumber": 197
+        },
+        {
+          "caller": "TestGetFolderByID_NotFoundOrOrgMismatch",
+          "callee": "t.Errorf",
+          "lineNumber": 198
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "sqlmock.New",
+          "lineNumber": 203
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "t.Fatalf",
+          "lineNumber": 205
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "db.Close",
+          "lineNumber": 207
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "gorm.Open",
+          "lineNumber": 209
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "postgres.New",
+          "lineNumber": 209
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "t.Fatalf",
+          "lineNumber": 211
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "repository.NewAssetRepository",
+          "lineNumber": 214
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(id = \\\\$1 AND org_id = \\\\$2\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY \\\"folders\\\".\\\"id\\\" LIMIT \\\\$3$\").\n\t\tWithArgs(folderID, orgID, 1).\n\t\tWillReturnError",
+          "lineNumber": 220
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(id = \\\\$1 AND org_id = \\\\$2\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY \\\"folders\\\".\\\"id\\\" LIMIT \\\\$3$\").\n\t\tWithArgs",
+          "lineNumber": 220
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "mock.ExpectQuery",
+          "lineNumber": 220
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "repo.GetFolderByID",
+          "lineNumber": 224
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "context.Background",
+          "lineNumber": 224
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "errors.Is",
+          "lineNumber": 225
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "t.Errorf",
+          "lineNumber": 226
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "mock.ExpectationsWereMet",
+          "lineNumber": 228
+        },
+        {
+          "caller": "TestGetFolderByID_SoftDeleted",
+          "callee": "t.Errorf",
+          "lineNumber": 229
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "sqlmock.New",
+          "lineNumber": 234
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "t.Fatalf",
+          "lineNumber": 236
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "db.Close",
+          "lineNumber": 238
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "gorm.Open",
+          "lineNumber": 240
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "postgres.New",
+          "lineNumber": 240
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "t.Fatalf",
+          "lineNumber": 242
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "repository.NewAssetRepository",
+          "lineNumber": 245
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "sqlmock.NewRows([]string{\"id\", \"org_id\", \"path\", \"name\", \"created_by\"}).\n\t\tAddRow(\"folder-2\", orgID, \"root.folder_2\", \"Folder 2\", \"user-1\").\n\t\tAddRow",
+          "lineNumber": 250
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "sqlmock.NewRows([]string{\"id\", \"org_id\", \"path\", \"name\", \"created_by\"}).\n\t\tAddRow",
+          "lineNumber": 250
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "sqlmock.NewRows",
+          "lineNumber": 250
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(org_id = \\\\$1 AND path <@ \\\\$2 AND nlevel\\\\(path\\\\) = nlevel\\\\(\\\\$3::ltree\\\\) \\\\+ 1\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY name ASC$\").\n\t\tWithArgs(orgID, parentPath, parentPath).\n\t\tWillReturnRows",
+          "lineNumber": 254
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(org_id = \\\\$1 AND path <@ \\\\$2 AND nlevel\\\\(path\\\\) = nlevel\\\\(\\\\$3::ltree\\\\) \\\\+ 1\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY name ASC$\").\n\t\tWithArgs",
+          "lineNumber": 254
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "mock.ExpectQuery",
+          "lineNumber": 254
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "repo.GetFolderChildren",
+          "lineNumber": 258
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "context.Background",
+          "lineNumber": 258
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 260
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "len",
+          "lineNumber": 262
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 263
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "len",
+          "lineNumber": 263
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 266
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "mock.ExpectationsWereMet",
+          "lineNumber": 268
+        },
+        {
+          "caller": "TestGetFolderChildren_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 269
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "sqlmock.New",
+          "lineNumber": 274
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "t.Fatalf",
+          "lineNumber": 276
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "db.Close",
+          "lineNumber": 278
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "gorm.Open",
+          "lineNumber": 280
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "postgres.New",
+          "lineNumber": 280
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "t.Fatalf",
+          "lineNumber": 282
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "repository.NewAssetRepository",
+          "lineNumber": 285
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "sqlmock.NewRows([]string{\"id\", \"org_id\", \"path\", \"name\", \"created_by\"}).\n\t\tAddRow(\"folder-1\", orgID, \"folder_1\", \"Folder 1\", \"user-1\").\n\t\tAddRow",
+          "lineNumber": 289
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "sqlmock.NewRows([]string{\"id\", \"org_id\", \"path\", \"name\", \"created_by\"}).\n\t\tAddRow",
+          "lineNumber": 289
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "sqlmock.NewRows",
+          "lineNumber": 289
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(org_id = \\\\$1 AND nlevel\\\\(path\\\\) = 1\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY name ASC$\").\n\t\tWithArgs(orgID).\n\t\tWillReturnRows",
+          "lineNumber": 293
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(org_id = \\\\$1 AND nlevel\\\\(path\\\\) = 1\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY name ASC$\").\n\t\tWithArgs",
+          "lineNumber": 293
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "mock.ExpectQuery",
+          "lineNumber": 293
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "repo.GetRootFolders",
+          "lineNumber": 297
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "context.Background",
+          "lineNumber": 297
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 299
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "len",
+          "lineNumber": 301
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 302
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "len",
+          "lineNumber": 302
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "mock.ExpectationsWereMet",
+          "lineNumber": 304
+        },
+        {
+          "caller": "TestGetRootFolders_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 305
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "sqlmock.New",
+          "lineNumber": 310
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "t.Fatalf",
+          "lineNumber": 312
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "db.Close",
+          "lineNumber": 314
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "gorm.Open",
+          "lineNumber": 316
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "postgres.New",
+          "lineNumber": 316
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "t.Fatalf",
+          "lineNumber": 318
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "repository.NewAssetRepository",
+          "lineNumber": 321
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "sqlmock.NewRows",
+          "lineNumber": 326
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(org_id = \\\\$1 AND path <@ \\\\$2 AND nlevel\\\\(path\\\\) = nlevel\\\\(\\\\$3::ltree\\\\) \\\\+ 1\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY name ASC$\").\n\t\tWithArgs(orgID, parentPath, parentPath).\n\t\tWillReturnRows",
+          "lineNumber": 328
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(org_id = \\\\$1 AND path <@ \\\\$2 AND nlevel\\\\(path\\\\) = nlevel\\\\(\\\\$3::ltree\\\\) \\\\+ 1\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY name ASC$\").\n\t\tWithArgs",
+          "lineNumber": 328
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "mock.ExpectQuery",
+          "lineNumber": 328
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "repo.GetFolderChildren",
+          "lineNumber": 332
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "context.Background",
+          "lineNumber": 332
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "t.Errorf",
+          "lineNumber": 334
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "len",
+          "lineNumber": 336
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "t.Errorf",
+          "lineNumber": 337
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "len",
+          "lineNumber": 337
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "mock.ExpectationsWereMet",
+          "lineNumber": 339
+        },
+        {
+          "caller": "TestGetFolderChildren_Empty",
+          "callee": "t.Errorf",
+          "lineNumber": 340
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "sqlmock.New",
+          "lineNumber": 345
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "t.Fatalf",
+          "lineNumber": 347
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "db.Close",
+          "lineNumber": 349
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "gorm.Open",
+          "lineNumber": 351
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "postgres.New",
+          "lineNumber": 351
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "t.Fatalf",
+          "lineNumber": 353
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "repository.NewAssetRepository",
+          "lineNumber": 356
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "sqlmock.NewRows([]string{\"id\", \"org_id\", \"path\", \"name\", \"created_by\"}).\n\t\tAddRow(\"folder-1\", orgID, \"root\", \"Root\", \"user-1\").\n\t\tAddRow",
+          "lineNumber": 361
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "sqlmock.NewRows([]string{\"id\", \"org_id\", \"path\", \"name\", \"created_by\"}).\n\t\tAddRow",
+          "lineNumber": 361
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "sqlmock.NewRows",
+          "lineNumber": 361
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(org_id = \\\\$1 AND path <@ \\\\$2\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY path ASC$\").\n\t\tWithArgs(orgID, rootPath).\n\t\tWillReturnRows",
+          "lineNumber": 366
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "mock.ExpectQuery(\"^SELECT \\\\* FROM \\\"folders\\\" WHERE \\\\(org_id = \\\\$1 AND path <@ \\\\$2\\\\) AND \\\"folders\\\".\\\"deleted_at\\\" IS NULL ORDER BY path ASC$\").\n\t\tWithArgs",
+          "lineNumber": 366
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "mock.ExpectQuery",
+          "lineNumber": 366
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "repo.GetFolderTree",
+          "lineNumber": 370
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "context.Background",
+          "lineNumber": 370
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 372
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "len",
+          "lineNumber": 374
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 375
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "len",
+          "lineNumber": 375
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "mock.ExpectationsWereMet",
+          "lineNumber": 377
+        },
+        {
+          "caller": "TestGetFolderTree_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 378
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 10,
+        "functionCount": 10,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/asset-core/internal/requestcontext/context.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 29,
+      "nonEmptyLines": 23,
+      "functions": [
+        {
+          "name": "WithActor",
+          "startLine": 18,
+          "endLine": 20,
+          "params": [
+            "ctx",
+            "actor"
+          ]
+        },
+        {
+          "name": "GetActor",
+          "startLine": 23,
+          "endLine": 29,
+          "params": [
+            "ctx"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "Actor",
+          "startLine": 12,
+          "endLine": 15,
+          "methods": [],
+          "properties": [
+            "UserID",
+            "OrgID"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "Actor",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "WithActor",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "GetActor",
+          "line": 23,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "WithActor",
+          "callee": "context.WithValue",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GetActor",
+          "callee": "ctx.Value",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GetActor",
+          "callee": "errors.New",
+          "lineNumber": 26
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 2,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "services/asset-core/internal/usecase/asset_usecase.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 38,
+      "nonEmptyLines": 29,
+      "functions": [
+        {
+          "name": "NewAssetUsecase",
+          "startLine": 14,
+          "endLine": 16,
+          "params": [
+            "repo"
+          ]
+        },
+        {
+          "name": "GetFolderTree",
+          "startLine": 18,
+          "endLine": 22,
+          "params": [
+            "ctx",
+            "orgID",
+            "rootPath"
+          ]
+        },
+        {
+          "name": "GetFolderByID",
+          "startLine": 24,
+          "endLine": 26,
+          "params": [
+            "ctx",
+            "orgID",
+            "folderID"
+          ]
+        },
+        {
+          "name": "GetFolderChildren",
+          "startLine": 28,
+          "endLine": 30,
+          "params": [
+            "ctx",
+            "orgID",
+            "parentPath"
+          ]
+        },
+        {
+          "name": "GetRootFolders",
+          "startLine": 32,
+          "endLine": 34,
+          "params": [
+            "ctx",
+            "orgID"
+          ]
+        },
+        {
+          "name": "EnsureRefs",
+          "startLine": 36,
+          "endLine": 38,
+          "params": [
+            "ctx",
+            "userID",
+            "orgID"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "assetUsecase",
+          "startLine": 9,
+          "endLine": 11,
+          "methods": [
+            "GetFolderTree",
+            "GetFolderByID",
+            "GetFolderChildren",
+            "GetRootFolders",
+            "EnsureRefs"
+          ],
+          "properties": [
+            "repo"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "NewAssetUsecase",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "GetFolderTree",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "GetFolderByID",
+          "line": 24,
+          "isDefault": false
+        },
+        {
+          "name": "GetFolderChildren",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "GetRootFolders",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "EnsureRefs",
+          "line": 36,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "GetFolderTree",
+          "callee": "u.repo.GetFolderTree",
+          "lineNumber": 21
+        },
+        {
+          "caller": "GetFolderByID",
+          "callee": "u.repo.GetFolderByID",
+          "lineNumber": 25
+        },
+        {
+          "caller": "GetFolderChildren",
+          "callee": "u.repo.GetFolderChildren",
+          "lineNumber": 29
+        },
+        {
+          "caller": "GetRootFolders",
+          "callee": "u.repo.GetRootFolders",
+          "lineNumber": 33
+        },
+        {
+          "caller": "EnsureRefs",
+          "callee": "u.repo.EnsureRefs",
+          "lineNumber": 37
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 1
+      }
+    }
+  ]
+}

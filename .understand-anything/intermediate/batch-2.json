@@ -1,0 +1,226 @@
+{
+  "nodes": [
+    {
+      "id": "file:services/access-core/src/db/queries/roles.ts",
+      "type": "file",
+      "name": "roles.ts",
+      "path": "services/access-core/src/db/queries/roles.ts",
+      "summary": "Database queries for retrieving Role records using Prisma.",
+      "tags": ["db", "prisma", "queries", "role"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/roles.ts:listRolesByOrg",
+      "type": "function",
+      "name": "listRolesByOrg",
+      "path": "services/access-core/src/db/queries/roles.ts",
+      "summary": "Retrieves all roles associated with a specific organization.",
+      "tags": ["db-read", "role"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/roles.ts:getRoleById",
+      "type": "function",
+      "name": "getRoleById",
+      "path": "services/access-core/src/db/queries/roles.ts",
+      "summary": "Fetches a single role by its unique identifier.",
+      "tags": ["db-read", "role"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/users.ts",
+      "type": "file",
+      "name": "users.ts",
+      "path": "services/access-core/src/db/queries/users.ts",
+      "summary": "Database queries for retrieving User records using Prisma.",
+      "tags": ["db", "prisma", "queries", "user"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/users.ts:listUsers",
+      "type": "function",
+      "name": "listUsers",
+      "path": "services/access-core/src/db/queries/users.ts",
+      "summary": "Retrieves a list of all users.",
+      "tags": ["db-read", "user"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/users.ts:getUserById",
+      "type": "function",
+      "name": "getUserById",
+      "path": "services/access-core/src/db/queries/users.ts",
+      "summary": "Fetches a single user by their unique identifier.",
+      "tags": ["db-read", "user"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "path": "services/access-core/src/graphql/resolvers/index.ts",
+      "summary": "Aggregates and exports all GraphQL resolvers for the access-core service.",
+      "tags": ["graphql", "resolvers", "entrypoint"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "type": "file",
+      "name": "roleResolvers.ts",
+      "path": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "summary": "GraphQL resolvers and mappers for Role entities.",
+      "tags": ["graphql", "resolvers", "role"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/roleResolvers.ts:toRole",
+      "type": "function",
+      "name": "toRole",
+      "path": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "summary": "Maps a database Role record to a GraphQL Role object.",
+      "tags": ["mapper", "graphql"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "type": "file",
+      "name": "userResolvers.ts",
+      "path": "services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "summary": "GraphQL resolvers and mappers for User entities.",
+      "tags": ["graphql", "resolvers", "user"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/userResolvers.ts:toUser",
+      "type": "function",
+      "name": "toUser",
+      "path": "services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "summary": "Maps a database User record to a GraphQL User object.",
+      "tags": ["mapper", "graphql"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/schema.ts",
+      "type": "file",
+      "name": "schema.ts",
+      "path": "services/access-core/src/graphql/schema.ts",
+      "summary": "Constructs the executable GraphQL schema by combining type definitions and resolvers.",
+      "tags": ["graphql", "schema"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/typeDefs.ts",
+      "type": "file",
+      "name": "typeDefs.ts",
+      "path": "services/access-core/src/graphql/typeDefs.ts",
+      "summary": "Defines the GraphQL schema types, queries, and mutations.",
+      "tags": ["graphql", "typedefs"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:services/access-core/src/server.ts",
+      "type": "file",
+      "name": "server.ts",
+      "path": "services/access-core/src/server.ts",
+      "summary": "Sets up the Fastify HTTP server with GraphQL Yoga integration.",
+      "tags": ["server", "fastify", "graphql-yoga"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/access-core/src/server.ts:buildServer",
+      "type": "function",
+      "name": "buildServer",
+      "path": "services/access-core/src/server.ts",
+      "summary": "Initializes and configures the Fastify server and registers the GraphQL endpoint.",
+      "tags": ["server-init"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "function:services/access-core/src/db/queries/roles.ts:listRolesByOrg",
+      "type": "contains"
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "function:services/access-core/src/db/queries/roles.ts:getRoleById",
+      "type": "contains"
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:listUsers",
+      "type": "contains"
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:getUserById",
+      "type": "contains"
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/roleResolvers.ts:toRole",
+      "type": "contains"
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/roles.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/userResolvers.ts:toUser",
+      "type": "contains"
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/users.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/graphql/schema.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/graphql/schema.ts",
+      "target": "file:services/access-core/src/graphql/typeDefs.ts",
+      "type": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/server.ts",
+      "target": "function:services/access-core/src/server.ts:buildServer",
+      "type": "contains"
+    },
+    {
+      "source": "file:services/access-core/src/server.ts",
+      "target": "file:services/access-core/src/graphql/schema.ts",
+      "type": "imports"
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "fdf12d9bcd465d05287f8c53343297ea3466eebc",
+  "generatedAt": "2026-06-29T08:47:32.944Z",
+  "files": {
+    "infra/db/access/migrations/V1__create_access_schema.sql": {
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql",
+      "contentHash": "da90284c45b11477d8b5741187c4c6114dbf6c94ec1aca5168d0013cc24d4b0b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 134,
+      "hasStructuralAnalysis": true
+    },
+    "infra/db/access/migrations/V2__seed_access_schema.sql": {
+      "filePath": "infra/db/access/migrations/V2__seed_access_schema.sql",
+      "contentHash": "bac5f5c03e08b267eae85fe33779acab8a98658e3306eea12ec9338e79ae0199",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 57,
+      "hasStructuralAnalysis": true
+    },
+    "infra/db/asset/migrations/V1__asset_initial_schema.sql": {
+      "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "contentHash": "b9bf87d4a721bae3452210e2963d791fa4db72fc215d2ab361c16d9c39236455",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 143,
+      "hasStructuralAnalysis": true
+    },
+    "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql": {
+      "filePath": "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql",
+      "contentHash": "a3ae9f50ae0fc1916e91d3e8a03322973c903e8f34a1ef7b044fa40763132afa",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 82,
+      "hasStructuralAnalysis": true
+    },
+    "infra/docker-compose.yml": {
+      "filePath": "infra/docker-compose.yml",
+      "contentHash": "4ed86082008d5f82b01c87ecc6525db054ad28ed83618bc3898de4d15709f118",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 89,
+      "hasStructuralAnalysis": true
+    },
+    "services/access-core/prisma.config.ts": {
+      "filePath": "services/access-core/prisma.config.ts",
+      "contentHash": "c1bcbd0ff267c8b6885cd467ed8122cf6508bdac6c929d69f9b512ccde65a033",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "dotenv/config",
+          "specifiers": []
+        },
+        {
+          "source": "prisma/config",
+          "specifiers": [
+            "defineConfig"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

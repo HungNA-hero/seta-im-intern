@@ -1,14 +1,20 @@
 import Fastify, { FastifyInstance } from "fastify";
 import { createYoga } from "graphql-yoga";
-import { schema } from "./graphql/schema";
+import { schema, GraphQLContext } from "./graphql/schema";
 
 export async function buildServer(): Promise<FastifyInstance> {
   const fastify = Fastify({ logger: true });
 
-  const yoga = createYoga({
+  const yoga = createYoga<GraphQLContext>({
     schema,
     graphqlEndpoint: "/graphql",
     logging: false,
+    context: (req) => {
+      return {
+        requester: req.request.headers.get("x-user-id"),
+        currentOrg: req.request.headers.get("x-org-id"),
+      };
+    },
   });
 
   fastify.route({

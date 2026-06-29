@@ -1,0 +1,174 @@
+{
+  "nodes": [
+    {
+      "id": "file:services/access-core/src/config.ts",
+      "type": "file",
+      "properties": {
+        "path": "services/access-core/src/config.ts",
+        "name": "config.ts",
+        "summary": "Configuration file for the access-core service, parsing environment variables.",
+        "tags": [
+          "config",
+          "setup"
+        ],
+        "complexity": "simple"
+      }
+    },
+    {
+      "id": "file:services/access-core/src/db/prisma.ts",
+      "type": "file",
+      "properties": {
+        "path": "services/access-core/src/db/prisma.ts",
+        "name": "prisma.ts",
+        "summary": "Prisma database client initialization for the access-core service.",
+        "tags": [
+          "database",
+          "prisma",
+          "client"
+        ],
+        "complexity": "simple"
+      }
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "type": "file",
+      "properties": {
+        "path": "services/access-core/src/db/queries/objectPermissions.ts",
+        "name": "objectPermissions.ts",
+        "summary": "Database queries for listing and managing object-level permissions.",
+        "tags": [
+          "database",
+          "query",
+          "permissions"
+        ],
+        "complexity": "moderate"
+      }
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/objectPermissions.ts:listObjectPermissions",
+      "type": "function",
+      "properties": {
+        "path": "services/access-core/src/db/queries/objectPermissions.ts",
+        "name": "listObjectPermissions"
+      }
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "type": "file",
+      "properties": {
+        "path": "services/access-core/src/db/queries/rolePermissions.ts",
+        "name": "rolePermissions.ts",
+        "summary": "Database queries for listing and managing role-based permissions.",
+        "tags": [
+          "database",
+          "query",
+          "permissions"
+        ],
+        "complexity": "moderate"
+      }
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/rolePermissions.ts:listRolePermissions",
+      "type": "function",
+      "properties": {
+        "path": "services/access-core/src/db/queries/rolePermissions.ts",
+        "name": "listRolePermissions"
+      }
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "type": "file",
+      "properties": {
+        "path": "services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+        "name": "permissionResolvers.ts",
+        "summary": "GraphQL resolvers for handling permission-related queries and mutations.",
+        "tags": [
+          "graphql",
+          "resolver",
+          "permissions"
+        ],
+        "complexity": "moderate"
+      }
+    },
+    {
+      "id": "file:services/access-core/src/index.ts",
+      "type": "file",
+      "properties": {
+        "path": "services/access-core/src/index.ts",
+        "name": "index.ts",
+        "summary": "Main entry point for the access-core service, initializing the server and connecting to the database.",
+        "tags": [
+          "entrypoint",
+          "service",
+          "initialization"
+        ],
+        "complexity": "simple"
+      }
+    },
+    {
+      "id": "function:services/access-core/src/index.ts:main",
+      "type": "function",
+      "properties": {
+        "path": "services/access-core/src/index.ts",
+        "name": "main"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:services/access-core/src/db/prisma.ts",
+      "target": "file:services/access-core/src/config.ts",
+      "relation": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "relation": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "target": "function:services/access-core/src/db/queries/objectPermissions.ts:listObjectPermissions",
+      "relation": "contains"
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "relation": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "target": "function:services/access-core/src/db/queries/rolePermissions.ts:listRolePermissions",
+      "relation": "contains"
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "relation": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "relation": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/index.ts",
+      "target": "file:services/access-core/src/config.ts",
+      "relation": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/index.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "relation": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/index.ts",
+      "target": "file:services/access-core/src/server.ts",
+      "relation": "imports"
+    },
+    {
+      "source": "file:services/access-core/src/index.ts",
+      "target": "function:services/access-core/src/index.ts:main",
+      "relation": "contains"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "batchImportData": {
+    "services/access-core/src/config.ts": [],
+    "services/access-core/src/db/prisma.ts": [
+      "services/access-core/src/config.ts"
+    ],
+    "services/access-core/src/db/queries/objectPermissions.ts": [
+      "services/access-core/src/db/prisma.ts"
+    ],
+    "services/access-core/src/db/queries/rolePermissions.ts": [
+      "services/access-core/src/db/prisma.ts"
+    ],
+    "services/access-core/src/graphql/resolvers/permissionResolvers.ts": [
+      "services/access-core/src/db/queries/objectPermissions.ts",
+      "services/access-core/src/db/queries/rolePermissions.ts"
+    ],
+    "services/access-core/src/index.ts": [
+      "services/access-core/src/config.ts",
+      "services/access-core/src/db/prisma.ts",
+      "services/access-core/src/server.ts"
+    ]
+  },
+  "neighborMap": {
+    "services/access-core/src/db/prisma.ts": [
+      {
+        "path": "services/access-core/src/db/queries/roles.ts",
+        "batchIndex": 2,
+        "symbols": [
+          "listRolesByOrg",
+          "getRoleById"
+        ]
+      },
+      {
+        "path": "services/access-core/src/db/queries/users.ts",
+        "batchIndex": 2,
+        "symbols": [
+          "listUsers",
+          "getUserById"
+        ]
+      }
+    ],
+    "services/access-core/src/graphql/resolvers/permissionResolvers.ts": [
+      {
+        "path": "services/access-core/src/graphql/resolvers/index.ts",
+        "batchIndex": 2,
+        "symbols": [
+          "resolvers"
+        ]
+      }
+    ],
+    "services/access-core/src/index.ts": [
+      {
+        "path": "services/access-core/src/server.ts",
+        "batchIndex": 2,
+        "symbols": [
+          "buildServer"
+        ]
+      }
+    ]
+  }
+}

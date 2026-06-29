@@ -1,0 +1,24 @@
+{
+  "projectRoot": "C:\\Users\\admin\\Downloads\\Seta Im Intern\\seta-im-intern",
+  "sourceFilePaths": [
+    "infra/db/access/migrations/V1__create_access_schema.sql",
+    "infra/db/access/migrations/V1__create_access_schema.sql",
+    "infra/db/access/migrations/V1__create_access_schema.sql",
+    "infra/db/access/migrations/V1__create_access_schema.sql",
+    "infra/db/access/migrations/V1__create_access_schema.sql",
+    "infra/db/access/migrations/V1__create_access_schema.sql",
+    "infra/db/access/migrations/V1__create_access_schema.sql",
+    "infra/db/access/migrations/V1__create_access_schema.sql",
+    "infra/db/access/migrations/V1__create_access_schema.sql",
+    "infra/db/access/migrations/V2__seed_access_schema.sql",
+    "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+    "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+    "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+    "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+    "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+    "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql",
+    "infra/docker-compose.yml",
+    "services/access-core/prisma.config.ts"
+  ],
+  "gitCommitHash": "fdf12d9bcd465d05287f8c53343297ea3466eebc"
+}

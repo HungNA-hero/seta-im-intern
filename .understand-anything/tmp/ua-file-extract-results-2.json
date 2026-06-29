@@ -1,0 +1,354 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 8,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "services/access-core/src/db/queries/roles.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 38,
+      "nonEmptyLines": 35,
+      "functions": [
+        {
+          "name": "listRolesByOrg",
+          "startLine": 13,
+          "endLine": 24,
+          "params": [
+            "orgId"
+          ]
+        },
+        {
+          "name": "getRoleById",
+          "startLine": 26,
+          "endLine": 38,
+          "params": [
+            "id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "listRolesByOrg",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "getRoleById",
+          "line": 26,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "listRolesByOrg",
+          "callee": "prisma.roles.findMany",
+          "lineNumber": 14
+        },
+        {
+          "caller": "listRolesByOrg",
+          "callee": "roles.map",
+          "lineNumber": 15
+        },
+        {
+          "caller": "getRoleById",
+          "callee": "prisma.roles.findUnique",
+          "lineNumber": 27
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/db/queries/users.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 35,
+      "nonEmptyLines": 32,
+      "functions": [
+        {
+          "name": "listUsers",
+          "startLine": 12,
+          "endLine": 22,
+          "params": []
+        },
+        {
+          "name": "getUserById",
+          "startLine": 24,
+          "endLine": 35,
+          "params": [
+            "id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "listUsers",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "getUserById",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "listUsers",
+          "callee": "prisma.users.findMany",
+          "lineNumber": 13
+        },
+        {
+          "caller": "listUsers",
+          "callee": "users.map",
+          "lineNumber": 14
+        },
+        {
+          "caller": "getUserById",
+          "callee": "prisma.users.findUnique",
+          "lineNumber": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/graphql/resolvers/index.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 13,
+      "nonEmptyLines": 12,
+      "exports": [
+        {
+          "name": "resolvers",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 24,
+      "nonEmptyLines": 22,
+      "functions": [
+        {
+          "name": "toRole",
+          "startLine": 3,
+          "endLine": 13,
+          "params": [
+            "r"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "roleResolvers",
+          "line": 15,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "toRole",
+          "callee": "r.createdAt.toISOString",
+          "lineNumber": 10
+        },
+        {
+          "caller": "toRole",
+          "callee": "r.updatedAt.toISOString",
+          "lineNumber": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 22,
+      "nonEmptyLines": 20,
+      "functions": [
+        {
+          "name": "toUser",
+          "startLine": 3,
+          "endLine": 12,
+          "params": [
+            "u"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "userResolvers",
+          "line": 14,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "toUser",
+          "callee": "u.createdAt.toISOString",
+          "lineNumber": 9
+        },
+        {
+          "caller": "toUser",
+          "callee": "u.updatedAt.toISOString",
+          "lineNumber": 10
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/graphql/schema.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 5,
+      "nonEmptyLines": 4,
+      "exports": [
+        {
+          "name": "schema",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/graphql/typeDefs.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 80,
+      "nonEmptyLines": 73,
+      "exports": [
+        {
+          "name": "typeDefs",
+          "line": 1,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/server.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 28,
+      "functions": [
+        {
+          "name": "buildServer",
+          "startLine": 5,
+          "endLine": 33,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "buildServer",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "buildServer",
+          "callee": "Fastify",
+          "lineNumber": 6
+        },
+        {
+          "caller": "buildServer",
+          "callee": "createYoga",
+          "lineNumber": 8
+        },
+        {
+          "caller": "buildServer",
+          "callee": "fastify.route",
+          "lineNumber": 14
+        },
+        {
+          "caller": "buildServer",
+          "callee": "yoga.fetch",
+          "lineNumber": 18
+        },
+        {
+          "caller": "buildServer",
+          "callee": "JSON.stringify",
+          "lineNumber": 21
+        },
+        {
+          "caller": "buildServer",
+          "callee": "response.headers.forEach",
+          "lineNumber": 23
+        },
+        {
+          "caller": "buildServer",
+          "callee": "reply.header",
+          "lineNumber": 23
+        },
+        {
+          "caller": "buildServer",
+          "callee": "reply.status",
+          "lineNumber": 24
+        },
+        {
+          "caller": "buildServer",
+          "callee": "response.text",
+          "lineNumber": 25
+        },
+        {
+          "caller": "buildServer",
+          "callee": "reply.send",
+          "lineNumber": 26
+        },
+        {
+          "caller": "buildServer",
+          "callee": "fastify.get",
+          "lineNumber": 30
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

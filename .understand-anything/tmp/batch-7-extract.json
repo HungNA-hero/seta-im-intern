@@ -1,0 +1,78 @@
+{
+  "batchIndex": 7,
+  "files": [
+    {
+      "path": ".understand-anything/.understandignore",
+      "language": "unknown",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": ".understand-anything/config.json",
+      "language": "json",
+      "sizeLines": 3,
+      "fileCategory": "config"
+    },
+    {
+      "path": "infra/db/asset/seed/.gitkeep",
+      "language": "unknown",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "infra/docker-compose.yml",
+      "language": "yaml",
+      "sizeLines": 88,
+      "fileCategory": "infra"
+    },
+    {
+      "path": "services/access-core/package.json",
+      "language": "json",
+      "sizeLines": 32,
+      "fileCategory": "config"
+    },
+    {
+      "path": "services/access-core/prisma.config.ts",
+      "language": "typescript",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/access-core/prisma/schema.prisma",
+      "language": "prisma",
+      "sizeLines": 150,
+      "fileCategory": "data"
+    },
+    {
+      "path": "services/access-core/tsconfig.json",
+      "language": "json",
+      "sizeLines": 13,
+      "fileCategory": "config"
+    },
+    {
+      "path": "services/asset-core/go.mod",
+      "language": "mod",
+      "sizeLines": 22,
+      "fileCategory": "config"
+    },
+    {
+      "path": "services/asset-core/go.sum",
+      "language": "sum",
+      "sizeLines": 41,
+      "fileCategory": "config"
+    }
+  ],
+  "batchImportData": {
+    ".understand-anything/.understandignore": [],
+    ".understand-anything/config.json": [],
+    "infra/db/asset/seed/.gitkeep": [],
+    "infra/docker-compose.yml": [],
+    "services/access-core/package.json": [],
+    "services/access-core/prisma.config.ts": [],
+    "services/access-core/prisma/schema.prisma": [],
+    "services/access-core/tsconfig.json": [],
+    "services/asset-core/go.mod": [],
+    "services/asset-core/go.sum": []
+  },
+  "neighborMap": {}
+}

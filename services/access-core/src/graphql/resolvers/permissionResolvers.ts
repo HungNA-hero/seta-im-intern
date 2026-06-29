@@ -26,7 +26,7 @@ export const permissionResolvers = {
         orgId,
         resourceType,
         resourceId,
-      }: { orgId: string; resourceType: ResourceType; resourceId: string },
+      }: { orgId: string; resourceType: resource_type; resourceId: string },
     ) => {
       const rows = await listObjectPermissions(
         orgId,

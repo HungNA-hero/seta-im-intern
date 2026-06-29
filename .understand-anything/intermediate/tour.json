@@ -1,0 +1,65 @@
+[
+  {
+    "order": 1,
+    "title": "Entry Points",
+    "description": "Đây là tài liệu README chính và docker-compose",
+    "nodeIds": [
+      "document:README.md",
+      "service:infra/docker-compose.yml"
+    ]
+  },
+  {
+    "order": 2,
+    "title": "Access Core API",
+    "description": "Các resolver GraphQL để quản lý Users và Roles.",
+    "nodeIds": [
+      "function:services/access-core/src/graphql/resolvers/userResolvers.ts:toUser",
+      "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "function:services/access-core/src/graphql/resolvers/roleResolvers.ts:toRole",
+      "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "file:services/access-core/src/graphql/resolvers/index.ts"
+    ]
+  },
+  {
+    "order": 3,
+    "title": "Asset Core HTTP",
+    "description": "Handler HTTP của Golang service xử lý logic folder/metadata",
+    "nodeIds": [
+      "class:services/asset-core/internal/delivery/http/asset_handler.go:AssetHandler",
+      "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleMetadataItems",
+      "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderTree",
+      "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "function:services/asset-core/internal/delivery/http/asset_handler.go:NewAssetHandler",
+      "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersUsesMatchingOrganizationContext",
+      "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleFolders",
+      "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersRejectsOrganizationContextMismatch",
+      "class:services/asset-core/internal/delivery/http/asset_handler_test.go:fakeAssetUsecase",
+      "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleHealth",
+      "function:services/asset-core/internal/delivery/http/asset_handler_test.go:EnsureRefs",
+      "file:services/asset-core/internal/delivery/http/asset_handler.go"
+    ]
+  },
+  {
+    "order": 4,
+    "title": "Database Schema",
+    "description": "SQL Migration schema cho Access và Asset DB",
+    "nodeIds": [
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:organization_ref",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration",
+      "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions",
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref"
+    ]
+  }
+]

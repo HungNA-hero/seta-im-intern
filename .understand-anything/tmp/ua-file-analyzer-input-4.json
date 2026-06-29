@@ -1,0 +1,21 @@
+{
+  "projectRoot": "C:\\Users\\admin\\Downloads\\Seta Im Intern\\seta-im-intern",
+  "batchFiles": [
+    {
+      "path": "infra/db/access/migrations/V1__create_access_schema.sql",
+      "language": "sql",
+      "sizeLines": 133,
+      "fileCategory": "data"
+    },
+    {
+      "path": "infra/db/access/migrations/V2__seed_access_schema.sql",
+      "language": "sql",
+      "sizeLines": 56,
+      "fileCategory": "data"
+    }
+  ],
+  "batchImportData": {
+    "infra/db/access/migrations/V1__create_access_schema.sql": [],
+    "infra/db/access/migrations/V2__seed_access_schema.sql": []
+  }
+}

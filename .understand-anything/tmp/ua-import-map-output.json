@@ -1,0 +1,113 @@
+{
+  "scriptCompleted": true,
+  "stats": {
+    "filesScanned": 41,
+    "filesWithImports": 20,
+    "totalEdges": 42
+  },
+  "importMap": {
+    ".understand-anything/.understandignore": [],
+    ".understand-anything/config.json": [],
+    "infra/db/access/migrations/V1__create_access_schema.sql": [],
+    "infra/db/access/migrations/V2__seed_access_schema.sql": [],
+    "infra/db/asset/migrations/V1__asset_initial_schema.sql": [],
+    "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql": [],
+    "infra/db/asset/seed/.gitkeep": [],
+    "infra/docker-compose.yml": [],
+    "package.json": [],
+    "pr_body.txt": [],
+    "README.md": [],
+    "services/access-core/package.json": [],
+    "services/access-core/prisma.config.ts": [],
+    "services/access-core/prisma/schema.prisma": [],
+    "services/access-core/src/config.ts": [],
+    "services/access-core/src/db/prisma.ts": [
+      "services/access-core/src/config.ts"
+    ],
+    "services/access-core/src/db/queries/objectPermissions.ts": [
+      "services/access-core/src/db/prisma.ts"
+    ],
+    "services/access-core/src/db/queries/rolePermissions.ts": [
+      "services/access-core/src/db/prisma.ts"
+    ],
+    "services/access-core/src/db/queries/roles.ts": [
+      "services/access-core/src/db/prisma.ts"
+    ],
+    "services/access-core/src/db/queries/users.ts": [
+      "services/access-core/src/db/prisma.ts"
+    ],
+    "services/access-core/src/graphql/resolvers/index.ts": [
+      "services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "services/access-core/src/graphql/resolvers/userResolvers.ts"
+    ],
+    "services/access-core/src/graphql/resolvers/permissionResolvers.ts": [
+      "services/access-core/src/db/queries/objectPermissions.ts",
+      "services/access-core/src/db/queries/rolePermissions.ts"
+    ],
+    "services/access-core/src/graphql/resolvers/roleResolvers.ts": [
+      "services/access-core/src/db/queries/roles.ts"
+    ],
+    "services/access-core/src/graphql/resolvers/userResolvers.ts": [
+      "services/access-core/src/db/queries/users.ts"
+    ],
+    "services/access-core/src/graphql/schema.ts": [
+      "services/access-core/src/graphql/resolvers/index.ts",
+      "services/access-core/src/graphql/typeDefs.ts"
+    ],
+    "services/access-core/src/graphql/typeDefs.ts": [],
+    "services/access-core/src/index.ts": [
+      "services/access-core/src/config.ts",
+      "services/access-core/src/db/prisma.ts",
+      "services/access-core/src/server.ts"
+    ],
+    "services/access-core/src/server.ts": [
+      "services/access-core/src/graphql/schema.ts"
+    ],
+    "services/access-core/tsconfig.json": [],
+    "services/asset-core/cmd/server/main.go": [
+      "services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "services/asset-core/internal/delivery/http/asset_handler.go",
+      "services/asset-core/internal/delivery/http/middleware_test.go",
+      "services/asset-core/internal/delivery/http/middleware.go",
+      "services/asset-core/internal/repository/asset_repository_test.go",
+      "services/asset-core/internal/repository/asset_repository.go",
+      "services/asset-core/internal/usecase/asset_usecase.go"
+    ],
+    "services/asset-core/go.mod": [],
+    "services/asset-core/go.sum": [],
+    "services/asset-core/internal/delivery/http/asset_handler_test.go": [
+      "services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "services/asset-core/internal/delivery/http/asset_handler.go",
+      "services/asset-core/internal/delivery/http/middleware_test.go",
+      "services/asset-core/internal/delivery/http/middleware.go",
+      "services/asset-core/internal/domain/asset.go"
+    ],
+    "services/asset-core/internal/delivery/http/asset_handler.go": [
+      "services/asset-core/internal/domain/asset.go",
+      "services/asset-core/internal/requestcontext/context.go"
+    ],
+    "services/asset-core/internal/delivery/http/middleware_test.go": [
+      "services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "services/asset-core/internal/delivery/http/asset_handler.go",
+      "services/asset-core/internal/delivery/http/middleware_test.go",
+      "services/asset-core/internal/delivery/http/middleware.go",
+      "services/asset-core/internal/requestcontext/context.go"
+    ],
+    "services/asset-core/internal/delivery/http/middleware.go": [
+      "services/asset-core/internal/requestcontext/context.go"
+    ],
+    "services/asset-core/internal/domain/asset.go": [],
+    "services/asset-core/internal/repository/asset_repository_test.go": [
+      "services/asset-core/internal/repository/asset_repository_test.go",
+      "services/asset-core/internal/repository/asset_repository.go"
+    ],
+    "services/asset-core/internal/repository/asset_repository.go": [
+      "services/asset-core/internal/domain/asset.go"
+    ],
+    "services/asset-core/internal/requestcontext/context.go": [],
+    "services/asset-core/internal/usecase/asset_usecase.go": [
+      "services/asset-core/internal/domain/asset.go"
+    ]
+  }
+}

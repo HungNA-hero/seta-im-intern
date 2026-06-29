@@ -1,0 +1,712 @@
+{
+  "nodes": [
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:UserRef",
+      "type": "class",
+      "name": "UserRef",
+      "path": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class UserRef",
+      "tags": [
+        "class",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:Folder",
+      "type": "class",
+      "name": "Folder",
+      "path": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class Folder",
+      "tags": [
+        "class",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:MetadataItem",
+      "type": "class",
+      "name": "MetadataItem",
+      "path": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class MetadataItem",
+      "tags": [
+        "class",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:AssetRepository",
+      "type": "class",
+      "name": "AssetRepository",
+      "path": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class AssetRepository",
+      "tags": [
+        "class",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:AssetUsecase",
+      "type": "class",
+      "name": "AssetUsecase",
+      "path": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class AssetUsecase",
+      "tags": [
+        "class",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository.go",
+      "type": "file",
+      "name": "asset_repository.go",
+      "path": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "File handling asset_repository.go",
+      "tags": [
+        "code",
+        "go",
+        "services",
+        "asset-core",
+        "internal",
+        "repository"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:NewAssetRepository",
+      "type": "function",
+      "name": "NewAssetRepository",
+      "path": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function NewAssetRepository",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderTree",
+      "type": "function",
+      "name": "GetFolderTree",
+      "path": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function GetFolderTree",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderByID",
+      "type": "function",
+      "name": "GetFolderByID",
+      "path": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function GetFolderByID",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderChildren",
+      "type": "function",
+      "name": "GetFolderChildren",
+      "path": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function GetFolderChildren",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:GetRootFolders",
+      "type": "function",
+      "name": "GetRootFolders",
+      "path": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function GetRootFolders",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:EnsureRefs",
+      "type": "function",
+      "name": "EnsureRefs",
+      "path": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function EnsureRefs",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:services/asset-core/internal/repository/asset_repository.go:assetRepository",
+      "type": "class",
+      "name": "assetRepository",
+      "path": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Class assetRepository",
+      "tags": [
+        "class",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "file",
+      "name": "asset_repository_test.go",
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "File handling asset_repository_test.go",
+      "tags": [
+        "code",
+        "go",
+        "services",
+        "asset-core",
+        "internal",
+        "repository"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_Success_RepeatedCall",
+      "type": "function",
+      "name": "TestEnsureRefs_Success_RepeatedCall",
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestEnsureRefs_Success_RepeatedCall",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_OrganizationFailurePropagated",
+      "type": "function",
+      "name": "TestEnsureRefs_OrganizationFailurePropagated",
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestEnsureRefs_OrganizationFailurePropagated",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_DBFailurePropagated",
+      "type": "function",
+      "name": "TestEnsureRefs_DBFailurePropagated",
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestEnsureRefs_DBFailurePropagated",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_Success",
+      "type": "function",
+      "name": "TestGetFolderByID_Success",
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderByID_Success",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_NotFoundOrOrgMismatch",
+      "type": "function",
+      "name": "TestGetFolderByID_NotFoundOrOrgMismatch",
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderByID_NotFoundOrOrgMismatch",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_SoftDeleted",
+      "type": "function",
+      "name": "TestGetFolderByID_SoftDeleted",
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderByID_SoftDeleted",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Success",
+      "type": "function",
+      "name": "TestGetFolderChildren_Success",
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderChildren_Success",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetRootFolders_Success",
+      "type": "function",
+      "name": "TestGetRootFolders_Success",
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetRootFolders_Success",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Empty",
+      "type": "function",
+      "name": "TestGetFolderChildren_Empty",
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderChildren_Empty",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_Success",
+      "type": "function",
+      "name": "TestGetFolderTree_Success",
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderTree_Success",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:services/asset-core/internal/requestcontext/context.go",
+      "type": "file",
+      "name": "context.go",
+      "path": "services/asset-core/internal/requestcontext/context.go",
+      "summary": "File handling context.go",
+      "tags": [
+        "code",
+        "go",
+        "services",
+        "asset-core",
+        "internal",
+        "requestcontext"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/requestcontext/context.go:WithActor",
+      "type": "function",
+      "name": "WithActor",
+      "path": "services/asset-core/internal/requestcontext/context.go",
+      "summary": "Function WithActor",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/requestcontext/context.go:GetActor",
+      "type": "function",
+      "name": "GetActor",
+      "path": "services/asset-core/internal/requestcontext/context.go",
+      "summary": "Function GetActor",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:services/asset-core/internal/requestcontext/context.go:Actor",
+      "type": "class",
+      "name": "Actor",
+      "path": "services/asset-core/internal/requestcontext/context.go",
+      "summary": "Class Actor",
+      "tags": [
+        "class",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "type": "file",
+      "name": "asset_usecase.go",
+      "path": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "File handling asset_usecase.go",
+      "tags": [
+        "code",
+        "go",
+        "services",
+        "asset-core",
+        "internal",
+        "usecase"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:NewAssetUsecase",
+      "type": "function",
+      "name": "NewAssetUsecase",
+      "path": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function NewAssetUsecase",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderTree",
+      "type": "function",
+      "name": "GetFolderTree",
+      "path": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function GetFolderTree",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderByID",
+      "type": "function",
+      "name": "GetFolderByID",
+      "path": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function GetFolderByID",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderChildren",
+      "type": "function",
+      "name": "GetFolderChildren",
+      "path": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function GetFolderChildren",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetRootFolders",
+      "type": "function",
+      "name": "GetRootFolders",
+      "path": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function GetRootFolders",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:EnsureRefs",
+      "type": "function",
+      "name": "EnsureRefs",
+      "path": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function EnsureRefs",
+      "tags": [
+        "function",
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:services/asset-core/internal/usecase/asset_usecase.go:assetUsecase",
+      "type": "class",
+      "name": "assetUsecase",
+      "path": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Class assetUsecase",
+      "tags": [
+        "class",
+        "go"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "target": "file:services/asset-core/internal/requestcontext/context.go",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:OrganizationRef",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:UserRef",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:Folder",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:MetadataItem",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:AssetRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:AssetUsecase",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:NewAssetRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderTree",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderByID",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderChildren",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetRootFolders",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:EnsureRefs",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "class:services/asset-core/internal/repository/asset_repository.go:assetRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_Success_RepeatedCall",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_OrganizationFailurePropagated",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_DBFailurePropagated",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_Success",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_NotFoundOrOrgMismatch",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_SoftDeleted",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Success",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetRootFolders_Success",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Empty",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_Success",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository.go",
+      "type": "imports",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/requestcontext/context.go",
+      "target": "function:services/asset-core/internal/requestcontext/context.go:WithActor",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/requestcontext/context.go",
+      "target": "function:services/asset-core/internal/requestcontext/context.go:GetActor",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/requestcontext/context.go",
+      "target": "class:services/asset-core/internal/requestcontext/context.go:Actor",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:NewAssetUsecase",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderTree",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderByID",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderChildren",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetRootFolders",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:EnsureRefs",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "class:services/asset-core/internal/usecase/asset_usecase.go:assetUsecase",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "weight": 1
+    }
+  ]
+}
