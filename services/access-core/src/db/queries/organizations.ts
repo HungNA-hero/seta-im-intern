@@ -1,14 +1,37 @@
 import { prisma } from "../prisma";
-import type { Organization } from "@prisma/client";
 
-export type { Organization };
+export type Organization = {
+  id: string;
+  code: string;
+  name: string;
+  olpEnabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-export function listOrganizations(): Promise<Organization[]> {
-  return prisma.organization.findMany({ orderBy: { createdAt: "asc" } });
+export async function listOrganizations(): Promise<Organization[]> {
+  const orgs = await prisma.organization.findMany({ orderBy: { createdAt: "asc" } });
+  return orgs.map((o) => ({
+    id: o.id,
+    code: o.code,
+    name: o.name,
+    olpEnabled: o.olpEnabled,
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+  }));
 }
 
-export function getOrganizationById(id: string): Promise<Organization | null> {
-  return prisma.organization.findUnique({ where: { id } });
+export async function getOrganizationById(id: string): Promise<Organization | null> {
+  const o = await prisma.organization.findUnique({ where: { id } });
+  if (!o) return null;
+  return {
+    id: o.id,
+    code: o.code,
+    name: o.name,
+    olpEnabled: o.olpEnabled,
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+  };
 }
 
 export async function addOrgMember(

@@ -1,5 +1,5 @@
 import { prisma } from "../prisma";
-import { resource_type } from "@prisma/client";
+import { ResourceType } from "@prisma/client";
 
 export type ObjectPermission = {
   id: string;
@@ -15,25 +15,21 @@ export type ObjectPermission = {
 
 export async function listObjectPermissions(
   orgId: string,
-  resourceType: string,
+  resourceType: ResourceType,
   resourceId: string,
 ): Promise<ObjectPermission[]> {
-  const perms = await prisma.object_permissions.findMany({
-    where: {
-      org_id: orgId,
-      resource_type: resourceType as resource_type,
-      resource_id: resourceId,
-    },
+  const perms = await prisma.objectPermission.findMany({
+    where: { orgId, resourceType, resourceId },
   });
   return perms.map((p) => ({
     id: p.id,
-    orgId: p.org_id,
-    resourceType: p.resource_type,
-    resourceId: p.resource_id,
-    granteeUserId: p.grantee_user_id,
-    granteeRoleId: p.grantee_role_id,
-    actionId: p.action_id,
-    grantedBy: p.granted_by,
-    grantedAt: p.granted_at,
+    orgId: p.orgId,
+    resourceType: p.resourceType,
+    resourceId: p.resourceId,
+    granteeUserId: p.granteeUserId,
+    granteeRoleId: p.granteeRoleId,
+    actionId: p.actionId,
+    grantedBy: p.grantedBy,
+    grantedAt: p.grantedAt,
   }));
 }
