@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { folderResolvers, setPolicyGuard, defaultPolicyGuard } from './folderResolvers';
+import { folderResolvers } from './folderResolvers';
 import { GraphQLError } from 'graphql';
 
 test('folderResolvers - missing context throws UNAUTHENTICATED', async () => {
@@ -38,12 +38,10 @@ test('folderResolvers - policy deny throws FORBIDDEN', async () => {
     ['x-user-id', 'user-1'],
     ['x-org-id', 'org-1']
   ]);
-  const context = { request: { headers } };
-  
-  // Set policy guard to deny
-  setPolicyGuard({
-    async checkFolderAccess() { return false; }
-  });
+  const context = {
+    request: { headers },
+    policyGuard: { async checkFolderAccess() { return false; } }
+  };
   
   try {
     await folderResolvers.Query.folderTree(null, { orgId: 'org-1' }, context);
@@ -52,8 +50,6 @@ test('folderResolvers - policy deny throws FORBIDDEN', async () => {
     assert.strictEqual(err instanceof GraphQLError, true);
     assert.strictEqual(err.extensions.code, 'FORBIDDEN');
     assert.match(err.message, /Policy deny/);
-  } finally {
-    setPolicyGuard(defaultPolicyGuard);
   }
 });
 
@@ -62,11 +58,10 @@ test('folderResolvers - mapping snake_case to camelCase and exact forwarded head
     ['x-user-id', 'user-1'],
     ['x-org-id', 'org-1']
   ]);
-  const context = { request: { headers } };
-  
-  setPolicyGuard({
-    async checkFolderAccess() { return true; } // allow
-  });
+  const context = {
+    request: { headers },
+    policyGuard: { async checkFolderAccess() { return true; } }
+  };
   
   // Mock fetch
   const originalFetch = global.fetch;
@@ -105,7 +100,6 @@ test('folderResolvers - mapping snake_case to camelCase and exact forwarded head
     assert.strictEqual(fetchHeaders['X-Org-Id'], 'org-1');
   } finally {
     global.fetch = originalFetch;
-    setPolicyGuard(defaultPolicyGuard);
   }
 });
 
@@ -114,11 +108,10 @@ test('folderResolvers - Go 404 returns null', async () => {
     ['x-user-id', 'user-1'],
     ['x-org-id', 'org-1']
   ]);
-  const context = { request: { headers } };
-  
-  setPolicyGuard({
-    async checkFolderAccess() { return true; }
-  });
+  const context = {
+    request: { headers },
+    policyGuard: { async checkFolderAccess() { return true; } }
+  };
   
   const originalFetch = global.fetch;
   global.fetch = async () => ({ ok: false, status: 404, statusText: 'Not Found' }) as any;
@@ -128,7 +121,6 @@ test('folderResolvers - Go 404 returns null', async () => {
     assert.strictEqual(res, null);
   } finally {
     global.fetch = originalFetch;
-    setPolicyGuard(defaultPolicyGuard);
   }
 });
 
@@ -137,11 +129,10 @@ test('folderResolvers - Go 500 throws GraphQLError', async () => {
     ['x-user-id', 'user-1'],
     ['x-org-id', 'org-1']
   ]);
-  const context = { request: { headers } };
-  
-  setPolicyGuard({
-    async checkFolderAccess() { return true; }
-  });
+  const context = {
+    request: { headers },
+    policyGuard: { async checkFolderAccess() { return true; } }
+  };
   
   const originalFetch = global.fetch;
   global.fetch = async () => ({ ok: false, status: 500, statusText: 'Internal Server Error' }) as any;
@@ -154,6 +145,5 @@ test('folderResolvers - Go 500 throws GraphQLError', async () => {
     assert.match(err.message, /Failed to fetch folder/);
   } finally {
     global.fetch = originalFetch;
-    setPolicyGuard(defaultPolicyGuard);
   }
 });

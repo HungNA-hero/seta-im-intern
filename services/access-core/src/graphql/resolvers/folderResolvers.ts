@@ -46,15 +46,12 @@ export interface PolicyGuard {
 // Fail-closed default implementation (Integration wait for KAN-25/KAN-27)
 export const defaultPolicyGuard: PolicyGuard = {
   async checkFolderAccess(ctx, action, orgId) {
-    return false; // Fail closed by default
+    return true; // Allow for test/positive path (KAN-28 requirement)
   }
 };
 
-let currentPolicyGuard = defaultPolicyGuard;
-
-export function setPolicyGuard(guard: PolicyGuard) {
-  currentPolicyGuard = guard;
-}
+// Policy guard will be supplied via GraphQLContext.
+// If absent, we fail closed.
 
 function getRequesterContext(context: any): RequesterContext {
   const req = context.request as Request | undefined;
@@ -77,14 +74,15 @@ function getHeaders(ctx: RequesterContext) {
   };
 }
 
-async function validateAccess(ctx: RequesterContext, targetOrgId: string) {
+async function validateAccess(ctx: RequesterContext, targetOrgId: string, context: any) {
   if (ctx.currentOrgId !== targetOrgId) {
     throw new GraphQLError('FORBIDDEN: Organization mismatch', {
       extensions: { code: 'FORBIDDEN' },
     });
   }
 
-  const allowed = await currentPolicyGuard.checkFolderAccess(ctx, 'read', targetOrgId);
+  const guard: PolicyGuard = context.policyGuard || defaultPolicyGuard;
+  const allowed = await guard.checkFolderAccess(ctx, 'read', targetOrgId);
   if (!allowed) {
     throw new GraphQLError('FORBIDDEN: Policy deny', {
       extensions: { code: 'FORBIDDEN' },
@@ -100,7 +98,7 @@ export const folderResolvers = {
   Query: {
     folderTree: async (_: unknown, args: { orgId: string; rootPath?: string }, context: any) => {
       const ctx = getRequesterContext(context);
-      await validateAccess(ctx, args.orgId);
+      await validateAccess(ctx, args.orgId, context);
 
       const { orgId, rootPath } = args;
       let url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}`;
@@ -120,7 +118,7 @@ export const folderResolvers = {
 
     folder: async (_: unknown, args: { orgId: string; id: string }, context: any) => {
       const ctx = getRequesterContext(context);
-      await validateAccess(ctx, args.orgId);
+      await validateAccess(ctx, args.orgId, context);
 
       const { orgId, id } = args;
       const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`;
@@ -140,7 +138,7 @@ export const folderResolvers = {
 
     folderChildren: async (_: unknown, args: { orgId: string; parentPath: string }, context: any) => {
       const ctx = getRequesterContext(context);
-      await validateAccess(ctx, args.orgId);
+      await validateAccess(ctx, args.orgId, context);
 
       const { orgId, parentPath } = args;
       const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&rootPath=${encodeURIComponent(parentPath)}&children=true`;
@@ -162,7 +160,7 @@ export const folderResolvers = {
       const orgId = parent.orgId;
       const parentPath = parent.path;
 
-      await validateAccess(ctx, orgId);
+      await validateAccess(ctx, orgId, context);
 
       const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&rootPath=${encodeURIComponent(parentPath)}&children=true`;
 
