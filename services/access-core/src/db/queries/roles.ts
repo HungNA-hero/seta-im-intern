@@ -1,4 +1,4 @@
-import { prisma } from '../prisma';
+import { prisma } from "../prisma";
 
 export type Role = {
   id: string;
@@ -12,7 +12,7 @@ export type Role = {
 
 export async function listRolesByOrg(orgId: string): Promise<Role[]> {
   const roles = await prisma.roles.findMany({ where: { org_id: orgId } });
-  return roles.map(r => ({
+  return roles.map((r) => ({
     id: r.id,
     orgId: r.org_id,
     code: r.code,

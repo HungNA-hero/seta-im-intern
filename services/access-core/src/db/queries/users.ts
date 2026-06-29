@@ -1,4 +1,4 @@
-import { prisma } from '../prisma';
+import { prisma } from "../prisma";
 
 export type User = {
   id: string;
@@ -11,7 +11,7 @@ export type User = {
 
 export async function listUsers(): Promise<User[]> {
   const users = await prisma.users.findMany();
-  return users.map(u => ({
+  return users.map((u) => ({
     id: u.id,
     email: u.email,
     displayName: u.display_name,
