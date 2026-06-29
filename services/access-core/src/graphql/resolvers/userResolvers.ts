@@ -1,14 +1,15 @@
 import { listUsers, getUserById, User } from '../../db/queries/users';
+import { serializeDates } from './utils';
 
 function toUser(u: User) {
-  return {
-    id:          u.id,
-    email:       u.email,
+  return serializeDates({
+    id: u.id,
+    email: u.email,
     displayName: u.displayName,
-    isActive:    u.isActive,
-    createdAt:   u.createdAt.toISOString(),
-    updatedAt:   u.updatedAt.toISOString(),
-  };
+    isActive: u.isActive,
+    createdAt: u.createdAt,
+    updatedAt: u.updatedAt,
+  });
 }
 
 export const userResolvers = {

@@ -20,6 +20,15 @@ export const typeDefs = /* GraphQL */ `
     updatedAt:   String!
   }
 
+  type Organization {
+    id:         ID!
+    code:       String!
+    name:       String!
+    olpEnabled: Boolean!
+    createdAt:  String!
+    updatedAt:  String!
+  }
+
   type Role {
     id:          ID!
     orgId:       ID!
@@ -49,9 +58,19 @@ export const typeDefs = /* GraphQL */ `
     grantedAt:     String!
   }
 
+  type Mutation {
+    createRole(orgId: ID!, code: String!, name: String!, description: String): Role!
+    updateRole(id: ID!, name: String, description: String): Role!
+    addOrgMember(orgId: ID!, userId: ID!): Boolean!
+    assignRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean!
+    revokeRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean!
+  }
+
   type Query {
     users:                                               [User!]!
     user(id: ID!):                                       User
+    organizations:                                       [Organization!]!
+    organization(id: ID!):                               Organization
     roles(orgId: ID!):                                   [Role!]!
     role(id: ID!):                                       Role
     rolePermissions(roleId: ID!):                        [RolePermission!]!
