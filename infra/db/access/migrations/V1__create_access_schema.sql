@@ -32,12 +32,14 @@ BEFORE UPDATE ON access.users
 FOR EACH ROW EXECUTE FUNCTION access.set_updated_at();
 
 CREATE TABLE access.organizations (
-    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    code        VARCHAR     NOT NULL UNIQUE,
-    name        VARCHAR     NOT NULL,
-    olp_enabled BOOLEAN     NOT NULL DEFAULT false,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    id          uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    code        varchar(100) NOT NULL UNIQUE,
+    name        varchar(255) NOT NULL,
+    olp_enabled boolean      NOT NULL DEFAULT false,
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    updated_at  timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT chk_organizations_code_not_blank CHECK (btrim(code) <> ''),
+    CONSTRAINT chk_organizations_name_not_blank CHECK (btrim(name) <> '')
 );
 
 CREATE TRIGGER trg_organizations_set_updated_at
@@ -53,30 +55,6 @@ CREATE TABLE access.organization_members (
 );
 
 CREATE INDEX idx_org_members_user ON access.organization_members (user_id);
-
-CREATE TABLE access.organizations (
-    id          uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
-    code        varchar(100) NOT NULL UNIQUE,
-    name        varchar(255) NOT NULL,
-    olp_enabled boolean      NOT NULL DEFAULT false,
-    created_at  timestamptz  NOT NULL DEFAULT now(),
-    updated_at  timestamptz  NOT NULL DEFAULT now(),
-    CONSTRAINT chk_organizations_code_not_blank CHECK (btrim(code) <> ''),
-    CONSTRAINT chk_organizations_name_not_blank CHECK (btrim(name) <> '')
-);
-
-CREATE TRIGGER trg_organizations_set_updated_at
-BEFORE UPDATE ON access.organizations
-FOR EACH ROW
-EXECUTE FUNCTION access.set_updated_at();
-
-CREATE TABLE access.organization_members (
-    id        uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-    org_id    uuid        NOT NULL REFERENCES access.organizations(id) ON DELETE CASCADE,
-    user_id   uuid        NOT NULL REFERENCES access.users(id) ON DELETE CASCADE,
-    joined_at timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (org_id, user_id)
-);
 
 CREATE TABLE access.roles (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

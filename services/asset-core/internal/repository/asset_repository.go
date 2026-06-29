@@ -27,3 +27,21 @@ func (r *assetRepository) GetFolderTree(ctx context.Context, orgID string, rootP
 
 	return folders, err
 }
+
+func (r *assetRepository) EnsureRefs(ctx context.Context, userID, orgID string) error {
+	// Upsert UserRef
+	if err := r.db.WithContext(ctx).Exec(
+		"INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID,
+	).Error; err != nil {
+		return err
+	}
+
+	// Upsert OrganizationRef
+	if err := r.db.WithContext(ctx).Exec(
+		"INSERT INTO organization_ref (org_id) VALUES (?) ON CONFLICT (org_id) DO NOTHING", orgID,
+	).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

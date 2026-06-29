@@ -15,10 +15,15 @@ export async function buildServer(): Promise<FastifyInstance> {
     url:    '/graphql',
     method: ['GET', 'POST', 'OPTIONS'],
     handler: async (req, reply) => {
-      const response = await yoga.handleNodeRequest(req.raw, {});
+      const response = await yoga.fetch(`http://${req.headers.host}${req.url}`, {
+        method: req.method,
+        headers: req.headers as HeadersInit,
+        body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+      });
       response.headers.forEach((value, key) => reply.header(key, value));
       reply.status(response.status);
-      reply.send(response.body);
+      const text = await response.text();
+      reply.send(text);
     },
   });
 

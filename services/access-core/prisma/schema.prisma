@@ -1,0 +1,150 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["access"]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model object_permissions {
+  id                                              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id                                          String             @db.Uuid
+  resource_type                                   resource_type
+  resource_id                                     String             @db.Uuid
+  grantee_user_id                                 String?            @db.Uuid
+  grantee_role_id                                 String?            @db.Uuid
+  action_id                                       String             @db.Uuid
+  granted_by                                      String             @db.Uuid
+  granted_at                                      DateTime           @default(now()) @db.Timestamptz(6)
+  roles                                           roles?             @relation(fields: [grantee_role_id, org_id], references: [id, org_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_op_grantee_role_org")
+  permission_actions                              permission_actions @relation(fields: [action_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_object_permissions_granted_byTousers      users              @relation("object_permissions_granted_byTousers", fields: [granted_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_object_permissions_grantee_user_idTousers users?             @relation("object_permissions_grantee_user_idTousers", fields: [grantee_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  organizations                                   organizations      @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([org_id, resource_type, resource_id, grantee_role_id, action_id], map: "uniq_object_perm_role", where: raw("(grantee_role_id IS NOT NULL)"))
+  @@unique([org_id, resource_type, resource_id, grantee_user_id, action_id], map: "uniq_object_perm_user", where: raw("(grantee_user_id IS NOT NULL)"))
+  @@index([org_id, resource_type, resource_id], map: "idx_object_perm_object")
+  @@schema("access")
+}
+
+model organization_members {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  user_id       String        @db.Uuid
+  joined_at     DateTime      @default(now()) @db.Timestamptz(6)
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([org_id, user_id], map: "uniq_org_member")
+  @@index([user_id], map: "idx_org_members_user")
+  @@schema("access")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model organizations {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code                 String                 @unique @db.VarChar(100)
+  name                 String                 @db.VarChar(255)
+  olp_enabled          Boolean                @default(false)
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime               @default(now()) @db.Timestamptz(6)
+  object_permissions   object_permissions[]
+  organization_members organization_members[]
+  roles                roles[]
+  user_roles           user_roles[]
+
+  @@schema("access")
+}
+
+model permission_actions {
+  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code               permission_action_code @unique
+  description        String?
+  object_permissions object_permissions[]
+  role_permissions   role_permissions[]
+
+  @@schema("access")
+}
+
+model role_permissions {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role_id            String             @db.Uuid
+  action_id          String             @db.Uuid
+  resource_type      resource_type
+  permission_actions permission_actions @relation(fields: [action_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles              roles              @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([role_id, action_id, resource_type], map: "uniq_role_permission")
+  @@index([role_id], map: "idx_role_perms_role")
+  @@schema("access")
+}
+
+model roles {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id             String               @db.Uuid
+  code               String               @db.VarChar
+  name               String               @db.VarChar
+  description        String?
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  object_permissions object_permissions[]
+  role_permissions   role_permissions[]
+  organizations      organizations        @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user_roles         user_roles[]
+
+  @@unique([org_id, code], map: "uniq_role_code_per_org")
+  @@unique([id, org_id], map: "uq_roles_id_org")
+  @@index([org_id], map: "idx_roles_org")
+  @@schema("access")
+}
+
+model user_roles {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  org_id        String        @db.Uuid
+  user_id       String        @db.Uuid
+  role_id       String        @db.Uuid
+  assigned_at   DateTime      @default(now()) @db.Timestamptz(6)
+  roles         roles         @relation(fields: [role_id, org_id], references: [id, org_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_roles_role_org")
+  organizations organizations @relation(fields: [org_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([org_id, user_id, role_id], map: "uniq_user_role_per_org")
+  @@index([org_id, user_id], map: "idx_user_roles_org_user")
+  @@schema("access")
+}
+
+model users {
+  id                                                           String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                                        String                 @unique @db.VarChar
+  display_name                                                 String                 @db.VarChar
+  is_active                                                    Boolean                @default(true)
+  created_at                                                   DateTime               @default(now()) @db.Timestamptz(6)
+  updated_at                                                   DateTime               @default(now()) @db.Timestamptz(6)
+  deleted_at                                                   DateTime?              @db.Timestamptz(6)
+  object_permissions_object_permissions_granted_byTousers      object_permissions[]   @relation("object_permissions_granted_byTousers")
+  object_permissions_object_permissions_grantee_user_idTousers object_permissions[]   @relation("object_permissions_grantee_user_idTousers")
+  organization_members                                         organization_members[]
+  user_roles                                                   user_roles[]
+
+  @@schema("access")
+}
+
+enum permission_action_code {
+  read
+  write
+  delete
+  manage_permissions
+
+  @@schema("access")
+}
+
+enum resource_type {
+  folder
+  metadata_item
+
+  @@schema("access")
+}

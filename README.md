@@ -18,9 +18,20 @@ This baseline follows the M1 architecture:
 ### Quick Start (NPM Scripts)
 
 We have provided NPM scripts at the root level to simplify running and managing the system. 
-Before starting, run `npm install` in the root directory.
+Before starting, run the following to install all dependencies:
+```bash
+npm ci
+npm --prefix services/access-core ci
+```
 
-- **Start everything** (databases + access-core + asset-core):
+For a clean environment, start the databases and apply all Flyway migrations before starting the application services:
+
+```bash
+npm run docker:up
+npm run docker:migrate
+```
+
+- **Start both application services** (databases must already be migrated):
   ```bash
   npm run dev:all
   ```

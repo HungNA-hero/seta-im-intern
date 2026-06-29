@@ -3,6 +3,8 @@ module seta-im-intern/go-asset-core
 go 1.26.2
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/google/uuid v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )

@@ -73,9 +73,11 @@ func (MetadataItem) TableName() string {
 // AssetRepository defines the contract for database operations related to assets.
 type AssetRepository interface {
 	GetFolderTree(ctx context.Context, orgID string, rootPath string) ([]Folder, error)
+	EnsureRefs(ctx context.Context, userID, orgID string) error
 }
 
 // AssetUsecase defines the contract for business logic operations related to assets.
 type AssetUsecase interface {
 	GetFolderTree(ctx context.Context, orgID string, rootPath string) ([]Folder, error)
+	EnsureRefs(ctx context.Context, userID, orgID string) error
 }

@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/gorm"
 	"seta-im-intern/go-asset-core/internal/domain"
+	"seta-im-intern/go-asset-core/internal/requestcontext"
 )
 
 // AssetHandler handles HTTP requests for assets.
@@ -22,8 +23,8 @@ func NewAssetHandler(mux *http.ServeMux, usecase domain.AssetUsecase, db *gorm.D
 	}
 
 	mux.HandleFunc("/healthz", handler.HandleHealth)
-	mux.HandleFunc("/internal/api/v1/folders", handler.HandleFolders)
-	mux.HandleFunc("/internal/api/v1/metadata-items", handler.HandleMetadataItems)
+	mux.HandleFunc("/internal/api/v1/folders", RequireActor(handler.HandleFolders))
+	mux.HandleFunc("/internal/api/v1/metadata-items", RequireActor(handler.HandleMetadataItems))
 }
 
 func (h *AssetHandler) HandleHealth(w http.ResponseWriter, r *http.Request) {
@@ -54,6 +55,16 @@ func (h *AssetHandler) HandleFolders(w http.ResponseWriter, r *http.Request) {
 	rootPath := r.URL.Query().Get("rootPath")
 	if orgID == "" || rootPath == "" {
 		http.Error(w, "Missing orgId or rootPath", http.StatusBadRequest)
+		return
+	}
+
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		http.Error(w, "Missing actor context", http.StatusInternalServerError)
+		return
+	}
+	if orgID != actor.OrgID {
+		http.Error(w, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
