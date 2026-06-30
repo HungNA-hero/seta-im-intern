@@ -91,6 +91,8 @@ export const typeDefs = /* GraphQL */ `
       grantedBy: ID!
     ): ObjectPermission! @orgMember
     revokeObjectPermission(id: ID!): Boolean! @orgMember
+    createFolder(orgId: ID!, parentPath: String, name: String!, description: String): Folder! @orgMember
+    updateFolder(orgId: ID!, id: ID!, name: String, description: String): Folder! @orgMember
   }
 
   type Folder {
@@ -125,7 +127,7 @@ export const typeDefs = /* GraphQL */ `
       resourceType: ResourceType!
       resourceId: ID!
     ): PermissionResult!
-    folder(id: ID!): Folder @auth
+    folder(orgId: ID!, id: ID!): Folder @auth
     folderTree(orgId: ID!, rootPath: String): [Folder!]! @auth
     folderChildren(orgId: ID!, parentPath: String!): [Folder!]! @auth
   }

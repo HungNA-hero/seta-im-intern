@@ -29,6 +29,21 @@ function toFolder(f: GoFolder) {
   };
 }
 
+const GO_ERROR_CODES: Record<number, string> = {
+  400: "BAD_USER_INPUT",
+  401: "UNAUTHENTICATED",
+  403: "FORBIDDEN",
+  404: "NOT_FOUND",
+  409: "CONFLICT",
+};
+
+function goHeaders(
+  userId: string,
+  orgId: string,
+): Record<string, string> {
+  return { "X-User-Id": userId, "X-Org-Id": orgId };
+}
+
 async function assertFolderPermission(
   userId: string,
   orgId: string,
@@ -54,9 +69,7 @@ async function fetchFolderList(
   userId: string,
   orgId: string,
 ): Promise<GoFolder[]> {
-  const resp = await fetch(url, {
-    headers: { "X-User-Id": userId, "X-Org-Id": orgId },
-  });
+  const resp = await fetch(url, { headers: goHeaders(userId, orgId) });
   if (!resp.ok) {
     throw new GraphQLError(`Failed to fetch folders: ${resp.statusText}`, {
       extensions: { code: "INTERNAL_SERVER_ERROR" },
@@ -66,25 +79,38 @@ async function fetchFolderList(
   return (data.folders ?? []) as GoFolder[];
 }
 
+async function handleGoResponse(
+  res: Response,
+  defaultMessage: string,
+): Promise<ReturnType<typeof toFolder>> {
+  if (res.ok) {
+    const data = await res.json();
+    if (!data.folder) {
+      throw new GraphQLError(`${defaultMessage}: unexpected response format`, {
+        extensions: { code: "INTERNAL_SERVER_ERROR" },
+      });
+    }
+    return toFolder(data.folder as GoFolder);
+  }
+  const code = GO_ERROR_CODES[res.status] ?? "INTERNAL_SERVER_ERROR";
+  throw new GraphQLError(`${defaultMessage}: ${res.statusText}`, {
+    extensions: { code },
+  });
+}
+
 export const folderResolvers = {
   Query: {
-    folder: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
+    folder: async (
+      _: unknown,
+      { orgId, id }: { orgId: string; id: string },
+      ctx: GraphQLContext,
+    ) => {
       assertAuthenticated(ctx);
-      await assertFolderPermission(
-        ctx.userId,
-        ctx.currentOrgId ?? "",
-        id,
-        "read",
-      );
+      await assertFolderPermission(ctx.userId, orgId, id, "read");
 
       const resp = await fetch(
-        `${config.goAssetUrl}/internal/api/v1/folders?id=${id}`,
-        {
-          headers: {
-            "X-User-Id": ctx.userId,
-            "X-Org-Id": ctx.currentOrgId ?? "",
-          },
-        },
+        `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
+        { headers: goHeaders(ctx.userId, orgId) },
       );
 
       if (resp.status === 404) return null;
@@ -136,6 +162,89 @@ export const folderResolvers = {
       return (await fetchFolderList(url, ctx.userId, parent.orgId)).map(
         toFolder,
       );
+    },
+  },
+
+  Mutation: {
+    createFolder: async (
+      _: unknown,
+      {
+        orgId,
+        parentPath,
+        name,
+        description,
+      }: {
+        orgId: string;
+        parentPath?: string;
+        name: string;
+        description?: string;
+      },
+      ctx: GraphQLContext,
+    ) => {
+      assertAuthenticated(ctx);
+      await assertFolderPermission(ctx.userId, orgId, orgId, "write");
+
+      const body = {
+        name,
+        ...(parentPath !== undefined && { parent_path: parentPath }),
+        ...(description !== undefined && { description }),
+      };
+
+      const res = await fetch(
+        `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}`,
+        {
+          method: "POST",
+          headers: { ...goHeaders(ctx.userId, orgId), "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
+      return handleGoResponse(res, "Failed to create folder");
+    },
+
+    updateFolder: async (
+      _: unknown,
+      {
+        orgId,
+        id,
+        name,
+        description,
+      }: {
+        orgId: string;
+        id: string;
+        name?: string | null;
+        description?: string | null;
+      },
+      ctx: GraphQLContext,
+    ) => {
+      assertAuthenticated(ctx);
+
+      if (name === undefined && description === undefined) {
+        throw new GraphQLError("At least one field must be provided", {
+          extensions: { code: "BAD_USER_INPUT" },
+        });
+      }
+      if (name === null) {
+        throw new GraphQLError("Folder name cannot be null", {
+          extensions: { code: "BAD_USER_INPUT" },
+        });
+      }
+
+      await assertFolderPermission(ctx.userId, orgId, id, "write");
+
+      const body = {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+      };
+
+      const res = await fetch(
+        `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
+        {
+          method: "PATCH",
+          headers: { ...goHeaders(ctx.userId, orgId), "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
+      return handleGoResponse(res, "Failed to update folder");
     },
   },
 };
