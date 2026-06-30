@@ -93,6 +93,18 @@ export const typeDefs = /* GraphQL */ `
     revokeObjectPermission(id: ID!): Boolean! @orgMember
   }
 
+  type Folder {
+    id: ID!
+    orgId: ID!
+    path: String!
+    name: String!
+    description: String!
+    createdBy: ID!
+    updatedBy: ID
+    createdAt: String!
+    updatedAt: String!
+  }
+
   type Query {
     users: [User!]! @auth
     user(id: ID!): User @auth
@@ -112,5 +124,6 @@ export const typeDefs = /* GraphQL */ `
       resourceType: ResourceType!
       resourceId: ID!
     ): PermissionResult!
+    folder(id: ID!): Folder @auth
   }
 `;
