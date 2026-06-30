@@ -39,12 +39,13 @@ export async function canDo(
   });
   if (!permAction) return { allowed: false, reason: "unknown action" };
 
-  const rbacCeiling = await prisma.rolePermission.findFirst({
-    where: { roleId: { in: roleIds }, actionId: permAction.id, resourceType },
-  });
-  if (!rbacCeiling) return { allowed: false, reason: "no RBAC ceiling" };
-
-  if (!org?.olpEnabled) return { allowed: true, reason: null };
+  if (!org?.olpEnabled) {
+    const rbacCeiling = await prisma.rolePermission.findFirst({
+      where: { roleId: { in: roleIds }, actionId: permAction.id, resourceType },
+    });
+    if (!rbacCeiling) return { allowed: false, reason: "no RBAC ceiling" };
+    return { allowed: true, reason: null };
+  }
 
   const olpGrant = await prisma.objectPermission.findFirst({
     where: {
