@@ -23,11 +23,14 @@ const ACTIONS = [
   { code: "manage_permissions", id: "action-manage" },
 ];
 
-function activeUser(roleCode = "org_admin", roleId = "role-1") {
+// Default role is an ordinary (non-admin) org role so canDo runs the full
+// RBAC/OLP path; org_admin/trainer_admin short-circuit before those queries.
+// userRoles carry orgId because canDo scopes roles to the requested org.
+function activeUser(roleCode = "member", roleId = "role-1") {
   return {
     id: "user-1",
     isActive: true,
-    userRoles: [{ roleId, role: { code: roleCode } }],
+    userRoles: [{ roleId, orgId: "org-1", role: { code: roleCode } }],
   };
 }
 

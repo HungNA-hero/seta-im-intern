@@ -3,11 +3,17 @@ import { PermissionActionCode, ResourceType } from "@prisma/client";
 
 let permActionCachePromise: Promise<Map<string, string>> | null = null;
 
-async function getPermActionId(code: PermissionActionCode): Promise<string | null> {
+async function getPermActionId(
+  code: PermissionActionCode,
+): Promise<string | null> {
   if (!permActionCachePromise) {
     permActionCachePromise = prisma.permissionAction
       .findMany({ select: { code: true, id: true } })
-      .then(rows => new Map(rows.map(r => [r.code, r.id])));
+      .then((rows) => new Map(rows.map((r) => [r.code, r.id])))
+      .catch((err) => {
+        permActionCachePromise = null;
+        throw err;
+      });
   }
   return (await permActionCachePromise).get(code) ?? null;
 }
@@ -25,7 +31,6 @@ export async function canDo(
     where: { id: userId },
     include: {
       userRoles: {
-        where: { orgId },
         include: { role: { select: { code: true } } },
       },
     },
@@ -38,25 +43,34 @@ export async function canDo(
     return { allowed: true, reason: "trainer_admin" };
   }
 
-  const roleIds = user.userRoles.map((ur) => ur.roleId);
+  const orgRoles = user.userRoles.filter((ur) => ur.orgId === orgId);
 
-  const org = await prisma.organization.findUnique({
-    where: { id: orgId },
-    select: { olpEnabled: true },
-  });
+  if (orgRoles.some((ur) => ur.role.code === "org_admin")) {
+    return { allowed: true, reason: "org_admin" };
+  }
 
-  const permActionId = await getPermActionId(action);
+  const roleIds = orgRoles.map((ur) => ur.roleId);
+
+  const [org, permActionId] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { olpEnabled: true },
+    }),
+    getPermActionId(action),
+  ]);
+
   if (!permActionId) return { allowed: false, reason: "unknown action" };
 
   if (!org?.olpEnabled) {
     const rbacCeiling = await prisma.rolePermission.findFirst({
       where: { roleId: { in: roleIds }, actionId: permActionId, resourceType },
     });
-    if (!rbacCeiling) return { allowed: false, reason: "no RBAC ceiling" };
-    return { allowed: true, reason: null };
+    return rbacCeiling
+      ? { allowed: true, reason: null }
+      : { allowed: false, reason: "no RBAC ceiling" };
   }
 
-  const olpGrant = await prisma.objectPermission.findFirst({
+  const grant = await prisma.objectPermission.findFirst({
     where: {
       orgId,
       resourceType,
@@ -65,7 +79,7 @@ export async function canDo(
       OR: [{ granteeUserId: userId }, { granteeRoleId: { in: roleIds } }],
     },
   });
-
-  if (!olpGrant) return { allowed: false, reason: "no object permission" };
-  return { allowed: true, reason: null };
+  return grant
+    ? { allowed: true, reason: null }
+    : { allowed: false, reason: "no object permission" };
 }
