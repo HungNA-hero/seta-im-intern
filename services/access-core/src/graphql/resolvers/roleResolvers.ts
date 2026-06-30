@@ -1,54 +1,39 @@
-import {
-  listRolesByOrg,
-  getRoleById,
-  createRole,
-  updateRole,
-  Role,
-} from "../../db/queries/roles";
-import { serializeDates } from './utils';
-import { assertAuthenticated, assertOrgMember, GraphQLContext } from '../context';
-
-function toRole(r: Role) {
-  return serializeDates(r);
-}
+import { listRolesByOrg, getRoleById, createRole, updateRole } from "../../db/queries/roles";
+import { serializeDates, rethrowPrismaError } from "./utils";
+import { GraphQLContext } from "../context";
+import { GraphQLError } from "graphql";
 
 export const roleResolvers = {
   Query: {
-    roles: async (_: unknown, { orgId }: { orgId: string }, ctx: GraphQLContext) => {
-      assertOrgMember(ctx);
-      return (await listRolesByOrg(orgId)).map(toRole);
-    },
+    roles: async (_: unknown, { orgId }: { orgId: string }) =>
+      (await listRolesByOrg(orgId)).map(serializeDates),
     role: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
-      assertAuthenticated(ctx);
       const r = await getRoleById(id);
-      return r ? toRole(r) : null;
+      if (!r || r.orgId !== ctx.currentOrgId)
+        throw new GraphQLError("Role not found", { extensions: { code: "NOT_FOUND" } });
+      return serializeDates(r);
     },
   },
   Mutation: {
     createRole: async (
       _: unknown,
-      {
-        orgId,
-        code,
-        name,
-        description,
-      }: { orgId: string; code: string; name: string; description?: string },
-      ctx: GraphQLContext,
+      { orgId, code, name, description }: { orgId: string; code: string; name: string; description?: string },
     ) => {
-      assertOrgMember(ctx);
-      return toRole(await createRole(orgId, code, name, description));
+      try {
+        return serializeDates(await createRole(orgId, code, name, description));
+      } catch (err) {
+        rethrowPrismaError(err, { P2002: "Role code already exists in this org" });
+      }
     },
     updateRole: async (
       _: unknown,
-      {
-        id,
-        name,
-        description,
-      }: { id: string; name?: string; description?: string },
-      ctx: GraphQLContext,
+      { id, name, description }: { id: string; name?: string; description?: string },
     ) => {
-      assertOrgMember(ctx);
-      return toRole(await updateRole(id, name, description));
+      try {
+        return serializeDates(await updateRole(id, name, description));
+      } catch (err) {
+        rethrowPrismaError(err, { P2025: "Role not found" });
+      }
     },
   },
 };

@@ -30,19 +30,33 @@ export function assertOrgMember(
   }
 }
 
-const empty: GraphQLContext = {
-  userId: null,
-  currentOrgId: null,
-  isMember: false,
-  roles: [],
-  olpEnabled: false,
-};
+function emptyContext(): GraphQLContext {
+  return {
+    userId: null,
+    currentOrgId: null,
+    isMember: false,
+    roles: [],
+    olpEnabled: false,
+  };
+}
 
 export async function loadRequestContext(
   userId: string | null,
   orgId: string | null,
 ): Promise<GraphQLContext> {
-  if (!userId || !orgId) return empty;
+  if (!userId) return emptyContext();
+
+  if (!orgId) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.isActive) return emptyContext();
+    return {
+      userId,
+      currentOrgId: null,
+      isMember: false,
+      roles: [],
+      olpEnabled: false,
+    };
+  }
 
   const [user, org] = await Promise.all([
     prisma.user.findUnique({
@@ -61,7 +75,7 @@ export async function loadRequestContext(
     }),
   ]);
 
-  if (!user || !user.isActive) return empty;
+  if (!user || !user.isActive) return emptyContext();
 
   return {
     userId,

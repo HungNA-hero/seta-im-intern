@@ -1,8 +1,8 @@
-import { userResolvers }         from './userResolvers';
-import { roleResolvers }         from './roleResolvers';
-import { permissionResolvers }   from './permissionResolvers';
-import { organizationResolvers } from './organizationResolvers';
-import { folderResolvers }       from './folderResolvers';
+import { userResolvers } from "./userResolvers";
+import { roleResolvers } from "./roleResolvers";
+import { permissionResolvers } from "./permissionResolvers";
+import { organizationResolvers } from "./organizationResolvers";
+import { canDoResolvers } from "./canDoResolvers";
 
 export const resolvers = {
   Query: {
@@ -10,11 +10,12 @@ export const resolvers = {
     ...organizationResolvers.Query,
     ...roleResolvers.Query,
     ...permissionResolvers.Query,
-    ...folderResolvers.Query,
+    ...canDoResolvers.Query,
   },
-  Folder: folderResolvers.Folder,
   Mutation: {
-    ...roleResolvers.Mutation,
+    ...userResolvers.Mutation,
     ...organizationResolvers.Mutation,
+    ...roleResolvers.Mutation,
+    ...permissionResolvers.Mutation,
   },
 };

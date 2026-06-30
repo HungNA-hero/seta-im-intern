@@ -1,46 +1,55 @@
-import { listOrganizations, getOrganizationById, addOrgMember, Organization } from '../../db/queries/organizations';
-import { assignRole, revokeRole } from '../../db/queries/userRoles';
-import { serializeDates } from './utils';
-import { assertAuthenticated, assertOrgMember, GraphQLContext } from '../context';
+import { listOrganizations, getOrganizationById, addOrgMember, createOrganization, Organization } from "../../db/queries/organizations";
+import { assignRole, revokeRole } from "../../db/queries/userRoles";
+import { serializeDates, rethrowPrismaError } from "./utils";
+import { GraphQLContext } from "../context";
+import { GraphQLError } from "graphql";
 
 function toOrganization(o: Organization) {
-  return serializeDates({
-    id: o.id,
-    code: o.code,
-    name: o.name,
-    olpEnabled: o.olpEnabled,
-    createdAt: o.createdAt,
-    updatedAt: o.updatedAt,
-  });
+  return serializeDates(o);
 }
 
 export const organizationResolvers = {
   Query: {
-    organizations: async (_: unknown, __: unknown, ctx: GraphQLContext) => {
-      assertAuthenticated(ctx);
-      return (await listOrganizations()).map(toOrganization);
-    },
-    organization: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
-      assertAuthenticated(ctx);
+    organizations: async () => (await listOrganizations()).map(toOrganization),
+    organization: async (_: unknown, { id }: { id: string }) => {
       const o = await getOrganizationById(id);
-      return o ? toOrganization(o) : null;
+      if (!o) throw new GraphQLError("Organization not found", { extensions: { code: "NOT_FOUND" } });
+      return toOrganization(o);
     },
   },
   Mutation: {
-    addOrgMember: async (_: unknown, { orgId, userId }: { orgId: string; userId: string }, ctx: GraphQLContext) => {
-      assertOrgMember(ctx);
-      await addOrgMember(orgId, userId);
-      return true;
+    createOrganization: async (_: unknown, { code, name }: { code: string; name: string }, ctx: GraphQLContext) => {
+      try {
+        const org = await createOrganization(code, name);
+        await addOrgMember(org.id, ctx.userId as string);
+        return toOrganization(org);
+      } catch (err) {
+        rethrowPrismaError(err, { P2002: "Organization code already in use" });
+      }
     },
-    assignRole: async (_: unknown, { orgId, userId, roleId }: { orgId: string; userId: string; roleId: string }, ctx: GraphQLContext) => {
-      assertOrgMember(ctx);
-      await assignRole(orgId, userId, roleId);
-      return true;
+    addOrgMember: async (_: unknown, { orgId, userId }: { orgId: string; userId: string }) => {
+      try {
+        await addOrgMember(orgId, userId);
+        return true;
+      } catch (err) {
+        rethrowPrismaError(err, { P2002: "User is already a member of this organization" });
+      }
     },
-    revokeRole: async (_: unknown, { orgId, userId, roleId }: { orgId: string; userId: string; roleId: string }, ctx: GraphQLContext) => {
-      assertOrgMember(ctx);
-      await revokeRole(orgId, userId, roleId);
-      return true;
+    assignRole: async (_: unknown, { orgId, userId, roleId }: { orgId: string; userId: string; roleId: string }) => {
+      try {
+        await assignRole(orgId, userId, roleId);
+        return true;
+      } catch (err) {
+        rethrowPrismaError(err, { P2002: "Role already assigned to this user" });
+      }
+    },
+    revokeRole: async (_: unknown, { orgId, userId, roleId }: { orgId: string; userId: string; roleId: string }) => {
+      try {
+        await revokeRole(orgId, userId, roleId);
+        return true;
+      } catch (err) {
+        rethrowPrismaError(err, { P2025: "Role assignment not found" });
+      }
     },
   },
 };
