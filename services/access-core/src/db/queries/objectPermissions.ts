@@ -1,5 +1,5 @@
 import { prisma } from "../prisma";
-import { resource_type } from "@prisma/client";
+import { PermissionActionCode, ResourceType } from "@prisma/client";
 
 export type ObjectPermission = {
   id: string;
@@ -15,21 +15,39 @@ export type ObjectPermission = {
 
 export async function listObjectPermissions(
   orgId: string,
-  resourceType: resource_type,
+  resourceType: ResourceType,
   resourceId: string,
 ): Promise<ObjectPermission[]> {
-  const perms = await prisma.object_permissions.findMany({
-    where: { org_id: orgId, resource_type: resourceType, resource_id: resourceId },
+  return prisma.objectPermission.findMany({
+    where: { orgId, resourceType, resourceId },
   });
-  return perms.map((p) => ({
-    id: p.id,
-    orgId: p.org_id,
-    resourceType: p.resource_type,
-    resourceId: p.resource_id,
-    granteeUserId: p.grantee_user_id,
-    granteeRoleId: p.grantee_role_id,
-    actionId: p.action_id,
-    grantedBy: p.granted_by,
-    grantedAt: p.granted_at,
-  }));
+}
+
+export async function grantObjectPermission(
+  orgId: string,
+  resourceType: ResourceType,
+  resourceId: string,
+  action: PermissionActionCode,
+  grantedBy: string,
+  granteeUserId?: string | null,
+  granteeRoleId?: string | null,
+): Promise<ObjectPermission> {
+  const permAction = await prisma.permissionAction.findUniqueOrThrow({
+    where: { code: action },
+  });
+  return prisma.objectPermission.create({
+    data: {
+      orgId,
+      resourceType,
+      resourceId,
+      actionId: permAction.id,
+      grantedBy,
+      granteeUserId: granteeUserId ?? null,
+      granteeRoleId: granteeRoleId ?? null,
+    },
+  });
+}
+
+export async function revokeObjectPermission(id: string): Promise<void> {
+  await prisma.objectPermission.delete({ where: { id } });
 }

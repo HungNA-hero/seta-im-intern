@@ -1,4 +1,7 @@
 export const typeDefs = /* GraphQL */ `
+  directive @auth on FIELD_DEFINITION
+  directive @orgMember on FIELD_DEFINITION
+
   enum ResourceType {
     folder
     metadata_item
@@ -12,88 +15,118 @@ export const typeDefs = /* GraphQL */ `
   }
 
   type User {
-    id:          ID!
-    email:       String!
+    id: ID!
+    email: String!
     displayName: String!
-    isActive:    Boolean!
-    createdAt:   String!
-    updatedAt:   String!
+    isActive: Boolean!
+    createdAt: String!
+    updatedAt: String!
   }
 
   type Organization {
-    id:         ID!
-    code:       String!
-    name:       String!
+    id: ID!
+    code: String!
+    name: String!
     olpEnabled: Boolean!
-    createdAt:  String!
-    updatedAt:  String!
+    createdAt: String!
+    updatedAt: String!
   }
 
   type Role {
-    id:          ID!
-    orgId:       ID!
-    code:        String!
-    name:        String!
+    id: ID!
+    orgId: ID!
+    code: String!
+    name: String!
     description: String
-    createdAt:   String!
-    updatedAt:   String!
+    createdAt: String!
+    updatedAt: String!
   }
 
   type RolePermission {
-    id:           ID!
-    roleId:       ID!
-    actionId:     ID!
+    id: ID!
+    roleId: ID!
+    actionId: ID!
     resourceType: ResourceType!
   }
 
   type ObjectPermission {
-    id:            ID!
-    orgId:         ID!
-    resourceType:  ResourceType!
-    resourceId:    ID!
+    id: ID!
+    orgId: ID!
+    resourceType: ResourceType!
+    resourceId: ID!
     granteeUserId: ID
     granteeRoleId: ID
-    actionId:      ID!
-    grantedBy:     ID!
-    grantedAt:     String!
+    actionId: ID!
+    grantedBy: ID!
+    grantedAt: String!
   }
 
-  type Folder {
-    id:          ID!
-    orgId:       ID!
-    path:        String!
-    name:        String!
-    description: String
-    createdBy:   ID!
-    updatedBy:   ID
-    createdAt:   String!
-    updatedAt:   String!
-    children:    [Folder!]
+  type PermissionResult {
+    allowed: Boolean!
+    reason: String
   }
 
   type Mutation {
-    createRole(orgId: ID!, code: String!, name: String!, description: String): Role!
-    updateRole(id: ID!, name: String, description: String): Role!
-    addOrgMember(orgId: ID!, userId: ID!): Boolean!
-    assignRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean!
-    revokeRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean!
+    createUser(email: String!, displayName: String!): User! @auth
+    updateUser(id: ID!, displayName: String!): User! @auth
+    deactivateUser(id: ID!): User! @auth
+    createOrganization(code: String!, name: String!): Organization! @auth
+    createRole(
+      orgId: ID!
+      code: String!
+      name: String!
+      description: String
+    ): Role! @orgMember
+    updateRole(id: ID!, name: String, description: String): Role! @orgMember
+    addOrgMember(orgId: ID!, userId: ID!): Boolean! @orgMember
+    assignRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean! @orgMember
+    revokeRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean! @orgMember
+    grantObjectPermission(
+      orgId: ID!
+      resourceType: ResourceType!
+      resourceId: ID!
+      action: PermissionAction!
+      granteeUserId: ID
+      granteeRoleId: ID
+      grantedBy: ID!
+    ): ObjectPermission! @orgMember
+    revokeObjectPermission(id: ID!): Boolean! @orgMember
+  }
+
+  type Folder {
+    id: ID!
+    orgId: ID!
+    path: String!
+    name: String!
+    description: String
+    createdBy: ID!
+    updatedBy: ID
+    createdAt: String!
+    updatedAt: String!
+    children: [Folder!]!
   }
 
   type Query {
-    users:                                               [User!]!
-    user(id: ID!):                                       User
-    organizations:                                       [Organization!]!
-    organization(id: ID!):                               Organization
-    roles(orgId: ID!):                                   [Role!]!
-    role(id: ID!):                                       Role
-    rolePermissions(roleId: ID!):                        [RolePermission!]!
+    users: [User!]! @auth
+    user(id: ID!): User @auth
+    organizations: [Organization!]! @auth
+    organization(id: ID!): Organization @auth
+    roles(orgId: ID!): [Role!]! @orgMember
+    role(id: ID!): Role @orgMember
+    rolePermissions(roleId: ID!): [RolePermission!]! @orgMember
     objectPermissions(
-      orgId:        ID!
+      orgId: ID!
       resourceType: ResourceType!
-      resourceId:   ID!
-    ):                                                   [ObjectPermission!]!
-    folderTree(orgId: ID!, rootPath: String):              [Folder!]!
-    folder(orgId: ID!, id: ID!):                          Folder
-    folderChildren(orgId: ID!, parentPath: String!):      [Folder!]!
+      resourceId: ID!
+    ): [ObjectPermission!]! @orgMember
+    canDo(
+      userId: ID!
+      action: PermissionAction!
+      resourceType: ResourceType!
+      resourceId: ID!
+    ): PermissionResult!
+    folder(id: ID!): Folder @auth
+    folderTree(orgId: ID!, rootPath: String): [Folder!]! @auth
+    folderChildren(orgId: ID!, parentPath: String!): [Folder!]! @auth
   }
 `;

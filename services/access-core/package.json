@@ -7,7 +7,10 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate deploy"
+    "db:migrate": "prisma migrate deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
@@ -23,7 +26,8 @@
     "@types/pg": "^8",
     "prisma": "^7.8.0",
     "ts-node": "^10",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.9"
   },
   "allowScripts": {
     "@prisma/engines@7.8.0": true,

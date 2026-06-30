@@ -10,33 +10,35 @@ export type Organization = {
 };
 
 export async function listOrganizations(): Promise<Organization[]> {
-  const orgs = await prisma.organizations.findMany({ orderBy: { created_at: "asc" } });
+  const orgs = await prisma.organization.findMany({ orderBy: { createdAt: "asc" } });
   return orgs.map((o) => ({
     id: o.id,
     code: o.code,
     name: o.name,
-    olpEnabled: o.olp_enabled,
-    createdAt: o.created_at,
-    updatedAt: o.updated_at,
+    olpEnabled: o.olpEnabled,
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
   }));
 }
 
 export async function getOrganizationById(id: string): Promise<Organization | null> {
-  const o = await prisma.organizations.findUnique({ where: { id } });
+  const o = await prisma.organization.findUnique({ where: { id } });
   if (!o) return null;
   return {
     id: o.id,
     code: o.code,
     name: o.name,
-    olpEnabled: o.olp_enabled,
-    createdAt: o.created_at,
-    updatedAt: o.updated_at,
+    olpEnabled: o.olpEnabled,
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
   };
 }
 
-export async function addOrgMember(
-  orgId: string,
-  userId: string,
-): Promise<void> {
-  await prisma.organization_members.create({ data: { org_id: orgId, user_id: userId } });
+export async function addOrgMember(orgId: string, userId: string): Promise<void> {
+  await prisma.organizationMember.create({ data: { orgId, userId } });
+}
+
+export async function createOrganization(code: string, name: string): Promise<Organization> {
+  const o = await prisma.organization.create({ data: { code, name } });
+  return { id: o.id, code: o.code, name: o.name, olpEnabled: o.olpEnabled, createdAt: o.createdAt, updatedAt: o.updatedAt };
 }

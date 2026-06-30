@@ -1,49 +1,84 @@
-import {
-  listRolePermissions,
-  RolePermission,
-} from "../../db/queries/rolePermissions";
+import { listRolePermissions } from "../../db/queries/rolePermissions";
 import {
   listObjectPermissions,
-  ObjectPermission,
+  grantObjectPermission,
+  revokeObjectPermission,
 } from "../../db/queries/objectPermissions";
-import { resource_type } from "@prisma/client";
+import { PermissionActionCode, ResourceType } from "@prisma/client";
+import { GraphQLError } from "graphql";
+import { serializePermission, rethrowPrismaError } from "./utils";
 
 export const permissionResolvers = {
   Query: {
-    rolePermissions: async (_: unknown, { roleId }: { roleId: string }) => {
-      const rows = await listRolePermissions(roleId);
-      return rows.map((r: RolePermission) => ({
-        id: r.id,
-        roleId: r.roleId,
-        actionId: r.actionId,
-        resourceType: r.resourceType,
-      }));
-    },
-
+    rolePermissions: async (_: unknown, { roleId }: { roleId: string }) =>
+      listRolePermissions(roleId),
     objectPermissions: async (
       _: unknown,
       {
         orgId,
         resourceType,
         resourceId,
-      }: { orgId: string; resourceType: resource_type; resourceId: string },
-    ) => {
-      const rows = await listObjectPermissions(
+      }: { orgId: string; resourceType: ResourceType; resourceId: string },
+    ) =>
+      (await listObjectPermissions(orgId, resourceType, resourceId)).map(
+        serializePermission,
+      ),
+  },
+  Mutation: {
+    grantObjectPermission: async (
+      _: unknown,
+      {
         orgId,
-        resourceType as resource_type,
+        resourceType,
         resourceId,
-      );
-      return rows.map((r: ObjectPermission) => ({
-        id: r.id,
-        orgId: r.orgId,
-        resourceType: r.resourceType,
-        resourceId: r.resourceId,
-        granteeUserId: r.granteeUserId,
-        granteeRoleId: r.granteeRoleId,
-        actionId: r.actionId,
-        grantedBy: r.grantedBy,
-        grantedAt: r.grantedAt.toISOString(),
-      }));
+        action,
+        granteeUserId,
+        granteeRoleId,
+        grantedBy,
+      }: {
+        orgId: string;
+        resourceType: ResourceType;
+        resourceId: string;
+        action: PermissionActionCode;
+        granteeUserId?: string | null;
+        granteeRoleId?: string | null;
+        grantedBy: string;
+      },
+    ) => {
+      if (!!granteeUserId === !!granteeRoleId) {
+        throw new GraphQLError(
+          "Exactly one of granteeUserId or granteeRoleId must be set",
+          {
+            extensions: { code: "BAD_INPUT" },
+          },
+        );
+      }
+      try {
+        return serializePermission(
+          await grantObjectPermission(
+            orgId,
+            resourceType,
+            resourceId,
+            action,
+            grantedBy,
+            granteeUserId,
+            granteeRoleId,
+          ),
+        );
+      } catch (err) {
+        rethrowPrismaError(err, {
+          P2002: "Object permission already exists",
+          P2025: "Permission action not found",
+        });
+      }
+    },
+    revokeObjectPermission: async (_: unknown, { id }: { id: string }) => {
+      try {
+        await revokeObjectPermission(id);
+        return true;
+      } catch (err) {
+        rethrowPrismaError(err, { P2025: "Object permission not found" });
+      }
     },
   },
 };

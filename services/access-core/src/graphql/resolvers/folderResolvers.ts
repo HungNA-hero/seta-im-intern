@@ -1,12 +1,8 @@
-import { config } from '../../config';
-import { GraphQLError } from 'graphql';
-import type {
-  GraphQLContext,
-  PolicyGuard,
-  RequesterContext,
-} from '../schema';
+import { GraphQLError } from "graphql";
+import { canDo } from "../../db/queries/canDo";
+import { assertAuthenticated, GraphQLContext } from "../context";
+import { config } from "../../config";
 
-// Types mapping what Go Asset Core returns
 interface GoFolder {
   id: string;
   org_id: string;
@@ -17,10 +13,8 @@ interface GoFolder {
   updated_by: string | null;
   created_at: string;
   updated_at: string;
-  deleted_at: string | null;
 }
 
-// Convert Go's snake_case to GraphQL's camelCase
 function toFolder(f: GoFolder) {
   return {
     id: f.id,
@@ -35,142 +29,113 @@ function toFolder(f: GoFolder) {
   };
 }
 
-// ---------------------------------------------------------
-// Requester Context and Policy Guard Contract (AG-KAN28-INDEPENDENT-C2)
-// ---------------------------------------------------------
-
-// Fail-closed default implementation (Integration wait for KAN-25/KAN-27)
-export const defaultPolicyGuard: PolicyGuard = {
-  async checkFolderAccess() {
-    return false;
-  }
-};
-
-// Policy guard will be supplied via GraphQLContext.
-// If absent, we fail closed.
-
-function getRequesterContext(context: GraphQLContext): RequesterContext {
-  const userId = context.requester;
-  const currentOrgId = context.currentOrg;
-
-  if (!userId || !currentOrgId) {
-    throw new GraphQLError('UNAUTHENTICATED', {
-      extensions: { code: 'UNAUTHENTICATED' },
-    });
-  }
-
-  return { userId, currentOrgId };
-}
-
-function getHeaders(ctx: RequesterContext) {
-  return {
-    'X-User-Id': ctx.userId,
-    'X-Org-Id': ctx.currentOrgId,
-  };
-}
-
-async function validateAccess(
-  ctx: RequesterContext,
-  targetOrgId: string,
-  context: GraphQLContext,
+async function assertFolderPermission(
+  userId: string,
+  orgId: string,
+  resourceId: string,
+  action: "read" | "write" | "delete" | "manage_permissions",
 ) {
-  if (ctx.currentOrgId !== targetOrgId) {
-    throw new GraphQLError('FORBIDDEN: Organization mismatch', {
-      extensions: { code: 'FORBIDDEN' },
-    });
-  }
-
-  const guard = context.policyGuard ?? defaultPolicyGuard;
-  const allowed = await guard.checkFolderAccess(ctx, 'read', targetOrgId);
+  const { allowed, reason } = await canDo(
+    userId,
+    action,
+    "folder",
+    resourceId,
+    orgId,
+  );
   if (!allowed) {
-    throw new GraphQLError('FORBIDDEN: Policy deny', {
-      extensions: { code: 'FORBIDDEN' },
+    throw new GraphQLError(reason ?? "Forbidden", {
+      extensions: { code: "FORBIDDEN" },
     });
   }
 }
 
-// ---------------------------------------------------------
-// Resolvers
-// ---------------------------------------------------------
+async function fetchFolderList(
+  url: string,
+  userId: string,
+  orgId: string,
+): Promise<GoFolder[]> {
+  const resp = await fetch(url, {
+    headers: { "X-User-Id": userId, "X-Org-Id": orgId },
+  });
+  if (!resp.ok) {
+    throw new GraphQLError(`Failed to fetch folders: ${resp.statusText}`, {
+      extensions: { code: "INTERNAL_SERVER_ERROR" },
+    });
+  }
+  const data = await resp.json();
+  return (data.folders ?? []) as GoFolder[];
+}
 
 export const folderResolvers = {
   Query: {
-    folderTree: async (_: unknown, args: { orgId: string; rootPath?: string }, context: GraphQLContext) => {
-      const ctx = getRequesterContext(context);
-      await validateAccess(ctx, args.orgId, context);
+    folder: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
+      assertAuthenticated(ctx);
+      await assertFolderPermission(
+        ctx.userId,
+        ctx.currentOrgId ?? "",
+        id,
+        "read",
+      );
 
-      const { orgId, rootPath } = args;
-      let url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}`;
-      if (rootPath) {
-        url += `&rootPath=${encodeURIComponent(rootPath)}`;
+      const resp = await fetch(
+        `${config.goAssetUrl}/internal/api/v1/folders?id=${id}`,
+        {
+          headers: {
+            "X-User-Id": ctx.userId,
+            "X-Org-Id": ctx.currentOrgId ?? "",
+          },
+        },
+      );
+
+      if (resp.status === 404) return null;
+      if (!resp.ok) {
+        throw new GraphQLError(`Failed to fetch folder: ${resp.statusText}`, {
+          extensions: { code: "INTERNAL_SERVER_ERROR" },
+        });
       }
 
-      const res = await fetch(url, { headers: getHeaders(ctx) });
-
-      if (!res.ok) {
-        throw new GraphQLError(`Failed to fetch folder tree: ${res.statusText}`);
-      }
-
-      const data = await res.json() as { folders: GoFolder[] };
-      return (data.folders || []).map(toFolder);
+      const data = await resp.json();
+      return data.folder ? toFolder(data.folder as GoFolder) : null;
     },
 
-    folder: async (_: unknown, args: { orgId: string; id: string }, context: GraphQLContext) => {
-      const ctx = getRequesterContext(context);
-      await validateAccess(ctx, args.orgId, context);
+    folderTree: async (
+      _: unknown,
+      { orgId, rootPath }: { orgId: string; rootPath?: string },
+      ctx: GraphQLContext,
+    ) => {
+      assertAuthenticated(ctx);
+      await assertFolderPermission(ctx.userId, orgId, orgId, "read");
 
-      const { orgId, id } = args;
-      const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`;
+      let url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${orgId}`;
+      if (rootPath) url += `&rootPath=${encodeURIComponent(rootPath)}`;
 
-      const res = await fetch(url, { headers: getHeaders(ctx) });
-
-      if (!res.ok) {
-        if (res.status === 404) {
-          return null;
-        }
-        throw new GraphQLError(`Failed to fetch folder: ${res.statusText}`);
-      }
-
-      const data = await res.json() as { folder: GoFolder };
-      return data.folder ? toFolder(data.folder) : null;
+      return (await fetchFolderList(url, ctx.userId, orgId)).map(toFolder);
     },
 
-    folderChildren: async (_: unknown, args: { orgId: string; parentPath: string }, context: GraphQLContext) => {
-      const ctx = getRequesterContext(context);
-      await validateAccess(ctx, args.orgId, context);
+    folderChildren: async (
+      _: unknown,
+      { orgId, parentPath }: { orgId: string; parentPath: string },
+      ctx: GraphQLContext,
+    ) => {
+      assertAuthenticated(ctx);
+      await assertFolderPermission(ctx.userId, orgId, orgId, "read");
 
-      const { orgId, parentPath } = args;
-      const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&rootPath=${encodeURIComponent(parentPath)}&children=true`;
-
-      const res = await fetch(url, { headers: getHeaders(ctx) });
-
-      if (!res.ok) {
-        throw new GraphQLError(`Failed to fetch folder children: ${res.statusText}`);
-      }
-
-      const data = await res.json() as { folders: GoFolder[] };
-      return (data.folders || []).map(toFolder);
+      const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${orgId}&rootPath=${encodeURIComponent(parentPath)}&children=true`;
+      return (await fetchFolderList(url, ctx.userId, orgId)).map(toFolder);
     },
   },
 
   Folder: {
-    children: async (parent: { orgId: string; path: string }, _: unknown, context: GraphQLContext) => {
-      const ctx = getRequesterContext(context);
-      const orgId = parent.orgId;
-      const parentPath = parent.path;
-
-      await validateAccess(ctx, orgId, context);
-
-      const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&rootPath=${encodeURIComponent(parentPath)}&children=true`;
-
-      const res = await fetch(url, { headers: getHeaders(ctx) });
-
-      if (!res.ok) {
-        throw new GraphQLError(`Failed to fetch folder children: ${res.statusText}`);
-      }
-
-      const data = await res.json() as { folders: GoFolder[] };
-      return (data.folders || []).map(toFolder);
+    children: async (
+      parent: { orgId: string; path: string },
+      _: unknown,
+      ctx: GraphQLContext,
+    ) => {
+      assertAuthenticated(ctx);
+      const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${parent.orgId}&rootPath=${encodeURIComponent(parent.path)}&children=true`;
+      return (await fetchFolderList(url, ctx.userId, parent.orgId)).map(
+        toFolder,
+      );
     },
   },
 };

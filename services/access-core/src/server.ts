@@ -1,30 +1,23 @@
 import Fastify, { FastifyInstance } from "fastify";
 import { createYoga } from "graphql-yoga";
-import { schema, GraphQLContext, PolicyGuard } from "./graphql/schema";
+import { schema } from "./graphql/schema";
+import { loadRequestContext } from "./graphql/context";
 
-export type ServerDependencies = {
-  policyGuard?: PolicyGuard;
-};
+export async function buildServer(): Promise<FastifyInstance> {
+  const app = Fastify({ logger: true });
 
-export async function buildServer(
-  dependencies: ServerDependencies = {},
-): Promise<FastifyInstance> {
-  const fastify = Fastify({ logger: true });
-
-  const yoga = createYoga<GraphQLContext>({
+  const yoga = createYoga({
     schema,
     graphqlEndpoint: "/graphql",
     logging: false,
-    context: (req) => {
-      return {
-        requester: req.request.headers.get("x-user-id"),
-        currentOrg: req.request.headers.get("x-org-id"),
-        policyGuard: dependencies.policyGuard,
-      };
+    context: (ctx: any) => {
+      const h = (k: string) =>
+        (ctx.fastifyRequest?.headers[k] as string | undefined) ?? null;
+      return loadRequestContext(h("x-user-id"), h("x-org-id"));
     },
   });
 
-  fastify.route({
+  app.route({
     url: "/graphql",
     method: ["GET", "POST", "OPTIONS"],
     handler: async (req, reply) => {
@@ -38,15 +31,15 @@ export async function buildServer(
               ? JSON.stringify(req.body)
               : undefined,
         },
+        { fastifyRequest: req },
       );
       response.headers.forEach((value, key) => reply.header(key, value));
       reply.status(response.status);
-      const text = await response.text();
-      reply.send(text);
+      reply.send(await response.text());
     },
   });
 
-  fastify.get("/health", async () => ({ status: "ok" }));
+  app.get("/health", async () => ({ status: "ok" }));
 
-  return fastify;
+  return app;
 }
