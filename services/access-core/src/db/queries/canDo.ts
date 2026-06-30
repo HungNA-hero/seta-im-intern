@@ -1,6 +1,17 @@
 import { prisma } from "../prisma";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
 
+let permActionCachePromise: Promise<Map<string, string>> | null = null;
+
+async function getPermActionId(code: PermissionActionCode): Promise<string | null> {
+  if (!permActionCachePromise) {
+    permActionCachePromise = prisma.permissionAction
+      .findMany({ select: { code: true, id: true } })
+      .then(rows => new Map(rows.map(r => [r.code, r.id])));
+  }
+  return (await permActionCachePromise).get(code) ?? null;
+}
+
 export async function canDo(
   userId: string,
   action: PermissionActionCode,
@@ -34,14 +45,12 @@ export async function canDo(
     select: { olpEnabled: true },
   });
 
-  const permAction = await prisma.permissionAction.findUnique({
-    where: { code: action },
-  });
-  if (!permAction) return { allowed: false, reason: "unknown action" };
+  const permActionId = await getPermActionId(action);
+  if (!permActionId) return { allowed: false, reason: "unknown action" };
 
   if (!org?.olpEnabled) {
     const rbacCeiling = await prisma.rolePermission.findFirst({
-      where: { roleId: { in: roleIds }, actionId: permAction.id, resourceType },
+      where: { roleId: { in: roleIds }, actionId: permActionId, resourceType },
     });
     if (!rbacCeiling) return { allowed: false, reason: "no RBAC ceiling" };
     return { allowed: true, reason: null };
@@ -52,7 +61,7 @@ export async function canDo(
       orgId,
       resourceType,
       resourceId,
-      actionId: permAction.id,
+      actionId: permActionId,
       OR: [{ granteeUserId: userId }, { granteeRoleId: { in: roleIds } }],
     },
   });

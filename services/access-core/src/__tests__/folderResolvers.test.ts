@@ -380,6 +380,213 @@ describe("Mutation.updateFolder", () => {
   });
 });
 
+// ── Query.folderTree ─────────────────────────────────────────────────────────
+
+function fetchListOk(goFolders: ReturnType<typeof makeGoFolder>[]) {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ folders: goFolders }),
+  });
+}
+
+describe("Query.folderTree", () => {
+  const org = "org-1";
+  const ctx = makeCtx();
+
+  test("returns mapped folders", async () => {
+    const raw = [
+      makeGoFolder({ id: "f1", path: "root", name: "Root" }),
+      makeGoFolder({ id: "f2", path: "root.child", name: "Child" }),
+    ];
+    fetchListOk(raw);
+
+    const result = await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({ id: "f1", name: "Root", path: "root" });
+    expect(result[1]).toMatchObject({ id: "f2", name: "Child", path: "root.child" });
+  });
+
+  test("attaches _subtreeNodes (same reference) to every folder", async () => {
+    fetchListOk([
+      makeGoFolder({ id: "f1", path: "root" }),
+      makeGoFolder({ id: "f2", path: "root.child" }),
+    ]);
+
+    const result = (await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx)) as any[];
+
+    expect(result[0]._subtreeNodes).toHaveLength(2);
+    expect(result[0]._subtreeNodes).toBe(result[1]._subtreeNodes);
+  });
+
+  test("makes exactly one HTTP call to Go", async () => {
+    fetchListOk([makeGoFolder()]);
+    await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test("uses org-scoped permission check (resourceId === orgId)", async () => {
+    fetchListOk([]);
+    await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx);
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "read", "folder", org, org);
+  });
+
+  test("appends rootPath to URL when provided", async () => {
+    fetchListOk([]);
+    await folderResolvers.Query.folderTree(undefined, { orgId: org, rootPath: "docs" }, ctx);
+    const [url] = mockFetch.mock.calls[0];
+    expect(url).toContain("rootPath=docs");
+  });
+
+  test("maps Go error codes (403 → FORBIDDEN, not INTERNAL_SERVER_ERROR)", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 403, statusText: "Forbidden" });
+    await expect(
+      folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "FORBIDDEN" } }));
+  });
+
+  test("throws UNAUTHENTICATED when userId is null", async () => {
+    await expect(
+      folderResolvers.Query.folderTree(undefined, { orgId: org }, makeCtx({ userId: null })),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "UNAUTHENTICATED" } }));
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+});
+
+// ── Query.folderChildren ──────────────────────────────────────────────────────
+
+describe("Query.folderChildren", () => {
+  const org = "org-1";
+  const ctx = makeCtx();
+
+  test("returns children from Go", async () => {
+    const raw = [makeGoFolder({ id: "c1", path: "root.child1" })];
+    fetchListOk(raw);
+
+    const result = await folderResolvers.Query.folderChildren(
+      undefined,
+      { orgId: org, parentPath: "root" },
+      ctx,
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: "c1", path: "root.child1" });
+  });
+
+  test("sends children=true and parentPath in URL", async () => {
+    fetchListOk([]);
+    await folderResolvers.Query.folderChildren(
+      undefined,
+      { orgId: org, parentPath: "root" },
+      ctx,
+    );
+    const [url] = mockFetch.mock.calls[0];
+    expect(url).toContain("children=true");
+    expect(url).toContain("rootPath=root");
+  });
+
+  test("uses org-scoped permission check", async () => {
+    fetchListOk([]);
+    await folderResolvers.Query.folderChildren(
+      undefined,
+      { orgId: org, parentPath: "root" },
+      ctx,
+    );
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "read", "folder", org, org);
+  });
+
+  test("maps Go error codes (403 → FORBIDDEN)", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 403, statusText: "Forbidden" });
+    await expect(
+      folderResolvers.Query.folderChildren(undefined, { orgId: org, parentPath: "root" }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "FORBIDDEN" } }));
+  });
+});
+
+// ── Folder.children ───────────────────────────────────────────────────────────
+
+describe("Folder.children", () => {
+  const ctx = makeCtx();
+
+  function node(id: string, path: string) {
+    return {
+      id,
+      orgId: "org-1",
+      path,
+      name: id,
+      description: null as string | null,
+      createdBy: "user-1",
+      updatedBy: null as string | null,
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+    };
+  }
+
+  const allNodes = [
+    node("root", "root"),
+    node("child1", "root.child1"),
+    node("child2", "root.child2"),
+    node("grandchild", "root.child1.grandchild"),
+  ];
+
+  test("resolves direct children from cache without any HTTP call", async () => {
+    const parent = { ...allNodes[0], _subtreeNodes: allNodes };
+
+    const result = await folderResolvers.Folder.children(parent, undefined, ctx);
+
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(result).toHaveLength(2);
+    expect((result as any[]).map(r => r.id)).toEqual(expect.arrayContaining(["child1", "child2"]));
+  });
+
+  test("excludes grandchildren when resolving direct children", async () => {
+    const parent = { ...allNodes[0], _subtreeNodes: allNodes };
+
+    const result = await folderResolvers.Folder.children(parent, undefined, ctx);
+
+    expect((result as any[]).map(r => r.id)).not.toContain("grandchild");
+  });
+
+  test("propagates _subtreeNodes to resolved children for deeper nesting", async () => {
+    const parent = { ...allNodes[0], _subtreeNodes: allNodes };
+
+    const children = (await folderResolvers.Folder.children(parent, undefined, ctx)) as any[];
+
+    expect(children[0]._subtreeNodes).toBe(allNodes);
+    expect(children[1]._subtreeNodes).toBe(allNodes);
+  });
+
+  test("resolves grandchildren correctly from nested cache (no HTTP)", async () => {
+    const parent = { ...allNodes[0], _subtreeNodes: allNodes };
+    const children = (await folderResolvers.Folder.children(parent, undefined, ctx)) as any[];
+    const child1 = children.find((c: any) => c.id === "child1");
+
+    const grandchildren = (await folderResolvers.Folder.children(child1, undefined, ctx)) as any[];
+
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(grandchildren).toHaveLength(1);
+    expect(grandchildren[0].id).toBe("grandchild");
+  });
+
+  test("falls back to HTTP when parent has no _subtreeNodes", async () => {
+    fetchListOk([makeGoFolder({ id: "c1", path: "root.child1" })]);
+    const parent = node("root", "root");
+
+    const result = await folderResolvers.Folder.children(parent, undefined, ctx);
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect((result as any[])[0].id).toBe("c1");
+  });
+
+  test("HTTP fallback URL contains children=true and encoded parent path", async () => {
+    fetchListOk([]);
+    await folderResolvers.Folder.children(node("x", "a.b"), undefined, ctx);
+    const [url] = mockFetch.mock.calls[0];
+    expect(url).toContain("children=true");
+    expect(url).toContain("rootPath=a.b");
+  });
+});
+
 // ── Query.folder ──────────────────────────────────────────────────────────────
 
 describe("Query.folder", () => {
@@ -460,5 +667,12 @@ describe("Query.folder", () => {
       expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("maps non-404 Go errors via GO_ERROR_CODES (403 → FORBIDDEN)", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 403, statusText: "Forbidden" });
+    await expect(
+      folderResolvers.Query.folder(undefined, { orgId: org, id: folderId }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "FORBIDDEN" } }));
   });
 });

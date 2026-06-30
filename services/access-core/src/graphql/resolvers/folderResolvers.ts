@@ -29,6 +29,8 @@ function toFolder(f: GoFolder) {
   };
 }
 
+type FolderNode = ReturnType<typeof toFolder>;
+
 const GO_ERROR_CODES: Record<number, string> = {
   400: "BAD_USER_INPUT",
   401: "UNAUTHENTICATED",
@@ -71,8 +73,9 @@ async function fetchFolderList(
 ): Promise<GoFolder[]> {
   const resp = await fetch(url, { headers: goHeaders(userId, orgId) });
   if (!resp.ok) {
+    const code = GO_ERROR_CODES[resp.status] ?? "INTERNAL_SERVER_ERROR";
     throw new GraphQLError(`Failed to fetch folders: ${resp.statusText}`, {
-      extensions: { code: "INTERNAL_SERVER_ERROR" },
+      extensions: { code },
     });
   }
   const data = await resp.json();
@@ -82,7 +85,7 @@ async function fetchFolderList(
 async function handleGoResponse(
   res: Response,
   defaultMessage: string,
-): Promise<ReturnType<typeof toFolder>> {
+): Promise<FolderNode> {
   if (res.ok) {
     const data = await res.json();
     if (!data.folder) {
@@ -115,8 +118,9 @@ export const folderResolvers = {
 
       if (resp.status === 404) return null;
       if (!resp.ok) {
+        const code = GO_ERROR_CODES[resp.status] ?? "INTERNAL_SERVER_ERROR";
         throw new GraphQLError(`Failed to fetch folder: ${resp.statusText}`, {
-          extensions: { code: "INTERNAL_SERVER_ERROR" },
+          extensions: { code },
         });
       }
 
@@ -135,7 +139,9 @@ export const folderResolvers = {
       let url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${orgId}`;
       if (rootPath) url += `&rootPath=${encodeURIComponent(rootPath)}`;
 
-      return (await fetchFolderList(url, ctx.userId, orgId)).map(toFolder);
+      const folders = (await fetchFolderList(url, ctx.userId, orgId)).map(toFolder) as (FolderNode & { _subtreeNodes: FolderNode[] })[];
+      folders.forEach(f => { f._subtreeNodes = folders; });
+      return folders;
     },
 
     folderChildren: async (
@@ -153,15 +159,24 @@ export const folderResolvers = {
 
   Folder: {
     children: async (
-      parent: { orgId: string; path: string },
+      parent: FolderNode & { _subtreeNodes?: FolderNode[] },
       _: unknown,
       ctx: GraphQLContext,
     ) => {
       assertAuthenticated(ctx);
+
+      if (parent._subtreeNodes) {
+        const cache = parent._subtreeNodes;
+        const prefix = parent.path + ".";
+        const kids = cache.filter(
+          f => f.path.startsWith(prefix) && !f.path.slice(prefix.length).includes("."),
+        );
+        return kids.map(f => ({ ...f, _subtreeNodes: cache }));
+      }
+
+      console.warn(`[folderResolvers] Folder.children: no subtree cache on parent "${parent.path}", falling back to HTTP`);
       const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${parent.orgId}&rootPath=${encodeURIComponent(parent.path)}&children=true`;
-      return (await fetchFolderList(url, ctx.userId, parent.orgId)).map(
-        toFolder,
-      );
+      return (await fetchFolderList(url, ctx.userId, parent.orgId)).map(toFolder);
     },
   },
 
