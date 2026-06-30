@@ -2,9 +2,14 @@ package usecase
 
 import (
 	"context"
+	"regexp"
+	"strings"
+	"unicode/utf8"
 
 	"seta-im-intern/go-asset-core/internal/domain"
 )
+
+var ltreePathPattern = regexp.MustCompile(`^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*$`)
 
 type assetUsecase struct {
 	repo domain.AssetRepository
@@ -35,4 +40,39 @@ func (u *assetUsecase) GetRootFolders(ctx context.Context, orgID string) ([]doma
 
 func (u *assetUsecase) EnsureRefs(ctx context.Context, userID, orgID string) error {
 	return u.repo.EnsureRefs(ctx, userID, orgID)
+}
+
+func (u *assetUsecase) CreateFolder(ctx context.Context, orgID, userID string, input domain.CreateFolderInput) (domain.Folder, error) {
+	input.Name = strings.TrimSpace(input.Name)
+	if input.Name == "" {
+		return domain.Folder{}, domain.ErrInvalidInput
+	}
+	if utf8.RuneCountInString(input.Name) > 255 {
+		return domain.Folder{}, domain.ErrInvalidInput
+	}
+	if input.ParentPath != nil {
+		trimmed := strings.TrimSpace(*input.ParentPath)
+		if trimmed != "" && !ltreePathPattern.MatchString(trimmed) {
+			return domain.Folder{}, domain.ErrInvalidInput
+		}
+		input.ParentPath = &trimmed
+	}
+	return u.repo.CreateFolder(ctx, orgID, userID, input)
+}
+
+func (u *assetUsecase) UpdateFolder(ctx context.Context, orgID, userID, folderID string, input domain.UpdateFolderInput) (domain.Folder, error) {
+	if input.NameSet {
+		if input.Name == nil {
+			return domain.Folder{}, domain.ErrInvalidInput
+		}
+		trimmed := strings.TrimSpace(*input.Name)
+		if trimmed == "" || utf8.RuneCountInString(trimmed) > 255 {
+			return domain.Folder{}, domain.ErrInvalidInput
+		}
+		input.Name = &trimmed
+	}
+	if !input.NameSet && !input.DescriptionSet {
+		return domain.Folder{}, domain.ErrInvalidInput
+	}
+	return u.repo.UpdateFolder(ctx, orgID, userID, folderID, input)
 }

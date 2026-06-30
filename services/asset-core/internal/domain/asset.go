@@ -2,10 +2,32 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
 )
+
+var (
+	ErrFolderNotFound = errors.New("folder not found")
+	ErrFolderConflict = errors.New("folder conflict: sibling name or path already exists")
+	ErrInvalidInput   = errors.New("invalid input")
+)
+
+// CreateFolderInput holds the data required to create a folder.
+type CreateFolderInput struct {
+	ParentPath  *string `json:"parent_path"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+}
+
+// UpdateFolderInput holds the data required to update a folder.
+type UpdateFolderInput struct {
+	Name           *string
+	NameSet        bool
+	Description    *string
+	DescriptionSet bool
+}
 
 // OrganizationRef acts as a shadow reference to Access DB organizations.
 type OrganizationRef struct {
@@ -31,7 +53,7 @@ type Folder struct {
 	OrgID       string         `gorm:"type:uuid;not null;index:uq_folders_active_path,unique" json:"org_id"`
 	Path        string         `gorm:"type:ltree;not null;index:uq_folders_active_path,unique;index:idx_folders_path_gist,type:gist" json:"path"`
 	Name        string         `gorm:"type:varchar(255);not null" json:"name"`
-	Description string         `gorm:"type:text" json:"description"`
+	Description *string        `gorm:"type:text" json:"description"`
 	CreatedBy   string         `gorm:"type:uuid;not null" json:"created_by"`
 	UpdatedBy   *string        `gorm:"type:uuid" json:"updated_by"`
 	CreatedAt   time.Time      `gorm:"not null;default:now()" json:"created_at"`
@@ -76,6 +98,8 @@ type AssetRepository interface {
 	GetFolderByID(ctx context.Context, orgID string, folderID string) (Folder, error)
 	GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]Folder, error)
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
+	CreateFolder(ctx context.Context, orgID, userID string, input CreateFolderInput) (Folder, error)
+	UpdateFolder(ctx context.Context, orgID, userID, folderID string, input UpdateFolderInput) (Folder, error)
 	EnsureRefs(ctx context.Context, userID, orgID string) error
 }
 
@@ -85,5 +109,7 @@ type AssetUsecase interface {
 	GetFolderByID(ctx context.Context, orgID string, folderID string) (Folder, error)
 	GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]Folder, error)
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
+	CreateFolder(ctx context.Context, orgID, userID string, input CreateFolderInput) (Folder, error)
+	UpdateFolder(ctx context.Context, orgID, userID, folderID string, input UpdateFolderInput) (Folder, error)
 	EnsureRefs(ctx context.Context, userID, orgID string) error
 }
