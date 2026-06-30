@@ -46,3 +46,12 @@ logs/
 Thumbs.db
 env
 docs/
+
+# Claude Code and tooling
+.claude/
+.specify/
+CLAUDE.md
+
+# Local spec / planning docs
+specs/
+
