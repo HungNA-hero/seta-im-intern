@@ -1,11 +1,18 @@
 import { defaultFieldResolver, GraphQLSchema } from "graphql";
 import { mapSchema, getDirective, MapperKind } from "@graphql-tools/utils";
-import { assertAuthenticated, assertOrgMember, GraphQLContext } from "./context";
+import {
+  assertAuthenticated,
+  assertOrgContext,
+  assertOrgMember,
+  GraphQLContext,
+} from "./context";
+
+type FieldGuard = (ctx: GraphQLContext, args: Record<string, unknown>) => void;
 
 function wrapField(
   schema: GraphQLSchema,
   directiveName: string,
-  guard: (ctx: GraphQLContext) => void,
+  guard: FieldGuard,
 ): GraphQLSchema {
   return mapSchema(schema, {
     [MapperKind.OBJECT_FIELD](fieldConfig) {
@@ -14,7 +21,7 @@ function wrapField(
       }
       const { resolve = defaultFieldResolver } = fieldConfig;
       fieldConfig.resolve = (source, args, ctx: GraphQLContext, info) => {
-        guard(ctx);
+        guard(ctx, args);
         return resolve(source, args, ctx, info);
       };
       return fieldConfig;
@@ -22,8 +29,16 @@ function wrapField(
   });
 }
 
+function assertSameOrg(
+  ctx: GraphQLContext,
+  args: Record<string, unknown>,
+): void {
+  assertOrgContext(ctx, args.orgId as string);
+}
+
 export function applyAuthDirectives(schema: GraphQLSchema): GraphQLSchema {
   schema = wrapField(schema, "auth", assertAuthenticated);
   schema = wrapField(schema, "orgMember", assertOrgMember);
+  schema = wrapField(schema, "sameOrg", assertSameOrg);
   return schema;
 }

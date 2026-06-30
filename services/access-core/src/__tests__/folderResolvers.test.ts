@@ -407,16 +407,24 @@ describe("Query.folderTree", () => {
     expect(result[1]).toMatchObject({ id: "f2", name: "Child", path: "root.child" });
   });
 
-  test("attaches _subtreeNodes (same reference) to every folder", async () => {
+  test("attaches subtreeNodes (same reference) to every folder when rootPath is given", async () => {
     fetchListOk([
       makeGoFolder({ id: "f1", path: "root" }),
       makeGoFolder({ id: "f2", path: "root.child" }),
     ]);
 
+    const result = (await folderResolvers.Query.folderTree(undefined, { orgId: org, rootPath: "root" }, ctx)) as any[];
+
+    expect(result[0].subtreeNodes).toHaveLength(2);
+    expect(result[0].subtreeNodes).toBe(result[1].subtreeNodes);
+  });
+
+  test("does not attach subtreeNodes without rootPath (Go returns root-level only)", async () => {
+    fetchListOk([makeGoFolder({ id: "f1", path: "root" })]);
+
     const result = (await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx)) as any[];
 
-    expect(result[0]._subtreeNodes).toHaveLength(2);
-    expect(result[0]._subtreeNodes).toBe(result[1]._subtreeNodes);
+    expect(result[0].subtreeNodes).toBeUndefined();
   });
 
   test("makes exactly one HTTP call to Go", async () => {
@@ -530,7 +538,7 @@ describe("Folder.children", () => {
   ];
 
   test("resolves direct children from cache without any HTTP call", async () => {
-    const parent = { ...allNodes[0], _subtreeNodes: allNodes };
+    const parent = { ...allNodes[0], subtreeNodes: allNodes };
 
     const result = await folderResolvers.Folder.children(parent, undefined, ctx);
 
@@ -540,24 +548,24 @@ describe("Folder.children", () => {
   });
 
   test("excludes grandchildren when resolving direct children", async () => {
-    const parent = { ...allNodes[0], _subtreeNodes: allNodes };
+    const parent = { ...allNodes[0], subtreeNodes: allNodes };
 
     const result = await folderResolvers.Folder.children(parent, undefined, ctx);
 
     expect((result as any[]).map(r => r.id)).not.toContain("grandchild");
   });
 
-  test("propagates _subtreeNodes to resolved children for deeper nesting", async () => {
-    const parent = { ...allNodes[0], _subtreeNodes: allNodes };
+  test("propagates subtreeNodes to resolved children for deeper nesting", async () => {
+    const parent = { ...allNodes[0], subtreeNodes: allNodes };
 
     const children = (await folderResolvers.Folder.children(parent, undefined, ctx)) as any[];
 
-    expect(children[0]._subtreeNodes).toBe(allNodes);
-    expect(children[1]._subtreeNodes).toBe(allNodes);
+    expect(children[0].subtreeNodes).toBe(allNodes);
+    expect(children[1].subtreeNodes).toBe(allNodes);
   });
 
   test("resolves grandchildren correctly from nested cache (no HTTP)", async () => {
-    const parent = { ...allNodes[0], _subtreeNodes: allNodes };
+    const parent = { ...allNodes[0], subtreeNodes: allNodes };
     const children = (await folderResolvers.Folder.children(parent, undefined, ctx)) as any[];
     const child1 = children.find((c: any) => c.id === "child1");
 
@@ -568,7 +576,7 @@ describe("Folder.children", () => {
     expect(grandchildren[0].id).toBe("grandchild");
   });
 
-  test("falls back to HTTP when parent has no _subtreeNodes", async () => {
+  test("falls back to HTTP when parent has no subtreeNodes", async () => {
     fetchListOk([makeGoFolder({ id: "c1", path: "root.child1" })]);
     const parent = node("root", "root");
 

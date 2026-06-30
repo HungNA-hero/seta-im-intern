@@ -30,6 +30,15 @@ export function assertOrgMember(
   }
 }
 
+export function assertOrgContext(ctx: GraphQLContext, orgId: string): void {
+  if (ctx.currentOrgId !== orgId) {
+    throw new GraphQLError(
+      "Forbidden: orgId argument does not match the authenticated organization",
+      { extensions: { code: "FORBIDDEN" } },
+    );
+  }
+}
+
 function emptyContext(): GraphQLContext {
   return {
     userId: null,

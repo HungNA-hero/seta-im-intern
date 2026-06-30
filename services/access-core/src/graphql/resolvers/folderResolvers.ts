@@ -1,6 +1,10 @@
 import { GraphQLError } from "graphql";
 import { canDo } from "../../db/queries/canDo";
-import { assertAuthenticated, GraphQLContext } from "../context";
+import {
+  assertAuthenticated,
+  assertOrgContext,
+  GraphQLContext,
+} from "../context";
 import { config } from "../../config";
 
 interface GoFolder {
@@ -39,11 +43,15 @@ const GO_ERROR_CODES: Record<number, string> = {
   409: "CONFLICT",
 };
 
-function goHeaders(
-  userId: string,
-  orgId: string,
-): Record<string, string> {
+function goHeaders(userId: string, orgId: string): Record<string, string> {
   return { "X-User-Id": userId, "X-Org-Id": orgId };
+}
+
+function throwGoError(res: Response, message: string): never {
+  const code = GO_ERROR_CODES[res.status] ?? "INTERNAL_SERVER_ERROR";
+  throw new GraphQLError(`${message}: ${res.statusText}`, {
+    extensions: { code },
+  });
 }
 
 async function assertFolderPermission(
@@ -72,12 +80,7 @@ async function fetchFolderList(
   orgId: string,
 ): Promise<GoFolder[]> {
   const resp = await fetch(url, { headers: goHeaders(userId, orgId) });
-  if (!resp.ok) {
-    const code = GO_ERROR_CODES[resp.status] ?? "INTERNAL_SERVER_ERROR";
-    throw new GraphQLError(`Failed to fetch folders: ${resp.statusText}`, {
-      extensions: { code },
-    });
-  }
+  if (!resp.ok) throwGoError(resp, "Failed to fetch folders");
   const data = await resp.json();
   return (data.folders ?? []) as GoFolder[];
 }
@@ -95,10 +98,26 @@ async function handleGoResponse(
     }
     return toFolder(data.folder as GoFolder);
   }
-  const code = GO_ERROR_CODES[res.status] ?? "INTERNAL_SERVER_ERROR";
-  throw new GraphQLError(`${defaultMessage}: ${res.statusText}`, {
-    extensions: { code },
+  throwGoError(res, defaultMessage);
+}
+
+async function writeFolder(
+  method: "POST" | "PATCH",
+  url: string,
+  userId: string,
+  orgId: string,
+  body: Record<string, unknown>,
+  message: string,
+): Promise<FolderNode> {
+  const res = await fetch(url, {
+    method,
+    headers: {
+      ...goHeaders(userId, orgId),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
   });
+  return handleGoResponse(res, message);
 }
 
 export const folderResolvers = {
@@ -117,12 +136,7 @@ export const folderResolvers = {
       );
 
       if (resp.status === 404) return null;
-      if (!resp.ok) {
-        const code = GO_ERROR_CODES[resp.status] ?? "INTERNAL_SERVER_ERROR";
-        throw new GraphQLError(`Failed to fetch folder: ${resp.statusText}`, {
-          extensions: { code },
-        });
-      }
+      if (!resp.ok) throwGoError(resp, "Failed to fetch folder");
 
       const data = await resp.json();
       return data.folder ? toFolder(data.folder as GoFolder) : null;
@@ -136,11 +150,21 @@ export const folderResolvers = {
       assertAuthenticated(ctx);
       await assertFolderPermission(ctx.userId, orgId, orgId, "read");
 
-      let url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${orgId}`;
+      let url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}`;
       if (rootPath) url += `&rootPath=${encodeURIComponent(rootPath)}`;
 
-      const folders = (await fetchFolderList(url, ctx.userId, orgId)).map(toFolder) as (FolderNode & { _subtreeNodes: FolderNode[] })[];
-      folders.forEach(f => { f._subtreeNodes = folders; });
+      const folders = (await fetchFolderList(url, ctx.userId, orgId)).map(
+        toFolder,
+      );
+
+      if (rootPath) {
+        const cached = folders as (FolderNode & {
+          subtreeNodes: FolderNode[];
+        })[];
+        cached.forEach((f) => {
+          f.subtreeNodes = cached;
+        });
+      }
       return folders;
     },
 
@@ -152,31 +176,35 @@ export const folderResolvers = {
       assertAuthenticated(ctx);
       await assertFolderPermission(ctx.userId, orgId, orgId, "read");
 
-      const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${orgId}&rootPath=${encodeURIComponent(parentPath)}&children=true`;
+      const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&rootPath=${encodeURIComponent(parentPath)}&children=true`;
       return (await fetchFolderList(url, ctx.userId, orgId)).map(toFolder);
     },
   },
 
   Folder: {
     children: async (
-      parent: FolderNode & { _subtreeNodes?: FolderNode[] },
+      parent: FolderNode & { subtreeNodes?: FolderNode[] },
       _: unknown,
       ctx: GraphQLContext,
     ) => {
       assertAuthenticated(ctx);
+      assertOrgContext(ctx, parent.orgId);
 
-      if (parent._subtreeNodes) {
-        const cache = parent._subtreeNodes;
+      if (parent.subtreeNodes) {
+        const cache = parent.subtreeNodes;
         const prefix = parent.path + ".";
         const kids = cache.filter(
-          f => f.path.startsWith(prefix) && !f.path.slice(prefix.length).includes("."),
+          (f) =>
+            f.path.startsWith(prefix) &&
+            !f.path.slice(prefix.length).includes("."),
         );
-        return kids.map(f => ({ ...f, _subtreeNodes: cache }));
+        return kids.map((f) => ({ ...f, subtreeNodes: cache }));
       }
 
-      console.warn(`[folderResolvers] Folder.children: no subtree cache on parent "${parent.path}", falling back to HTTP`);
-      const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${parent.orgId}&rootPath=${encodeURIComponent(parent.path)}&children=true`;
-      return (await fetchFolderList(url, ctx.userId, parent.orgId)).map(toFolder);
+      const url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(parent.orgId)}&rootPath=${encodeURIComponent(parent.path)}&children=true`;
+      return (await fetchFolderList(url, ctx.userId, parent.orgId)).map(
+        toFolder,
+      );
     },
   },
 
@@ -205,15 +233,14 @@ export const folderResolvers = {
         ...(description !== undefined && { description }),
       };
 
-      const res = await fetch(
+      return writeFolder(
+        "POST",
         `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}`,
-        {
-          method: "POST",
-          headers: { ...goHeaders(ctx.userId, orgId), "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
+        ctx.userId,
+        orgId,
+        body,
+        "Failed to create folder",
       );
-      return handleGoResponse(res, "Failed to create folder");
     },
 
     updateFolder: async (
@@ -251,15 +278,14 @@ export const folderResolvers = {
         ...(description !== undefined && { description }),
       };
 
-      const res = await fetch(
+      return writeFolder(
+        "PATCH",
         `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
-        {
-          method: "PATCH",
-          headers: { ...goHeaders(ctx.userId, orgId), "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
+        ctx.userId,
+        orgId,
+        body,
+        "Failed to update folder",
       );
-      return handleGoResponse(res, "Failed to update folder");
     },
   },
 };
