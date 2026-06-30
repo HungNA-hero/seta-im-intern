@@ -2,6 +2,7 @@ package http_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,6 +23,10 @@ type fakeAssetUsecase struct {
 	childrenErr  error
 	rootResp     []domain.Folder
 	rootErr      error
+	createInput  domain.CreateFolderInput
+	createErr    error
+	updateInput  domain.UpdateFolderInput
+	updateErr    error
 }
 
 func (f *fakeAssetUsecase) GetFolderTree(_ context.Context, orgID, _ string) ([]domain.Folder, error) {
@@ -64,7 +69,23 @@ func (f *fakeAssetUsecase) GetFolderChildren(_ context.Context, orgID, parentPat
 	return f.childrenResp, nil
 }
 
-func (f *fakeAssetUsecase) EnsureRefs(_ context.Context, _, _ string) error {
+func (f *fakeAssetUsecase) CreateFolder(_ context.Context, orgID, userID string, input domain.CreateFolderInput) (domain.Folder, error) {
+	f.called = true
+	f.methodCalled = "CreateFolder"
+	f.orgID = orgID
+	f.createInput = input
+	return domain.Folder{}, f.createErr
+}
+
+func (f *fakeAssetUsecase) UpdateFolder(_ context.Context, orgID, userID, folderID string, input domain.UpdateFolderInput) (domain.Folder, error) {
+	f.called = true
+	f.methodCalled = "UpdateFolder"
+	f.orgID = orgID
+	f.updateInput = input
+	return domain.Folder{}, f.updateErr
+}
+
+func (f *fakeAssetUsecase) EnsureRefs(_ context.Context, userID, orgID string) error {
 	return nil
 }
 
@@ -352,5 +373,63 @@ func TestHandleFolderDetailOrgMismatch(t *testing.T) {
 	}
 	if usecase.called {
 		t.Fatal("expected usecase not to be called on org mismatch")
+	}
+}
+
+func TestHandleFolderFactsReturnsScopedActiveFact(t *testing.T) {
+	const userID = "00000000-0000-0000-0000-000000000001"
+	const orgID = "00000000-0000-0000-0000-000000000002"
+	const folderID = "10000000-0000-0000-0000-000000000000"
+
+	usecase := &fakeAssetUsecase{folderByID: &domain.Folder{
+		ID: folderID, OrgID: orgID, Path: "root", Name: "Root",
+	}}
+	mux := http.NewServeMux()
+	assetHTTP.NewAssetHandler(mux, usecase, nil)
+	req := httptest.NewRequest(http.MethodGet,
+		"/internal/api/v1/facts/folders?orgId="+orgID+"&id="+folderID, nil)
+	req.Header.Set("X-User-Id", userID)
+	req.Header.Set("X-Org-Id", orgID)
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, req)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusOK, response.Code, response.Body.String())
+	}
+	var fact struct {
+		ResourceType string `json:"resource_type"`
+		ID           string `json:"id"`
+		OrgID        string `json:"org_id"`
+		Active       bool   `json:"active"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &fact); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if fact.ResourceType != "folder" || fact.ID != folderID || fact.OrgID != orgID || !fact.Active {
+		t.Fatalf("unexpected fact: %+v", fact)
+	}
+}
+
+func TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase(t *testing.T) {
+	const userID = "00000000-0000-0000-0000-000000000001"
+	const actorOrgID = "00000000-0000-0000-0000-000000000002"
+	const requestedOrgID = "00000000-0000-0000-0000-000000000003"
+	const folderID = "10000000-0000-0000-0000-000000000000"
+
+	usecase := &fakeAssetUsecase{}
+	mux := http.NewServeMux()
+	assetHTTP.NewAssetHandler(mux, usecase, nil)
+	req := httptest.NewRequest(http.MethodGet,
+		"/internal/api/v1/facts/folders?orgId="+requestedOrgID+"&id="+folderID, nil)
+	req.Header.Set("X-User-Id", userID)
+	req.Header.Set("X-Org-Id", actorOrgID)
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, req)
+
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("expected status %d, got %d", http.StatusForbidden, response.Code)
+	}
+	if usecase.called {
+		t.Fatal("expected organization mismatch to be rejected before the use case")
 	}
 }
