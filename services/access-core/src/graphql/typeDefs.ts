@@ -98,11 +98,12 @@ export const typeDefs = /* GraphQL */ `
     orgId: ID!
     path: String!
     name: String!
-    description: String!
+    description: String
     createdBy: ID!
     updatedBy: ID
     createdAt: String!
     updatedAt: String!
+    children: [Folder!]!
   }
 
   type Query {
@@ -125,5 +126,7 @@ export const typeDefs = /* GraphQL */ `
       resourceId: ID!
     ): PermissionResult!
     folder(id: ID!): Folder @auth
+    folderTree(orgId: ID!, rootPath: String): [Folder!]! @auth
+    folderChildren(orgId: ID!, parentPath: String!): [Folder!]! @auth
   }
 `;
