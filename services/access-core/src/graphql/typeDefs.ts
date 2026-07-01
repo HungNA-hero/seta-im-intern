@@ -94,6 +94,8 @@ export const typeDefs = /* GraphQL */ `
     revokeObjectPermission(id: ID!): Boolean! @orgMember
     createFolder(orgId: ID!, parentPath: String, name: String!, description: String): Folder! @orgMember @sameOrg
     updateFolder(orgId: ID!, id: ID!, name: String, description: String): Folder! @orgMember @sameOrg
+    createMetadata(orgId: ID!, input: CreateMetadataInput!): MetadataItem! @orgMember @sameOrg
+    updateMetadata(orgId: ID!, id: ID!, input: UpdateMetadataInput!): MetadataItem! @orgMember @sameOrg
   }
 
   type Folder {
@@ -107,6 +109,58 @@ export const typeDefs = /* GraphQL */ `
     createdAt: String!
     updatedAt: String!
     children: [Folder!]!
+  }
+
+  type MetadataItem {
+    id: ID!
+    folderId: ID!
+    title: String!
+    description: String
+    labels: [String!]!
+    category: String
+    externalSource: String
+    externalId: String
+    sourceUrl: String
+    thumbnailUrl: String
+    license: String
+    author: String
+    metadataJson: String!
+    notes: String
+    createdBy: ID!
+    updatedBy: ID
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  input CreateMetadataInput {
+    folderId: ID!
+    title: String!
+    description: String
+    labels: [String!]
+    category: String
+    externalSource: String
+    externalId: String
+    sourceUrl: String
+    thumbnailUrl: String
+    license: String
+    author: String
+    metadataJson: String
+    notes: String
+  }
+
+  input UpdateMetadataInput {
+    title: String
+    description: String
+    labels: [String!]
+    category: String
+    externalSource: String
+    externalId: String
+    sourceUrl: String
+    thumbnailUrl: String
+    license: String
+    author: String
+    metadataJson: String
+    notes: String
   }
 
   type Query {
@@ -131,5 +185,7 @@ export const typeDefs = /* GraphQL */ `
     folder(orgId: ID!, id: ID!): Folder @auth @sameOrg
     folderTree(orgId: ID!, rootPath: String): [Folder!]! @auth @sameOrg
     folderChildren(orgId: ID!, parentPath: String!): [Folder!]! @auth @sameOrg
+    metadataItems(orgId: ID!, folderId: ID!): [MetadataItem!]! @orgMember @sameOrg
+    metadataItem(orgId: ID!, id: ID!): MetadataItem @orgMember @sameOrg
   }
 `;

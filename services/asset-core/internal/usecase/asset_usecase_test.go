@@ -10,9 +10,12 @@ import (
 	"seta-im-intern/go-asset-core/internal/usecase"
 )
 
+// fakeAssetRepo captures use-case delegation so validation tests can assert normalized inputs and blocked writes.
 type fakeAssetRepo struct {
-	createCalled bool
-	updateCalled bool
+	createCalled        bool
+	updateCalled        bool
+	metadataCreateInput domain.CreateMetadataInput
+	metadataUpdateInput domain.UpdateMetadataInput
 }
 
 func (f *fakeAssetRepo) GetFolderTree(_ context.Context, _ string, _ string) ([]domain.Folder, error) {
@@ -37,6 +40,28 @@ func (f *fakeAssetRepo) CreateFolder(_ context.Context, _, _ string, _ domain.Cr
 func (f *fakeAssetRepo) UpdateFolder(_ context.Context, _, _, _ string, _ domain.UpdateFolderInput) (domain.Folder, error) {
 	f.updateCalled = true
 	return domain.Folder{}, nil
+}
+
+// GetMetadataItemsByFolder satisfies the metadata list repository contract for use-case tests.
+func (f *fakeAssetRepo) GetMetadataItemsByFolder(ctx context.Context, orgID, folderID string) ([]domain.MetadataItem, error) {
+	return nil, nil
+}
+
+// GetMetadataItemByID satisfies the metadata detail repository contract for use-case tests.
+func (f *fakeAssetRepo) GetMetadataItemByID(ctx context.Context, orgID, id string) (domain.MetadataItem, error) {
+	return domain.MetadataItem{}, nil
+}
+
+// CreateMetadataItem captures the normalized create input passed by the use case.
+func (f *fakeAssetRepo) CreateMetadataItem(ctx context.Context, orgID, userID string, input domain.CreateMetadataInput) (domain.MetadataItem, error) {
+	f.metadataCreateInput = input
+	return domain.MetadataItem{}, nil
+}
+
+// UpdateMetadataItem captures the normalized sparse update passed by the use case.
+func (f *fakeAssetRepo) UpdateMetadataItem(ctx context.Context, orgID, userID, id string, input domain.UpdateMetadataInput) (domain.MetadataItem, error) {
+	f.metadataUpdateInput = input
+	return domain.MetadataItem{}, nil
 }
 
 func TestAssetUsecase_CreateFolder_Validation(t *testing.T) {

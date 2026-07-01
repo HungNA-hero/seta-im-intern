@@ -24,12 +24,12 @@ func NewAssetRepository(db *gorm.DB) domain.AssetRepository {
 func (r *assetRepository) GetFolderTree(ctx context.Context, orgID string, rootPath string) ([]domain.Folder, error) {
 	var folders []domain.Folder
 
-	// Using PostgreSQL ltree <@ operator to find all descendants of rootPath.
-	// We MUST filter by org_id as requested by the Mentor Feedback.
-	err := r.db.WithContext(ctx).
-		Where("org_id = ? AND path <@ ?", orgID, rootPath).
-		Order("path ASC").
-		Find(&folders).Error
+	query := r.db.WithContext(ctx).Where("org_id = ?", orgID)
+	// An empty root requests the full organization forest for one-call GraphQL tree assembly.
+	if rootPath != "" {
+		query = query.Where("path <@ ?", rootPath)
+	}
+	err := query.Order("path ASC").Find(&folders).Error
 
 	return folders, err
 }
@@ -236,4 +236,193 @@ func (r *assetRepository) UpdateFolder(ctx context.Context, orgID, userID, folde
 	})
 
 	return folder, err
+}
+
+// GetMetadataItemsByFolder retrieves all active metadata items for a given folder in an organization.
+func (r *assetRepository) GetMetadataItemsByFolder(ctx context.Context, orgID, folderID string) ([]domain.MetadataItem, error) {
+	var items []domain.MetadataItem
+
+	// Verify the active parent independently so a missing, deleted, or cross-org folder cannot masquerade as an empty list.
+	var folder domain.Folder
+	if err := r.db.WithContext(ctx).
+		Select("id").
+		Where("id = ? AND org_id = ?", folderID, orgID).
+		First(&folder).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, domain.ErrFolderNotFound
+		}
+		return nil, err
+	}
+
+	err := r.db.WithContext(ctx).
+		Table("metadata_items").
+		Select("metadata_items.*").
+		Joins("JOIN folders ON folders.id = metadata_items.folder_id").
+		Where("metadata_items.folder_id = ? AND folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", folderID, orgID).
+		Order("metadata_items.created_at DESC, metadata_items.id ASC").
+		Find(&items).Error
+
+	return items, err
+}
+
+// GetMetadataItemByID retrieves a specific metadata item by its ID, ensuring organization scope.
+func (r *assetRepository) GetMetadataItemByID(ctx context.Context, orgID, id string) (domain.MetadataItem, error) {
+	var item domain.MetadataItem
+
+	err := r.db.WithContext(ctx).
+		Table("metadata_items").
+		Select("metadata_items.*").
+		Joins("JOIN folders ON folders.id = metadata_items.folder_id").
+		Where("metadata_items.id = ? AND folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", id, orgID).
+		First(&item).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return item, domain.ErrMetadataNotFound
+	}
+	return item, err
+}
+
+// CreateMetadataItem creates a new metadata item, validating parent folder and org scope.
+func (r *assetRepository) CreateMetadataItem(ctx context.Context, orgID, userID string, input domain.CreateMetadataInput) (domain.MetadataItem, error) {
+	var newItem domain.MetadataItem
+
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("INSERT INTO organization_ref (org_id) VALUES (?) ON CONFLICT (org_id) DO NOTHING", orgID).Error; err != nil {
+			return err
+		}
+
+		var parentFolder domain.Folder
+		if err := tx.Clauses(clause.Locking{Strength: "SHARE"}).
+			Where("id = ? AND org_id = ?", input.FolderID, orgID).
+			First(&parentFolder).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return domain.ErrFolderNotFound
+			}
+			return err
+		}
+
+		newItem = domain.MetadataItem{
+			FolderID:       input.FolderID,
+			Title:          input.Title,
+			Description:    input.Description,
+			Labels:         input.Labels,
+			Category:       input.Category,
+			ExternalSource: input.ExternalSource,
+			ExternalID:     input.ExternalID,
+			SourceURL:      input.SourceURL,
+			ThumbnailURL:   input.ThumbnailURL,
+			License:        input.License,
+			Author:         input.Author,
+			MetadataJSON:   input.MetadataJSON,
+			Notes:          input.Notes,
+			CreatedBy:      userID,
+		}
+
+		if err := tx.Create(&newItem).Error; err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+				return domain.ErrMetadataConflict
+			}
+			return err
+		}
+		return nil
+	})
+
+	return newItem, err
+}
+
+// UpdateMetadataItem updates an existing metadata item with the provided sparse fields.
+func (r *assetRepository) UpdateMetadataItem(ctx context.Context, orgID, userID, id string, input domain.UpdateMetadataInput) (domain.MetadataItem, error) {
+	var item domain.MetadataItem
+
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("INSERT INTO organization_ref (org_id) VALUES (?) ON CONFLICT (org_id) DO NOTHING", orgID).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Table("metadata_items").
+			Select("metadata_items.*").
+			Joins("JOIN folders ON folders.id = metadata_items.folder_id").
+			Where("metadata_items.id = ? AND folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", id, orgID).
+			First(&item).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return domain.ErrMetadataNotFound
+			}
+			return err
+		}
+
+		if input.TitleSet && input.Title != nil {
+			item.Title = *input.Title
+		}
+		if input.DescriptionSet {
+			item.Description = input.Description
+		}
+		if input.LabelsSet {
+			if input.Labels != nil {
+				item.Labels = *input.Labels
+			} else {
+				item.Labels = []string{}
+			}
+		}
+		if input.CategorySet {
+			item.Category = input.Category
+		}
+		if input.ExternalSourceSet {
+			item.ExternalSource = input.ExternalSource
+		}
+		if input.ExternalIDSet {
+			item.ExternalID = input.ExternalID
+		}
+		if input.SourceURLSet {
+			item.SourceURL = input.SourceURL
+		}
+		if input.ThumbnailURLSet {
+			item.ThumbnailURL = input.ThumbnailURL
+		}
+		if input.LicenseSet {
+			item.License = input.License
+		}
+		if input.AuthorSet {
+			item.Author = input.Author
+		}
+		if input.MetadataJSONSet {
+			if input.MetadataJSON != nil {
+				item.MetadataJSON = *input.MetadataJSON
+			} else {
+				item.MetadataJSON = []byte("{}")
+			}
+		}
+		if input.NotesSet {
+			item.Notes = input.Notes
+		}
+
+		// Validate the final pair after locking the row so concurrent updates cannot bypass the cross-field invariant.
+		hasExternalSource := item.ExternalSource != nil && strings.TrimSpace(*item.ExternalSource) != ""
+		hasExternalID := item.ExternalID != nil && strings.TrimSpace(*item.ExternalID) != ""
+		if hasExternalSource != hasExternalID {
+			return domain.ErrInvalidInput
+		}
+
+		item.UpdatedBy = &userID
+
+		// Save uses the model's primary key and updates all fields, handling updated_at automatically via GORM hooks.
+		if err := tx.Save(&item).Error; err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+				return domain.ErrMetadataConflict
+			}
+			return err
+		}
+
+		return nil
+	})
+
+	return item, err
 }

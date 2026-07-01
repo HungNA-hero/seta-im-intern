@@ -4,6 +4,7 @@ import { permissionResolvers } from "./permissionResolvers";
 import { organizationResolvers } from "./organizationResolvers";
 import { canDoResolvers } from "./canDoResolvers";
 import { folderResolvers } from "./folderResolvers";
+import { metadataResolvers } from "./metadataResolvers";
 
 export const resolvers = {
   Query: {
@@ -13,6 +14,7 @@ export const resolvers = {
     ...permissionResolvers.Query,
     ...canDoResolvers.Query,
     ...folderResolvers.Query,
+    ...metadataResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,
@@ -20,6 +22,7 @@ export const resolvers = {
     ...roleResolvers.Mutation,
     ...permissionResolvers.Mutation,
     ...folderResolvers.Mutation,
+    ...metadataResolvers.Mutation,
   },
   Folder: folderResolvers.Folder,
 };

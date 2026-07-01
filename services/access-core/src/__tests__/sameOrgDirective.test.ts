@@ -79,6 +79,66 @@ describe("@sameOrg directive", () => {
     expect(mockCanDo).toHaveBeenCalledTimes(1);
   });
 
+  test("resolves Root to Animals to Dogs with one Go request and one policy call", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        folders: [
+          {
+            id: "root",
+            org_id: "org-1",
+            path: "root",
+            name: "Root",
+            created_by: "user-1",
+            created_at: "2026-07-01T00:00:00Z",
+            updated_at: "2026-07-01T00:00:00Z",
+          },
+          {
+            id: "animals",
+            org_id: "org-1",
+            path: "root.animals",
+            name: "Animals",
+            created_by: "user-1",
+            created_at: "2026-07-01T00:00:00Z",
+            updated_at: "2026-07-01T00:00:00Z",
+          },
+          {
+            id: "dogs",
+            org_id: "org-1",
+            path: "root.animals.dogs",
+            name: "Dogs",
+            created_by: "user-1",
+            created_at: "2026-07-01T00:00:00Z",
+            updated_at: "2026-07-01T00:00:00Z",
+          },
+        ],
+      }),
+    });
+
+    const result = await run(
+      `query {
+        folderTree(orgId: "org-1") {
+          id
+          name
+          children { id name children { id name } }
+        }
+      }`,
+      ctx(),
+    );
+    const folders = result.data?.folderTree as Array<{
+      id: string;
+      children: Array<{ id: string; children: Array<{ id: string }> }>;
+    }>;
+    const root = folders.find((folder) => folder.id === "root");
+
+    expect(result.errors).toBeUndefined();
+    expect(root?.children[0].id).toBe("animals");
+    expect(root?.children[0].children[0].id).toBe("dogs");
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockCanDo).toHaveBeenCalledTimes(1);
+    expect(mockFetch.mock.calls[0][0]).toContain("tree=true");
+  });
+
   test("rejects a mutation when orgId arg != authenticated org", async () => {
     const result = await run(
       `mutation { createFolder(orgId: "org-2", name: "x") { id } }`,

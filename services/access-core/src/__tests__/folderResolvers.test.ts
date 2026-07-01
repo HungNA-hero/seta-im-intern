@@ -419,12 +419,13 @@ describe("Query.folderTree", () => {
     expect(result[0].subtreeNodes).toBe(result[1].subtreeNodes);
   });
 
-  test("does not attach subtreeNodes without rootPath (Go returns root-level only)", async () => {
+  test("loads and attaches the full forest cache without rootPath", async () => {
     fetchListOk([makeGoFolder({ id: "f1", path: "root" })]);
 
     const result = (await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx)) as any[];
 
-    expect(result[0].subtreeNodes).toBeUndefined();
+    expect(result[0].subtreeNodes).toBe(result);
+    expect(mockFetch.mock.calls[0][0]).toContain("tree=true");
   });
 
   test("makes exactly one HTTP call to Go", async () => {
