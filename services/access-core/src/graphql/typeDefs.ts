@@ -1,6 +1,7 @@
 export const typeDefs = /* GraphQL */ `
   directive @auth on FIELD_DEFINITION
   directive @orgMember on FIELD_DEFINITION
+  directive @sameOrg on FIELD_DEFINITION
 
   enum ResourceType {
     folder
@@ -91,6 +92,8 @@ export const typeDefs = /* GraphQL */ `
       grantedBy: ID!
     ): ObjectPermission! @orgMember
     revokeObjectPermission(id: ID!): Boolean! @orgMember
+    createFolder(orgId: ID!, parentPath: String, name: String!, description: String): Folder! @orgMember @sameOrg
+    updateFolder(orgId: ID!, id: ID!, name: String, description: String): Folder! @orgMember @sameOrg
   }
 
   type Folder {
@@ -125,8 +128,8 @@ export const typeDefs = /* GraphQL */ `
       resourceType: ResourceType!
       resourceId: ID!
     ): PermissionResult!
-    folder(id: ID!): Folder @auth
-    folderTree(orgId: ID!, rootPath: String): [Folder!]! @auth
-    folderChildren(orgId: ID!, parentPath: String!): [Folder!]! @auth
+    folder(orgId: ID!, id: ID!): Folder @auth @sameOrg
+    folderTree(orgId: ID!, rootPath: String): [Folder!]! @auth @sameOrg
+    folderChildren(orgId: ID!, parentPath: String!): [Folder!]! @auth @sameOrg
   }
 `;

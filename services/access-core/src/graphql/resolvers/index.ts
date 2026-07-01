@@ -19,5 +19,7 @@ export const resolvers = {
     ...organizationResolvers.Mutation,
     ...roleResolvers.Mutation,
     ...permissionResolvers.Mutation,
+    ...folderResolvers.Mutation,
   },
+  Folder: folderResolvers.Folder,
 };
