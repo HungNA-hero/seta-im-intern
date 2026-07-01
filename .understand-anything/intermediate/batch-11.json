@@ -1,0 +1,41 @@
+{
+  "nodes": [
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Main project documentation and getting-started guide, detailing setup for databases and local services.",
+      "tags": [
+        "documentation",
+        "entry-point"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "Root configuration file for NPM defining scripts and development dependencies.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:pr_body.txt",
+      "type": "document",
+      "name": "pr_body.txt",
+      "filePath": "pr_body.txt",
+      "summary": "Template or draft for a Pull Request description.",
+      "tags": [
+        "documentation",
+        "ci-cd"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": []
+}

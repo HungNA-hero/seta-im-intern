@@ -1,0 +1,1074 @@
+{
+  "nodes": [
+    {
+      "id": "file:services/asset-core/cmd/server/main.go",
+      "type": "file",
+      "name": "main.go",
+      "filePath": "services/asset-core/cmd/server/main.go",
+      "summary": "Source code file main.go.",
+      "tags": [
+        "entry-point",
+        "component",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/cmd/server/main.go:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "services/asset-core/cmd/server/main.go",
+      "summary": "Function main in main.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        17,
+        45
+      ]
+    },
+    {
+      "id": "function:services/asset-core/cmd/server/main.go:openAssetDB",
+      "type": "function",
+      "name": "openAssetDB",
+      "filePath": "services/asset-core/cmd/server/main.go",
+      "summary": "Function openAssetDB in main.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        47,
+        62
+      ]
+    },
+    {
+      "id": "function:services/asset-core/cmd/server/main.go:assetDSNFromEnv",
+      "type": "function",
+      "name": "assetDSNFromEnv",
+      "filePath": "services/asset-core/cmd/server/main.go",
+      "summary": "Function assetDSNFromEnv in main.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        64,
+        74
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/domain/asset.go",
+      "type": "file",
+      "name": "asset.go",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Source code file asset.go.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "function",
+      "name": "TableName",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Function TableName in asset.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        41,
+        43
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "function",
+      "name": "TableName",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Function TableName in asset.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        50,
+        52
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "function",
+      "name": "TableName",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Function TableName in asset.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        68,
+        70
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "function",
+      "name": "TableName",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Function TableName in asset.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        96,
+        98
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:CreateFolderInput",
+      "type": "class",
+      "name": "CreateFolderInput",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class CreateFolderInput in asset.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        22,
+        26
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:UpdateFolderInput",
+      "type": "class",
+      "name": "UpdateFolderInput",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class UpdateFolderInput in asset.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        29,
+        34
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:OrganizationRef",
+      "type": "class",
+      "name": "OrganizationRef",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class OrganizationRef in asset.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        37,
+        39
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:UserRef",
+      "type": "class",
+      "name": "UserRef",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class UserRef in asset.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        46,
+        48
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:Folder",
+      "type": "class",
+      "name": "Folder",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class Folder in asset.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        55,
+        66
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:MetadataItem",
+      "type": "class",
+      "name": "MetadataItem",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class MetadataItem in asset.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        73,
+        93
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:CreateMetadataInput",
+      "type": "class",
+      "name": "CreateMetadataInput",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class CreateMetadataInput in asset.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        101,
+        115
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:UpdateMetadataInput",
+      "type": "class",
+      "name": "UpdateMetadataInput",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class UpdateMetadataInput in asset.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        119,
+        144
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:AssetRepository",
+      "type": "class",
+      "name": "AssetRepository",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class AssetRepository in asset.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        147,
+        164
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:AssetUsecase",
+      "type": "class",
+      "name": "AssetUsecase",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Class AssetUsecase in asset.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        167,
+        184
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository.go",
+      "type": "file",
+      "name": "asset_repository.go",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Source code file asset_repository.go.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:NewAssetRepository",
+      "type": "function",
+      "name": "NewAssetRepository",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function NewAssetRepository in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        20,
+        22
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderTree",
+      "type": "function",
+      "name": "GetFolderTree",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function GetFolderTree in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        24,
+        35
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderByID",
+      "type": "function",
+      "name": "GetFolderByID",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function GetFolderByID in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        37,
+        45
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderChildren",
+      "type": "function",
+      "name": "GetFolderChildren",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function GetFolderChildren in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        47,
+        59
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:GetRootFolders",
+      "type": "function",
+      "name": "GetRootFolders",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function GetRootFolders in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        61,
+        71
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:EnsureRefs",
+      "type": "function",
+      "name": "EnsureRefs",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function EnsureRefs in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        73,
+        89
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:CreateFolder",
+      "type": "function",
+      "name": "CreateFolder",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function CreateFolder in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        91,
+        172
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:UpdateFolder",
+      "type": "function",
+      "name": "UpdateFolder",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function UpdateFolder in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        174,
+        239
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:GetMetadataItemsByFolder",
+      "type": "function",
+      "name": "GetMetadataItemsByFolder",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function GetMetadataItemsByFolder in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        242,
+        266
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:GetMetadataItemByID",
+      "type": "function",
+      "name": "GetMetadataItemByID",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function GetMetadataItemByID in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        269,
+        283
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:CreateMetadataItem",
+      "type": "function",
+      "name": "CreateMetadataItem",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function CreateMetadataItem in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        286,
+        335
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository.go:UpdateMetadataItem",
+      "type": "function",
+      "name": "UpdateMetadataItem",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Function UpdateMetadataItem in asset_repository.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        338,
+        428
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/repository/asset_repository.go:assetRepository",
+      "type": "class",
+      "name": "assetRepository",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Class assetRepository in asset_repository.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        15,
+        17
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "function:services/asset-core/cmd/server/main.go:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "function:services/asset-core/cmd/server/main.go:openAssetDB",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "function:services/asset-core/cmd/server/main.go:assetDSNFromEnv",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/cmd/server/main.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:services/asset-core/cmd/server/main.go:main",
+      "target": "function:services/asset-core/cmd/server/main.go:openAssetDB",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:services/asset-core/cmd/server/main.go:main",
+      "target": "function:services/asset-core/cmd/server/main.go:assetDSNFromEnv",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:CreateFolderInput",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:CreateFolderInput",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:UpdateFolderInput",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:UpdateFolderInput",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:OrganizationRef",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:OrganizationRef",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:UserRef",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:UserRef",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:Folder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:Folder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:MetadataItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:MetadataItem",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:CreateMetadataInput",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:CreateMetadataInput",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:UpdateMetadataInput",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:UpdateMetadataInput",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:AssetRepository",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:AssetRepository",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:AssetUsecase",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:AssetUsecase",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:NewAssetRepository",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:NewAssetRepository",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderTree",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderTree",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderByID",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderByID",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderChildren",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderChildren",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetRootFolders",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetRootFolders",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:EnsureRefs",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:EnsureRefs",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:CreateFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:CreateFolder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:UpdateFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:UpdateFolder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetMetadataItemsByFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetMetadataItemsByFolder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetMetadataItemByID",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetMetadataItemByID",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:CreateMetadataItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:CreateMetadataItem",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:UpdateMetadataItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:UpdateMetadataItem",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "class:services/asset-core/internal/repository/asset_repository.go:assetRepository",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

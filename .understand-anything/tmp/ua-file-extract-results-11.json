@@ -1,0 +1,127 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 136,
+      "nonEmptyLines": 102,
+      "sections": [
+        {
+          "heading": "seta-im-intern",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Phase 1 local database baseline",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "Prerequisites",
+          "level": 3,
+          "line": 11
+        },
+        {
+          "heading": "Quick Start (NPM Scripts)",
+          "level": 3,
+          "line": 18
+        },
+        {
+          "heading": "Manual Setup & Commands",
+          "level": 3,
+          "line": 49
+        },
+        {
+          "heading": "Start databases",
+          "level": 4,
+          "line": 53
+        },
+        {
+          "heading": "Run migrations",
+          "level": 4,
+          "line": 62
+        },
+        {
+          "heading": "Inspect databases",
+          "level": 4,
+          "line": 85
+        },
+        {
+          "heading": "Run Go Asset Core locally",
+          "level": 4,
+          "line": 101
+        },
+        {
+          "heading": "Reset local data",
+          "level": 4,
+          "line": 125
+        },
+        {
+          "heading": "Environment overrides",
+          "level": 3,
+          "line": 134
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 11
+      }
+    },
+    {
+      "path": "package.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 20,
+      "nonEmptyLines": 20,
+      "sections": [
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "private",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "scripts",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "devDependencies",
+          "level": 1,
+          "line": 17
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 5
+      }
+    },
+    {
+      "path": "pr_body.txt",
+      "language": "txt",
+      "fileCategory": "docs",
+      "totalLines": 11,
+      "nonEmptyLines": 9,
+      "metrics": {}
+    }
+  ]
+}

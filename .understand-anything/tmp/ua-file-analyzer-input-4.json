@@ -1,21 +1,95 @@
 {
-  "projectRoot": "C:\\Users\\admin\\Downloads\\Seta Im Intern\\seta-im-intern",
-  "batchFiles": [
-    {
-      "path": "infra/db/access/migrations/V1__create_access_schema.sql",
-      "language": "sql",
-      "sizeLines": 133,
-      "fileCategory": "data"
-    },
-    {
-      "path": "infra/db/access/migrations/V2__seed_access_schema.sql",
-      "language": "sql",
-      "sizeLines": 56,
-      "fileCategory": "data"
-    }
-  ],
-  "batchImportData": {
-    "infra/db/access/migrations/V1__create_access_schema.sql": [],
-    "infra/db/access/migrations/V2__seed_access_schema.sql": []
-  }
+    "projectRoot":  "c:\\Users\\admin\\Downloads\\Seta Im Intern\\seta-im-intern",
+    "batchImportData":  {
+                            "services/asset-core/internal/delivery/http/asset_handler_test.go":  [
+                                                                                                     "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+                                                                                                     "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+                                                                                                     "services/asset-core/internal/delivery/http/asset_handler_test.go",
+                                                                                                     "services/asset-core/internal/delivery/http/asset_handler.go",
+                                                                                                     "services/asset-core/internal/delivery/http/middleware_test.go",
+                                                                                                     "services/asset-core/internal/delivery/http/middleware.go",
+                                                                                                     "services/asset-core/internal/domain/asset.go"
+                                                                                                 ],
+                            "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go":  [
+                                                                                                              "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+                                                                                                              "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+                                                                                                              "services/asset-core/internal/delivery/http/asset_handler_test.go",
+                                                                                                              "services/asset-core/internal/delivery/http/asset_handler.go",
+                                                                                                              "services/asset-core/internal/delivery/http/middleware_test.go",
+                                                                                                              "services/asset-core/internal/delivery/http/middleware.go",
+                                                                                                              "services/asset-core/internal/domain/asset.go"
+                                                                                                          ],
+                            "services/asset-core/internal/requestcontext/context.go":  [
+
+                                                                                       ],
+                            "services/asset-core/internal/delivery/http/asset_handler.go":  [
+                                                                                                "services/asset-core/internal/domain/asset.go",
+                                                                                                "services/asset-core/internal/requestcontext/context.go"
+                                                                                            ],
+                            "services/asset-core/internal/delivery/http/middleware.go":  [
+                                                                                             "services/asset-core/internal/requestcontext/context.go"
+                                                                                         ],
+                            "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go":  [
+                                                                                                                   "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+                                                                                                                   "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+                                                                                                                   "services/asset-core/internal/delivery/http/asset_handler_test.go",
+                                                                                                                   "services/asset-core/internal/delivery/http/asset_handler.go",
+                                                                                                                   "services/asset-core/internal/delivery/http/middleware_test.go",
+                                                                                                                   "services/asset-core/internal/delivery/http/middleware.go",
+                                                                                                                   "services/asset-core/internal/domain/asset.go"
+                                                                                                               ],
+                            "services/asset-core/internal/delivery/http/middleware_test.go":  [
+                                                                                                  "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+                                                                                                  "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+                                                                                                  "services/asset-core/internal/delivery/http/asset_handler_test.go",
+                                                                                                  "services/asset-core/internal/delivery/http/asset_handler.go",
+                                                                                                  "services/asset-core/internal/delivery/http/middleware_test.go",
+                                                                                                  "services/asset-core/internal/delivery/http/middleware.go",
+                                                                                                  "services/asset-core/internal/requestcontext/context.go"
+                                                                                              ]
+                        },
+    "batchFiles":  [
+                       {
+                           "fileCategory":  "code",
+                           "path":  "services/asset-core/internal/delivery/http/asset_handler.go",
+                           "language":  "go",
+                           "sizeLines":  584
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+                           "language":  "go",
+                           "sizeLines":  264
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+                           "language":  "go",
+                           "sizeLines":  178
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "services/asset-core/internal/delivery/http/asset_handler_test.go",
+                           "language":  "go",
+                           "sizeLines":  510
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "services/asset-core/internal/delivery/http/middleware.go",
+                           "language":  "go",
+                           "sizeLines":  39
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "services/asset-core/internal/delivery/http/middleware_test.go",
+                           "language":  "go",
+                           "sizeLines":  106
+                       },
+                       {
+                           "fileCategory":  "code",
+                           "path":  "services/asset-core/internal/requestcontext/context.go",
+                           "language":  "go",
+                           "sizeLines":  29
+                       }
+                   ]
 }

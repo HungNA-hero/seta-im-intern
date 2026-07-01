@@ -1,0 +1,3121 @@
+{
+  "scriptCompleted": true,
+  "entryPointCandidates": [
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "score": 6,
+      "name": "index.ts",
+      "type": "file"
+    },
+    {
+      "id": "file:services/asset-core/cmd/server/main.go",
+      "score": 5,
+      "name": "main.go",
+      "summary": "Source code file main.go.",
+      "type": "file"
+    },
+    {
+      "id": "file:services/access-core/src/index.ts",
+      "score": 5,
+      "type": "file"
+    },
+    {
+      "id": "document:README.md",
+      "score": 5,
+      "name": "README.md",
+      "summary": "Main project README detailing local database baseline setup, prerequisites, quick start npm scripts, manual setup commands, and environment overrides for the SETA IM intern project.",
+      "type": "document"
+    },
+    {
+      "id": "file:services/access-core/src/server.ts",
+      "score": 4,
+      "name": "server.ts",
+      "summary": "Source code file server.ts.",
+      "type": "file"
+    }
+  ],
+  "fanInRanking": [
+    {
+      "id": "file:services/asset-core/internal/domain/asset.go",
+      "fanIn": 12,
+      "name": "asset.go"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/context.ts",
+      "fanIn": 12,
+      "name": "context.ts"
+    },
+    {
+      "id": "file:services/access-core/src/db/prisma.ts",
+      "fanIn": 10,
+      "name": "prisma.ts"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "fanIn": 8,
+      "name": "asset_repository_create_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "fanIn": 8,
+      "name": "asset_repository_metadata_integration_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "fanIn": 8,
+      "name": "asset_repository_metadata_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "fanIn": 8,
+      "name": "asset_repository_update_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "fanIn": 7,
+      "name": "asset_repository_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "fanIn": 6,
+      "name": "asset_handler_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "fanIn": 6,
+      "name": "middleware_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository.go",
+      "fanIn": 6,
+      "name": "asset_repository.go"
+    },
+    {
+      "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref",
+      "fanIn": 6,
+      "name": "user_ref"
+    },
+    {
+      "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+      "fanIn": 6,
+      "name": "organizations"
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "fanIn": 5,
+      "name": "asset_handler.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/middleware.go",
+      "fanIn": 5,
+      "name": "middleware.go"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/users.ts:toUser",
+      "fanIn": 5,
+      "name": "toUser"
+    },
+    {
+      "id": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "fanIn": 5,
+      "name": "asset_usecase_metadata_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "fanIn": 5,
+      "name": "asset_usecase_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "fanIn": 5,
+      "name": "asset_handler_create_update_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "fanIn": 5,
+      "name": "asset_handler_metadata_test.go"
+    }
+  ],
+  "fanOutRanking": [
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "fanOut": 41,
+      "name": "asset_handler_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository.go",
+      "fanOut": 31,
+      "name": "asset_repository.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "fanOut": 31,
+      "name": "asset_usecase_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "fanOut": 29,
+      "name": "asset_usecase.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/domain/asset.go",
+      "fanOut": 28,
+      "name": "asset.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "fanOut": 28,
+      "name": "asset_repository_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "fanOut": 23,
+      "name": "asset_handler.go"
+    },
+    {
+      "id": "file:services/asset-core/cmd/server/main.go",
+      "fanOut": 18,
+      "name": "main.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "fanOut": 17,
+      "name": "asset_repository_create_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "fanOut": 17,
+      "name": "asset_repository_update_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "fanOut": 15,
+      "name": "asset_repository_metadata_test.go"
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "fanOut": 15,
+      "name": "asset_handler_create_update_test.go"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/context.ts",
+      "fanOut": 14,
+      "name": "context.ts"
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "fanOut": 14,
+      "name": "asset_handler_metadata_test.go"
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/users.ts",
+      "fanOut": 12,
+      "name": "users.ts"
+    },
+    {
+      "id": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "fanOut": 12,
+      "name": "asset_usecase_metadata_test.go"
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/roles.ts",
+      "fanOut": 10,
+      "name": "roles.ts"
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "fanOut": 9,
+      "name": "middleware_test.go"
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/organizations.ts",
+      "fanOut": 9,
+      "name": "organizations.ts"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "fanOut": 9,
+      "name": "metadataResolvers.ts"
+    }
+  ],
+  "bfsTraversal": {
+    "startNode": "file:services/access-core/src/graphql/resolvers/index.ts",
+    "order": [
+      "file:services/access-core/src/graphql/resolvers/index.ts",
+      "file:services/access-core/src/graphql/resolvers/canDoResolvers.ts",
+      "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "file:services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+      "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "file:services/access-core/src/db/queries/canDo.ts",
+      "file:services/access-core/src/graphql/context.ts",
+      "file:services/access-core/src/config.ts",
+      "file:services/access-core/src/db/queries/organizations.ts",
+      "file:services/access-core/src/db/queries/userRoles.ts",
+      "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "file:services/access-core/src/db/queries/roles.ts",
+      "file:services/access-core/src/db/queries/users.ts",
+      "file:services/access-core/src/db/prisma.ts"
+    ],
+    "depthMap": {
+      "file:services/access-core/src/graphql/resolvers/index.ts": 0,
+      "file:services/access-core/src/graphql/resolvers/canDoResolvers.ts": 1,
+      "file:services/access-core/src/graphql/resolvers/folderResolvers.ts": 1,
+      "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts": 1,
+      "file:services/access-core/src/graphql/resolvers/organizationResolvers.ts": 1,
+      "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts": 1,
+      "file:services/access-core/src/graphql/resolvers/roleResolvers.ts": 1,
+      "file:services/access-core/src/graphql/resolvers/userResolvers.ts": 1,
+      "file:services/access-core/src/db/queries/canDo.ts": 2,
+      "file:services/access-core/src/graphql/context.ts": 2,
+      "file:services/access-core/src/config.ts": 2,
+      "file:services/access-core/src/db/queries/organizations.ts": 2,
+      "file:services/access-core/src/db/queries/userRoles.ts": 2,
+      "file:services/access-core/src/graphql/resolvers/utils.ts": 2,
+      "file:services/access-core/src/db/queries/objectPermissions.ts": 2,
+      "file:services/access-core/src/db/queries/rolePermissions.ts": 2,
+      "file:services/access-core/src/db/queries/roles.ts": 2,
+      "file:services/access-core/src/db/queries/users.ts": 2,
+      "file:services/access-core/src/db/prisma.ts": 3
+    },
+    "byDepth": {
+      "0": [
+        "file:services/access-core/src/graphql/resolvers/index.ts"
+      ],
+      "1": [
+        "file:services/access-core/src/graphql/resolvers/canDoResolvers.ts",
+        "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+        "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+        "file:services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+        "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+        "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+        "file:services/access-core/src/graphql/resolvers/userResolvers.ts"
+      ],
+      "2": [
+        "file:services/access-core/src/db/queries/canDo.ts",
+        "file:services/access-core/src/graphql/context.ts",
+        "file:services/access-core/src/config.ts",
+        "file:services/access-core/src/db/queries/organizations.ts",
+        "file:services/access-core/src/db/queries/userRoles.ts",
+        "file:services/access-core/src/graphql/resolvers/utils.ts",
+        "file:services/access-core/src/db/queries/objectPermissions.ts",
+        "file:services/access-core/src/db/queries/rolePermissions.ts",
+        "file:services/access-core/src/db/queries/roles.ts",
+        "file:services/access-core/src/db/queries/users.ts"
+      ],
+      "3": [
+        "file:services/access-core/src/db/prisma.ts"
+      ]
+    }
+  },
+  "nonCodeFiles": {
+    "documentation": [
+      {
+        "id": "document:.understand-anything/baseline-context.md",
+        "name": "baseline-context.md",
+        "type": "document",
+        "summary": "Documentation file."
+      },
+      {
+        "id": "document:.understand-anything/understand-tour.md",
+        "name": "understand-tour.md",
+        "type": "document",
+        "summary": "Documentation file."
+      },
+      {
+        "id": "document:.understand-anything/tmp/ua-tour-prompt.txt",
+        "name": "ua-tour-prompt.txt",
+        "type": "document",
+        "summary": "Intermediate text prompt used by Understand Anything plugin: ua-tour-prompt.txt."
+      },
+      {
+        "id": "document:README.md",
+        "name": "README.md",
+        "type": "document",
+        "summary": "Main project README detailing local database baseline setup, prerequisites, quick start npm scripts, manual setup commands, and environment overrides for the SETA IM intern project."
+      },
+      {
+        "id": "document:pr_body.txt",
+        "name": "pr_body.txt",
+        "type": "document",
+        "summary": "Template or default text for a Pull Request body (KAN-24) describing root package.json additions and README updates."
+      }
+    ],
+    "infrastructure": [
+      {
+        "id": "service:infra/docker-compose.yml",
+        "name": "docker-compose.yml",
+        "type": "service",
+        "summary": "Định nghĩa môi trường Docker Compose gồm hai PostgreSQL database, hai job Flyway migration và container access-core với health check, volume cùng cổng cục bộ."
+      },
+      {
+        "id": "resource:infra/docker-compose.yml:asset-db",
+        "name": "asset-db",
+        "type": "resource",
+        "summary": "Docker service for asset-db"
+      },
+      {
+        "id": "resource:infra/docker-compose.yml:access-db",
+        "name": "access-db",
+        "type": "resource",
+        "summary": "Docker service for access-db"
+      },
+      {
+        "id": "resource:infra/docker-compose.yml:flyway-asset",
+        "name": "flyway-asset",
+        "type": "resource",
+        "summary": "Docker service for flyway-asset"
+      },
+      {
+        "id": "resource:infra/docker-compose.yml:flyway-access",
+        "name": "flyway-access",
+        "type": "resource",
+        "summary": "Docker service for flyway-access"
+      },
+      {
+        "id": "resource:infra/docker-compose.yml:access-core",
+        "name": "access-core",
+        "type": "resource",
+        "summary": "Docker service for access-core"
+      }
+    ],
+    "data": [
+      {
+        "id": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+        "name": "V1__create_access_schema.sql",
+        "type": "table",
+        "summary": "Database schema migration script."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+        "name": "access",
+        "type": "table",
+        "summary": "Table access definition."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V2__seed_access_schema.sql",
+        "name": "V2__seed_access_schema.sql",
+        "type": "table",
+        "summary": "Database schema migration script."
+      },
+      {
+        "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql",
+        "name": "V1__asset_initial_schema.sql",
+        "type": "table",
+        "summary": "Database schema migration script."
+      },
+      {
+        "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:organization_ref",
+        "name": "organization_ref",
+        "type": "table",
+        "summary": "Giữ tham chiếu bóng tới ID tổ chức do Access DB sở hữu. Bảng nhỏ này cho phép Asset Core kiểm tra khóa ngoại mà không sao chép dữ liệu tổ chức."
+      },
+      {
+        "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref",
+        "name": "user_ref",
+        "type": "table",
+        "summary": "Giữ ID người dùng từ Access DB để Asset Core dùng trong các trường audit. Thiết kế chỉ lưu khóa định danh nhằm tránh nhân bản hồ sơ người dùng giữa hai cơ sở dữ liệu."
+      },
+      {
+        "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
+        "name": "folders",
+        "type": "table",
+        "summary": "Lưu cây thư mục theo tenant bằng đường dẫn `ltree`, kèm thông tin mô tả, audit và soft delete. Các partial unique index giữ duy nhất đường dẫn và tên anh em còn hiệu lực."
+      },
+      {
+        "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items",
+        "name": "metadata_items",
+        "type": "table",
+        "summary": "Lưu metadata văn bản của asset trong từng thư mục, gồm nhãn, nguồn ngoài, giấy phép, tác giả, JSON mở rộng và thông tin audit. Ràng buộc bảo đảm cặp định danh nguồn ngoài đầy đủ, còn trigger cấm gắn item vào thư mục đã soft delete."
+      },
+      {
+        "id": "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql",
+        "name": "V2__asset_seed_demo_tree.sql",
+        "type": "table",
+        "summary": "Database schema migration script."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+        "name": "V1__create_access_schema.sql",
+        "type": "table",
+        "summary": "Khởi tạo schema `access` cho danh tính, tổ chức và mô hình phân quyền nhiều tầng, gồm RBAC theo vai trò và quyền trên từng đối tượng. Migration cũng định nghĩa enum, trigger cập nhật thời gian, ràng buộc toàn vẹn và các index phục vụ truy vấn quyền."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
+        "name": "users",
+        "type": "table",
+        "summary": "Lưu danh tính người dùng, trạng thái hoạt động và các mốc thời gian hỗ trợ soft delete. Email được bảo đảm duy nhất và `updated_at` được duy trì bằng trigger."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+        "name": "organizations",
+        "type": "table",
+        "summary": "Đại diện tenant tổ chức với mã và tên duy nhất, đồng thời lưu cờ bật tính năng OLP. Các check constraint ngăn mã hoặc tên rỗng."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members",
+        "name": "organization_members",
+        "type": "table",
+        "summary": "Liên kết người dùng với tổ chức và ghi nhận thời điểm tham gia. Cặp tổ chức-người dùng là duy nhất và được xóa dây chuyền khi thực thể cha bị xóa."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+        "name": "roles",
+        "type": "table",
+        "summary": "Định nghĩa vai trò trong phạm vi từng tổ chức, với mã vai trò duy nhất theo tenant. Khóa duy nhất ghép `id` và `org_id` hỗ trợ foreign key bảo toàn phạm vi tổ chức."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
+        "name": "user_roles",
+        "type": "table",
+        "summary": "Gán vai trò cho người dùng trong một tổ chức và ngăn trùng lặp cùng một phép gán. Composite foreign key bảo đảm vai trò thuộc đúng tenant được chỉ định."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions",
+        "name": "permission_actions",
+        "type": "table",
+        "summary": "Danh mục chuẩn hóa các hành động quyền như đọc, ghi, xóa và quản lý quyền. Mã hành động dùng enum PostgreSQL và được bảo đảm duy nhất."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions",
+        "name": "role_permissions",
+        "type": "table",
+        "summary": "Xác định trần quyền của một vai trò theo hành động và loại tài nguyên. Ràng buộc duy nhất ngăn khai báo lặp cùng một quyền RBAC."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
+        "name": "object_permissions",
+        "type": "table",
+        "summary": "Lưu quyền trực tiếp trên từng đối tượng cho người dùng hoặc vai trò trong một tổ chức. Check constraint buộc chỉ có đúng một loại bên nhận quyền, còn partial unique index ngăn cấp trùng."
+      },
+      {
+        "id": "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+        "name": "V2__seed_access_schema.sql",
+        "type": "table",
+        "summary": "Nạp dữ liệu mẫu có tính idempotent cho schema truy cập: hành động quyền, tổ chức Seta, hai vai trò, người dùng, thành viên và phép gán vai trò. Phần cuối sinh ma trận quyền RBAC cho `org_admin` và `viewer` trên folder cùng metadata item."
+      },
+      {
+        "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration",
+        "name": "V1__asset_initial_schema.sql",
+        "type": "table",
+        "summary": "Khởi tạo cơ sở dữ liệu Asset Core cho cây thư mục và bản ghi metadata, đồng thời tạo bảng tham chiếu mỏng tới danh tính thuộc Access DB. Migration dùng `ltree`, soft delete, audit fields, trigger và index chuyên biệt để bảo vệ cấu trúc cây và tối ưu truy vấn."
+      },
+      {
+        "id": "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql:asset-seed-migration",
+        "name": "V2__asset_seed_demo_tree.sql",
+        "type": "table",
+        "summary": "Nạp dữ liệu mẫu idempotent cho Asset Core, gồm tham chiếu tổ chức/người dùng, cây `Root → Animals → Dogs` và một metadata item minh họa. Seed phục vụ phát triển cục bộ và kiểm tra vị trí thư mục cùng định danh import từ nguồn ngoài."
+      },
+      {
+        "id": "schema:services/access-core/prisma/schema.prisma",
+        "name": "schema.prisma",
+        "type": "schema",
+        "summary": "Database schema definition for access-core"
+      },
+      {
+        "id": "table:services/access-core/prisma/schema.prisma:object_permissions",
+        "name": "object_permissions",
+        "type": "table",
+        "summary": "Prisma model for object_permissions"
+      },
+      {
+        "id": "table:services/access-core/prisma/schema.prisma:organization_members",
+        "name": "organization_members",
+        "type": "table",
+        "summary": "Prisma model for organization_members"
+      },
+      {
+        "id": "table:services/access-core/prisma/schema.prisma:organizations",
+        "name": "organizations",
+        "type": "table",
+        "summary": "Prisma model for organizations"
+      },
+      {
+        "id": "table:services/access-core/prisma/schema.prisma:permission_actions",
+        "name": "permission_actions",
+        "type": "table",
+        "summary": "Prisma model for permission_actions"
+      },
+      {
+        "id": "table:services/access-core/prisma/schema.prisma:role_permissions",
+        "name": "role_permissions",
+        "type": "table",
+        "summary": "Prisma model for role_permissions"
+      },
+      {
+        "id": "table:services/access-core/prisma/schema.prisma:roles",
+        "name": "roles",
+        "type": "table",
+        "summary": "Prisma model for roles"
+      },
+      {
+        "id": "table:services/access-core/prisma/schema.prisma:user_roles",
+        "name": "user_roles",
+        "type": "table",
+        "summary": "Prisma model for user_roles"
+      },
+      {
+        "id": "table:services/access-core/prisma/schema.prisma:users",
+        "name": "users",
+        "type": "table",
+        "summary": "Prisma model for users"
+      }
+    ],
+    "config": [
+      {
+        "id": "config:.understand-anything/config.json",
+        "name": "config.json",
+        "type": "config",
+        "summary": "Configuration file."
+      },
+      {
+        "id": "config:.understand-anything/diff-overlay.json",
+        "name": "diff-overlay.json",
+        "type": "config",
+        "summary": "Configuration file."
+      },
+      {
+        "id": "config:.understand-anything/fingerprints.json",
+        "name": "fingerprints.json",
+        "type": "config",
+        "summary": "Configuration file."
+      },
+      {
+        "id": "config:.understand-anything/knowledge-graph.json",
+        "name": "knowledge-graph.json",
+        "type": "config",
+        "summary": "Configuration file."
+      },
+      {
+        "id": "config:.understand-anything/meta.json",
+        "name": "meta.json",
+        "type": "config",
+        "summary": "Configuration file."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/assemble-review.json",
+        "name": "assemble-review.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: assemble-review.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/assembled-graph.json",
+        "name": "assembled-graph.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: assembled-graph.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/batch-1-part-1.json",
+        "name": "batch-1-part-1.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: batch-1-part-1.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/batch-1-part-2.json",
+        "name": "batch-1-part-2.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: batch-1-part-2.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/batch-2.json",
+        "name": "batch-2.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: batch-2.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/batch-3.json",
+        "name": "batch-3.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: batch-3.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/batch-6.json",
+        "name": "batch-6.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: batch-6.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/batch-7.json",
+        "name": "batch-7.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: batch-7.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/batch-999.json",
+        "name": "batch-999.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: batch-999.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/batches.json",
+        "name": "batches.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: batches.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/fingerprint-input.json",
+        "name": "fingerprint-input.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: fingerprint-input.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/layers.json",
+        "name": "layers.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: layers.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/review.json",
+        "name": "review.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: review.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/scan-result.json",
+        "name": "scan-result.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: scan-result.json."
+      },
+      {
+        "id": "config:.understand-anything/intermediate/tour.json",
+        "name": "tour.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: tour.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/batch-7-extract.json",
+        "name": "batch-7-extract.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: batch-7-extract.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/changed-files.txt",
+        "name": "changed-files.txt",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: changed-files.txt."
+      },
+      {
+        "id": "config:.understand-anything/tmp/subagents-input.json",
+        "name": "subagents-input.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: subagents-input.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-arch-input.json",
+        "name": "ua-arch-input.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-arch-input.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-arch-prompt.txt",
+        "name": "ua-arch-prompt.txt",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-arch-prompt.txt."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-arch-results.json",
+        "name": "ua-arch-results.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-arch-results.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-batch-3-context.json",
+        "name": "ua-batch-3-context.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-batch-3-context.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-analyzer-input-1.json",
+        "name": "ua-file-analyzer-input-1.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-1.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-analyzer-input-2.json",
+        "name": "ua-file-analyzer-input-2.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-2.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-analyzer-input-3.json",
+        "name": "ua-file-analyzer-input-3.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-3.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-analyzer-input-4.json",
+        "name": "ua-file-analyzer-input-4.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-4.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-analyzer-input-5.json",
+        "name": "ua-file-analyzer-input-5.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-5.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-analyzer-input-6.json",
+        "name": "ua-file-analyzer-input-6.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-6.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-analyzer-input-7.json",
+        "name": "ua-file-analyzer-input-7.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-7.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-extract-results-1.json",
+        "name": "ua-file-extract-results-1.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-1.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-extract-results-2.json",
+        "name": "ua-file-extract-results-2.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-2.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-extract-results-3.json",
+        "name": "ua-file-extract-results-3.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-3.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-extract-results-4.json",
+        "name": "ua-file-extract-results-4.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-4.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-extract-results-5.json",
+        "name": "ua-file-extract-results-5.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-5.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-extract-results-6.json",
+        "name": "ua-file-extract-results-6.json",
+        "type": "config",
+        "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-6.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-file-extract-results-7.json",
+        "name": "ua-file-extract-results-7.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: ua-file-extract-results-7.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-import-map-input.json",
+        "name": "ua-import-map-input.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: ua-import-map-input.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-import-map-output.json",
+        "name": "ua-import-map-output.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: ua-import-map-output.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-scan-files.json",
+        "name": "ua-scan-files.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: ua-scan-files.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-tour-input.json",
+        "name": "ua-tour-input.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: ua-tour-input.json."
+      },
+      {
+        "id": "config:.understand-anything/tmp/ua-tour-results.json",
+        "name": "ua-tour-results.json",
+        "type": "config",
+        "summary": "Intermediate artifact from Understand Anything plugin: ua-tour-results.json."
+      },
+      {
+        "id": "config:package.json",
+        "name": "package.json",
+        "type": "config",
+        "summary": "Root configuration file for NPM defining scripts and development dependencies."
+      },
+      {
+        "id": "config:services/access-core/package.json",
+        "name": "package.json",
+        "type": "config",
+        "summary": "Configuration file: services/access-core/package.json"
+      },
+      {
+        "id": "config:services/access-core/tsconfig.json",
+        "name": "tsconfig.json",
+        "type": "config",
+        "summary": "Configuration file: services/access-core/tsconfig.json"
+      },
+      {
+        "id": "config:services/asset-core/go.mod",
+        "name": "go.mod",
+        "type": "config",
+        "summary": "Configuration file: services/asset-core/go.mod"
+      },
+      {
+        "id": "config:services/asset-core/go.sum",
+        "name": "go.sum",
+        "type": "config",
+        "summary": "Configuration file: services/asset-core/go.sum"
+      },
+      {
+        "id": "config:infra/docker-compose.yml",
+        "name": "docker-compose.yml",
+        "type": "config",
+        "summary": "Configuration file: infra/docker-compose.yml"
+      },
+      {
+        "id": "config:services/access-core/prisma.config.ts",
+        "name": "prisma.config.ts",
+        "type": "config",
+        "summary": "Configuration file: services/access-core/prisma.config.ts"
+      }
+    ]
+  },
+  "clusters": [
+    {
+      "nodes": [
+        "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+        "file:services/asset-core/internal/delivery/http/middleware_test.go",
+        "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+        "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+        "file:services/asset-core/cmd/server/main.go",
+        "file:services/asset-core/internal/delivery/http/asset_handler.go",
+        "file:services/asset-core/internal/delivery/http/middleware.go",
+        "file:services/asset-core/internal/domain/asset.go",
+        "file:services/asset-core/internal/repository/asset_repository.go",
+        "file:services/asset-core/internal/repository/asset_repository_test.go",
+        "file:services/asset-core/internal/requestcontext/context.go",
+        "file:services/asset-core/internal/usecase/asset_usecase.go",
+        "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+        "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+        "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+        "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+        "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+        "file:services/asset-core/internal/usecase/asset_usecase_test.go"
+      ],
+      "edgeCount": 62
+    },
+    {
+      "nodes": [
+        "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+        "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+        "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+        "file:services/asset-core/internal/repository/asset_repository_test.go",
+        "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+        "file:services/asset-core/cmd/server/main.go",
+        "file:services/asset-core/internal/domain/asset.go",
+        "file:services/asset-core/internal/repository/asset_repository.go",
+        "file:services/asset-core/internal/usecase/asset_usecase.go",
+        "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+        "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+        "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+        "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+        "file:services/asset-core/internal/delivery/http/asset_handler.go",
+        "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+        "file:services/asset-core/internal/delivery/http/middleware.go",
+        "file:services/asset-core/internal/delivery/http/middleware_test.go",
+        "file:services/asset-core/internal/requestcontext/context.go"
+      ],
+      "edgeCount": 62
+    },
+    {
+      "nodes": [
+        "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+        "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+        "file:services/asset-core/cmd/server/main.go",
+        "file:services/asset-core/internal/domain/asset.go",
+        "file:services/asset-core/internal/repository/asset_repository.go",
+        "file:services/asset-core/internal/repository/asset_repository_test.go",
+        "file:services/asset-core/internal/usecase/asset_usecase.go",
+        "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+        "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+        "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+        "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+        "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+        "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+        "file:services/asset-core/internal/delivery/http/asset_handler.go",
+        "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+        "file:services/asset-core/internal/delivery/http/middleware.go",
+        "file:services/asset-core/internal/delivery/http/middleware_test.go",
+        "file:services/asset-core/internal/requestcontext/context.go"
+      ],
+      "edgeCount": 62
+    }
+  ],
+  "layers": {
+    "count": 4,
+    "list": [
+      {
+        "id": "layer:access-core",
+        "name": "Access Core Service",
+        "description": "TypeScript GraphQL service handling authentication, roles, permissions, and organization hierarchy",
+        "nodeIds": [
+          "file:services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
+          "file:services/access-core/src/config.ts",
+          "file:services/access-core/src/db/prisma.ts",
+          "file:services/access-core/src/db/queries/objectPermissions.ts",
+          "file:services/access-core/src/db/queries/organizations.ts",
+          "file:services/access-core/src/db/queries/rolePermissions.ts",
+          "file:services/access-core/src/db/queries/roles.ts",
+          "file:services/access-core/src/db/queries/userRoles.ts",
+          "file:services/access-core/src/db/queries/users.ts",
+          "file:services/access-core/src/graphql/resolvers/index.ts",
+          "file:services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+          "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+          "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+          "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+          "file:services/access-core/src/graphql/resolvers/utils.ts",
+          "file:services/access-core/src/server.ts",
+          "file:services/access-core/src/__tests__/canDo.test.ts",
+          "file:services/access-core/src/__tests__/context.test.ts",
+          "file:services/access-core/src/__tests__/folderResolvers.test.ts",
+          "file:services/access-core/src/__tests__/metadataResolvers.test.ts",
+          "file:services/access-core/src/__tests__/metadataSchema.test.ts",
+          "file:services/access-core/src/__tests__/sameOrgDirective.test.ts",
+          "file:services/access-core/src/db/queries/canDo.ts",
+          "file:services/access-core/src/graphql/context.ts",
+          "file:services/access-core/src/graphql/directives.ts",
+          "file:services/access-core/src/graphql/resolvers/canDoResolvers.ts",
+          "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+          "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+          "file:services/access-core/src/graphql/schema.ts",
+          "file:services/access-core/src/graphql/typeDefs.ts",
+          "config:services/access-core/package.json",
+          "file:services/access-core/prisma.config.ts",
+          "schema:services/access-core/prisma/schema.prisma",
+          "config:services/access-core/tsconfig.json",
+          "config:services/access-core/prisma.config.ts",
+          "table:services/access-core/prisma/schema.prisma:object_permissions",
+          "table:services/access-core/prisma/schema.prisma:organization_members",
+          "table:services/access-core/prisma/schema.prisma:organizations",
+          "table:services/access-core/prisma/schema.prisma:permission_actions",
+          "table:services/access-core/prisma/schema.prisma:role_permissions",
+          "table:services/access-core/prisma/schema.prisma:roles",
+          "table:services/access-core/prisma/schema.prisma:user_roles",
+          "table:services/access-core/prisma/schema.prisma:users",
+          "file:services/access-core/src/index.ts"
+        ]
+      },
+      {
+        "id": "layer:asset-core",
+        "name": "Asset Core Service",
+        "description": "Go service handling asset management, folder structures, and metadata operations",
+        "nodeIds": [
+          "file:services/asset-core/cmd/server/main.go",
+          "file:services/asset-core/internal/delivery/http/asset_handler.go",
+          "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+          "file:services/asset-core/internal/delivery/http/middleware.go",
+          "file:services/asset-core/internal/delivery/http/middleware_test.go",
+          "file:services/asset-core/internal/domain/asset.go",
+          "file:services/asset-core/internal/repository/asset_repository.go",
+          "file:services/asset-core/internal/repository/asset_repository_test.go",
+          "file:services/asset-core/internal/requestcontext/context.go",
+          "file:services/asset-core/internal/usecase/asset_usecase.go",
+          "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+          "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+          "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+          "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+          "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+          "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+          "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+          "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+          "config:services/asset-core/go.mod",
+          "config:services/asset-core/go.sum"
+        ]
+      },
+      {
+        "id": "layer:infrastructure",
+        "name": "Infrastructure & Data",
+        "description": "Database schemas, Flyway migrations, and Docker Compose configurations for the services",
+        "nodeIds": [
+          "table:infra/db/access/migrations/V1__create_access_schema.sql",
+          "table:infra/db/access/migrations/V2__seed_access_schema.sql",
+          "table:infra/db/asset/migrations/V1__asset_initial_schema.sql",
+          "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:organization_ref",
+          "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref",
+          "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
+          "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items",
+          "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql",
+          "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+          "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
+          "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+          "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members",
+          "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+          "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
+          "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions",
+          "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions",
+          "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
+          "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+          "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration",
+          "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql:asset-seed-migration",
+          "file:infra/db/asset/seed/.gitkeep",
+          "service:infra/docker-compose.yml",
+          "config:infra/docker-compose.yml",
+          "resource:infra/docker-compose.yml:asset-db",
+          "resource:infra/docker-compose.yml:access-db",
+          "resource:infra/docker-compose.yml:flyway-asset",
+          "resource:infra/docker-compose.yml:flyway-access",
+          "resource:infra/docker-compose.yml:access-core",
+          "table:infra/db/access/migrations/V1__create_access_schema.sql:access"
+        ]
+      },
+      {
+        "id": "layer:configuration-and-docs",
+        "name": "Configuration & Documentation",
+        "description": "Project documentation, NPM root configuration, and Understand Anything plugin artifacts",
+        "nodeIds": [
+          "document:.understand-anything/baseline-context.md",
+          "config:.understand-anything/config.json",
+          "config:.understand-anything/diff-overlay.json",
+          "config:.understand-anything/fingerprints.json",
+          "config:.understand-anything/knowledge-graph.json",
+          "config:.understand-anything/meta.json",
+          "document:.understand-anything/understand-tour.md",
+          "config:.understand-anything/intermediate/assemble-review.json",
+          "config:.understand-anything/intermediate/assembled-graph.json",
+          "config:.understand-anything/intermediate/batch-1-part-1.json",
+          "config:.understand-anything/intermediate/batch-1-part-2.json",
+          "config:.understand-anything/intermediate/batch-2.json",
+          "config:.understand-anything/intermediate/batch-3.json",
+          "config:.understand-anything/intermediate/batch-6.json",
+          "config:.understand-anything/intermediate/batch-7.json",
+          "config:.understand-anything/intermediate/batch-999.json",
+          "config:.understand-anything/intermediate/batches.json",
+          "config:.understand-anything/intermediate/fingerprint-input.json",
+          "config:.understand-anything/intermediate/layers.json",
+          "config:.understand-anything/intermediate/review.json",
+          "config:.understand-anything/intermediate/scan-result.json",
+          "config:.understand-anything/intermediate/tour.json",
+          "config:.understand-anything/tmp/batch-7-extract.json",
+          "config:.understand-anything/tmp/changed-files.txt",
+          "config:.understand-anything/tmp/subagents-input.json",
+          "config:.understand-anything/tmp/ua-arch-input.json",
+          "config:.understand-anything/tmp/ua-arch-prompt.txt",
+          "config:.understand-anything/tmp/ua-arch-results.json",
+          "config:.understand-anything/tmp/ua-batch-3-context.json",
+          "config:.understand-anything/tmp/ua-file-analyzer-input-1.json",
+          "config:.understand-anything/tmp/ua-file-analyzer-input-2.json",
+          "config:.understand-anything/tmp/ua-file-analyzer-input-3.json",
+          "config:.understand-anything/tmp/ua-file-analyzer-input-4.json",
+          "config:.understand-anything/tmp/ua-file-analyzer-input-5.json",
+          "config:.understand-anything/tmp/ua-file-analyzer-input-6.json",
+          "config:.understand-anything/tmp/ua-file-analyzer-input-7.json",
+          "config:.understand-anything/tmp/ua-file-extract-results-1.json",
+          "config:.understand-anything/tmp/ua-file-extract-results-2.json",
+          "config:.understand-anything/tmp/ua-file-extract-results-3.json",
+          "config:.understand-anything/tmp/ua-file-extract-results-4.json",
+          "config:.understand-anything/tmp/ua-file-extract-results-5.json",
+          "config:.understand-anything/tmp/ua-file-extract-results-6.json",
+          "config:.understand-anything/tmp/ua-file-extract-results-7.json",
+          "config:.understand-anything/tmp/ua-import-map-input.json",
+          "config:.understand-anything/tmp/ua-import-map-output.json",
+          "config:.understand-anything/tmp/ua-scan-files.json",
+          "config:.understand-anything/tmp/ua-tour-input.json",
+          "document:.understand-anything/tmp/ua-tour-prompt.txt",
+          "config:.understand-anything/tmp/ua-tour-results.json",
+          "config:package.json",
+          "document:README.md",
+          "document:pr_body.txt"
+        ]
+      }
+    ]
+  },
+  "nodeSummaryIndex": {
+    "file:services/asset-core/cmd/server/main.go": {
+      "name": "main.go",
+      "type": "file",
+      "summary": "Source code file main.go.",
+      "filePath": "services/asset-core/cmd/server/main.go"
+    },
+    "function:services/asset-core/cmd/server/main.go:main": {
+      "name": "main",
+      "type": "function",
+      "summary": "Function main in main.go.",
+      "filePath": "services/asset-core/cmd/server/main.go"
+    },
+    "function:services/asset-core/cmd/server/main.go:openAssetDB": {
+      "name": "openAssetDB",
+      "type": "function",
+      "summary": "Function openAssetDB in main.go.",
+      "filePath": "services/asset-core/cmd/server/main.go"
+    },
+    "function:services/asset-core/cmd/server/main.go:assetDSNFromEnv": {
+      "name": "assetDSNFromEnv",
+      "type": "function",
+      "summary": "Function assetDSNFromEnv in main.go.",
+      "filePath": "services/asset-core/cmd/server/main.go"
+    },
+    "file:services/asset-core/internal/delivery/http/asset_handler.go": {
+      "name": "asset_handler.go",
+      "type": "file",
+      "summary": "API handler for specific endpoints.",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler.go"
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:NewAssetHandler": {
+      "name": "NewAssetHandler",
+      "type": "function",
+      "summary": "Function NewAssetHandler."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleHealth": {
+      "name": "HandleHealth",
+      "type": "function",
+      "summary": "Function HandleHealth."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleFolders": {
+      "name": "HandleFolders",
+      "type": "function",
+      "summary": "Function HandleFolders."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleMetadataItems": {
+      "name": "HandleMetadataItems",
+      "type": "function",
+      "summary": "Function HandleMetadataItems."
+    },
+    "class:services/asset-core/internal/delivery/http/asset_handler.go:AssetHandler": {
+      "name": "AssetHandler",
+      "type": "class",
+      "summary": "Class AssetHandler."
+    },
+    "file:services/asset-core/internal/delivery/http/asset_handler_test.go": {
+      "name": "asset_handler_test.go",
+      "type": "file",
+      "summary": "Test file.",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler_test.go"
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderTree": {
+      "name": "GetFolderTree",
+      "type": "function",
+      "summary": "Implementation of GetFolderTree.",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler_test.go"
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetRootFolders": {
+      "name": "GetRootFolders",
+      "type": "function",
+      "summary": "Implementation of GetRootFolders.",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler_test.go"
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderByID": {
+      "name": "GetFolderByID",
+      "type": "function",
+      "summary": "Function GetFolderByID."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderChildren": {
+      "name": "GetFolderChildren",
+      "type": "function",
+      "summary": "Implementation of GetFolderChildren.",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler_test.go"
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:EnsureRefs": {
+      "name": "EnsureRefs",
+      "type": "function",
+      "summary": "Implementation of EnsureRefs.",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler_test.go"
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListRejectsOrganizationContextMismatch": {
+      "name": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+      "type": "function",
+      "summary": "Function TestHandleFoldersListRejectsOrganizationContextMismatch."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListUsesMatchingOrganizationContext": {
+      "name": "TestHandleFoldersListUsesMatchingOrganizationContext",
+      "type": "function",
+      "summary": "Function TestHandleFoldersListUsesMatchingOrganizationContext."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListMissingOrgId": {
+      "name": "TestHandleFoldersListMissingOrgId",
+      "type": "function",
+      "summary": "Function TestHandleFoldersListMissingOrgId."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListWithoutRootPathCallsRootLevel": {
+      "name": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+      "type": "function",
+      "summary": "Function TestHandleFoldersListWithoutRootPathCallsRootLevel."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListChildrenOnly": {
+      "name": "TestHandleFoldersListChildrenOnly",
+      "type": "function",
+      "summary": "Function TestHandleFoldersListChildrenOnly."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListChildrenMissingRootPathReturns400": {
+      "name": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+      "type": "function",
+      "summary": "Function TestHandleFoldersListChildrenMissingRootPathReturns400."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailValidRequest": {
+      "name": "TestHandleFolderDetailValidRequest",
+      "type": "function",
+      "summary": "Function TestHandleFolderDetailValidRequest."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailNotFound": {
+      "name": "TestHandleFolderDetailNotFound",
+      "type": "function",
+      "summary": "Function TestHandleFolderDetailNotFound."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailInvalidUUID": {
+      "name": "TestHandleFolderDetailInvalidUUID",
+      "type": "function",
+      "summary": "Function TestHandleFolderDetailInvalidUUID."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailOrgMismatch": {
+      "name": "TestHandleFolderDetailOrgMismatch",
+      "type": "function",
+      "summary": "Function TestHandleFolderDetailOrgMismatch."
+    },
+    "class:services/asset-core/internal/delivery/http/asset_handler_test.go:fakeAssetUsecase": {
+      "name": "fakeAssetUsecase",
+      "type": "class",
+      "summary": "Class fakeAssetUsecase."
+    },
+    "file:services/asset-core/internal/delivery/http/middleware.go": {
+      "name": "middleware.go",
+      "type": "file",
+      "summary": "File handling middleware.go"
+    },
+    "function:services/asset-core/internal/delivery/http/middleware.go:RequireActor": {
+      "name": "RequireActor",
+      "type": "function",
+      "summary": "Function RequireActor"
+    },
+    "file:services/asset-core/internal/delivery/http/middleware_test.go": {
+      "name": "middleware_test.go",
+      "type": "file",
+      "summary": "File handling middleware_test.go"
+    },
+    "function:services/asset-core/internal/delivery/http/middleware_test.go:TestRequireActor": {
+      "name": "TestRequireActor",
+      "type": "function",
+      "summary": "Function TestRequireActor"
+    },
+    "file:services/asset-core/internal/domain/asset.go": {
+      "name": "asset.go",
+      "type": "file",
+      "summary": "Source code file asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "function:services/asset-core/internal/domain/asset.go:TableName": {
+      "name": "TableName",
+      "type": "function",
+      "summary": "Function TableName in asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "class:services/asset-core/internal/domain/asset.go:OrganizationRef": {
+      "name": "OrganizationRef",
+      "type": "class",
+      "summary": "Class OrganizationRef in asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "class:services/asset-core/internal/domain/asset.go:UserRef": {
+      "name": "UserRef",
+      "type": "class",
+      "summary": "Class UserRef in asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "class:services/asset-core/internal/domain/asset.go:Folder": {
+      "name": "Folder",
+      "type": "class",
+      "summary": "Class Folder in asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "class:services/asset-core/internal/domain/asset.go:MetadataItem": {
+      "name": "MetadataItem",
+      "type": "class",
+      "summary": "Class MetadataItem in asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "class:services/asset-core/internal/domain/asset.go:AssetRepository": {
+      "name": "AssetRepository",
+      "type": "class",
+      "summary": "Class AssetRepository in asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "class:services/asset-core/internal/domain/asset.go:AssetUsecase": {
+      "name": "AssetUsecase",
+      "type": "class",
+      "summary": "Class AssetUsecase in asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "file:services/asset-core/internal/repository/asset_repository.go": {
+      "name": "asset_repository.go",
+      "type": "file",
+      "summary": "Source code file asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:NewAssetRepository": {
+      "name": "NewAssetRepository",
+      "type": "function",
+      "summary": "Function NewAssetRepository in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:GetFolderTree": {
+      "name": "GetFolderTree",
+      "type": "function",
+      "summary": "Function GetFolderTree in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:GetFolderByID": {
+      "name": "GetFolderByID",
+      "type": "function",
+      "summary": "Function GetFolderByID in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:GetFolderChildren": {
+      "name": "GetFolderChildren",
+      "type": "function",
+      "summary": "Function GetFolderChildren in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:GetRootFolders": {
+      "name": "GetRootFolders",
+      "type": "function",
+      "summary": "Function GetRootFolders in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:EnsureRefs": {
+      "name": "EnsureRefs",
+      "type": "function",
+      "summary": "Function EnsureRefs in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "class:services/asset-core/internal/repository/asset_repository.go:assetRepository": {
+      "name": "assetRepository",
+      "type": "class",
+      "summary": "Class assetRepository in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "file:services/asset-core/internal/repository/asset_repository_test.go": {
+      "name": "asset_repository_test.go",
+      "type": "file",
+      "summary": "Source code file asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_Success_RepeatedCall": {
+      "name": "TestEnsureRefs_Success_RepeatedCall",
+      "type": "function",
+      "summary": "Function TestEnsureRefs_Success_RepeatedCall in asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_OrganizationFailurePropagated": {
+      "name": "TestEnsureRefs_OrganizationFailurePropagated",
+      "type": "function",
+      "summary": "Function TestEnsureRefs_OrganizationFailurePropagated in asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_DBFailurePropagated": {
+      "name": "TestEnsureRefs_DBFailurePropagated",
+      "type": "function",
+      "summary": "Function TestEnsureRefs_DBFailurePropagated in asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_Success": {
+      "name": "TestGetFolderByID_Success",
+      "type": "function",
+      "summary": "Function TestGetFolderByID_Success in asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_NotFoundOrOrgMismatch": {
+      "name": "TestGetFolderByID_NotFoundOrOrgMismatch",
+      "type": "function",
+      "summary": "Function TestGetFolderByID_NotFoundOrOrgMismatch in asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_SoftDeleted": {
+      "name": "TestGetFolderByID_SoftDeleted",
+      "type": "function",
+      "summary": "Function TestGetFolderByID_SoftDeleted in asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Success": {
+      "name": "TestGetFolderChildren_Success",
+      "type": "function",
+      "summary": "Function TestGetFolderChildren_Success in asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetRootFolders_Success": {
+      "name": "TestGetRootFolders_Success",
+      "type": "function",
+      "summary": "Function TestGetRootFolders_Success in asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Empty": {
+      "name": "TestGetFolderChildren_Empty",
+      "type": "function",
+      "summary": "Function TestGetFolderChildren_Empty in asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_Success": {
+      "name": "TestGetFolderTree_Success",
+      "type": "function",
+      "summary": "Function TestGetFolderTree_Success in asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "file:services/asset-core/internal/requestcontext/context.go": {
+      "name": "context.go",
+      "type": "file",
+      "summary": "File handling context.go"
+    },
+    "function:services/asset-core/internal/requestcontext/context.go:WithActor": {
+      "name": "WithActor",
+      "type": "function",
+      "summary": "Function WithActor"
+    },
+    "function:services/asset-core/internal/requestcontext/context.go:GetActor": {
+      "name": "GetActor",
+      "type": "function",
+      "summary": "Function GetActor"
+    },
+    "class:services/asset-core/internal/requestcontext/context.go:Actor": {
+      "name": "Actor",
+      "type": "class",
+      "summary": "Class Actor"
+    },
+    "file:services/asset-core/internal/usecase/asset_usecase.go": {
+      "name": "asset_usecase.go",
+      "type": "file",
+      "summary": "Source code file asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:NewAssetUsecase": {
+      "name": "NewAssetUsecase",
+      "type": "function",
+      "summary": "Function NewAssetUsecase in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderTree": {
+      "name": "GetFolderTree",
+      "type": "function",
+      "summary": "Function GetFolderTree in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderByID": {
+      "name": "GetFolderByID",
+      "type": "function",
+      "summary": "Function GetFolderByID in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderChildren": {
+      "name": "GetFolderChildren",
+      "type": "function",
+      "summary": "Function GetFolderChildren in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:GetRootFolders": {
+      "name": "GetRootFolders",
+      "type": "function",
+      "summary": "Function GetRootFolders in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:EnsureRefs": {
+      "name": "EnsureRefs",
+      "type": "function",
+      "summary": "Function EnsureRefs in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "class:services/asset-core/internal/usecase/asset_usecase.go:assetUsecase": {
+      "name": "assetUsecase",
+      "type": "class",
+      "summary": "Class assetUsecase in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "file:services/access-core/src/__tests__/metadataE2E.e2e.test.ts": {
+      "name": "metadataE2E.e2e.test.ts",
+      "type": "file",
+      "summary": "Source code file metadataE2E.e2e.test.ts.",
+      "filePath": "services/access-core/src/__tests__/metadataE2E.e2e.test.ts"
+    },
+    "function:services/access-core/src/__tests__/metadataE2E.e2e.test.ts:queryGraphQL": {
+      "name": "queryGraphQL",
+      "type": "function",
+      "summary": "Function queryGraphQL in metadataE2E.e2e.test.ts.",
+      "filePath": "services/access-core/src/__tests__/metadataE2E.e2e.test.ts"
+    },
+    "file:services/access-core/src/config.ts": {
+      "name": "config.ts",
+      "type": "file",
+      "summary": "Source code file config.ts.",
+      "filePath": "services/access-core/src/config.ts"
+    },
+    "file:services/access-core/src/db/prisma.ts": {
+      "name": "prisma.ts",
+      "type": "file",
+      "summary": "Source code file prisma.ts.",
+      "filePath": "services/access-core/src/db/prisma.ts"
+    },
+    "file:services/access-core/src/db/queries/objectPermissions.ts": {
+      "name": "objectPermissions.ts",
+      "type": "file",
+      "summary": "Source code file objectPermissions.ts.",
+      "filePath": "services/access-core/src/db/queries/objectPermissions.ts"
+    },
+    "function:services/access-core/src/db/queries/objectPermissions.ts:listObjectPermissions": {
+      "name": "listObjectPermissions",
+      "type": "function",
+      "summary": "Function listObjectPermissions in objectPermissions.ts.",
+      "filePath": "services/access-core/src/db/queries/objectPermissions.ts"
+    },
+    "function:services/access-core/src/db/queries/objectPermissions.ts:grantObjectPermission": {
+      "name": "grantObjectPermission",
+      "type": "function",
+      "summary": "Function grantObjectPermission in objectPermissions.ts.",
+      "filePath": "services/access-core/src/db/queries/objectPermissions.ts"
+    },
+    "function:services/access-core/src/db/queries/objectPermissions.ts:revokeObjectPermission": {
+      "name": "revokeObjectPermission",
+      "type": "function",
+      "summary": "Function revokeObjectPermission in objectPermissions.ts.",
+      "filePath": "services/access-core/src/db/queries/objectPermissions.ts"
+    },
+    "file:services/access-core/src/db/queries/organizations.ts": {
+      "name": "organizations.ts",
+      "type": "file",
+      "summary": "Source code file organizations.ts.",
+      "filePath": "services/access-core/src/db/queries/organizations.ts"
+    },
+    "function:services/access-core/src/db/queries/organizations.ts:listOrganizations": {
+      "name": "listOrganizations",
+      "type": "function",
+      "summary": "Function listOrganizations in organizations.ts.",
+      "filePath": "services/access-core/src/db/queries/organizations.ts"
+    },
+    "function:services/access-core/src/db/queries/organizations.ts:getOrganizationById": {
+      "name": "getOrganizationById",
+      "type": "function",
+      "summary": "Function getOrganizationById in organizations.ts.",
+      "filePath": "services/access-core/src/db/queries/organizations.ts"
+    },
+    "function:services/access-core/src/db/queries/organizations.ts:addOrgMember": {
+      "name": "addOrgMember",
+      "type": "function",
+      "summary": "Function addOrgMember in organizations.ts.",
+      "filePath": "services/access-core/src/db/queries/organizations.ts"
+    },
+    "function:services/access-core/src/db/queries/organizations.ts:createOrganization": {
+      "name": "createOrganization",
+      "type": "function",
+      "summary": "Function createOrganization in organizations.ts.",
+      "filePath": "services/access-core/src/db/queries/organizations.ts"
+    },
+    "file:services/access-core/src/db/queries/rolePermissions.ts": {
+      "name": "rolePermissions.ts",
+      "type": "file",
+      "summary": "Source code file rolePermissions.ts.",
+      "filePath": "services/access-core/src/db/queries/rolePermissions.ts"
+    },
+    "function:services/access-core/src/db/queries/rolePermissions.ts:listRolePermissions": {
+      "name": "listRolePermissions",
+      "type": "function",
+      "summary": "Function listRolePermissions in rolePermissions.ts.",
+      "filePath": "services/access-core/src/db/queries/rolePermissions.ts"
+    },
+    "file:services/access-core/src/db/queries/roles.ts": {
+      "name": "roles.ts",
+      "type": "file"
+    },
+    "function:services/access-core/src/db/queries/roles.ts:toRole": {
+      "name": "toRole",
+      "type": "function",
+      "summary": "Function toRole in roles.ts.",
+      "filePath": "services/access-core/src/db/queries/roles.ts"
+    },
+    "function:services/access-core/src/db/queries/roles.ts:listRolesByOrg": {
+      "name": "listRolesByOrg",
+      "type": "function",
+      "summary": "Function listRolesByOrg in roles.ts.",
+      "filePath": "services/access-core/src/db/queries/roles.ts"
+    },
+    "function:services/access-core/src/db/queries/roles.ts:getRoleById": {
+      "name": "getRoleById",
+      "type": "function",
+      "summary": "Function getRoleById in roles.ts.",
+      "filePath": "services/access-core/src/db/queries/roles.ts"
+    },
+    "function:services/access-core/src/db/queries/roles.ts:createRole": {
+      "name": "createRole",
+      "type": "function",
+      "summary": "Function createRole in roles.ts.",
+      "filePath": "services/access-core/src/db/queries/roles.ts"
+    },
+    "function:services/access-core/src/db/queries/roles.ts:updateRole": {
+      "name": "updateRole",
+      "type": "function",
+      "summary": "Function updateRole in roles.ts.",
+      "filePath": "services/access-core/src/db/queries/roles.ts"
+    },
+    "file:services/access-core/src/db/queries/userRoles.ts": {
+      "name": "userRoles.ts",
+      "type": "file",
+      "summary": "Source code file userRoles.ts.",
+      "filePath": "services/access-core/src/db/queries/userRoles.ts"
+    },
+    "function:services/access-core/src/db/queries/userRoles.ts:assignRole": {
+      "name": "assignRole",
+      "type": "function",
+      "summary": "Function assignRole in userRoles.ts.",
+      "filePath": "services/access-core/src/db/queries/userRoles.ts"
+    },
+    "function:services/access-core/src/db/queries/userRoles.ts:revokeRole": {
+      "name": "revokeRole",
+      "type": "function",
+      "summary": "Function revokeRole in userRoles.ts.",
+      "filePath": "services/access-core/src/db/queries/userRoles.ts"
+    },
+    "file:services/access-core/src/db/queries/users.ts": {
+      "name": "users.ts",
+      "type": "file"
+    },
+    "function:services/access-core/src/db/queries/users.ts:toUser": {
+      "name": "toUser",
+      "type": "function",
+      "summary": "Function toUser in users.ts.",
+      "filePath": "services/access-core/src/db/queries/users.ts"
+    },
+    "function:services/access-core/src/db/queries/users.ts:listUsers": {
+      "name": "listUsers",
+      "type": "function",
+      "summary": "Function listUsers in users.ts.",
+      "filePath": "services/access-core/src/db/queries/users.ts"
+    },
+    "function:services/access-core/src/db/queries/users.ts:getUserById": {
+      "name": "getUserById",
+      "type": "function",
+      "summary": "Function getUserById in users.ts.",
+      "filePath": "services/access-core/src/db/queries/users.ts"
+    },
+    "function:services/access-core/src/db/queries/users.ts:createUser": {
+      "name": "createUser",
+      "type": "function",
+      "summary": "Function createUser in users.ts.",
+      "filePath": "services/access-core/src/db/queries/users.ts"
+    },
+    "function:services/access-core/src/db/queries/users.ts:updateUser": {
+      "name": "updateUser",
+      "type": "function",
+      "summary": "Function updateUser in users.ts.",
+      "filePath": "services/access-core/src/db/queries/users.ts"
+    },
+    "function:services/access-core/src/db/queries/users.ts:deactivateUser": {
+      "name": "deactivateUser",
+      "type": "function",
+      "summary": "Function deactivateUser in users.ts.",
+      "filePath": "services/access-core/src/db/queries/users.ts"
+    },
+    "file:services/access-core/src/graphql/resolvers/index.ts": {
+      "name": "index.ts",
+      "type": "file"
+    },
+    "file:services/access-core/src/graphql/resolvers/organizationResolvers.ts": {
+      "name": "organizationResolvers.ts",
+      "type": "file",
+      "summary": "Source code file organizationResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/organizationResolvers.ts"
+    },
+    "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts": {
+      "name": "permissionResolvers.ts",
+      "type": "file",
+      "summary": "Source code file permissionResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/permissionResolvers.ts"
+    },
+    "file:services/access-core/src/graphql/resolvers/roleResolvers.ts": {
+      "name": "roleResolvers.ts",
+      "type": "file"
+    },
+    "file:services/access-core/src/graphql/resolvers/userResolvers.ts": {
+      "name": "userResolvers.ts",
+      "type": "file"
+    },
+    "file:services/access-core/src/graphql/resolvers/utils.ts": {
+      "name": "utils.ts",
+      "type": "file",
+      "summary": "Source code file utils.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/utils.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/utils.ts:serializeDates": {
+      "name": "serializeDates",
+      "type": "function",
+      "summary": "Function serializeDates in utils.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/utils.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/utils.ts:serializePermission": {
+      "name": "serializePermission",
+      "type": "function",
+      "summary": "Function serializePermission in utils.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/utils.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/utils.ts:rethrowPrismaError": {
+      "name": "rethrowPrismaError",
+      "type": "function",
+      "summary": "Function rethrowPrismaError in utils.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/utils.ts"
+    },
+    "file:services/access-core/src/index.ts": {
+      "type": "file"
+    },
+    "function:services/access-core/src/index.ts:main": {
+      "type": "function"
+    },
+    "file:services/access-core/src/server.ts": {
+      "name": "server.ts",
+      "type": "file",
+      "summary": "Source code file server.ts.",
+      "filePath": "services/access-core/src/server.ts"
+    },
+    "function:services/access-core/src/server.ts:maskGraphQLError": {
+      "name": "maskGraphQLError",
+      "type": "function",
+      "summary": "Function maskGraphQLError in server.ts.",
+      "filePath": "services/access-core/src/server.ts"
+    },
+    "function:services/access-core/src/server.ts:buildServer": {
+      "name": "buildServer",
+      "type": "function",
+      "summary": "Function buildServer in server.ts.",
+      "filePath": "services/access-core/src/server.ts"
+    },
+    "file:services/access-core/src/__tests__/canDo.test.ts": {
+      "name": "canDo.test.ts",
+      "type": "file",
+      "summary": "Source code file canDo.test.ts.",
+      "filePath": "services/access-core/src/__tests__/canDo.test.ts"
+    },
+    "file:services/access-core/src/__tests__/context.test.ts": {
+      "name": "context.test.ts",
+      "type": "file",
+      "summary": "Source code file context.test.ts.",
+      "filePath": "services/access-core/src/__tests__/context.test.ts"
+    },
+    "file:services/access-core/src/__tests__/folderResolvers.test.ts": {
+      "name": "folderResolvers.test.ts",
+      "type": "file",
+      "summary": "Source code file folderResolvers.test.ts.",
+      "filePath": "services/access-core/src/__tests__/folderResolvers.test.ts"
+    },
+    "function:services/access-core/src/__tests__/folderResolvers.test.ts:makeGoFolder": {
+      "name": "makeGoFolder",
+      "type": "function",
+      "summary": "Function makeGoFolder in folderResolvers.test.ts.",
+      "filePath": "services/access-core/src/__tests__/folderResolvers.test.ts"
+    },
+    "file:services/access-core/src/__tests__/metadataResolvers.test.ts": {
+      "name": "metadataResolvers.test.ts",
+      "type": "file",
+      "summary": "Source code file metadataResolvers.test.ts.",
+      "filePath": "services/access-core/src/__tests__/metadataResolvers.test.ts"
+    },
+    "function:services/access-core/src/__tests__/metadataResolvers.test.ts:makeGoMetadataItem": {
+      "name": "makeGoMetadataItem",
+      "type": "function",
+      "summary": "Function makeGoMetadataItem in metadataResolvers.test.ts.",
+      "filePath": "services/access-core/src/__tests__/metadataResolvers.test.ts"
+    },
+    "file:services/access-core/src/__tests__/metadataSchema.test.ts": {
+      "name": "metadataSchema.test.ts",
+      "type": "file",
+      "summary": "Source code file metadataSchema.test.ts.",
+      "filePath": "services/access-core/src/__tests__/metadataSchema.test.ts"
+    },
+    "function:services/access-core/src/__tests__/metadataSchema.test.ts:metadataContext": {
+      "name": "metadataContext",
+      "type": "function",
+      "summary": "Function metadataContext in metadataSchema.test.ts.",
+      "filePath": "services/access-core/src/__tests__/metadataSchema.test.ts"
+    },
+    "function:services/access-core/src/__tests__/metadataSchema.test.ts:executeMetadataOperation": {
+      "name": "executeMetadataOperation",
+      "type": "function",
+      "summary": "Function executeMetadataOperation in metadataSchema.test.ts.",
+      "filePath": "services/access-core/src/__tests__/metadataSchema.test.ts"
+    },
+    "file:services/access-core/src/__tests__/sameOrgDirective.test.ts": {
+      "name": "sameOrgDirective.test.ts",
+      "type": "file",
+      "summary": "Source code file sameOrgDirective.test.ts.",
+      "filePath": "services/access-core/src/__tests__/sameOrgDirective.test.ts"
+    },
+    "function:services/access-core/src/__tests__/sameOrgDirective.test.ts:run": {
+      "name": "run",
+      "type": "function",
+      "summary": "Function run in sameOrgDirective.test.ts.",
+      "filePath": "services/access-core/src/__tests__/sameOrgDirective.test.ts"
+    },
+    "file:services/access-core/src/db/queries/canDo.ts": {
+      "name": "canDo.ts",
+      "type": "file",
+      "summary": "Source code file canDo.ts.",
+      "filePath": "services/access-core/src/db/queries/canDo.ts"
+    },
+    "function:services/access-core/src/db/queries/canDo.ts:getPermActionId": {
+      "name": "getPermActionId",
+      "type": "function",
+      "summary": "Function getPermActionId in canDo.ts.",
+      "filePath": "services/access-core/src/db/queries/canDo.ts"
+    },
+    "function:services/access-core/src/db/queries/canDo.ts:canDo": {
+      "name": "canDo",
+      "type": "function",
+      "summary": "Function canDo in canDo.ts.",
+      "filePath": "services/access-core/src/db/queries/canDo.ts"
+    },
+    "file:services/access-core/src/graphql/context.ts": {
+      "name": "context.ts",
+      "type": "file",
+      "summary": "Source code file context.ts.",
+      "filePath": "services/access-core/src/graphql/context.ts"
+    },
+    "function:services/access-core/src/graphql/context.ts:assertAuthenticated": {
+      "name": "assertAuthenticated",
+      "type": "function",
+      "summary": "Function assertAuthenticated in context.ts.",
+      "filePath": "services/access-core/src/graphql/context.ts"
+    },
+    "function:services/access-core/src/graphql/context.ts:assertOrgMember": {
+      "name": "assertOrgMember",
+      "type": "function",
+      "summary": "Function assertOrgMember in context.ts.",
+      "filePath": "services/access-core/src/graphql/context.ts"
+    },
+    "function:services/access-core/src/graphql/context.ts:assertOrgContext": {
+      "name": "assertOrgContext",
+      "type": "function",
+      "summary": "Function assertOrgContext in context.ts.",
+      "filePath": "services/access-core/src/graphql/context.ts"
+    },
+    "function:services/access-core/src/graphql/context.ts:loadRequestContext": {
+      "name": "loadRequestContext",
+      "type": "function",
+      "summary": "Function loadRequestContext in context.ts.",
+      "filePath": "services/access-core/src/graphql/context.ts"
+    },
+    "file:services/access-core/src/graphql/directives.ts": {
+      "name": "directives.ts",
+      "type": "file",
+      "summary": "Source code file directives.ts.",
+      "filePath": "services/access-core/src/graphql/directives.ts"
+    },
+    "function:services/access-core/src/graphql/directives.ts:wrapField": {
+      "name": "wrapField",
+      "type": "function",
+      "summary": "Function wrapField in directives.ts.",
+      "filePath": "services/access-core/src/graphql/directives.ts"
+    },
+    "function:services/access-core/src/graphql/directives.ts:applyAuthDirectives": {
+      "name": "applyAuthDirectives",
+      "type": "function",
+      "summary": "Function applyAuthDirectives in directives.ts.",
+      "filePath": "services/access-core/src/graphql/directives.ts"
+    },
+    "file:services/access-core/src/graphql/resolvers/canDoResolvers.ts": {
+      "name": "canDoResolvers.ts",
+      "type": "file",
+      "summary": "Source code file canDoResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/canDoResolvers.ts"
+    },
+    "file:services/access-core/src/graphql/resolvers/folderResolvers.ts": {
+      "name": "folderResolvers.ts",
+      "type": "file",
+      "summary": "Source code file folderResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/folderResolvers.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:toFolder": {
+      "name": "toFolder",
+      "type": "function",
+      "summary": "Function toFolder in folderResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/folderResolvers.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:assertFolderPermission": {
+      "name": "assertFolderPermission",
+      "type": "function",
+      "summary": "Function assertFolderPermission in folderResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/folderResolvers.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:handleGoResponse": {
+      "name": "handleGoResponse",
+      "type": "function",
+      "summary": "Function handleGoResponse in folderResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/folderResolvers.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:writeFolder": {
+      "name": "writeFolder",
+      "type": "function",
+      "summary": "Function writeFolder in folderResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/folderResolvers.ts"
+    },
+    "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts": {
+      "name": "metadataResolvers.ts",
+      "type": "file",
+      "summary": "Source code file metadataResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:toMetadataItem": {
+      "name": "toMetadataItem",
+      "type": "function",
+      "summary": "Function toMetadataItem in metadataResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:handleGoItemResponse": {
+      "name": "handleGoItemResponse",
+      "type": "function",
+      "summary": "Function handleGoItemResponse in metadataResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:assertMetadataPermission": {
+      "name": "assertMetadataPermission",
+      "type": "function",
+      "summary": "Function assertMetadataPermission in metadataResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:validateAndParseJsonString": {
+      "name": "validateAndParseJsonString",
+      "type": "function",
+      "summary": "Function validateAndParseJsonString in metadataResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts"
+    },
+    "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:mapInputToSnakeCase": {
+      "name": "mapInputToSnakeCase",
+      "type": "function",
+      "summary": "Function mapInputToSnakeCase in metadataResolvers.ts.",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts"
+    },
+    "file:services/access-core/src/graphql/schema.ts": {
+      "name": "schema.ts",
+      "type": "file"
+    },
+    "file:services/access-core/src/graphql/typeDefs.ts": {
+      "name": "typeDefs.ts",
+      "type": "file"
+    },
+    "class:services/asset-core/internal/domain/asset.go:CreateFolderInput": {
+      "name": "CreateFolderInput",
+      "type": "class",
+      "summary": "Class CreateFolderInput in asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "class:services/asset-core/internal/domain/asset.go:UpdateFolderInput": {
+      "name": "UpdateFolderInput",
+      "type": "class",
+      "summary": "Class UpdateFolderInput in asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "class:services/asset-core/internal/domain/asset.go:CreateMetadataInput": {
+      "name": "CreateMetadataInput",
+      "type": "class",
+      "summary": "Class CreateMetadataInput in asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "class:services/asset-core/internal/domain/asset.go:UpdateMetadataInput": {
+      "name": "UpdateMetadataInput",
+      "type": "class",
+      "summary": "Class UpdateMetadataInput in asset.go.",
+      "filePath": "services/asset-core/internal/domain/asset.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:CreateFolder": {
+      "name": "CreateFolder",
+      "type": "function",
+      "summary": "Function CreateFolder in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:UpdateFolder": {
+      "name": "UpdateFolder",
+      "type": "function",
+      "summary": "Function UpdateFolder in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:GetMetadataItemsByFolder": {
+      "name": "GetMetadataItemsByFolder",
+      "type": "function",
+      "summary": "Function GetMetadataItemsByFolder in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:GetMetadataItemByID": {
+      "name": "GetMetadataItemByID",
+      "type": "function",
+      "summary": "Function GetMetadataItemByID in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:CreateMetadataItem": {
+      "name": "CreateMetadataItem",
+      "type": "function",
+      "summary": "Function CreateMetadataItem in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository.go:UpdateMetadataItem": {
+      "name": "UpdateMetadataItem",
+      "type": "function",
+      "summary": "Function UpdateMetadataItem in asset_repository.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go"
+    },
+    "file:services/asset-core/internal/repository/asset_repository_create_test.go": {
+      "name": "asset_repository_create_test.go",
+      "type": "file",
+      "summary": "Source code file asset_repository_create_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_Root_Success": {
+      "name": "TestCreateFolder_Root_Success",
+      "type": "function",
+      "summary": "Function TestCreateFolder_Root_Success in asset_repository_create_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_Child_Success": {
+      "name": "TestCreateFolder_Child_Success",
+      "type": "function",
+      "summary": "Function TestCreateFolder_Child_Success in asset_repository_create_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_DuplicateSibling": {
+      "name": "TestCreateFolder_DuplicateSibling",
+      "type": "function",
+      "summary": "Function TestCreateFolder_DuplicateSibling in asset_repository_create_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_SiblingCheckFailureRollsBack": {
+      "name": "TestCreateFolder_SiblingCheckFailureRollsBack",
+      "type": "function",
+      "summary": "Function TestCreateFolder_SiblingCheckFailureRollsBack in asset_repository_create_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_ParentNotFoundRollsBack": {
+      "name": "TestCreateFolder_ParentNotFoundRollsBack",
+      "type": "function",
+      "summary": "Function TestCreateFolder_ParentNotFoundRollsBack in asset_repository_create_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go"
+    },
+    "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go": {
+      "name": "asset_repository_metadata_integration_test.go",
+      "type": "file",
+      "summary": "Source code file asset_repository_metadata_integration_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go:TestMetadataRepository_PostgresRoundTrip": {
+      "name": "TestMetadataRepository_PostgresRoundTrip",
+      "type": "function",
+      "summary": "Function TestMetadataRepository_PostgresRoundTrip in asset_repository_metadata_integration_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go"
+    },
+    "file:services/asset-core/internal/repository/asset_repository_metadata_test.go": {
+      "name": "asset_repository_metadata_test.go",
+      "type": "file",
+      "summary": "Source code file asset_repository_metadata_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_GetByFolder_EmptyList": {
+      "name": "TestMetadataRepository_GetByFolder_EmptyList",
+      "type": "function",
+      "summary": "Function TestMetadataRepository_GetByFolder_EmptyList in asset_repository_metadata_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_GetByFolder_MissingFolder": {
+      "name": "TestMetadataRepository_GetByFolder_MissingFolder",
+      "type": "function",
+      "summary": "Function TestMetadataRepository_GetByFolder_MissingFolder in asset_repository_metadata_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_CreateSuccess": {
+      "name": "TestMetadataRepository_CreateSuccess",
+      "type": "function",
+      "summary": "Function TestMetadataRepository_CreateSuccess in asset_repository_metadata_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_UpdateRejectsInvalidFinalExternalPair": {
+      "name": "TestMetadataRepository_UpdateRejectsInvalidFinalExternalPair",
+      "type": "function",
+      "summary": "Function TestMetadataRepository_UpdateRejectsInvalidFinalExternalPair in asset_repository_metadata_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_EmptyRootReturnsOrganizationForest": {
+      "name": "TestGetFolderTree_EmptyRootReturnsOrganizationForest",
+      "type": "function",
+      "summary": "Function TestGetFolderTree_EmptyRootReturnsOrganizationForest in asset_repository_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go"
+    },
+    "file:services/asset-core/internal/repository/asset_repository_update_test.go": {
+      "name": "asset_repository_update_test.go",
+      "type": "file",
+      "summary": "Source code file asset_repository_update_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_Success": {
+      "name": "TestUpdateFolder_Success",
+      "type": "function",
+      "summary": "Function TestUpdateFolder_Success in asset_repository_update_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_NotFound": {
+      "name": "TestUpdateFolder_NotFound",
+      "type": "function",
+      "summary": "Function TestUpdateFolder_NotFound in asset_repository_update_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_ClearDescription": {
+      "name": "TestUpdateFolder_ClearDescription",
+      "type": "function",
+      "summary": "Function TestUpdateFolder_ClearDescription in asset_repository_update_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_SiblingCheckFailureRollsBack": {
+      "name": "TestUpdateFolder_SiblingCheckFailureRollsBack",
+      "type": "function",
+      "summary": "Function TestUpdateFolder_SiblingCheckFailureRollsBack in asset_repository_update_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go"
+    },
+    "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_DuplicateSiblingRollsBack": {
+      "name": "TestUpdateFolder_DuplicateSiblingRollsBack",
+      "type": "function",
+      "summary": "Function TestUpdateFolder_DuplicateSiblingRollsBack in asset_repository_update_test.go.",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:CreateFolder": {
+      "name": "CreateFolder",
+      "type": "function",
+      "summary": "Function CreateFolder in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:UpdateFolder": {
+      "name": "UpdateFolder",
+      "type": "function",
+      "summary": "Function UpdateFolder in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:GetMetadataItemsByFolder": {
+      "name": "GetMetadataItemsByFolder",
+      "type": "function",
+      "summary": "Function GetMetadataItemsByFolder in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:GetMetadataItemByID": {
+      "name": "GetMetadataItemByID",
+      "type": "function",
+      "summary": "Function GetMetadataItemByID in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:normalizeLabels": {
+      "name": "normalizeLabels",
+      "type": "function",
+      "summary": "Function normalizeLabels in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:CreateMetadataItem": {
+      "name": "CreateMetadataItem",
+      "type": "function",
+      "summary": "Function CreateMetadataItem in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase.go:UpdateMetadataItem": {
+      "name": "UpdateMetadataItem",
+      "type": "function",
+      "summary": "Function UpdateMetadataItem in asset_usecase.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go"
+    },
+    "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go": {
+      "name": "asset_usecase_metadata_test.go",
+      "type": "file",
+      "summary": "Source code file asset_usecase_metadata_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_CreateMetadata_Validation": {
+      "name": "TestAssetUsecase_CreateMetadata_Validation",
+      "type": "function",
+      "summary": "Function TestAssetUsecase_CreateMetadata_Validation in asset_usecase_metadata_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_CreateMetadata_NormalizesDefaults": {
+      "name": "TestAssetUsecase_CreateMetadata_NormalizesDefaults",
+      "type": "function",
+      "summary": "Function TestAssetUsecase_CreateMetadata_NormalizesDefaults in asset_usecase_metadata_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_UpdateMetadata_Validation": {
+      "name": "TestAssetUsecase_UpdateMetadata_Validation",
+      "type": "function",
+      "summary": "Function TestAssetUsecase_UpdateMetadata_Validation in asset_usecase_metadata_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_UpdateMetadata_ExplicitNullDefaults": {
+      "name": "TestAssetUsecase_UpdateMetadata_ExplicitNullDefaults",
+      "type": "function",
+      "summary": "Function TestAssetUsecase_UpdateMetadata_ExplicitNullDefaults in asset_usecase_metadata_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go"
+    },
+    "file:services/asset-core/internal/usecase/asset_usecase_test.go": {
+      "name": "asset_usecase_test.go",
+      "type": "file",
+      "summary": "Source code file asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderTree": {
+      "name": "GetFolderTree",
+      "type": "function",
+      "summary": "Function GetFolderTree in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderByID": {
+      "name": "GetFolderByID",
+      "type": "function",
+      "summary": "Function GetFolderByID in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderChildren": {
+      "name": "GetFolderChildren",
+      "type": "function",
+      "summary": "Function GetFolderChildren in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetRootFolders": {
+      "name": "GetRootFolders",
+      "type": "function",
+      "summary": "Function GetRootFolders in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:EnsureRefs": {
+      "name": "EnsureRefs",
+      "type": "function",
+      "summary": "Function EnsureRefs in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:CreateFolder": {
+      "name": "CreateFolder",
+      "type": "function",
+      "summary": "Function CreateFolder in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:UpdateFolder": {
+      "name": "UpdateFolder",
+      "type": "function",
+      "summary": "Function UpdateFolder in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetMetadataItemsByFolder": {
+      "name": "GetMetadataItemsByFolder",
+      "type": "function",
+      "summary": "Function GetMetadataItemsByFolder in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetMetadataItemByID": {
+      "name": "GetMetadataItemByID",
+      "type": "function",
+      "summary": "Function GetMetadataItemByID in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:CreateMetadataItem": {
+      "name": "CreateMetadataItem",
+      "type": "function",
+      "summary": "Function CreateMetadataItem in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:UpdateMetadataItem": {
+      "name": "UpdateMetadataItem",
+      "type": "function",
+      "summary": "Function UpdateMetadataItem in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:TestAssetUsecase_CreateFolder_Validation": {
+      "name": "TestAssetUsecase_CreateFolder_Validation",
+      "type": "function",
+      "summary": "Function TestAssetUsecase_CreateFolder_Validation in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "function:services/asset-core/internal/usecase/asset_usecase_test.go:TestAssetUsecase_UpdateFolder_Validation": {
+      "name": "TestAssetUsecase_UpdateFolder_Validation",
+      "type": "function",
+      "summary": "Function TestAssetUsecase_UpdateFolder_Validation in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "class:services/asset-core/internal/usecase/asset_usecase_test.go:fakeAssetRepo": {
+      "name": "fakeAssetRepo",
+      "type": "class",
+      "summary": "Class fakeAssetRepo in asset_usecase_test.go.",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go"
+    },
+    "file:services/access-core/src/db/queries/roles.ts:Role": {
+      "name": "Role",
+      "type": "type"
+    },
+    "function:__nofilepath__:toRole": {
+      "name": "toRole",
+      "type": "function"
+    },
+    "function:__nofilepath__:listRolesByOrg": {
+      "name": "listRolesByOrg",
+      "type": "function"
+    },
+    "function:__nofilepath__:getRoleById": {
+      "name": "getRoleById",
+      "type": "function"
+    },
+    "function:__nofilepath__:createRole": {
+      "name": "createRole",
+      "type": "function"
+    },
+    "function:__nofilepath__:updateRole": {
+      "name": "updateRole",
+      "type": "function"
+    },
+    "file:services/access-core/src/db/queries/users.ts:User": {
+      "name": "User",
+      "type": "type"
+    },
+    "function:__nofilepath__:toUser": {
+      "name": "toUser",
+      "type": "function"
+    },
+    "function:__nofilepath__:listUsers": {
+      "name": "listUsers",
+      "type": "function"
+    },
+    "function:__nofilepath__:getUserById": {
+      "name": "getUserById",
+      "type": "function"
+    },
+    "file:services/access-core/src/graphql/resolvers/index.ts:resolvers": {
+      "name": "resolvers",
+      "type": "constant"
+    },
+    "file:services/access-core/src/graphql/resolvers/roleResolvers.ts:roleResolvers": {
+      "name": "roleResolvers",
+      "type": "constant"
+    },
+    "file:services/access-core/src/graphql/resolvers/userResolvers.ts:userResolvers": {
+      "name": "userResolvers",
+      "type": "constant"
+    },
+    "file:services/access-core/src/graphql/schema.ts:RequesterContext": {
+      "name": "RequesterContext",
+      "type": "interface"
+    },
+    "file:services/access-core/src/graphql/schema.ts:PolicyGuard": {
+      "name": "PolicyGuard",
+      "type": "interface"
+    },
+    "file:services/access-core/src/graphql/schema.ts:GraphQLContext": {
+      "name": "GraphQLContext",
+      "type": "type"
+    },
+    "file:services/access-core/src/graphql/schema.ts:schema": {
+      "name": "schema",
+      "type": "constant"
+    },
+    "file:services/access-core/src/graphql/typeDefs.ts:typeDefs": {
+      "name": "typeDefs",
+      "type": "constant"
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:UnmarshalJSON": {
+      "name": "UnmarshalJSON",
+      "type": "function",
+      "summary": "Function UnmarshalJSON."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:handleGetFolders": {
+      "name": "handleGetFolders",
+      "type": "function",
+      "summary": "Function handleGetFolders."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:handleCreateFolder": {
+      "name": "handleCreateFolder",
+      "type": "function",
+      "summary": "Function handleCreateFolder."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:handleUpdateFolder": {
+      "name": "handleUpdateFolder",
+      "type": "function",
+      "summary": "Function handleUpdateFolder."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:mapDomainError": {
+      "name": "mapDomainError",
+      "type": "function",
+      "summary": "Function mapDomainError."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:decodeJSONBody": {
+      "name": "decodeJSONBody",
+      "type": "function",
+      "summary": "Function decodeJSONBody."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:handleGetMetadataItems": {
+      "name": "handleGetMetadataItems",
+      "type": "function",
+      "summary": "Function handleGetMetadataItems."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:handleCreateMetadataItem": {
+      "name": "handleCreateMetadataItem",
+      "type": "function",
+      "summary": "Function handleCreateMetadataItem."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:handleUpdateMetadataItem": {
+      "name": "handleUpdateMetadataItem",
+      "type": "function",
+      "summary": "Function handleUpdateMetadataItem."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleFolderFacts": {
+      "name": "HandleFolderFacts",
+      "type": "function",
+      "summary": "Function HandleFolderFacts."
+    },
+    "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go": {
+      "name": "asset_handler_create_update_test.go",
+      "type": "file",
+      "summary": "Test file.",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go"
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_Success": {
+      "name": "TestHandleCreateFolder_Success",
+      "type": "function",
+      "summary": "Function TestHandleCreateFolder_Success."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleUpdateFolder_Success": {
+      "name": "TestHandleUpdateFolder_Success",
+      "type": "function",
+      "summary": "Function TestHandleUpdateFolder_Success."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_OrgMismatch": {
+      "name": "TestHandleCreateFolder_OrgMismatch",
+      "type": "function",
+      "summary": "Function TestHandleCreateFolder_OrgMismatch."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_InvalidBody": {
+      "name": "TestHandleCreateFolder_InvalidBody",
+      "type": "function",
+      "summary": "Function TestHandleCreateFolder_InvalidBody."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_RejectsTrailingJSON": {
+      "name": "TestHandleCreateFolder_RejectsTrailingJSON",
+      "type": "function",
+      "summary": "Function TestHandleCreateFolder_RejectsTrailingJSON."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleUpdateFolder_DescriptionPresence": {
+      "name": "TestHandleUpdateFolder_DescriptionPresence",
+      "type": "function",
+      "summary": "Function TestHandleUpdateFolder_DescriptionPresence."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleUpdateFolder_InvalidUUID": {
+      "name": "TestHandleUpdateFolder_InvalidUUID",
+      "type": "function",
+      "summary": "Function TestHandleUpdateFolder_InvalidUUID."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_MapsDomainErrors": {
+      "name": "TestHandleCreateFolder_MapsDomainErrors",
+      "type": "function",
+      "summary": "Function TestHandleCreateFolder_MapsDomainErrors."
+    },
+    "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go": {
+      "name": "asset_handler_metadata_test.go",
+      "type": "file",
+      "summary": "Test file.",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go"
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_List": {
+      "name": "TestHandleMetadata_List",
+      "type": "function",
+      "summary": "Function TestHandleMetadata_List."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_GetRejectsAmbiguousSelector": {
+      "name": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+      "type": "function",
+      "summary": "Function TestHandleMetadata_GetRejectsAmbiguousSelector."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_DetailMapsNotFound": {
+      "name": "TestHandleMetadata_DetailMapsNotFound",
+      "type": "function",
+      "summary": "Function TestHandleMetadata_DetailMapsNotFound."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_CreateRejectsMalformedFolderID": {
+      "name": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+      "type": "function",
+      "summary": "Function TestHandleMetadata_CreateRejectsMalformedFolderID."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_Create": {
+      "name": "TestHandleMetadata_Create",
+      "type": "function",
+      "summary": "Function TestHandleMetadata_Create."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_UpdatePreservesExplicitNulls": {
+      "name": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+      "type": "function",
+      "summary": "Function TestHandleMetadata_UpdatePreservesExplicitNulls."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_RejectsOrganizationMismatch": {
+      "name": "TestHandleMetadata_RejectsOrganizationMismatch",
+      "type": "function",
+      "summary": "Function TestHandleMetadata_RejectsOrganizationMismatch."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListFullTreeUsesSingleTreeQuery": {
+      "name": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+      "type": "function",
+      "summary": "Function TestHandleFoldersListFullTreeUsesSingleTreeQuery."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderFactsReturnsScopedActiveFact": {
+      "name": "TestHandleFolderFactsReturnsScopedActiveFact",
+      "type": "function",
+      "summary": "Function TestHandleFolderFactsReturnsScopedActiveFact."
+    },
+    "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase": {
+      "name": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+      "type": "function",
+      "summary": "Function TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase."
+    },
+    "table:infra/db/access/migrations/V1__create_access_schema.sql": {
+      "name": "V1__create_access_schema.sql",
+      "type": "table",
+      "summary": "Database schema migration script.",
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql"
+    },
+    "table:infra/db/access/migrations/V1__create_access_schema.sql:access": {
+      "name": "access",
+      "type": "table",
+      "summary": "Table access definition."
+    },
+    "table:infra/db/access/migrations/V2__seed_access_schema.sql": {
+      "name": "V2__seed_access_schema.sql",
+      "type": "table",
+      "summary": "Database schema migration script.",
+      "filePath": "infra/db/access/migrations/V2__seed_access_schema.sql"
+    },
+    "table:infra/db/asset/migrations/V1__asset_initial_schema.sql": {
+      "name": "V1__asset_initial_schema.sql",
+      "type": "table",
+      "summary": "Database schema migration script.",
+      "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql"
+    },
+    "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:organization_ref": {
+      "name": "organization_ref",
+      "type": "table",
+      "summary": "Giữ tham chiếu bóng tới ID tổ chức do Access DB sở hữu. Bảng nhỏ này cho phép Asset Core kiểm tra khóa ngoại mà không sao chép dữ liệu tổ chức.",
+      "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql"
+    },
+    "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref": {
+      "name": "user_ref",
+      "type": "table",
+      "summary": "Giữ ID người dùng từ Access DB để Asset Core dùng trong các trường audit. Thiết kế chỉ lưu khóa định danh nhằm tránh nhân bản hồ sơ người dùng giữa hai cơ sở dữ liệu.",
+      "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql"
+    },
+    "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders": {
+      "name": "folders",
+      "type": "table",
+      "summary": "Lưu cây thư mục theo tenant bằng đường dẫn `ltree`, kèm thông tin mô tả, audit và soft delete. Các partial unique index giữ duy nhất đường dẫn và tên anh em còn hiệu lực.",
+      "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql"
+    },
+    "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items": {
+      "name": "metadata_items",
+      "type": "table",
+      "summary": "Lưu metadata văn bản của asset trong từng thư mục, gồm nhãn, nguồn ngoài, giấy phép, tác giả, JSON mở rộng và thông tin audit. Ràng buộc bảo đảm cặp định danh nguồn ngoài đầy đủ, còn trigger cấm gắn item vào thư mục đã soft delete.",
+      "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql"
+    },
+    "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql": {
+      "name": "V2__asset_seed_demo_tree.sql",
+      "type": "table",
+      "summary": "Database schema migration script.",
+      "filePath": "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql"
+    },
+    "document:.understand-anything/baseline-context.md": {
+      "name": "baseline-context.md",
+      "type": "document",
+      "summary": "Documentation file.",
+      "filePath": ".understand-anything/baseline-context.md"
+    },
+    "config:.understand-anything/config.json": {
+      "name": "config.json",
+      "type": "config",
+      "summary": "Configuration file.",
+      "filePath": ".understand-anything/config.json"
+    },
+    "config:.understand-anything/diff-overlay.json": {
+      "name": "diff-overlay.json",
+      "type": "config",
+      "summary": "Configuration file.",
+      "filePath": ".understand-anything/diff-overlay.json"
+    },
+    "config:.understand-anything/fingerprints.json": {
+      "name": "fingerprints.json",
+      "type": "config",
+      "summary": "Configuration file.",
+      "filePath": ".understand-anything/fingerprints.json"
+    },
+    "config:.understand-anything/knowledge-graph.json": {
+      "name": "knowledge-graph.json",
+      "type": "config",
+      "summary": "Configuration file.",
+      "filePath": ".understand-anything/knowledge-graph.json"
+    },
+    "config:.understand-anything/meta.json": {
+      "name": "meta.json",
+      "type": "config",
+      "summary": "Configuration file.",
+      "filePath": ".understand-anything/meta.json"
+    },
+    "document:.understand-anything/understand-tour.md": {
+      "name": "understand-tour.md",
+      "type": "document",
+      "summary": "Documentation file.",
+      "filePath": ".understand-anything/understand-tour.md"
+    },
+    "config:.understand-anything/intermediate/assemble-review.json": {
+      "name": "assemble-review.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: assemble-review.json.",
+      "filePath": ".understand-anything/intermediate/assemble-review.json"
+    },
+    "config:.understand-anything/intermediate/assembled-graph.json": {
+      "name": "assembled-graph.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: assembled-graph.json.",
+      "filePath": ".understand-anything/intermediate/assembled-graph.json"
+    },
+    "config:.understand-anything/intermediate/batch-1-part-1.json": {
+      "name": "batch-1-part-1.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-1-part-1.json.",
+      "filePath": ".understand-anything/intermediate/batch-1-part-1.json"
+    },
+    "config:.understand-anything/intermediate/batch-1-part-2.json": {
+      "name": "batch-1-part-2.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-1-part-2.json.",
+      "filePath": ".understand-anything/intermediate/batch-1-part-2.json"
+    },
+    "config:.understand-anything/intermediate/batch-2.json": {
+      "name": "batch-2.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-2.json.",
+      "filePath": ".understand-anything/intermediate/batch-2.json"
+    },
+    "config:.understand-anything/intermediate/batch-3.json": {
+      "name": "batch-3.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-3.json.",
+      "filePath": ".understand-anything/intermediate/batch-3.json"
+    },
+    "config:.understand-anything/intermediate/batch-6.json": {
+      "name": "batch-6.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-6.json.",
+      "filePath": ".understand-anything/intermediate/batch-6.json"
+    },
+    "config:.understand-anything/intermediate/batch-7.json": {
+      "name": "batch-7.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-7.json.",
+      "filePath": ".understand-anything/intermediate/batch-7.json"
+    },
+    "config:.understand-anything/intermediate/batch-999.json": {
+      "name": "batch-999.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-999.json.",
+      "filePath": ".understand-anything/intermediate/batch-999.json"
+    },
+    "config:.understand-anything/intermediate/batches.json": {
+      "name": "batches.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: batches.json.",
+      "filePath": ".understand-anything/intermediate/batches.json"
+    },
+    "config:.understand-anything/intermediate/fingerprint-input.json": {
+      "name": "fingerprint-input.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: fingerprint-input.json.",
+      "filePath": ".understand-anything/intermediate/fingerprint-input.json"
+    },
+    "config:.understand-anything/intermediate/layers.json": {
+      "name": "layers.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: layers.json.",
+      "filePath": ".understand-anything/intermediate/layers.json"
+    },
+    "config:.understand-anything/intermediate/review.json": {
+      "name": "review.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: review.json.",
+      "filePath": ".understand-anything/intermediate/review.json"
+    },
+    "config:.understand-anything/intermediate/scan-result.json": {
+      "name": "scan-result.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: scan-result.json.",
+      "filePath": ".understand-anything/intermediate/scan-result.json"
+    },
+    "config:.understand-anything/intermediate/tour.json": {
+      "name": "tour.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: tour.json.",
+      "filePath": ".understand-anything/intermediate/tour.json"
+    },
+    "config:.understand-anything/tmp/batch-7-extract.json": {
+      "name": "batch-7-extract.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: batch-7-extract.json.",
+      "filePath": ".understand-anything/tmp/batch-7-extract.json"
+    },
+    "config:.understand-anything/tmp/changed-files.txt": {
+      "name": "changed-files.txt",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: changed-files.txt.",
+      "filePath": ".understand-anything/tmp/changed-files.txt"
+    },
+    "config:.understand-anything/tmp/subagents-input.json": {
+      "name": "subagents-input.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: subagents-input.json.",
+      "filePath": ".understand-anything/tmp/subagents-input.json"
+    },
+    "config:.understand-anything/tmp/ua-arch-input.json": {
+      "name": "ua-arch-input.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-arch-input.json.",
+      "filePath": ".understand-anything/tmp/ua-arch-input.json"
+    },
+    "config:.understand-anything/tmp/ua-arch-prompt.txt": {
+      "name": "ua-arch-prompt.txt",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-arch-prompt.txt.",
+      "filePath": ".understand-anything/tmp/ua-arch-prompt.txt"
+    },
+    "config:.understand-anything/tmp/ua-arch-results.json": {
+      "name": "ua-arch-results.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-arch-results.json.",
+      "filePath": ".understand-anything/tmp/ua-arch-results.json"
+    },
+    "config:.understand-anything/tmp/ua-batch-3-context.json": {
+      "name": "ua-batch-3-context.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-batch-3-context.json.",
+      "filePath": ".understand-anything/tmp/ua-batch-3-context.json"
+    },
+    "config:.understand-anything/tmp/ua-file-analyzer-input-1.json": {
+      "name": "ua-file-analyzer-input-1.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-1.json.",
+      "filePath": ".understand-anything/tmp/ua-file-analyzer-input-1.json"
+    },
+    "config:.understand-anything/tmp/ua-file-analyzer-input-2.json": {
+      "name": "ua-file-analyzer-input-2.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-2.json.",
+      "filePath": ".understand-anything/tmp/ua-file-analyzer-input-2.json"
+    },
+    "config:.understand-anything/tmp/ua-file-analyzer-input-3.json": {
+      "name": "ua-file-analyzer-input-3.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-3.json.",
+      "filePath": ".understand-anything/tmp/ua-file-analyzer-input-3.json"
+    },
+    "config:.understand-anything/tmp/ua-file-analyzer-input-4.json": {
+      "name": "ua-file-analyzer-input-4.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-4.json.",
+      "filePath": ".understand-anything/tmp/ua-file-analyzer-input-4.json"
+    },
+    "config:.understand-anything/tmp/ua-file-analyzer-input-5.json": {
+      "name": "ua-file-analyzer-input-5.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-5.json.",
+      "filePath": ".understand-anything/tmp/ua-file-analyzer-input-5.json"
+    },
+    "config:.understand-anything/tmp/ua-file-analyzer-input-6.json": {
+      "name": "ua-file-analyzer-input-6.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-6.json.",
+      "filePath": ".understand-anything/tmp/ua-file-analyzer-input-6.json"
+    },
+    "config:.understand-anything/tmp/ua-file-analyzer-input-7.json": {
+      "name": "ua-file-analyzer-input-7.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-analyzer-input-7.json.",
+      "filePath": ".understand-anything/tmp/ua-file-analyzer-input-7.json"
+    },
+    "config:.understand-anything/tmp/ua-file-extract-results-1.json": {
+      "name": "ua-file-extract-results-1.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-1.json.",
+      "filePath": ".understand-anything/tmp/ua-file-extract-results-1.json"
+    },
+    "config:.understand-anything/tmp/ua-file-extract-results-2.json": {
+      "name": "ua-file-extract-results-2.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-2.json.",
+      "filePath": ".understand-anything/tmp/ua-file-extract-results-2.json"
+    },
+    "config:.understand-anything/tmp/ua-file-extract-results-3.json": {
+      "name": "ua-file-extract-results-3.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-3.json.",
+      "filePath": ".understand-anything/tmp/ua-file-extract-results-3.json"
+    },
+    "config:.understand-anything/tmp/ua-file-extract-results-4.json": {
+      "name": "ua-file-extract-results-4.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-4.json.",
+      "filePath": ".understand-anything/tmp/ua-file-extract-results-4.json"
+    },
+    "config:.understand-anything/tmp/ua-file-extract-results-5.json": {
+      "name": "ua-file-extract-results-5.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-5.json.",
+      "filePath": ".understand-anything/tmp/ua-file-extract-results-5.json"
+    },
+    "config:.understand-anything/tmp/ua-file-extract-results-6.json": {
+      "name": "ua-file-extract-results-6.json",
+      "type": "config",
+      "summary": "Intermediate JSON artifact generated by Understand Anything tool: ua-file-extract-results-6.json.",
+      "filePath": ".understand-anything/tmp/ua-file-extract-results-6.json"
+    },
+    "config:.understand-anything/tmp/ua-file-extract-results-7.json": {
+      "name": "ua-file-extract-results-7.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-file-extract-results-7.json.",
+      "filePath": ".understand-anything/tmp/ua-file-extract-results-7.json"
+    },
+    "config:.understand-anything/tmp/ua-import-map-input.json": {
+      "name": "ua-import-map-input.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-import-map-input.json.",
+      "filePath": ".understand-anything/tmp/ua-import-map-input.json"
+    },
+    "config:.understand-anything/tmp/ua-import-map-output.json": {
+      "name": "ua-import-map-output.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-import-map-output.json.",
+      "filePath": ".understand-anything/tmp/ua-import-map-output.json"
+    },
+    "config:.understand-anything/tmp/ua-scan-files.json": {
+      "name": "ua-scan-files.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-scan-files.json.",
+      "filePath": ".understand-anything/tmp/ua-scan-files.json"
+    },
+    "config:.understand-anything/tmp/ua-tour-input.json": {
+      "name": "ua-tour-input.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-tour-input.json.",
+      "filePath": ".understand-anything/tmp/ua-tour-input.json"
+    },
+    "document:.understand-anything/tmp/ua-tour-prompt.txt": {
+      "name": "ua-tour-prompt.txt",
+      "type": "document",
+      "summary": "Intermediate text prompt used by Understand Anything plugin: ua-tour-prompt.txt.",
+      "filePath": ".understand-anything/tmp/ua-tour-prompt.txt"
+    },
+    "config:.understand-anything/tmp/ua-tour-results.json": {
+      "name": "ua-tour-results.json",
+      "type": "config",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-tour-results.json.",
+      "filePath": ".understand-anything/tmp/ua-tour-results.json"
+    },
+    "document:README.md": {
+      "name": "README.md",
+      "type": "document",
+      "summary": "Main project README detailing local database baseline setup, prerequisites, quick start npm scripts, manual setup commands, and environment overrides for the SETA IM intern project."
+    },
+    "config:package.json": {
+      "name": "package.json",
+      "type": "config",
+      "summary": "Root configuration file for NPM defining scripts and development dependencies.",
+      "filePath": "package.json"
+    },
+    "document:pr_body.txt": {
+      "name": "pr_body.txt",
+      "type": "document",
+      "summary": "Template or default text for a Pull Request body (KAN-24) describing root package.json additions and README updates."
+    },
+    "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration": {
+      "name": "V1__create_access_schema.sql",
+      "type": "table",
+      "summary": "Khởi tạo schema `access` cho danh tính, tổ chức và mô hình phân quyền nhiều tầng, gồm RBAC theo vai trò và quyền trên từng đối tượng. Migration cũng định nghĩa enum, trigger cập nhật thời gian, ràng buộc toàn vẹn và các index phục vụ truy vấn quyền.",
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql"
+    },
+    "table:infra/db/access/migrations/V1__create_access_schema.sql:users": {
+      "name": "users",
+      "type": "table",
+      "summary": "Lưu danh tính người dùng, trạng thái hoạt động và các mốc thời gian hỗ trợ soft delete. Email được bảo đảm duy nhất và `updated_at` được duy trì bằng trigger.",
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql"
+    },
+    "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations": {
+      "name": "organizations",
+      "type": "table",
+      "summary": "Đại diện tenant tổ chức với mã và tên duy nhất, đồng thời lưu cờ bật tính năng OLP. Các check constraint ngăn mã hoặc tên rỗng.",
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql"
+    },
+    "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members": {
+      "name": "organization_members",
+      "type": "table",
+      "summary": "Liên kết người dùng với tổ chức và ghi nhận thời điểm tham gia. Cặp tổ chức-người dùng là duy nhất và được xóa dây chuyền khi thực thể cha bị xóa.",
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql"
+    },
+    "table:infra/db/access/migrations/V1__create_access_schema.sql:roles": {
+      "name": "roles",
+      "type": "table",
+      "summary": "Định nghĩa vai trò trong phạm vi từng tổ chức, với mã vai trò duy nhất theo tenant. Khóa duy nhất ghép `id` và `org_id` hỗ trợ foreign key bảo toàn phạm vi tổ chức.",
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql"
+    },
+    "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles": {
+      "name": "user_roles",
+      "type": "table",
+      "summary": "Gán vai trò cho người dùng trong một tổ chức và ngăn trùng lặp cùng một phép gán. Composite foreign key bảo đảm vai trò thuộc đúng tenant được chỉ định.",
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql"
+    },
+    "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions": {
+      "name": "permission_actions",
+      "type": "table",
+      "summary": "Danh mục chuẩn hóa các hành động quyền như đọc, ghi, xóa và quản lý quyền. Mã hành động dùng enum PostgreSQL và được bảo đảm duy nhất.",
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql"
+    },
+    "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions": {
+      "name": "role_permissions",
+      "type": "table",
+      "summary": "Xác định trần quyền của một vai trò theo hành động và loại tài nguyên. Ràng buộc duy nhất ngăn khai báo lặp cùng một quyền RBAC.",
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql"
+    },
+    "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions": {
+      "name": "object_permissions",
+      "type": "table",
+      "summary": "Lưu quyền trực tiếp trên từng đối tượng cho người dùng hoặc vai trò trong một tổ chức. Check constraint buộc chỉ có đúng một loại bên nhận quyền, còn partial unique index ngăn cấp trùng.",
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql"
+    },
+    "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration": {
+      "name": "V2__seed_access_schema.sql",
+      "type": "table",
+      "summary": "Nạp dữ liệu mẫu có tính idempotent cho schema truy cập: hành động quyền, tổ chức Seta, hai vai trò, người dùng, thành viên và phép gán vai trò. Phần cuối sinh ma trận quyền RBAC cho `org_admin` và `viewer` trên folder cùng metadata item.",
+      "filePath": "infra/db/access/migrations/V2__seed_access_schema.sql"
+    },
+    "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration": {
+      "name": "V1__asset_initial_schema.sql",
+      "type": "table",
+      "summary": "Khởi tạo cơ sở dữ liệu Asset Core cho cây thư mục và bản ghi metadata, đồng thời tạo bảng tham chiếu mỏng tới danh tính thuộc Access DB. Migration dùng `ltree`, soft delete, audit fields, trigger và index chuyên biệt để bảo vệ cấu trúc cây và tối ưu truy vấn.",
+      "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql"
+    },
+    "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql:asset-seed-migration": {
+      "name": "V2__asset_seed_demo_tree.sql",
+      "type": "table",
+      "summary": "Nạp dữ liệu mẫu idempotent cho Asset Core, gồm tham chiếu tổ chức/người dùng, cây `Root → Animals → Dogs` và một metadata item minh họa. Seed phục vụ phát triển cục bộ và kiểm tra vị trí thư mục cùng định danh import từ nguồn ngoài.",
+      "filePath": "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql"
+    },
+    "file:infra/db/asset/seed/.gitkeep": {
+      "name": ".gitkeep",
+      "type": "file",
+      "summary": "Placeholder or ignore file"
+    },
+    "service:infra/docker-compose.yml": {
+      "name": "docker-compose.yml",
+      "type": "service",
+      "summary": "Định nghĩa môi trường Docker Compose gồm hai PostgreSQL database, hai job Flyway migration và container access-core với health check, volume cùng cổng cục bộ.",
+      "filePath": "infra/docker-compose.yml"
+    },
+    "config:services/access-core/package.json": {
+      "name": "package.json",
+      "type": "config",
+      "summary": "Configuration file: services/access-core/package.json"
+    },
+    "file:services/access-core/prisma.config.ts": {
+      "name": "prisma.config.ts",
+      "type": "file",
+      "summary": "Cấu hình Prisma CLI trỏ tới schema và thư mục migration của access-core, đồng thời đọc DATABASE_URL từ môi trường qua dotenv.",
+      "filePath": "services/access-core/prisma.config.ts"
+    },
+    "schema:services/access-core/prisma/schema.prisma": {
+      "name": "schema.prisma",
+      "type": "schema",
+      "summary": "Database schema definition for access-core"
+    },
+    "config:services/access-core/tsconfig.json": {
+      "name": "tsconfig.json",
+      "type": "config",
+      "summary": "Configuration file: services/access-core/tsconfig.json"
+    },
+    "config:services/asset-core/go.mod": {
+      "name": "go.mod",
+      "type": "config",
+      "summary": "Configuration file: services/asset-core/go.mod"
+    },
+    "config:services/asset-core/go.sum": {
+      "name": "go.sum",
+      "type": "config",
+      "summary": "Configuration file: services/asset-core/go.sum"
+    },
+    "config:infra/docker-compose.yml": {
+      "name": "docker-compose.yml",
+      "type": "config",
+      "summary": "Configuration file: infra/docker-compose.yml"
+    },
+    "resource:infra/docker-compose.yml:asset-db": {
+      "name": "asset-db",
+      "type": "resource",
+      "summary": "Docker service for asset-db"
+    },
+    "resource:infra/docker-compose.yml:access-db": {
+      "name": "access-db",
+      "type": "resource",
+      "summary": "Docker service for access-db"
+    },
+    "resource:infra/docker-compose.yml:flyway-asset": {
+      "name": "flyway-asset",
+      "type": "resource",
+      "summary": "Docker service for flyway-asset"
+    },
+    "resource:infra/docker-compose.yml:flyway-access": {
+      "name": "flyway-access",
+      "type": "resource",
+      "summary": "Docker service for flyway-access"
+    },
+    "resource:infra/docker-compose.yml:access-core": {
+      "name": "access-core",
+      "type": "resource",
+      "summary": "Docker service for access-core"
+    },
+    "config:services/access-core/prisma.config.ts": {
+      "name": "prisma.config.ts",
+      "type": "config",
+      "summary": "Configuration file: services/access-core/prisma.config.ts"
+    },
+    "table:services/access-core/prisma/schema.prisma:object_permissions": {
+      "name": "object_permissions",
+      "type": "table",
+      "summary": "Prisma model for object_permissions"
+    },
+    "table:services/access-core/prisma/schema.prisma:organization_members": {
+      "name": "organization_members",
+      "type": "table",
+      "summary": "Prisma model for organization_members"
+    },
+    "table:services/access-core/prisma/schema.prisma:organizations": {
+      "name": "organizations",
+      "type": "table",
+      "summary": "Prisma model for organizations"
+    },
+    "table:services/access-core/prisma/schema.prisma:permission_actions": {
+      "name": "permission_actions",
+      "type": "table",
+      "summary": "Prisma model for permission_actions"
+    },
+    "table:services/access-core/prisma/schema.prisma:role_permissions": {
+      "name": "role_permissions",
+      "type": "table",
+      "summary": "Prisma model for role_permissions"
+    },
+    "table:services/access-core/prisma/schema.prisma:roles": {
+      "name": "roles",
+      "type": "table",
+      "summary": "Prisma model for roles"
+    },
+    "table:services/access-core/prisma/schema.prisma:user_roles": {
+      "name": "user_roles",
+      "type": "table",
+      "summary": "Prisma model for user_roles"
+    },
+    "table:services/access-core/prisma/schema.prisma:users": {
+      "name": "users",
+      "type": "table",
+      "summary": "Prisma model for users"
+    }
+  },
+  "totalNodes": 352,
+  "totalEdges": 585
+}

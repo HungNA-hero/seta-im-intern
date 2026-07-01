@@ -1,0 +1,1091 @@
+{
+  "nodes": [
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "file",
+      "name": "asset_repository_create_test.go",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "summary": "Source code file asset_repository_create_test.go.",
+      "tags": [
+        "test",
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_Root_Success",
+      "type": "function",
+      "name": "TestCreateFolder_Root_Success",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "summary": "Function TestCreateFolder_Root_Success in asset_repository_create_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        16,
+        62
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_Child_Success",
+      "type": "function",
+      "name": "TestCreateFolder_Child_Success",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "summary": "Function TestCreateFolder_Child_Success in asset_repository_create_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        64,
+        115
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_DuplicateSibling",
+      "type": "function",
+      "name": "TestCreateFolder_DuplicateSibling",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "summary": "Function TestCreateFolder_DuplicateSibling in asset_repository_create_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        117,
+        154
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_SiblingCheckFailureRollsBack",
+      "type": "function",
+      "name": "TestCreateFolder_SiblingCheckFailureRollsBack",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "summary": "Function TestCreateFolder_SiblingCheckFailureRollsBack in asset_repository_create_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        156,
+        185
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_ParentNotFoundRollsBack",
+      "type": "function",
+      "name": "TestCreateFolder_ParentNotFoundRollsBack",
+      "filePath": "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "summary": "Function TestCreateFolder_ParentNotFoundRollsBack in asset_repository_create_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        187,
+        221
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "file",
+      "name": "asset_repository_metadata_integration_test.go",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "summary": "Source code file asset_repository_metadata_integration_test.go.",
+      "tags": [
+        "test",
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go:TestMetadataRepository_PostgresRoundTrip",
+      "type": "function",
+      "name": "TestMetadataRepository_PostgresRoundTrip",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "summary": "Function TestMetadataRepository_PostgresRoundTrip in asset_repository_metadata_integration_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        20,
+        112
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "file",
+      "name": "asset_repository_metadata_test.go",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "summary": "Source code file asset_repository_metadata_test.go.",
+      "tags": [
+        "test",
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_GetByFolder_EmptyList",
+      "type": "function",
+      "name": "TestMetadataRepository_GetByFolder_EmptyList",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "summary": "Function TestMetadataRepository_GetByFolder_EmptyList in asset_repository_metadata_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        18,
+        47
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_GetByFolder_MissingFolder",
+      "type": "function",
+      "name": "TestMetadataRepository_GetByFolder_MissingFolder",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "summary": "Function TestMetadataRepository_GetByFolder_MissingFolder in asset_repository_metadata_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        50,
+        74
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_CreateSuccess",
+      "type": "function",
+      "name": "TestMetadataRepository_CreateSuccess",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "summary": "Function TestMetadataRepository_CreateSuccess in asset_repository_metadata_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        77,
+        120
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_UpdateRejectsInvalidFinalExternalPair",
+      "type": "function",
+      "name": "TestMetadataRepository_UpdateRejectsInvalidFinalExternalPair",
+      "filePath": "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "summary": "Function TestMetadataRepository_UpdateRejectsInvalidFinalExternalPair in asset_repository_metadata_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        123,
+        156
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "file",
+      "name": "asset_repository_test.go",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Source code file asset_repository_test.go.",
+      "tags": [
+        "test",
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_Success_RepeatedCall",
+      "type": "function",
+      "name": "TestEnsureRefs_Success_RepeatedCall",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestEnsureRefs_Success_RepeatedCall in asset_repository_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        14,
+        63
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_OrganizationFailurePropagated",
+      "type": "function",
+      "name": "TestEnsureRefs_OrganizationFailurePropagated",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestEnsureRefs_OrganizationFailurePropagated in asset_repository_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        65,
+        98
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_DBFailurePropagated",
+      "type": "function",
+      "name": "TestEnsureRefs_DBFailurePropagated",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestEnsureRefs_DBFailurePropagated in asset_repository_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        100,
+        134
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_Success",
+      "type": "function",
+      "name": "TestGetFolderByID_Success",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderByID_Success in asset_repository_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        136,
+        170
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_NotFoundOrOrgMismatch",
+      "type": "function",
+      "name": "TestGetFolderByID_NotFoundOrOrgMismatch",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderByID_NotFoundOrOrgMismatch in asset_repository_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        172,
+        200
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_SoftDeleted",
+      "type": "function",
+      "name": "TestGetFolderByID_SoftDeleted",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderByID_SoftDeleted in asset_repository_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        202,
+        231
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Success",
+      "type": "function",
+      "name": "TestGetFolderChildren_Success",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderChildren_Success in asset_repository_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        233,
+        271
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetRootFolders_Success",
+      "type": "function",
+      "name": "TestGetRootFolders_Success",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetRootFolders_Success in asset_repository_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        273,
+        307
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Empty",
+      "type": "function",
+      "name": "TestGetFolderChildren_Empty",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderChildren_Empty in asset_repository_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        309,
+        342
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_Success",
+      "type": "function",
+      "name": "TestGetFolderTree_Success",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderTree_Success in asset_repository_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        344,
+        380
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_EmptyRootReturnsOrganizationForest",
+      "type": "function",
+      "name": "TestGetFolderTree_EmptyRootReturnsOrganizationForest",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Function TestGetFolderTree_EmptyRootReturnsOrganizationForest in asset_repository_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        382,
+        413
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_Root_Success",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_Root_Success",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_Child_Success",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_Child_Success",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_DuplicateSibling",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_DuplicateSibling",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_SiblingCheckFailureRollsBack",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_SiblingCheckFailureRollsBack",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_ParentNotFoundRollsBack",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_create_test.go:TestCreateFolder_ParentNotFoundRollsBack",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go:TestMetadataRepository_PostgresRoundTrip",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go:TestMetadataRepository_PostgresRoundTrip",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_GetByFolder_EmptyList",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_GetByFolder_EmptyList",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_GetByFolder_MissingFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_GetByFolder_MissingFolder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_CreateSuccess",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_CreateSuccess",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_UpdateRejectsInvalidFinalExternalPair",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_metadata_test.go:TestMetadataRepository_UpdateRejectsInvalidFinalExternalPair",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_Success_RepeatedCall",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_Success_RepeatedCall",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_OrganizationFailurePropagated",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_OrganizationFailurePropagated",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_DBFailurePropagated",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_DBFailurePropagated",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_Success",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_Success",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_NotFoundOrOrgMismatch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_NotFoundOrOrgMismatch",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_SoftDeleted",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_SoftDeleted",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Success",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Success",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetRootFolders_Success",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetRootFolders_Success",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Empty",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Empty",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_Success",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_Success",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_EmptyRootReturnsOrganizationForest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_EmptyRootReturnsOrganizationForest",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

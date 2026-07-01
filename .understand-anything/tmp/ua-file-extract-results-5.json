@@ -4,130 +4,169 @@
   "filesSkipped": [],
   "results": [
     {
-      "path": "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "path": "infra/db/access/migrations/V1__create_access_schema.sql",
       "language": "sql",
       "fileCategory": "data",
-      "totalLines": 142,
-      "nonEmptyLines": 121,
+      "totalLines": 133,
+      "nonEmptyLines": 112,
       "definitions": [
         {
-          "name": "organization_ref",
+          "name": "access",
           "kind": "table",
           "fields": [
-            "org_id"
+            "id",
+            "email",
+            "display_name",
+            "is_active",
+            "created_at",
+            "updated_at",
+            "deleted_at"
           ],
-          "startLine": 4,
-          "endLine": 6
+          "startLine": 20,
+          "endLine": 28
         },
         {
-          "name": "user_ref",
+          "name": "access",
           "kind": "table",
           "fields": [
-            "user_id"
+            "id",
+            "code",
+            "name",
+            "olp_enabled",
+            "created_at",
+            "updated_at"
           ],
-          "startLine": 11,
-          "endLine": 13
+          "startLine": 34,
+          "endLine": 43
         },
         {
-          "name": "folders",
+          "name": "access",
           "kind": "table",
           "fields": [
             "id",
             "org_id",
-            "path",
-            "name",
-            "description",
-            "created_by",
-            "updated_by",
-            "created_at",
-            "updated_at",
-            "deleted_at"
+            "user_id",
+            "joined_at"
           ],
-          "startLine": 18,
-          "endLine": 30
-        },
-        {
-          "name": "metadata_items",
-          "kind": "table",
-          "fields": [
-            "id",
-            "folder_id",
-            "title",
-            "description",
-            "labels",
-            "category",
-            "external_source",
-            "external_id",
-            "source_url",
-            "thumbnail_url",
-            "license",
-            "author",
-            "metadata_json",
-            "notes",
-            "created_by",
-            "updated_by",
-            "created_at",
-            "updated_at",
-            "deleted_at"
-          ],
-          "startLine": 59,
-          "endLine": 84
-        },
-        {
-          "name": "uq_folders_active_path",
-          "kind": "index",
-          "fields": [],
-          "startLine": 35,
-          "endLine": 35
-        },
-        {
-          "name": "uq_folders_active_sibling_name",
-          "kind": "index",
-          "fields": [],
-          "startLine": 39,
-          "endLine": 39
-        },
-        {
-          "name": "idx_folders_path_gist",
-          "kind": "index",
-          "fields": [],
-          "startLine": 52,
-          "endLine": 52
-        },
-        {
-          "name": "idx_folders_active",
-          "kind": "index",
-          "fields": [],
-          "startLine": 55,
+          "startLine": 49,
           "endLine": 55
         },
         {
-          "name": "uq_metadata_items_external_identity",
-          "kind": "index",
-          "fields": [],
-          "startLine": 89,
-          "endLine": 89
+          "name": "access",
+          "kind": "table",
+          "fields": [
+            "id",
+            "org_id",
+            "code",
+            "name",
+            "description",
+            "created_at",
+            "updated_at"
+          ],
+          "startLine": 59,
+          "endLine": 69
         },
         {
-          "name": "idx_metadata_items_folder_id",
-          "kind": "index",
-          "fields": [],
-          "startLine": 93,
-          "endLine": 93
+          "name": "access",
+          "kind": "table",
+          "fields": [
+            "id",
+            "org_id",
+            "user_id",
+            "role_id",
+            "assigned_at"
+          ],
+          "startLine": 77,
+          "endLine": 86
         },
         {
-          "name": "idx_metadata_items_active_folder_id",
-          "kind": "index",
-          "fields": [],
+          "name": "access",
+          "kind": "table",
+          "fields": [
+            "id",
+            "code",
+            "description"
+          ],
+          "startLine": 90,
+          "endLine": 94
+        },
+        {
+          "name": "access",
+          "kind": "table",
+          "fields": [
+            "id",
+            "role_id",
+            "action_id",
+            "resource_type"
+          ],
           "startLine": 96,
-          "endLine": 96
+          "endLine": 102
         },
         {
-          "name": "idx_metadata_items_labels",
+          "name": "access",
+          "kind": "table",
+          "fields": [
+            "id",
+            "org_id",
+            "resource_type",
+            "resource_id",
+            "grantee_user_id",
+            "grantee_role_id",
+            "action_id",
+            "granted_by",
+            "granted_at"
+          ],
+          "startLine": 106,
+          "endLine": 122
+        },
+        {
+          "name": "idx_org_members_user",
           "kind": "index",
           "fields": [],
-          "startLine": 100,
-          "endLine": 100
+          "startLine": 57,
+          "endLine": 57
+        },
+        {
+          "name": "idx_roles_org",
+          "kind": "index",
+          "fields": [],
+          "startLine": 75,
+          "endLine": 75
+        },
+        {
+          "name": "idx_user_roles_org_user",
+          "kind": "index",
+          "fields": [],
+          "startLine": 88,
+          "endLine": 88
+        },
+        {
+          "name": "idx_role_perms_role",
+          "kind": "index",
+          "fields": [],
+          "startLine": 104,
+          "endLine": 104
+        },
+        {
+          "name": "uniq_object_perm_user",
+          "kind": "index",
+          "fields": [],
+          "startLine": 124,
+          "endLine": 124
+        },
+        {
+          "name": "uniq_object_perm_role",
+          "kind": "index",
+          "fields": [],
+          "startLine": 128,
+          "endLine": 128
+        },
+        {
+          "name": "idx_object_perm_object",
+          "kind": "index",
+          "fields": [],
+          "startLine": 132,
+          "endLine": 132
         }
       ],
       "metrics": {
@@ -135,15 +174,15 @@
         "exportCount": 0,
         "functionCount": 0,
         "classCount": 0,
-        "definitionCount": 12
+        "definitionCount": 15
       }
     },
     {
-      "path": "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql",
+      "path": "infra/db/access/migrations/V2__seed_access_schema.sql",
       "language": "sql",
       "fileCategory": "data",
-      "totalLines": 81,
-      "nonEmptyLines": 76,
+      "totalLines": 56,
+      "nonEmptyLines": 50,
       "metrics": {
         "importCount": 0,
         "exportCount": 0,
