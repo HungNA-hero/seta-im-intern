@@ -1,10 +1,14 @@
 package usecase
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/lib/pq"
 
 	"seta-im-intern/go-asset-core/internal/domain"
 )
@@ -75,4 +79,181 @@ func (u *assetUsecase) UpdateFolder(ctx context.Context, orgID, userID, folderID
 		return domain.Folder{}, domain.ErrInvalidInput
 	}
 	return u.repo.UpdateFolder(ctx, orgID, userID, folderID, input)
+}
+
+// GetMetadataItemsByFolder delegates an org-scoped active-folder metadata query to the repository.
+func (u *assetUsecase) GetMetadataItemsByFolder(ctx context.Context, orgID, folderID string) ([]domain.MetadataItem, error) {
+	return u.repo.GetMetadataItemsByFolder(ctx, orgID, folderID)
+}
+
+// GetMetadataItemByID delegates an org-scoped active metadata lookup to the repository.
+func (u *assetUsecase) GetMetadataItemByID(ctx context.Context, orgID, id string) (domain.MetadataItem, error) {
+	return u.repo.GetMetadataItemByID(ctx, orgID, id)
+}
+
+// normalizeLabels trims labels, rejects blank entries, and preserves first-seen order while deduplicating.
+func normalizeLabels(labels []string) (pq.StringArray, error) {
+	result := make(pq.StringArray, 0, len(labels))
+	seen := make(map[string]struct{}, len(labels))
+	for _, label := range labels {
+		normalized := strings.TrimSpace(label)
+		if normalized == "" {
+			return nil, domain.ErrInvalidInput
+		}
+		if _, exists := seen[normalized]; !exists {
+			seen[normalized] = struct{}{}
+			result = append(result, normalized)
+		}
+	}
+	return result, nil
+}
+
+// validateJSONObject accepts only a non-null JSON object so Asset DB never stores arrays, scalars, or JSON null.
+func validateJSONObject(data []byte) error {
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(data, &object); err != nil || object == nil {
+		return domain.ErrInvalidInput
+	}
+	return nil
+}
+
+// normalizeExternalIdentity trims a present external identity component and rejects blank values.
+func normalizeExternalIdentity(value *string) (*string, error) {
+	if value == nil {
+		return nil, nil
+	}
+	normalized := strings.TrimSpace(*value)
+	if normalized == "" {
+		return nil, domain.ErrInvalidInput
+	}
+	return &normalized, nil
+}
+
+// exceedsRuneLimit reports whether a present string exceeds its database-backed character limit.
+func exceedsRuneLimit(value *string, limit int) bool {
+	return value != nil && utf8.RuneCountInString(*value) > limit
+}
+
+// CreateMetadataItem normalizes and validates create input before crossing the repository transaction boundary.
+func (u *assetUsecase) CreateMetadataItem(ctx context.Context, orgID, userID string, input domain.CreateMetadataInput) (domain.MetadataItem, error) {
+	input.FolderID = strings.TrimSpace(input.FolderID)
+	if input.FolderID == "" {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+	input.Title = strings.TrimSpace(input.Title)
+	if input.Title == "" || utf8.RuneCountInString(input.Title) > 255 {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+	if exceedsRuneLimit(input.Category, 100) {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+	if exceedsRuneLimit(input.ExternalSource, 100) {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+	if exceedsRuneLimit(input.ExternalID, 255) || exceedsRuneLimit(input.License, 255) || exceedsRuneLimit(input.Author, 255) {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+
+	var err error
+	input.ExternalSource, err = normalizeExternalIdentity(input.ExternalSource)
+	if err != nil {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+	input.ExternalID, err = normalizeExternalIdentity(input.ExternalID)
+	if err != nil || (input.ExternalSource == nil) != (input.ExternalID == nil) {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+
+	input.Labels, err = normalizeLabels(input.Labels)
+	if err != nil {
+		return domain.MetadataItem{}, err
+	}
+
+	trimmedJSON := bytes.TrimSpace(input.MetadataJSON)
+	if len(trimmedJSON) == 0 || bytes.Equal(trimmedJSON, []byte("null")) {
+		input.MetadataJSON = []byte("{}")
+	} else if err := validateJSONObject(trimmedJSON); err != nil {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	} else {
+		input.MetadataJSON = append(json.RawMessage(nil), trimmedJSON...)
+	}
+
+	return u.repo.CreateMetadataItem(ctx, orgID, userID, input)
+}
+
+// UpdateMetadataItem validates sparse update semantics before the repository locks and updates the final row state.
+func (u *assetUsecase) UpdateMetadataItem(ctx context.Context, orgID, userID, id string, input domain.UpdateMetadataInput) (domain.MetadataItem, error) {
+	if !input.TitleSet && !input.DescriptionSet && !input.LabelsSet && !input.CategorySet &&
+		!input.ExternalSourceSet && !input.ExternalIDSet && !input.SourceURLSet &&
+		!input.ThumbnailURLSet && !input.LicenseSet && !input.AuthorSet &&
+		!input.MetadataJSONSet && !input.NotesSet {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+
+	if input.TitleSet {
+		if input.Title == nil {
+			return domain.MetadataItem{}, domain.ErrInvalidInput
+		}
+		trimmed := strings.TrimSpace(*input.Title)
+		if trimmed == "" || utf8.RuneCountInString(trimmed) > 255 {
+			return domain.MetadataItem{}, domain.ErrInvalidInput
+		}
+		input.Title = &trimmed
+	}
+
+	if input.CategorySet && exceedsRuneLimit(input.Category, 100) {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+	if input.ExternalSourceSet && exceedsRuneLimit(input.ExternalSource, 100) {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+	if input.ExternalIDSet && exceedsRuneLimit(input.ExternalID, 255) {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+	if (input.LicenseSet && exceedsRuneLimit(input.License, 255)) || (input.AuthorSet && exceedsRuneLimit(input.Author, 255)) {
+		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+
+	if input.LabelsSet {
+		labels := pq.StringArray{}
+		if input.Labels != nil {
+			normalized, err := normalizeLabels(*input.Labels)
+			if err != nil {
+				return domain.MetadataItem{}, err
+			}
+			labels = normalized
+		}
+		// Both explicit null and an empty array clear labels to the database's required empty array value.
+		input.Labels = &labels
+	}
+
+	if input.MetadataJSONSet {
+		metadataJSON := json.RawMessage("{}")
+		if input.MetadataJSON != nil {
+			trimmedJSON := bytes.TrimSpace(*input.MetadataJSON)
+			if bytes.Equal(trimmedJSON, []byte("null")) || validateJSONObject(trimmedJSON) != nil {
+				return domain.MetadataItem{}, domain.ErrInvalidInput
+			}
+			metadataJSON = append(json.RawMessage(nil), trimmedJSON...)
+		}
+		// Explicit null resets metadata_json to the contract default instead of storing JSON null.
+		input.MetadataJSON = &metadataJSON
+	}
+
+	if input.ExternalSourceSet {
+		normalized, err := normalizeExternalIdentity(input.ExternalSource)
+		if err != nil {
+			return domain.MetadataItem{}, domain.ErrInvalidInput
+		}
+		input.ExternalSource = normalized
+	}
+	if input.ExternalIDSet {
+		normalized, err := normalizeExternalIdentity(input.ExternalID)
+		if err != nil {
+			return domain.MetadataItem{}, domain.ErrInvalidInput
+		}
+		input.ExternalID = normalized
+	}
+
+	return u.repo.UpdateMetadataItem(ctx, orgID, userID, id, input)
 }

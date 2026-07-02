@@ -151,20 +151,23 @@ export const folderResolvers = {
       await assertFolderPermission(ctx.userId, orgId, orgId, "read");
 
       let url = `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}`;
-      if (rootPath) url += `&rootPath=${encodeURIComponent(rootPath)}`;
+      if (rootPath) {
+        url += `&rootPath=${encodeURIComponent(rootPath)}`;
+      } else {
+        // Load the complete forest once so nested children never trigger per-node Go calls.
+        url += "&tree=true";
+      }
 
       const folders = (await fetchFolderList(url, ctx.userId, orgId)).map(
         toFolder,
       );
 
-      if (rootPath) {
-        const cached = folders as (FolderNode & {
-          subtreeNodes: FolderNode[];
-        })[];
-        cached.forEach((f) => {
-          f.subtreeNodes = cached;
-        });
-      }
+      const cached = folders as (FolderNode & {
+        subtreeNodes: FolderNode[];
+      })[];
+      cached.forEach((folder) => {
+        folder.subtreeNodes = cached;
+      });
       return folders;
     },
 

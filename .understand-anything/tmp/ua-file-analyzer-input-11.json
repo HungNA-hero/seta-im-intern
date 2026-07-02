@@ -1,0 +1,28 @@
+{
+  "projectRoot": "c:/Users/admin/Downloads/Seta Im Intern/seta-im-intern",
+  "batchFiles": [
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "sizeLines": 136,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "package.json",
+      "language": "json",
+      "sizeLines": 20,
+      "fileCategory": "config"
+    },
+    {
+      "path": "pr_body.txt",
+      "language": "txt",
+      "sizeLines": 11,
+      "fileCategory": "docs"
+    }
+  ],
+  "batchImportData": {
+    "README.md": [],
+    "package.json": [],
+    "pr_body.txt": []
+  }
+}

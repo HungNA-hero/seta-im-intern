@@ -1,0 +1,2972 @@
+Analyze this codebase's structure to identify architectural layers.
+Project root: c:\Users\admin\Downloads\Seta Im Intern\seta-im-intern
+Write output to: c:\Users\admin\Downloads\Seta Im Intern\seta-im-intern\.understand-anything\intermediate\layers.json
+Project: seta-im-intern
+
+**Additional context from main session:**
+Frameworks detected: Docker Compose, Fastify, GORM, GraphQL Yoga, Prisma
+
+Directory tree (top 2 levels):
+.env.example
+.gitignore
+.understand-anything\.understandignore
+.understand-anything\baseline-context.md
+.understand-anything\config.json
+.understand-anything\diff-overlay.json
+.understand-anything\fingerprints.json
+.understand-anything\knowledge-graph.json
+.understand-anything\meta.json
+.understand-anything\understand-tour.md
+go-asset-core\main.exe
+infra\docker-compose.yml
+LICENSE
+package-lock.json
+package.json
+pr_body.txt
+README.md
+scripts\generate_subagents.js
+scripts\start-ua.js
+
+Use the directory tree, language context, and framework addendums (appended above) to inform layer assignments. Directory structure is strong evidence for layer boundaries. Non-code files (config, docs, infrastructure, data) should be assigned to appropriate layers — see the prompt template for guidance.
+
+
+## Language Context: go
+# Go Language Prompt Snippet
+
+## Key Concepts
+
+- **Goroutines**: Lightweight concurrent functions launched with `go` keyword
+- **Channels**: Typed conduits for communication and synchronization between goroutines
+- **Interfaces**: Implicitly satisfied contracts — no `implements` keyword needed
+- **Struct Embedding**: Composition mechanism providing field and method promotion
+- **Error Handling**: Explicit error return values (`error` interface) instead of exceptions
+- **Defer/Panic/Recover**: Deferred cleanup, unrecoverable errors, and recovery mechanism
+- **Slices vs Arrays**: Arrays are fixed-size values; slices are dynamic views backed by arrays
+- **Pointers**: Explicit pointer types for pass-by-reference semantics (no pointer arithmetic)
+- **Context Propagation**: `context.Context` carries deadlines, cancellation, and request-scoped values
+- **Init Functions**: Package-level `init()` runs automatically before `main()` for setup
+
+## Import Patterns
+
+- `import "package"` — single package import
+- `import alias "package"` — aliased import to avoid name conflicts
+- `import ( ... )` — grouped import block (standard library, then external, then internal)
+- `import _ "package"` — blank import for side effects only (e.g., driver registration)
+
+## File Patterns
+
+- `*_test.go` — test files in the same package (or `_test` package for black-box tests)
+- `cmd/` — directory containing main packages (binary entry points)
+- `internal/` — packages only importable by parent module (enforced by compiler)
+- `pkg/` — public library packages (convention, not enforced)
+- `go.mod` — module definition with dependency versions
+- `go.sum` — cryptographic checksums for dependencies
+
+## Common Frameworks
+
+- **Gin** — High-performance HTTP framework with middleware support
+- **Echo** — Minimalist web framework with built-in middleware
+- **Fiber** — Express-inspired framework built on fasthttp
+- **Chi** — Lightweight, composable HTTP router
+- **GORM** — ORM library with associations, hooks, and migrations
+
+## Example Language Notes
+
+> Implements `io.Reader` interface implicitly — no explicit declaration needed, just
+> matching method signatures. This enables any type with a `Read([]byte) (int, error)`
+> method to be used wherever `io.Reader` is expected.
+>
+> The `internal/` directory enforces encapsulation at the compiler level, preventing
+> external packages from importing implementation details — stronger than naming convention.
+
+
+## Language Context: json
+# JSON Language Prompt Snippet
+
+## Key Concepts
+
+- **Strict Syntax**: No trailing commas, no comments (unlike JSONC or JSON5), double-quoted strings only
+- **Data Types**: Objects, arrays, strings, numbers, booleans, and null — no undefined or date types
+- **Nested Structure**: Arbitrary nesting depth for hierarchical configuration or data
+- **Schema Validation**: JSON Schema (`$schema` keyword) for validating structure and types
+- **JSONC**: JSON with Comments variant used by VS Code, tsconfig.json, and other tooling
+- **JSON5**: Extended JSON allowing comments, trailing commas, unquoted keys, and more
+- **JSON Lines** (`.jsonl`): One JSON object per line for streaming data processing
+
+## Notable File Patterns
+
+- `package.json` — Node.js project manifest with dependencies, scripts, and metadata
+- `tsconfig.json` — TypeScript compiler configuration (actually JSONC)
+- `.eslintrc.json` — ESLint linting rules and configuration
+- `*.schema.json` — JSON Schema definitions for validation
+- `composer.json` — PHP Composer project manifest
+- `appsettings.json` — .NET application configuration
+- `manifest.json` — Browser extension or PWA manifest
+
+## Edge Patterns
+
+- `package.json` `configures` the build toolchain and defines project dependencies
+- `tsconfig.json` `configures` TypeScript compilation for all `.ts` files
+- JSON Schema files `defines_schema` for API request/response validation
+- Config JSON files `configures` the runtime behavior of the application
+
+## Summary Style
+
+> "Node.js project manifest defining N dependencies, build scripts, and project metadata."
+> "TypeScript compiler configuration enabling strict mode with path aliases for monorepo packages."
+> "JSON Schema defining the request/response structure for the user API endpoint."
+
+
+## Language Context: markdown
+# Markdown Language Prompt Snippet
+
+## Key Concepts
+
+- **Heading Hierarchy**: `#` through `######` for document structure, with h1 as the title
+- **Front Matter**: YAML metadata between `---` delimiters at the top of the file
+- **Fenced Code Blocks**: Triple backticks with optional language identifier for syntax highlighting
+- **Reference-Style Links**: `[text][ref]` with `[ref]: url` definitions, useful for repeated URLs
+- **Tables**: Pipe-delimited columns with alignment markers (`:---`, `:---:`, `---:`)
+- **Admonitions**: Blockquote-based callouts (`> **Note:**`, `> **Warning:**`) for emphasis
+- **Task Lists**: `- [ ]` and `- [x]` for checklists in issue trackers and READMEs
+- **HTML Embedding**: Raw HTML allowed inline for features Markdown does not support natively
+
+## Notable File Patterns
+
+- `README.md` — Project overview and entry point for new contributors (high-value)
+- `CONTRIBUTING.md` — Contribution guidelines, code style, PR process
+- `CHANGELOG.md` — Version history following Keep a Changelog or similar format
+- `docs/**/*.md` — Documentation directory with guides, API references, tutorials
+- `*.md` in source directories — Co-located documentation for modules or packages
+- `ADR-*.md` or `adr/*.md` — Architecture Decision Records
+
+## Edge Patterns
+
+- Markdown files `documents` the code components they describe or reference
+- Links to other `.md` files create `related` edges between documentation nodes
+- Code block references mentioning file paths may imply `documents` edges to those files
+- README files in subdirectories typically `documents` the module at that path
+
+## Summary Style
+
+> "Project overview documentation with N sections covering installation, usage, and API reference."
+> "Architecture Decision Record documenting the choice of [technology] for [purpose]."
+> "Contributing guide with code style rules, testing requirements, and pull request process."
+
+
+## Language Context: sql
+# SQL Language Prompt Snippet
+
+## Key Concepts
+
+- **DDL (Data Definition)**: `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE` for schema management
+- **DML (Data Manipulation)**: `SELECT`, `INSERT`, `UPDATE`, `DELETE` for data operations
+- **Normalization**: Organizing tables to reduce redundancy through 1NF, 2NF, 3NF relationships
+- **Foreign Keys**: `REFERENCES` constraints enforcing referential integrity between tables
+- **Indexes**: `CREATE INDEX` for query performance optimization on frequently queried columns
+- **Migrations**: Numbered, sequential schema changes applied in order for version control
+- **Transactions**: `BEGIN`/`COMMIT`/`ROLLBACK` for atomic multi-statement operations
+- **Views**: Named queries (`CREATE VIEW`) providing virtual tables for complex joins
+- **Stored Procedures**: Server-side functions for encapsulating business logic in the database
+- **Constraints**: `NOT NULL`, `UNIQUE`, `CHECK`, `DEFAULT` for data integrity rules
+
+## Notable File Patterns
+
+- `migrations/*.sql` — Numbered migration files (e.g., `001_create_users.sql`, `002_add_orders.sql`)
+- `schema.sql` — Full database schema definition (often generated from migrations)
+- `seeds/*.sql` — Seed data for development and testing environments
+- `*.up.sql` / `*.down.sql` — Reversible migration pairs (up applies, down reverts)
+- `init.sql` — Database initialization script for Docker or fresh setup
+- `procedures/*.sql` — Stored procedure definitions
+
+## Edge Patterns
+
+- SQL migration files `migrates` the tables they create or alter
+- Schema definition files `defines_schema` for the ORM models or data layer code that reads them
+- Table definitions create implicit `related` edges between tables connected by foreign keys
+- Seed files `depends_on` the migration files that create the tables they populate
+
+## Summary Style
+
+> "Database migration creating the users table with email, name, and authentication columns."
+> "Schema definition with N tables covering user management, orders, and payment processing."
+> "Seed data populating N tables with development fixtures for testing."
+
+
+## Language Context: typescript
+# TypeScript Language Prompt Snippet
+
+## Key Concepts
+
+- **Generics**: Parameterized types (`<T>`) enabling reusable, type-safe abstractions
+- **Type Guards**: Runtime checks that narrow types within conditional blocks (`is`, `in`, `typeof`, `instanceof`)
+- **Discriminated Unions**: Union types with a shared literal field used for exhaustive narrowing
+- **Utility Types**: Built-in mapped types like `Partial<T>`, `Pick<T, K>`, `Omit<T, K>`, `Record<K, V>`
+- **Interfaces vs Types**: Interfaces support declaration merging; type aliases support unions and mapped types
+- **Enums**: Numeric and string enums for named constant sets; prefer `as const` objects when possible
+- **Mapped Types**: Transform existing types property-by-property using `[K in keyof T]` syntax
+- **Conditional Types**: `T extends U ? X : Y` for type-level branching logic
+- **Template Literal Types**: String manipulation at the type level using backtick syntax
+- **Declaration Merging**: Interfaces with the same name merge their members automatically
+- **Module Augmentation**: Extending third-party module types via `declare module` blocks
+
+## Import Patterns
+
+- `import { X } from 'module'` — named import (most common)
+- `import type { X } from 'module'` — type-only import (erased at runtime)
+- `import * as X from 'module'` — namespace import
+- `import X from 'module'` — default import
+
+## File Patterns
+
+- `index.ts` — barrel file re-exporting public API from a directory
+- `*.d.ts` — type declaration files (ambient declarations, no runtime code)
+- `tsconfig.json` — TypeScript compiler configuration and project references
+- `*.tsx` — TypeScript files containing JSX (React components)
+
+## Common Frameworks
+
+- **React** — UI component library with hooks and JSX
+- **Angular** — Full-featured framework with decorators and dependency injection
+- **Next.js** — React meta-framework with SSR, SSG, and API routes
+- **NestJS** — Server-side framework inspired by Angular (decorators, modules, DI)
+- **Express (with TS)** — Minimal HTTP framework with typed request/response handlers
+
+## Example Language Notes
+
+> Uses generic type parameter `T extends BaseEntity` to ensure type safety across
+> repository methods. The constraint guarantees all entities share a common `id` field
+> while allowing specific entity types to flow through the data layer without casting.
+>
+> Barrel files (`index.ts`) re-export symbols so consumers import from the directory
+> rather than reaching into internal module paths — maintaining encapsulation.
+
+
+## Language Context: yaml
+# YAML Language Prompt Snippet
+
+## Key Concepts
+
+- **Indentation-Based Nesting**: Whitespace-sensitive structure (spaces only, no tabs) defining hierarchy
+- **Anchors and Aliases**: `&anchor` defines a reusable block, `*anchor` references it to avoid duplication
+- **Merge Keys**: `<<: *anchor` merges anchor contents into the current mapping
+- **Multi-Line Strings**: Literal block (`|`) preserves newlines, folded block (`>`) joins lines
+- **Document Separators**: `---` starts a new document, `...` ends one (multi-document streams)
+- **Tags and Types**: `!!str`, `!!int`, `!!bool` for explicit typing; custom tags for application-specific types
+- **Flow Style**: Inline JSON-like syntax `{key: value}` and `[item1, item2]` for compact notation
+- **Environment Variable Substitution**: `${VAR}` patterns used in docker-compose and CI configs
+
+## Notable File Patterns
+
+- `docker-compose.yml` / `docker-compose.yaml` — Multi-container Docker application definition
+- `.github/workflows/*.yml` — GitHub Actions CI/CD workflow definitions
+- `.gitlab-ci.yml` — GitLab CI/CD pipeline configuration
+- `kubernetes/*.yaml` / `k8s/*.yaml` — Kubernetes resource manifests
+- `*.config.yaml` — Application configuration files
+- `mkdocs.yml` — MkDocs documentation site configuration
+- `serverless.yml` — Serverless Framework configuration
+
+## Edge Patterns
+
+- YAML config files `configures` the code modules they control (e.g., database settings affect data layer)
+- CI/CD YAML files `triggers` build and deployment pipelines
+- docker-compose YAML `deploys` services and `depends_on` Dockerfiles
+- Kubernetes YAML `deploys` and `provisions` application services
+
+## Summary Style
+
+> "Docker Compose configuration defining N services with networking, volumes, and health checks."
+> "GitHub Actions workflow running tests on push and deploying to production on merge to main."
+> "Kubernetes deployment manifest with N replicas, resource limits, and liveness probes."
+
+
+
+File nodes (all node types):
+[
+  {
+    "id": "file:services/asset-core/cmd/server/main.go",
+    "type": "file",
+    "name": "main.go",
+    "filePath": "services/asset-core/cmd/server/main.go",
+    "summary": "Application entry point and initialization script.",
+    "tags": [
+      "entry-point",
+      "golang",
+      "golang"
+    ]
+  },
+  {
+    "id": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "type": "file",
+    "name": "asset_handler.go",
+    "filePath": "services/asset-core/internal/delivery/http/asset_handler.go",
+    "summary": "HTTP API handler for asset-related routes.",
+    "tags": [
+      "api-handler",
+      "golang",
+      "golang",
+      "tested"
+    ]
+  },
+  {
+    "id": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "type": "file",
+    "name": "asset_handler_test.go",
+    "filePath": "services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "summary": "Test suite for asset_handler.",
+    "tags": [
+      "test",
+      "api-handler",
+      "golang"
+    ]
+  },
+  {
+    "id": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "type": "file",
+    "name": "middleware.go",
+    "summary": "File handling middleware.go",
+    "tags": [
+      "code",
+      "go",
+      "services",
+      "asset-core",
+      "internal",
+      "delivery",
+      "http",
+      "tested"
+    ]
+  },
+  {
+    "id": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "type": "file",
+    "name": "middleware_test.go",
+    "summary": "File handling middleware_test.go",
+    "tags": [
+      "code",
+      "go",
+      "services",
+      "asset-core",
+      "internal",
+      "delivery",
+      "http"
+    ]
+  },
+  {
+    "id": "file:services/asset-core/internal/domain/asset.go",
+    "type": "file",
+    "name": "asset.go",
+    "filePath": "services/asset-core/internal/domain/asset.go",
+    "summary": "Domain models and entities for the asset domain.",
+    "tags": [
+      "data-model",
+      "golang",
+      "golang"
+    ]
+  },
+  {
+    "id": "file:services/asset-core/internal/repository/asset_repository.go",
+    "type": "file",
+    "name": "asset_repository.go",
+    "filePath": "services/asset-core/internal/repository/asset_repository.go",
+    "summary": "Database repository for persistent storage of assets.",
+    "tags": [
+      "database",
+      "golang",
+      "golang",
+      "tested"
+    ]
+  },
+  {
+    "id": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "type": "file",
+    "name": "asset_repository_test.go",
+    "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+    "summary": "Test suite for asset_repository.",
+    "tags": [
+      "test",
+      "database",
+      "golang"
+    ]
+  },
+  {
+    "id": "file:services/asset-core/internal/requestcontext/context.go",
+    "type": "file",
+    "name": "context.go",
+    "summary": "File handling context.go",
+    "tags": [
+      "code",
+      "go",
+      "services",
+      "asset-core",
+      "internal",
+      "requestcontext"
+    ]
+  },
+  {
+    "id": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "type": "file",
+    "name": "asset_usecase.go",
+    "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+    "summary": "Business logic use cases for assets.",
+    "tags": [
+      "service",
+      "golang",
+      "golang"
+    ]
+  },
+  {
+    "id": "file:services/access-core/src/config.ts",
+    "type": "file",
+    "name": "config.ts"
+  },
+  {
+    "id": "file:services/access-core/src/db/prisma.ts",
+    "type": "file",
+    "name": "prisma.ts"
+  },
+  {
+    "id": "file:services/access-core/src/db/queries/objectPermissions.ts",
+    "type": "file",
+    "name": "objectPermissions.ts"
+  },
+  {
+    "id": "file:services/access-core/src/db/queries/rolePermissions.ts",
+    "type": "file",
+    "name": "rolePermissions.ts"
+  },
+  {
+    "id": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+    "type": "file",
+    "name": "permissionResolvers.ts"
+  },
+  {
+    "id": "file:services/access-core/src/index.ts",
+    "type": "file"
+  },
+  {
+    "id": "file:services/access-core/src/server.ts",
+    "type": "file",
+    "name": "server.ts"
+  },
+  {
+    "id": "file:services/access-core/src/db/queries/roles.ts",
+    "type": "file",
+    "name": "roles.ts"
+  },
+  {
+    "id": "file:services/access-core/src/db/queries/users.ts",
+    "type": "file",
+    "name": "users.ts"
+  },
+  {
+    "id": "file:services/access-core/src/graphql/resolvers/index.ts",
+    "type": "file",
+    "name": "index.ts"
+  },
+  {
+    "id": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+    "type": "file",
+    "name": "roleResolvers.ts"
+  },
+  {
+    "id": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+    "type": "file",
+    "name": "userResolvers.ts"
+  },
+  {
+    "id": "file:services/access-core/src/graphql/schema.ts",
+    "type": "file",
+    "name": "schema.ts"
+  },
+  {
+    "id": "file:services/access-core/src/graphql/typeDefs.ts",
+    "type": "file",
+    "name": "typeDefs.ts"
+  },
+  {
+    "id": "document:README.md",
+    "type": "document",
+    "name": "README.md",
+    "summary": "Main project README detailing local database baseline setup, prerequisites, quick start npm scripts, manual setup commands, and environment overrides for the SETA IM intern project.",
+    "tags": [
+      "readme",
+      "documentation",
+      "setup",
+      "getting-started"
+    ]
+  },
+  {
+    "id": "config:package.json",
+    "type": "config",
+    "name": "package.json",
+    "filePath": "package.json",
+    "summary": "Root package.json configuring developer ergonomics scripts to run Docker Compose, Flyway migrations, and start microservices (Access Core and Asset Core) using concurrently.",
+    "tags": [
+      "package.json",
+      "npm",
+      "scripts",
+      "docker",
+      "migrations"
+    ]
+  },
+  {
+    "id": "document:pr_body.txt",
+    "type": "document",
+    "name": "pr_body.txt",
+    "summary": "Template or default text for a Pull Request body (KAN-24) describing root package.json additions and README updates.",
+    "tags": [
+      "pull-request",
+      "documentation",
+      "template"
+    ]
+  },
+  {
+    "id": "resource:node_189c1a8eaba647a9a18bfe45f54895f0",
+    "type": "resource",
+    "name": "asset-db",
+    "filePath": "infra/docker-compose.yml"
+  },
+  {
+    "id": "resource:node_a3fdeb2edaae43828eff048b04f03d67",
+    "type": "resource",
+    "name": "access-db",
+    "filePath": "infra/docker-compose.yml"
+  },
+  {
+    "id": "resource:node_17392b430ceb478fb729fe34195c27fd",
+    "type": "resource",
+    "name": "flyway-asset",
+    "filePath": "infra/docker-compose.yml"
+  },
+  {
+    "id": "resource:node_fbddd1c2a6804415a11676b07488f4ee",
+    "type": "resource",
+    "name": "flyway-access",
+    "filePath": "infra/docker-compose.yml"
+  },
+  {
+    "id": "resource:node_f10a8048c3ee4e2e9d81087848bbb837",
+    "type": "resource",
+    "name": "access-core",
+    "filePath": "infra/docker-compose.yml"
+  },
+  {
+    "id": "config:node_77e06fcfce8948f39d106570f2f8ec40",
+    "type": "config",
+    "name": "package.json dependencies",
+    "filePath": "services/access-core/package.json"
+  },
+  {
+    "id": "config:node_5d145dfa216946f68caf6a24cc8e3fa9",
+    "type": "config",
+    "name": "default",
+    "filePath": "services/access-core/prisma.config.ts"
+  },
+  {
+    "id": "config:node_30bd0da5fe8141c798224170e57c9bf4",
+    "type": "config",
+    "name": "compilerOptions",
+    "filePath": "services/access-core/tsconfig.json"
+  },
+  {
+    "id": "config:node_6eb54e8a5ca5464789f71902988e54eb",
+    "type": "config",
+    "name": "go module seta-im-intern/go-asset-core",
+    "filePath": "services/asset-core/go.mod"
+  },
+  {
+    "id": "config:node_c406dbfcc5864d7f9dc4db689940483d",
+    "type": "config",
+    "name": "understand config",
+    "filePath": ".understand-anything/config.json"
+  },
+  {
+    "id": "config:node_aaa0e03f93f54967a4b27dbe5a90fc88",
+    "type": "config",
+    "name": ".understandignore",
+    "filePath": ".understand-anything/.understandignore"
+  },
+  {
+    "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+    "type": "table",
+    "name": "V1__create_access_schema.sql",
+    "filePath": "infra/db/access/migrations/V1__create_access_schema.sql",
+    "summary": "Khởi tạo schema `access` cho danh tính, tổ chức và mô hình phân quyền nhiều tầng, gồm RBAC theo vai trò và quyền trên từng đối tượng. Migration cũng định nghĩa enum, trigger cập nhật thời gian, ràng buộc toàn vẹn và các index phục vụ truy vấn quyền.",
+    "tags": [
+      "cơ-sở-dữ-liệu",
+      "migration",
+      "phân-quyền",
+      "rbac",
+      "multi-tenant"
+    ]
+  },
+  {
+    "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
+    "type": "table",
+    "name": "users",
+    "filePath": "infra/db/access/migrations/V1__create_access_schema.sql",
+    "summary": "Lưu danh tính người dùng, trạng thái hoạt động và các mốc thời gian hỗ trợ soft delete. Email được bảo đảm duy nhất và `updated_at` được duy trì bằng trigger.",
+    "tags": [
+      "người-dùng",
+      "danh-tính",
+      "soft-delete",
+      "postgresql"
+    ]
+  },
+  {
+    "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+    "type": "table",
+    "name": "organizations",
+    "filePath": "infra/db/access/migrations/V1__create_access_schema.sql",
+    "summary": "Đại diện tenant tổ chức với mã và tên duy nhất, đồng thời lưu cờ bật tính năng OLP. Các check constraint ngăn mã hoặc tên rỗng.",
+    "tags": [
+      "tổ-chức",
+      "multi-tenant",
+      "cấu-hình",
+      "postgresql"
+    ]
+  },
+  {
+    "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members",
+    "type": "table",
+    "name": "organization_members",
+    "filePath": "infra/db/access/migrations/V1__create_access_schema.sql",
+    "summary": "Liên kết người dùng với tổ chức và ghi nhận thời điểm tham gia. Cặp tổ chức-người dùng là duy nhất và được xóa dây chuyền khi thực thể cha bị xóa.",
+    "tags": [
+      "thành-viên",
+      "tổ-chức",
+      "quan-hệ-nhiều-nhiều",
+      "multi-tenant"
+    ]
+  },
+  {
+    "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+    "type": "table",
+    "name": "roles",
+    "filePath": "infra/db/access/migrations/V1__create_access_schema.sql",
+    "summary": "Định nghĩa vai trò trong phạm vi từng tổ chức, với mã vai trò duy nhất theo tenant. Khóa duy nhất ghép `id` và `org_id` hỗ trợ foreign key bảo toàn phạm vi tổ chức.",
+    "tags": [
+      "vai-trò",
+      "rbac",
+      "multi-tenant",
+      "phân-quyền"
+    ]
+  },
+  {
+    "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
+    "type": "table",
+    "name": "user_roles",
+    "filePath": "infra/db/access/migrations/V1__create_access_schema.sql",
+    "summary": "Gán vai trò cho người dùng trong một tổ chức và ngăn trùng lặp cùng một phép gán. Composite foreign key bảo đảm vai trò thuộc đúng tenant được chỉ định.",
+    "tags": [
+      "gán-vai-trò",
+      "rbac",
+      "người-dùng",
+      "multi-tenant"
+    ]
+  },
+  {
+    "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions",
+    "type": "table",
+    "name": "permission_actions",
+    "filePath": "infra/db/access/migrations/V1__create_access_schema.sql",
+    "summary": "Danh mục chuẩn hóa các hành động quyền như đọc, ghi, xóa và quản lý quyền. Mã hành động dùng enum PostgreSQL và được bảo đảm duy nhất.",
+    "tags": [
+      "hành-động-quyền",
+      "rbac",
+      "danh-mục",
+      "postgresql-enum"
+    ]
+  },
+  {
+    "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions",
+    "type": "table",
+    "name": "role_permissions",
+    "filePath": "infra/db/access/migrations/V1__create_access_schema.sql",
+    "summary": "Xác định trần quyền của một vai trò theo hành động và loại tài nguyên. Ràng buộc duy nhất ngăn khai báo lặp cùng một quyền RBAC.",
+    "tags": [
+      "quyền-vai-trò",
+      "rbac",
+      "loại-tài-nguyên",
+      "phân-quyền"
+    ]
+  },
+  {
+    "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
+    "type": "table",
+    "name": "object_permissions",
+    "filePath": "infra/db/access/migrations/V1__create_access_schema.sql",
+    "summary": "Lưu quyền trực tiếp trên từng đối tượng cho người dùng hoặc vai trò trong một tổ chức. Check constraint buộc chỉ có đúng một loại bên nhận quyền, còn partial unique index ngăn cấp trùng.",
+    "tags": [
+      "quyền-đối-tượng",
+      "acl",
+      "rbac",
+      "phân-quyền",
+      "multi-tenant"
+    ]
+  },
+  {
+    "id": "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+    "type": "table",
+    "name": "V2__seed_access_schema.sql",
+    "filePath": "infra/db/access/migrations/V2__seed_access_schema.sql",
+    "summary": "Nạp dữ liệu mẫu có tính idempotent cho schema truy cập: hành động quyền, tổ chức Seta, hai vai trò, người dùng, thành viên và phép gán vai trò. Phần cuối sinh ma trận quyền RBAC cho `org_admin` và `viewer` trên folder cùng metadata item.",
+    "tags": [
+      "dữ-liệu-mẫu",
+      "migration",
+      "rbac",
+      "phát-triển-cục-bộ"
+    ]
+  },
+  {
+    "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration",
+    "type": "table",
+    "name": "V1__asset_initial_schema.sql",
+    "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+    "summary": "Khởi tạo cơ sở dữ liệu Asset Core cho cây thư mục và bản ghi metadata, đồng thời tạo bảng tham chiếu mỏng tới danh tính thuộc Access DB. Migration dùng `ltree`, soft delete, audit fields, trigger và index chuyên biệt để bảo vệ cấu trúc cây và tối ưu truy vấn.",
+    "tags": [
+      "cơ-sở-dữ-liệu",
+      "migration",
+      "asset-core",
+      "cây-thư-mục",
+      "metadata"
+    ]
+  },
+  {
+    "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:organization_ref",
+    "type": "table",
+    "name": "organization_ref",
+    "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+    "summary": "Giữ tham chiếu bóng tới ID tổ chức do Access DB sở hữu. Bảng nhỏ này cho phép Asset Core kiểm tra khóa ngoại mà không sao chép dữ liệu tổ chức.",
+    "tags": [
+      "tham-chiếu-bóng",
+      "tổ-chức",
+      "ranh-giới-dịch-vụ",
+      "khóa-ngoại"
+    ]
+  },
+  {
+    "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref",
+    "type": "table",
+    "name": "user_ref",
+    "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+    "summary": "Giữ ID người dùng từ Access DB để Asset Core dùng trong các trường audit. Thiết kế chỉ lưu khóa định danh nhằm tránh nhân bản hồ sơ người dùng giữa hai cơ sở dữ liệu.",
+    "tags": [
+      "tham-chiếu-bóng",
+      "người-dùng",
+      "audit",
+      "ranh-giới-dịch-vụ"
+    ]
+  },
+  {
+    "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
+    "type": "table",
+    "name": "folders",
+    "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+    "summary": "Lưu cây thư mục theo tenant bằng đường dẫn `ltree`, kèm thông tin mô tả, audit và soft delete. Các partial unique index giữ duy nhất đường dẫn và tên anh em còn hiệu lực.",
+    "tags": [
+      "cây-thư-mục",
+      "ltree",
+      "multi-tenant",
+      "soft-delete",
+      "audit"
+    ]
+  },
+  {
+    "id": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items",
+    "type": "table",
+    "name": "metadata_items",
+    "filePath": "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+    "summary": "Lưu metadata văn bản của asset trong từng thư mục, gồm nhãn, nguồn ngoài, giấy phép, tác giả, JSON mở rộng và thông tin audit. Ràng buộc bảo đảm cặp định danh nguồn ngoài đầy đủ, còn trigger cấm gắn item vào thư mục đã soft delete.",
+    "tags": [
+      "metadata",
+      "asset",
+      "jsonb",
+      "nhãn",
+      "soft-delete"
+    ]
+  },
+  {
+    "id": "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql:asset-seed-migration",
+    "type": "table",
+    "name": "V2__asset_seed_demo_tree.sql",
+    "filePath": "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql",
+    "summary": "Nạp dữ liệu mẫu idempotent cho Asset Core, gồm tham chiếu tổ chức/người dùng, cây `Root → Animals → Dogs` và một metadata item minh họa. Seed phục vụ phát triển cục bộ và kiểm tra vị trí thư mục cùng định danh import từ nguồn ngoài.",
+    "tags": [
+      "dữ-liệu-mẫu",
+      "migration",
+      "cây-thư-mục",
+      "metadata",
+      "phát-triển-cục-bộ"
+    ]
+  },
+  {
+    "id": "file:infra/db/asset/seed/.gitkeep",
+    "type": "file",
+    "name": ".gitkeep",
+    "summary": "Placeholder or ignore file",
+    "tags": [
+      "ignore"
+    ]
+  },
+  {
+    "id": "service:infra/docker-compose.yml",
+    "type": "service",
+    "name": "docker-compose.yml",
+    "filePath": "infra/docker-compose.yml",
+    "summary": "Định nghĩa môi trường Docker Compose gồm hai PostgreSQL database, hai job Flyway migration và container access-core với health check, volume cùng cổng cục bộ.",
+    "tags": [
+      "orchestration",
+      "infrastructure",
+      "containerization",
+      "database",
+      "migration"
+    ]
+  },
+  {
+    "id": "config:services/access-core/package.json",
+    "type": "config",
+    "name": "package.json",
+    "summary": "Configuration file: services/access-core/package.json",
+    "tags": [
+      "config"
+    ]
+  },
+  {
+    "id": "file:services/access-core/prisma.config.ts",
+    "type": "file",
+    "name": "prisma.config.ts",
+    "filePath": "services/access-core/prisma.config.ts",
+    "summary": "Cấu hình Prisma CLI trỏ tới schema và thư mục migration của access-core, đồng thời đọc DATABASE_URL từ môi trường qua dotenv.",
+    "tags": [
+      "configuration",
+      "prisma",
+      "database",
+      "migration"
+    ]
+  },
+  {
+    "id": "schema:services/access-core/prisma/schema.prisma",
+    "type": "schema",
+    "name": "schema.prisma",
+    "summary": "Database schema definition for access-core",
+    "tags": [
+      "database",
+      "schema",
+      "prisma"
+    ]
+  },
+  {
+    "id": "config:services/access-core/tsconfig.json",
+    "type": "config",
+    "name": "tsconfig.json",
+    "summary": "Configuration file: services/access-core/tsconfig.json",
+    "tags": [
+      "config"
+    ]
+  },
+  {
+    "id": "config:services/asset-core/go.mod",
+    "type": "config",
+    "name": "go.mod",
+    "summary": "Configuration file: services/asset-core/go.mod",
+    "tags": [
+      "config"
+    ]
+  },
+  {
+    "id": "config:services/asset-core/go.sum",
+    "type": "config",
+    "name": "go.sum",
+    "summary": "Configuration file: services/asset-core/go.sum",
+    "tags": [
+      "config"
+    ]
+  },
+  {
+    "id": "config:infra/docker-compose.yml",
+    "type": "config",
+    "name": "docker-compose.yml",
+    "summary": "Configuration file: infra/docker-compose.yml",
+    "tags": [
+      "config"
+    ]
+  },
+  {
+    "id": "resource:infra/docker-compose.yml:asset-db",
+    "type": "resource",
+    "name": "asset-db",
+    "summary": "Docker service for asset-db",
+    "tags": [
+      "docker",
+      "service",
+      "infra"
+    ]
+  },
+  {
+    "id": "resource:infra/docker-compose.yml:access-db",
+    "type": "resource",
+    "name": "access-db",
+    "summary": "Docker service for access-db",
+    "tags": [
+      "docker",
+      "service",
+      "infra"
+    ]
+  },
+  {
+    "id": "resource:infra/docker-compose.yml:flyway-asset",
+    "type": "resource",
+    "name": "flyway-asset",
+    "summary": "Docker service for flyway-asset",
+    "tags": [
+      "docker",
+      "service",
+      "infra"
+    ]
+  },
+  {
+    "id": "resource:infra/docker-compose.yml:flyway-access",
+    "type": "resource",
+    "name": "flyway-access",
+    "summary": "Docker service for flyway-access",
+    "tags": [
+      "docker",
+      "service",
+      "infra"
+    ]
+  },
+  {
+    "id": "resource:infra/docker-compose.yml:access-core",
+    "type": "resource",
+    "name": "access-core",
+    "summary": "Docker service for access-core",
+    "tags": [
+      "docker",
+      "service",
+      "infra"
+    ]
+  },
+  {
+    "id": "config:services/access-core/prisma.config.ts",
+    "type": "config",
+    "name": "prisma.config.ts",
+    "summary": "Configuration file: services/access-core/prisma.config.ts",
+    "tags": [
+      "config"
+    ]
+  },
+  {
+    "id": "table:services/access-core/prisma/schema.prisma:object_permissions",
+    "type": "table",
+    "name": "object_permissions",
+    "summary": "Prisma model for object_permissions",
+    "tags": [
+      "table",
+      "prisma"
+    ]
+  },
+  {
+    "id": "table:services/access-core/prisma/schema.prisma:organization_members",
+    "type": "table",
+    "name": "organization_members",
+    "summary": "Prisma model for organization_members",
+    "tags": [
+      "table",
+      "prisma"
+    ]
+  },
+  {
+    "id": "table:services/access-core/prisma/schema.prisma:organizations",
+    "type": "table",
+    "name": "organizations",
+    "summary": "Prisma model for organizations",
+    "tags": [
+      "table",
+      "prisma"
+    ]
+  },
+  {
+    "id": "table:services/access-core/prisma/schema.prisma:permission_actions",
+    "type": "table",
+    "name": "permission_actions",
+    "summary": "Prisma model for permission_actions",
+    "tags": [
+      "table",
+      "prisma"
+    ]
+  },
+  {
+    "id": "table:services/access-core/prisma/schema.prisma:role_permissions",
+    "type": "table",
+    "name": "role_permissions",
+    "summary": "Prisma model for role_permissions",
+    "tags": [
+      "table",
+      "prisma"
+    ]
+  },
+  {
+    "id": "table:services/access-core/prisma/schema.prisma:roles",
+    "type": "table",
+    "name": "roles",
+    "summary": "Prisma model for roles",
+    "tags": [
+      "table",
+      "prisma"
+    ]
+  },
+  {
+    "id": "table:services/access-core/prisma/schema.prisma:user_roles",
+    "type": "table",
+    "name": "user_roles",
+    "summary": "Prisma model for user_roles",
+    "tags": [
+      "table",
+      "prisma"
+    ]
+  },
+  {
+    "id": "table:services/access-core/prisma/schema.prisma:users",
+    "type": "table",
+    "name": "users",
+    "summary": "Prisma model for users",
+    "tags": [
+      "table",
+      "prisma"
+    ]
+  }
+]
+
+Import edges:
+[
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/repository/asset_repository.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "file:services/asset-core/internal/domain/asset.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "file:services/asset-core/internal/requestcontext/context.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "file:services/asset-core/internal/domain/asset.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "target": "file:services/asset-core/internal/requestcontext/context.go",
+    "type": "imports",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "type": "imports",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "type": "imports",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "file:services/asset-core/internal/requestcontext/context.go",
+    "type": "imports",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "file:services/asset-core/internal/domain/asset.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "file:services/asset-core/internal/repository/asset_repository.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "file:services/asset-core/internal/domain/asset.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/access-core/src/db/prisma.ts",
+    "target": "file:services/access-core/src/config.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
+    "target": "file:services/access-core/src/db/prisma.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/db/queries/rolePermissions.ts",
+    "target": "file:services/access-core/src/db/prisma.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/db/queries/roles.ts",
+    "target": "file:services/access-core/src/db/prisma.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/db/queries/users.ts",
+    "target": "file:services/access-core/src/db/prisma.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+    "target": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+    "target": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+    "target": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+    "target": "file:services/access-core/src/db/queries/objectPermissions.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+    "target": "file:services/access-core/src/db/queries/rolePermissions.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+    "target": "file:services/access-core/src/db/queries/roles.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+    "target": "file:services/access-core/src/db/queries/users.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/schema.ts",
+    "target": "file:services/access-core/src/graphql/resolvers/index.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/schema.ts",
+    "target": "file:services/access-core/src/graphql/typeDefs.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/index.ts",
+    "target": "file:services/access-core/src/config.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/index.ts",
+    "target": "file:services/access-core/src/db/prisma.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/index.ts",
+    "target": "file:services/access-core/src/server.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/server.ts",
+    "target": "file:services/access-core/src/graphql/schema.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  }
+]
+
+All edges (for cross-category analysis):
+[
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "function:services/asset-core/cmd/server/main.go:main",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "function:services/asset-core/cmd/server/main.go:openAssetDB",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "function:services/asset-core/cmd/server/main.go:assetDSNFromEnv",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/repository/asset_repository.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/cmd/server/main.go",
+    "target": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:NewAssetHandler",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:NewAssetHandler",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleHealth",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleHealth",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleFolders",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleFolders",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleMetadataItems",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleMetadataItems",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "class:services/asset-core/internal/delivery/http/asset_handler.go:AssetHandler",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "class:services/asset-core/internal/delivery/http/asset_handler.go:AssetHandler",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "file:services/asset-core/internal/domain/asset.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "file:services/asset-core/internal/requestcontext/context.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderTree",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderTree",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetRootFolders",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetRootFolders",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderByID",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderByID",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderChildren",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderChildren",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:EnsureRefs",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:EnsureRefs",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListRejectsOrganizationContextMismatch",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListRejectsOrganizationContextMismatch",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListUsesMatchingOrganizationContext",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListUsesMatchingOrganizationContext",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListMissingOrgId",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListMissingOrgId",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListWithoutRootPathCallsRootLevel",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListWithoutRootPathCallsRootLevel",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListChildrenOnly",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListChildrenOnly",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListChildrenMissingRootPathReturns400",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListChildrenMissingRootPathReturns400",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailValidRequest",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailValidRequest",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailNotFound",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailNotFound",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailInvalidUUID",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailInvalidUUID",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailOrgMismatch",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailOrgMismatch",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "class:services/asset-core/internal/delivery/http/asset_handler_test.go:fakeAssetUsecase",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "target": "file:services/asset-core/internal/domain/asset.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "type": "tested_by",
+    "direction": "forward",
+    "weight": 0.5
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "target": "function:services/asset-core/internal/delivery/http/middleware.go:RequireActor",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "target": "function:services/asset-core/internal/delivery/http/middleware.go:RequireActor",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "target": "file:services/asset-core/internal/requestcontext/context.go",
+    "type": "imports",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/middleware_test.go:TestRequireActor",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "function:services/asset-core/internal/delivery/http/middleware_test.go:TestRequireActor",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "type": "imports",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "type": "imports",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "target": "file:services/asset-core/internal/requestcontext/context.go",
+    "type": "imports",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "file:services/asset-core/internal/delivery/http/middleware.go",
+    "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+    "type": "tested_by",
+    "direction": "forward",
+    "weight": 0.5
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:OrganizationRef",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:OrganizationRef",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:UserRef",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:UserRef",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:Folder",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:Folder",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:MetadataItem",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:MetadataItem",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:AssetRepository",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:AssetRepository",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:AssetUsecase",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/domain/asset.go",
+    "target": "class:services/asset-core/internal/domain/asset.go:AssetUsecase",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:NewAssetRepository",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:NewAssetRepository",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderTree",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderTree",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderByID",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderByID",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderChildren",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderChildren",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:GetRootFolders",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:GetRootFolders",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:EnsureRefs",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository.go:EnsureRefs",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "class:services/asset-core/internal/repository/asset_repository.go:assetRepository",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "file:services/asset-core/internal/domain/asset.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_Success_RepeatedCall",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_Success_RepeatedCall",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_OrganizationFailurePropagated",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_OrganizationFailurePropagated",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_DBFailurePropagated",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_DBFailurePropagated",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_Success",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_Success",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_NotFoundOrOrgMismatch",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_NotFoundOrOrgMismatch",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_SoftDeleted",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_SoftDeleted",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Success",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Success",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetRootFolders_Success",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetRootFolders_Success",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Empty",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Empty",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_Success",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_Success",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "target": "file:services/asset-core/internal/repository/asset_repository.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "file:services/asset-core/internal/repository/asset_repository.go",
+    "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+    "type": "tested_by",
+    "direction": "forward",
+    "weight": 0.5
+  },
+  {
+    "source": "file:services/asset-core/internal/requestcontext/context.go",
+    "target": "function:services/asset-core/internal/requestcontext/context.go:WithActor",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/requestcontext/context.go",
+    "target": "function:services/asset-core/internal/requestcontext/context.go:WithActor",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/requestcontext/context.go",
+    "target": "function:services/asset-core/internal/requestcontext/context.go:GetActor",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/requestcontext/context.go",
+    "target": "function:services/asset-core/internal/requestcontext/context.go:GetActor",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/requestcontext/context.go",
+    "target": "class:services/asset-core/internal/requestcontext/context.go:Actor",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/requestcontext/context.go",
+    "target": "class:services/asset-core/internal/requestcontext/context.go:Actor",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:NewAssetUsecase",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:NewAssetUsecase",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderTree",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderTree",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderByID",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderByID",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderChildren",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderChildren",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetRootFolders",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetRootFolders",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:EnsureRefs",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "function:services/asset-core/internal/usecase/asset_usecase.go:EnsureRefs",
+    "type": "exports",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "class:services/asset-core/internal/usecase/asset_usecase.go:assetUsecase",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+    "target": "file:services/asset-core/internal/domain/asset.go",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "document:README.md",
+    "target": "config:package.json",
+    "type": "documents",
+    "summary": "README provides instructions on using the npm scripts defined in package.json.",
+    "direction": "forward"
+  },
+  {
+    "source": "document:pr_body.txt",
+    "target": "config:package.json",
+    "type": "documents",
+    "summary": "PR body documents changes made to package.json.",
+    "direction": "forward"
+  },
+  {
+    "source": "document:pr_body.txt",
+    "target": "document:README.md",
+    "type": "documents",
+    "direction": "forward",
+    "weight": 0.5
+  },
+  {
+    "source": "document:README.md",
+    "target": "file:services/asset-core/cmd/server/main.go",
+    "type": "documents",
+    "summary": "README documents how to run the Go Asset Core server locally.",
+    "direction": "forward"
+  },
+  {
+    "source": "config:package.json",
+    "target": "file:services/asset-core/cmd/server/main.go",
+    "type": "triggers",
+    "summary": "The dev:asset script triggers the Go Asset Core server main entry point.",
+    "direction": "forward"
+  },
+  {
+    "source": "function:services/asset-core/internal/delivery/http/middleware.go:RequireActor",
+    "target": "function:services/asset-core/internal/requestcontext/context.go:WithActor",
+    "type": "calls",
+    "direction": "forward",
+    "weight": 0.8
+  },
+  {
+    "source": "file:services/access-core/src/index.ts",
+    "target": "function:services/access-core/src/index.ts:main",
+    "type": "contains",
+    "direction": "forward",
+    "weight": 1
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
+    "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:organization_ref",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql:asset-seed-migration",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:organization_ref",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql:asset-seed-migration",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql:asset-seed-migration",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V2__asset_seed_demo_tree.sql:asset-seed-migration",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items",
+    "type": "migrates",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:organization_ref",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items",
+    "target": "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "service:infra/docker-compose.yml",
+    "target": "config:services/access-core/package.json",
+    "type": "deploys",
+    "direction": "forward",
+    "weight": 0.7
+  },
+  {
+    "source": "config:services/access-core/package.json",
+    "target": "file:services/access-core/prisma.config.ts",
+    "type": "configures",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "config:services/access-core/package.json",
+    "target": "schema:services/access-core/prisma/schema.prisma",
+    "type": "configures",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "config:services/access-core/tsconfig.json",
+    "target": "file:services/access-core/prisma.config.ts",
+    "type": "configures",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "file:services/access-core/prisma.config.ts",
+    "target": "schema:services/access-core/prisma/schema.prisma",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "config:services/asset-core/go.sum",
+    "target": "config:services/asset-core/go.mod",
+    "type": "depends_on",
+    "direction": "forward",
+    "weight": 0.6
+  },
+  {
+    "source": "file:services/access-core/src/index.ts",
+    "target": "function:services/access-core/src/index.ts:main",
+    "relation": "contains",
+    "direction": "forward"
+  },
+  {
+    "source": "document:pr_body.txt",
+    "target": "document:README.md",
+    "type": "related",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "config:infra/docker-compose.yml",
+    "target": "resource:infra/docker-compose.yml:asset-db",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "config:infra/docker-compose.yml",
+    "target": "resource:infra/docker-compose.yml:access-db",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "config:infra/docker-compose.yml",
+    "target": "resource:infra/docker-compose.yml:flyway-asset",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "config:infra/docker-compose.yml",
+    "target": "resource:infra/docker-compose.yml:flyway-access",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "config:infra/docker-compose.yml",
+    "target": "resource:infra/docker-compose.yml:access-core",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "schema:services/access-core/prisma/schema.prisma",
+    "target": "table:services/access-core/prisma/schema.prisma:object_permissions",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "schema:services/access-core/prisma/schema.prisma",
+    "target": "table:services/access-core/prisma/schema.prisma:organization_members",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "schema:services/access-core/prisma/schema.prisma",
+    "target": "table:services/access-core/prisma/schema.prisma:organizations",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "schema:services/access-core/prisma/schema.prisma",
+    "target": "table:services/access-core/prisma/schema.prisma:permission_actions",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "schema:services/access-core/prisma/schema.prisma",
+    "target": "table:services/access-core/prisma/schema.prisma:role_permissions",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "schema:services/access-core/prisma/schema.prisma",
+    "target": "table:services/access-core/prisma/schema.prisma:roles",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "schema:services/access-core/prisma/schema.prisma",
+    "target": "table:services/access-core/prisma/schema.prisma:user_roles",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "schema:services/access-core/prisma/schema.prisma",
+    "target": "table:services/access-core/prisma/schema.prisma:users",
+    "type": "contains",
+    "weight": 1,
+    "direction": "forward"
+  },
+  {
+    "source": "file:services/access-core/src/db/prisma.ts",
+    "target": "file:services/access-core/src/config.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
+    "target": "file:services/access-core/src/db/prisma.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/db/queries/rolePermissions.ts",
+    "target": "file:services/access-core/src/db/prisma.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/db/queries/roles.ts",
+    "target": "file:services/access-core/src/db/prisma.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/db/queries/users.ts",
+    "target": "file:services/access-core/src/db/prisma.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+    "target": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+    "target": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+    "target": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+    "target": "file:services/access-core/src/db/queries/objectPermissions.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+    "target": "file:services/access-core/src/db/queries/rolePermissions.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+    "target": "file:services/access-core/src/db/queries/roles.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+    "target": "file:services/access-core/src/db/queries/users.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/schema.ts",
+    "target": "file:services/access-core/src/graphql/resolvers/index.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/graphql/schema.ts",
+    "target": "file:services/access-core/src/graphql/typeDefs.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/index.ts",
+    "target": "file:services/access-core/src/config.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/index.ts",
+    "target": "file:services/access-core/src/db/prisma.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/index.ts",
+    "target": "file:services/access-core/src/server.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "source": "file:services/access-core/src/server.ts",
+    "target": "file:services/access-core/src/graphql/schema.ts",
+    "type": "imports",
+    "direction": "forward",
+    "weight": 0.7,
+    "recoveredFromImportMap": true
+  },
+  {
+    "target": "config:infra/docker-compose.yml",
+    "description": "Restored edge",
+    "source": "document:README.md",
+    "type": "documents",
+    "weight": 0.5
+  },
+  {
+    "target": "config:infra/docker-compose.yml",
+    "description": "Restored edge",
+    "source": "config:package.json",
+    "type": "triggers",
+    "weight": 0.5
+  }
+]

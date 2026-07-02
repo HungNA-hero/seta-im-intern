@@ -1,69 +1,133 @@
 {
   "scriptCompleted": true,
-  "filesAnalyzed": 3,
+  "filesAnalyzed": 2,
   "filesSkipped": [],
   "results": [
     {
-      "path": "README.md",
-      "language": "markdown",
-      "fileCategory": "docs",
-      "totalLines": 136,
-      "nonEmptyLines": 102,
-      "sections": [
+      "path": "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 142,
+      "nonEmptyLines": 121,
+      "definitions": [
         {
-          "heading": "seta-im-intern",
-          "level": 1,
-          "line": 1
+          "name": "organization_ref",
+          "kind": "table",
+          "fields": [
+            "org_id"
+          ],
+          "startLine": 4,
+          "endLine": 6
         },
         {
-          "heading": "Phase 1 local database baseline",
-          "level": 2,
-          "line": 3
+          "name": "user_ref",
+          "kind": "table",
+          "fields": [
+            "user_id"
+          ],
+          "startLine": 11,
+          "endLine": 13
         },
         {
-          "heading": "Prerequisites",
-          "level": 3,
-          "line": 11
+          "name": "folders",
+          "kind": "table",
+          "fields": [
+            "id",
+            "org_id",
+            "path",
+            "name",
+            "description",
+            "created_by",
+            "updated_by",
+            "created_at",
+            "updated_at",
+            "deleted_at"
+          ],
+          "startLine": 18,
+          "endLine": 30
         },
         {
-          "heading": "Quick Start (NPM Scripts)",
-          "level": 3,
-          "line": 18
+          "name": "metadata_items",
+          "kind": "table",
+          "fields": [
+            "id",
+            "folder_id",
+            "title",
+            "description",
+            "labels",
+            "category",
+            "external_source",
+            "external_id",
+            "source_url",
+            "thumbnail_url",
+            "license",
+            "author",
+            "metadata_json",
+            "notes",
+            "created_by",
+            "updated_by",
+            "created_at",
+            "updated_at",
+            "deleted_at"
+          ],
+          "startLine": 59,
+          "endLine": 84
         },
         {
-          "heading": "Manual Setup & Commands",
-          "level": 3,
-          "line": 49
+          "name": "uq_folders_active_path",
+          "kind": "index",
+          "fields": [],
+          "startLine": 35,
+          "endLine": 35
         },
         {
-          "heading": "Start databases",
-          "level": 4,
-          "line": 53
+          "name": "uq_folders_active_sibling_name",
+          "kind": "index",
+          "fields": [],
+          "startLine": 39,
+          "endLine": 39
         },
         {
-          "heading": "Run migrations",
-          "level": 4,
-          "line": 62
+          "name": "idx_folders_path_gist",
+          "kind": "index",
+          "fields": [],
+          "startLine": 52,
+          "endLine": 52
         },
         {
-          "heading": "Inspect databases",
-          "level": 4,
-          "line": 85
+          "name": "idx_folders_active",
+          "kind": "index",
+          "fields": [],
+          "startLine": 55,
+          "endLine": 55
         },
         {
-          "heading": "Run Go Asset Core locally",
-          "level": 4,
-          "line": 101
+          "name": "uq_metadata_items_external_identity",
+          "kind": "index",
+          "fields": [],
+          "startLine": 89,
+          "endLine": 89
         },
         {
-          "heading": "Reset local data",
-          "level": 4,
-          "line": 125
+          "name": "idx_metadata_items_folder_id",
+          "kind": "index",
+          "fields": [],
+          "startLine": 93,
+          "endLine": 93
         },
         {
-          "heading": "Environment overrides",
-          "level": 3,
-          "line": 134
+          "name": "idx_metadata_items_active_folder_id",
+          "kind": "index",
+          "fields": [],
+          "startLine": 96,
+          "endLine": 96
+        },
+        {
+          "name": "idx_metadata_items_labels",
+          "kind": "index",
+          "fields": [],
+          "startLine": 100,
+          "endLine": 100
         }
       ],
       "metrics": {
@@ -71,57 +135,22 @@
         "exportCount": 0,
         "functionCount": 0,
         "classCount": 0,
-        "sectionCount": 11
+        "definitionCount": 12
       }
     },
     {
-      "path": "package.json",
-      "language": "json",
-      "fileCategory": "config",
-      "totalLines": 20,
-      "nonEmptyLines": 20,
-      "sections": [
-        {
-          "heading": "name",
-          "level": 1,
-          "line": 2
-        },
-        {
-          "heading": "private",
-          "level": 1,
-          "line": 3
-        },
-        {
-          "heading": "version",
-          "level": 1,
-          "line": 4
-        },
-        {
-          "heading": "scripts",
-          "level": 1,
-          "line": 5
-        },
-        {
-          "heading": "devDependencies",
-          "level": 1,
-          "line": 17
-        }
-      ],
+      "path": "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql",
+      "language": "sql",
+      "fileCategory": "data",
+      "totalLines": 81,
+      "nonEmptyLines": 76,
       "metrics": {
         "importCount": 0,
         "exportCount": 0,
         "functionCount": 0,
         "classCount": 0,
-        "sectionCount": 5
+        "definitionCount": 0
       }
-    },
-    {
-      "path": "pr_body.txt",
-      "language": "txt",
-      "fileCategory": "docs",
-      "totalLines": 11,
-      "nonEmptyLines": 9,
-      "metrics": {}
     }
   ]
 }

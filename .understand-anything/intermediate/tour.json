@@ -1,65 +1,94 @@
 [
   {
     "order": 1,
-    "title": "Entry Points",
-    "description": "Đây là tài liệu README chính và docker-compose",
+    "title": "Project Overview",
+    "description": "Start with README.md to understand the Seta IM intern project. It outlines the dual-service architecture, local database baseline setup using Flyway migrations, and environment configurations.",
     "nodeIds": [
-      "document:README.md",
-      "service:infra/docker-compose.yml"
+      "document:README.md"
     ]
   },
   {
     "order": 2,
-    "title": "Access Core API",
-    "description": "Các resolver GraphQL để quản lý Users và Roles.",
+    "title": "Database Architecture",
+    "description": "The system uses two separate databases to enforce bounded contexts. Access Core handles identity, organizations, and RBAC, while Asset Core manages the folder tree and metadata, maintaining only thin references to users and organizations.",
     "nodeIds": [
-      "function:services/access-core/src/graphql/resolvers/userResolvers.ts:toUser",
-      "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "function:services/access-core/src/graphql/resolvers/roleResolvers.ts:toRole",
-      "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
-      "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "file:services/access-core/src/graphql/resolvers/index.ts"
-    ]
+      "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
+      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration"
+    ],
+    "languageLesson": "SQL migrations using tools like Flyway should be idempotent. Splitting domains into separate schemas or databases enforces bounded contexts and prevents tight coupling."
   },
   {
     "order": 3,
-    "title": "Asset Core HTTP",
-    "description": "Handler HTTP của Golang service xử lý logic folder/metadata",
+    "title": "Access Core Data Model",
+    "description": "The Access Core service uses Prisma to model its PostgreSQL database. This schema defines the TypeScript types for users, organizations, and permissions, which are exported via the Prisma client for database operations.",
     "nodeIds": [
-      "class:services/asset-core/internal/delivery/http/asset_handler.go:AssetHandler",
-      "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleMetadataItems",
-      "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderTree",
-      "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
-      "function:services/asset-core/internal/delivery/http/asset_handler.go:NewAssetHandler",
-      "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersUsesMatchingOrganizationContext",
-      "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleFolders",
-      "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersRejectsOrganizationContextMismatch",
-      "class:services/asset-core/internal/delivery/http/asset_handler_test.go:fakeAssetUsecase",
-      "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleHealth",
-      "function:services/asset-core/internal/delivery/http/asset_handler_test.go:EnsureRefs",
-      "file:services/asset-core/internal/delivery/http/asset_handler.go"
+      "schema:services/access-core/prisma/schema.prisma",
+      "file:services/access-core/src/db/prisma.ts"
     ]
   },
   {
     "order": 4,
-    "title": "Database Schema",
-    "description": "SQL Migration schema cho Access và Asset DB",
+    "title": "Access Core GraphQL API",
+    "description": "The entry point for the Access Core API is defined by these GraphQL resolvers. They map incoming queries and mutations to the underlying database operations, handling users, roles, and permissions.",
     "nodeIds": [
-      "table:infra/db/access/migrations/V1__create_access_schema.sql:object_permissions",
-      "table:infra/db/access/migrations/V1__create_access_schema.sql:roles",
-      "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
-      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:organization_ref",
-      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:asset-schema-migration",
-      "table:infra/db/access/migrations/V2__seed_access_schema.sql:access-seed-migration",
-      "table:infra/db/access/migrations/V1__create_access_schema.sql:organization_members",
-      "table:infra/db/access/migrations/V1__create_access_schema.sql:role_permissions",
-      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:metadata_items",
-      "table:infra/db/access/migrations/V1__create_access_schema.sql:users",
-      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:folders",
-      "table:infra/db/access/migrations/V1__create_access_schema.sql:user_roles",
-      "table:infra/db/access/migrations/V1__create_access_schema.sql:permission_actions",
-      "table:infra/db/access/migrations/V1__create_access_schema.sql:organizations",
-      "table:infra/db/asset/migrations/V1__asset_initial_schema.sql:user_ref"
+      "file:services/access-core/src/graphql/resolvers/index.ts",
+      "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "file:services/access-core/src/graphql/resolvers/roleResolvers.ts"
+    ],
+    "languageLesson": "GraphQL schemas provide a strongly typed API contract. Resolvers act as the glue between the schema's fields and the backend data sources."
+  },
+  {
+    "order": 5,
+    "title": "Context & Authorization",
+    "description": "Building on the resolvers, these modules ensure the API is secure. The context module asserts authentication and organization membership, while the canDo queries check specific object and role permissions before allowing actions.",
+    "nodeIds": [
+      "file:services/access-core/src/graphql/context.ts",
+      "file:services/access-core/src/db/queries/canDo.ts"
     ]
+  },
+  {
+    "order": 6,
+    "title": "Asset Core Entry Point",
+    "description": "Moving to the second service, this Go application manages folders and metadata. The main.go file initializes the server, wires up dependencies, and connects to the asset database.",
+    "nodeIds": [
+      "file:services/asset-core/cmd/server/main.go"
+    ],
+    "languageLesson": "In Go, main.go acts as the definitive entry point, explicitly wiring dependencies like database connections, routers, and use cases."
+  },
+  {
+    "order": 7,
+    "title": "Asset Core Domain Logic",
+    "description": "The domain model defines the core interfaces and structures for folders and metadata. The usecase layer implements business rules, coordinating between the HTTP handlers and the database repository.",
+    "nodeIds": [
+      "file:services/asset-core/internal/domain/asset.go",
+      "file:services/asset-core/internal/usecase/asset_usecase.go"
+    ],
+    "languageLesson": "Go's Clean Architecture often defines interfaces in a domain package to decouple business logic from specific implementations like HTTP or SQL."
+  },
+  {
+    "order": 8,
+    "title": "Asset Core HTTP API",
+    "description": "These files expose the asset domain via HTTP endpoints. The middleware extracts actor information from requests, and the handler maps JSON payloads to the usecase layer.",
+    "nodeIds": [
+      "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "file:services/asset-core/internal/delivery/http/middleware.go"
+    ]
+  },
+  {
+    "order": 9,
+    "title": "Asset Core Data Access",
+    "description": "The repository implements the domain interfaces to execute queries against the asset PostgreSQL database. It handles complex operations like fetching folder trees using ltree paths.",
+    "nodeIds": [
+      "file:services/asset-core/internal/repository/asset_repository.go"
+    ]
+  },
+  {
+    "order": 10,
+    "title": "Local Infrastructure",
+    "description": "Finally, Docker Compose ties the entire system together. It orchestrates the two PostgreSQL databases, runs Flyway migrations, and provisions the local environment for the Access and Asset services.",
+    "nodeIds": [
+      "service:infra/docker-compose.yml"
+    ],
+    "languageLesson": "Docker Compose orchestrates multi-container applications, defining networks, environment variables, and volume mounts for local development databases."
   }
 ]

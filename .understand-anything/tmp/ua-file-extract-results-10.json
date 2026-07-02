@@ -1,0 +1,256 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 7,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": ".understand-anything/tmp/ua-file-extract-results-7.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 189,
+      "nonEmptyLines": 189,
+      "sections": [
+        {
+          "heading": "scriptCompleted",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "filesAnalyzed",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "filesSkipped",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "results",
+          "level": 1,
+          "line": 5
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 4
+      }
+    },
+    {
+      "path": ".understand-anything/tmp/ua-import-map-input.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "sections": [
+        {
+          "heading": "projectRoot",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "files",
+          "level": 1,
+          "line": 1
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    },
+    {
+      "path": ".understand-anything/tmp/ua-import-map-output.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 330,
+      "nonEmptyLines": 330,
+      "sections": [
+        {
+          "heading": "scriptCompleted",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "stats",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "importMap",
+          "level": 1,
+          "line": 8
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 3
+      }
+    },
+    {
+      "path": ".understand-anything/tmp/ua-scan-files.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 808,
+      "nonEmptyLines": 808,
+      "sections": [
+        {
+          "heading": "scriptCompleted",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "files",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "totalFiles",
+          "level": 1,
+          "line": 779
+        },
+        {
+          "heading": "filteredByIgnore",
+          "level": 1,
+          "line": 780
+        },
+        {
+          "heading": "estimatedComplexity",
+          "level": 1,
+          "line": 781
+        },
+        {
+          "heading": "stats",
+          "level": 1,
+          "line": 782
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 6
+      }
+    },
+    {
+      "path": ".understand-anything/tmp/ua-tour-input.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 2486,
+      "nonEmptyLines": 2486,
+      "sections": [
+        {
+          "heading": "nodes",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "edges",
+          "level": 1,
+          "line": 757
+        },
+        {
+          "heading": "layers",
+          "level": 1,
+          "line": 2372
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 3
+      }
+    },
+    {
+      "path": ".understand-anything/tmp/ua-tour-prompt.txt",
+      "language": "txt",
+      "fileCategory": "docs",
+      "totalLines": 2603,
+      "nonEmptyLines": 2571,
+      "metrics": {}
+    },
+    {
+      "path": ".understand-anything/tmp/ua-tour-results.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 1063,
+      "nonEmptyLines": 1063,
+      "sections": [
+        {
+          "heading": "scriptCompleted",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "entryPointCandidates",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "fanInRanking",
+          "level": 1,
+          "line": 33
+        },
+        {
+          "heading": "fanOutRanking",
+          "level": 1,
+          "line": 135
+        },
+        {
+          "heading": "bfsTraversal",
+          "level": 1,
+          "line": 236
+        },
+        {
+          "heading": "nonCodeFiles",
+          "level": 1,
+          "line": 281
+        },
+        {
+          "heading": "clusters",
+          "level": 1,
+          "line": 535
+        },
+        {
+          "heading": "layers",
+          "level": 1,
+          "line": 558
+        },
+        {
+          "heading": "nodeSummaryIndex",
+          "level": 1,
+          "line": 675
+        },
+        {
+          "heading": "totalNodes",
+          "level": 1,
+          "line": 1061
+        },
+        {
+          "heading": "totalEdges",
+          "level": 1,
+          "line": 1062
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 11
+      }
+    }
+  ]
+}

@@ -1,239 +1,632 @@
 {
   "scriptCompleted": true,
-  "filesAnalyzed": 8,
+  "filesAnalyzed": 14,
   "filesSkipped": [],
   "results": [
     {
-      "path": "services/access-core/src/db/queries/roles.ts",
+      "path": "services/access-core/src/__tests__/canDo.test.ts",
       "language": "typescript",
       "fileCategory": "code",
-      "totalLines": 38,
-      "nonEmptyLines": 35,
+      "totalLines": 172,
+      "nonEmptyLines": 144,
       "functions": [
         {
-          "name": "listRolesByOrg",
-          "startLine": 13,
-          "endLine": 24,
-          "params": [
-            "orgId"
-          ]
-        },
-        {
-          "name": "getRoleById",
-          "startLine": 26,
-          "endLine": 38,
-          "params": [
-            "id"
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "name": "listRolesByOrg",
-          "line": 13,
-          "isDefault": false
-        },
-        {
-          "name": "getRoleById",
-          "line": 26,
-          "isDefault": false
-        }
-      ],
-      "callGraph": [
-        {
-          "caller": "listRolesByOrg",
-          "callee": "prisma.roles.findMany",
-          "lineNumber": 14
-        },
-        {
-          "caller": "listRolesByOrg",
-          "callee": "roles.map",
-          "lineNumber": 15
-        },
-        {
-          "caller": "getRoleById",
-          "callee": "prisma.roles.findUnique",
-          "lineNumber": 27
-        }
-      ],
-      "metrics": {
-        "importCount": 1,
-        "exportCount": 2,
-        "functionCount": 2,
-        "classCount": 0
-      }
-    },
-    {
-      "path": "services/access-core/src/db/queries/users.ts",
-      "language": "typescript",
-      "fileCategory": "code",
-      "totalLines": 35,
-      "nonEmptyLines": 32,
-      "functions": [
-        {
-          "name": "listUsers",
-          "startLine": 12,
-          "endLine": 22,
-          "params": []
-        },
-        {
-          "name": "getUserById",
-          "startLine": 24,
+          "name": "activeUser",
+          "startLine": 29,
           "endLine": 35,
           "params": [
-            "id"
+            "roleCode",
+            "roleId"
           ]
-        }
-      ],
-      "exports": [
-        {
-          "name": "listUsers",
-          "line": 12,
-          "isDefault": false
-        },
-        {
-          "name": "getUserById",
-          "line": 24,
-          "isDefault": false
-        }
-      ],
-      "callGraph": [
-        {
-          "caller": "listUsers",
-          "callee": "prisma.users.findMany",
-          "lineNumber": 13
-        },
-        {
-          "caller": "listUsers",
-          "callee": "users.map",
-          "lineNumber": 14
-        },
-        {
-          "caller": "getUserById",
-          "callee": "prisma.users.findUnique",
-          "lineNumber": 25
         }
       ],
       "metrics": {
         "importCount": 1,
-        "exportCount": 2,
-        "functionCount": 2,
+        "exportCount": 0,
+        "functionCount": 1,
         "classCount": 0
       }
     },
     {
-      "path": "services/access-core/src/graphql/resolvers/index.ts",
+      "path": "services/access-core/src/__tests__/context.test.ts",
       "language": "typescript",
       "fileCategory": "code",
-      "totalLines": 13,
-      "nonEmptyLines": 12,
-      "exports": [
-        {
-          "name": "resolvers",
-          "line": 6,
-          "isDefault": false
-        }
-      ],
+      "totalLines": 155,
+      "nonEmptyLines": 134,
       "metrics": {
-        "importCount": 4,
-        "exportCount": 1,
+        "importCount": 1,
+        "exportCount": 0,
         "functionCount": 0,
         "classCount": 0
       }
     },
     {
-      "path": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "path": "services/access-core/src/__tests__/folderResolvers.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 687,
+      "nonEmptyLines": 567,
+      "functions": [
+        {
+          "name": "makeCtx",
+          "startLine": 20,
+          "endLine": 29,
+          "params": [
+            "overrides"
+          ]
+        },
+        {
+          "name": "makeGoFolder",
+          "startLine": 31,
+          "endLine": 44,
+          "params": [
+            "overrides"
+          ]
+        },
+        {
+          "name": "fetchOk",
+          "startLine": 46,
+          "endLine": 51,
+          "params": [
+            "folder"
+          ]
+        },
+        {
+          "name": "fetchError",
+          "startLine": 53,
+          "endLine": 55,
+          "params": [
+            "status",
+            "statusText"
+          ]
+        },
+        {
+          "name": "fetchListOk",
+          "startLine": 385,
+          "endLine": 390,
+          "params": [
+            "goFolders"
+          ]
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fetchOk",
+          "callee": "mockFetch.mockResolvedValueOnce",
+          "lineNumber": 47
+        },
+        {
+          "caller": "fetchError",
+          "callee": "mockFetch.mockResolvedValueOnce",
+          "lineNumber": 54
+        },
+        {
+          "caller": "fetchListOk",
+          "callee": "mockFetch.mockResolvedValueOnce",
+          "lineNumber": 386
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 0,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/__tests__/metadataResolvers.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 483,
+      "nonEmptyLines": 407,
+      "functions": [
+        {
+          "name": "makeCtx",
+          "startLine": 21,
+          "endLine": 30,
+          "params": [
+            "overrides"
+          ]
+        },
+        {
+          "name": "makeGoMetadataItem",
+          "startLine": 33,
+          "endLine": 55,
+          "params": [
+            "overrides"
+          ]
+        },
+        {
+          "name": "fetchOk",
+          "startLine": 58,
+          "endLine": 64,
+          "params": [
+            "item"
+          ]
+        },
+        {
+          "name": "fetchListOk",
+          "startLine": 67,
+          "endLine": 73,
+          "params": [
+            "items"
+          ]
+        },
+        {
+          "name": "fetchError",
+          "startLine": 76,
+          "endLine": 78,
+          "params": [
+            "status",
+            "statusText"
+          ]
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "fetchOk",
+          "callee": "mockFetch.mockResolvedValueOnce",
+          "lineNumber": 59
+        },
+        {
+          "caller": "fetchListOk",
+          "callee": "mockFetch.mockResolvedValueOnce",
+          "lineNumber": 68
+        },
+        {
+          "caller": "fetchError",
+          "callee": "mockFetch.mockResolvedValueOnce",
+          "lineNumber": 77
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 0,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/__tests__/metadataSchema.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 113,
+      "nonEmptyLines": 96,
+      "functions": [
+        {
+          "name": "metadataContext",
+          "startLine": 24,
+          "endLine": 35,
+          "params": [
+            "overrides"
+          ]
+        },
+        {
+          "name": "executeMetadataOperation",
+          "startLine": 38,
+          "endLine": 55,
+          "params": [
+            "query",
+            "context"
+          ]
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "executeMetadataOperation",
+          "callee": "yoga.fetch",
+          "lineNumber": 42
+        },
+        {
+          "caller": "executeMetadataOperation",
+          "callee": "JSON.stringify",
+          "lineNumber": 47
+        },
+        {
+          "caller": "executeMetadataOperation",
+          "callee": "response.json",
+          "lineNumber": 51
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 0,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/__tests__/sameOrgDirective.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 162,
+      "nonEmptyLines": 142,
+      "functions": [
+        {
+          "name": "ctx",
+          "startLine": 23,
+          "endLine": 32,
+          "params": [
+            "overrides"
+          ]
+        },
+        {
+          "name": "run",
+          "startLine": 34,
+          "endLine": 48,
+          "params": [
+            "query",
+            "gqlCtx"
+          ]
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "run",
+          "callee": "yoga.fetch",
+          "lineNumber": 35
+        },
+        {
+          "caller": "run",
+          "callee": "JSON.stringify",
+          "lineNumber": 40
+        },
+        {
+          "caller": "run",
+          "callee": "res.json",
+          "lineNumber": 44
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 0,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/db/queries/canDo.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 105,
+      "nonEmptyLines": 92,
+      "functions": [
+        {
+          "name": "getPermActionId",
+          "startLine": 6,
+          "endLine": 19,
+          "params": [
+            "code"
+          ]
+        },
+        {
+          "name": "canDo",
+          "startLine": 41,
+          "endLine": 105,
+          "params": [
+            "userId",
+            "action",
+            "resourceType",
+            "resourceId",
+            "orgId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "canDo",
+          "line": 41,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getPermActionId",
+          "callee": "prisma.permissionAction\r\n      .findMany({ select: { code: true, id: true } })\r\n      .then((rows) => new Map(rows.map((r) => [r.code, r.id])))\r\n      .catch",
+          "lineNumber": 10
+        },
+        {
+          "caller": "getPermActionId",
+          "callee": "prisma.permissionAction\r\n      .findMany({ select: { code: true, id: true } })\r\n      .then",
+          "lineNumber": 10
+        },
+        {
+          "caller": "getPermActionId",
+          "callee": "prisma.permissionAction\r\n      .findMany",
+          "lineNumber": 10
+        },
+        {
+          "caller": "getPermActionId",
+          "callee": "rows.map",
+          "lineNumber": 12
+        },
+        {
+          "caller": "getPermActionId",
+          "callee": "(await permActionCachePromise).get",
+          "lineNumber": 18
+        },
+        {
+          "caller": "canDo",
+          "callee": "prisma.user.findUnique",
+          "lineNumber": 50
+        },
+        {
+          "caller": "canDo",
+          "callee": "user.userRoles.some",
+          "lineNumber": 62
+        },
+        {
+          "caller": "canDo",
+          "callee": "user.userRoles.filter",
+          "lineNumber": 66
+        },
+        {
+          "caller": "canDo",
+          "callee": "orgRoles.some",
+          "lineNumber": 68
+        },
+        {
+          "caller": "canDo",
+          "callee": "orgRoles.map",
+          "lineNumber": 72
+        },
+        {
+          "caller": "canDo",
+          "callee": "Promise.all",
+          "lineNumber": 74
+        },
+        {
+          "caller": "canDo",
+          "callee": "prisma.organization.findUnique",
+          "lineNumber": 75
+        },
+        {
+          "caller": "canDo",
+          "callee": "getPermActionId",
+          "lineNumber": 79
+        },
+        {
+          "caller": "canDo",
+          "callee": "prisma.rolePermission.findFirst",
+          "lineNumber": 85
+        },
+        {
+          "caller": "canDo",
+          "callee": "prisma.objectPermission.findFirst",
+          "lineNumber": 93
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/graphql/context.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 96,
+      "nonEmptyLines": 86,
+      "functions": [
+        {
+          "name": "assertAuthenticated",
+          "startLine": 12,
+          "endLine": 20,
+          "params": [
+            "ctx"
+          ]
+        },
+        {
+          "name": "assertOrgMember",
+          "startLine": 22,
+          "endLine": 31,
+          "params": [
+            "ctx"
+          ]
+        },
+        {
+          "name": "assertOrgContext",
+          "startLine": 33,
+          "endLine": 40,
+          "params": [
+            "ctx",
+            "orgId"
+          ]
+        },
+        {
+          "name": "emptyContext",
+          "startLine": 42,
+          "endLine": 50,
+          "params": []
+        },
+        {
+          "name": "loadRequestContext",
+          "startLine": 52,
+          "endLine": 96,
+          "params": [
+            "userId",
+            "orgId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "assertAuthenticated",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "assertOrgMember",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "assertOrgContext",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "loadRequestContext",
+          "line": 52,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "assertOrgMember",
+          "callee": "assertAuthenticated",
+          "lineNumber": 25
+        },
+        {
+          "caller": "loadRequestContext",
+          "callee": "emptyContext",
+          "lineNumber": 56
+        },
+        {
+          "caller": "loadRequestContext",
+          "callee": "prisma.user.findUnique",
+          "lineNumber": 59
+        },
+        {
+          "caller": "loadRequestContext",
+          "callee": "emptyContext",
+          "lineNumber": 60
+        },
+        {
+          "caller": "loadRequestContext",
+          "callee": "Promise.all",
+          "lineNumber": 70
+        },
+        {
+          "caller": "loadRequestContext",
+          "callee": "prisma.user.findUnique",
+          "lineNumber": 71
+        },
+        {
+          "caller": "loadRequestContext",
+          "callee": "prisma.organization.findUnique",
+          "lineNumber": 81
+        },
+        {
+          "caller": "loadRequestContext",
+          "callee": "emptyContext",
+          "lineNumber": 87
+        },
+        {
+          "caller": "loadRequestContext",
+          "callee": "user.userRoles.map",
+          "lineNumber": 93
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/graphql/directives.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 46,
+      "nonEmptyLines": 42,
+      "functions": [
+        {
+          "name": "wrapField",
+          "startLine": 12,
+          "endLine": 30,
+          "params": [
+            "schema",
+            "directiveName",
+            "guard"
+          ]
+        },
+        {
+          "name": "assertSameOrg",
+          "startLine": 32,
+          "endLine": 37,
+          "params": [
+            "ctx",
+            "args"
+          ]
+        },
+        {
+          "name": "applyAuthDirectives",
+          "startLine": 39,
+          "endLine": 46,
+          "params": [
+            "schema"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "applyAuthDirectives",
+          "line": 39,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "wrapField",
+          "callee": "mapSchema",
+          "lineNumber": 17
+        },
+        {
+          "caller": "wrapField",
+          "callee": "getDirective",
+          "lineNumber": 19
+        },
+        {
+          "caller": "wrapField",
+          "callee": "guard",
+          "lineNumber": 24
+        },
+        {
+          "caller": "wrapField",
+          "callee": "resolve",
+          "lineNumber": 25
+        },
+        {
+          "caller": "assertSameOrg",
+          "callee": "assertOrgContext",
+          "lineNumber": 36
+        },
+        {
+          "caller": "applyAuthDirectives",
+          "callee": "wrapField",
+          "lineNumber": 42
+        },
+        {
+          "caller": "applyAuthDirectives",
+          "callee": "wrapField",
+          "lineNumber": 43
+        },
+        {
+          "caller": "applyAuthDirectives",
+          "callee": "wrapField",
+          "lineNumber": 44
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/graphql/resolvers/canDoResolvers.ts",
       "language": "typescript",
       "fileCategory": "code",
       "totalLines": 24,
-      "nonEmptyLines": 22,
-      "functions": [
-        {
-          "name": "toRole",
-          "startLine": 3,
-          "endLine": 13,
-          "params": [
-            "r"
-          ]
-        }
-      ],
+      "nonEmptyLines": 23,
       "exports": [
         {
-          "name": "roleResolvers",
-          "line": 15,
-          "isDefault": false
-        }
-      ],
-      "callGraph": [
-        {
-          "caller": "toRole",
-          "callee": "r.createdAt.toISOString",
-          "lineNumber": 10
-        },
-        {
-          "caller": "toRole",
-          "callee": "r.updatedAt.toISOString",
-          "lineNumber": 11
-        }
-      ],
-      "metrics": {
-        "importCount": 1,
-        "exportCount": 1,
-        "functionCount": 1,
-        "classCount": 0
-      }
-    },
-    {
-      "path": "services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "language": "typescript",
-      "fileCategory": "code",
-      "totalLines": 22,
-      "nonEmptyLines": 20,
-      "functions": [
-        {
-          "name": "toUser",
-          "startLine": 3,
-          "endLine": 12,
-          "params": [
-            "u"
-          ]
-        }
-      ],
-      "exports": [
-        {
-          "name": "userResolvers",
-          "line": 14,
-          "isDefault": false
-        }
-      ],
-      "callGraph": [
-        {
-          "caller": "toUser",
-          "callee": "u.createdAt.toISOString",
-          "lineNumber": 9
-        },
-        {
-          "caller": "toUser",
-          "callee": "u.updatedAt.toISOString",
-          "lineNumber": 10
-        }
-      ],
-      "metrics": {
-        "importCount": 1,
-        "exportCount": 1,
-        "functionCount": 1,
-        "classCount": 0
-      }
-    },
-    {
-      "path": "services/access-core/src/graphql/schema.ts",
-      "language": "typescript",
-      "fileCategory": "code",
-      "totalLines": 5,
-      "nonEmptyLines": 4,
-      "exports": [
-        {
-          "name": "schema",
+          "name": "canDoResolvers",
           "line": 5,
           "isDefault": false
         }
@@ -246,11 +639,321 @@
       }
     },
     {
+      "path": "services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 294,
+      "nonEmptyLines": 263,
+      "functions": [
+        {
+          "name": "toFolder",
+          "startLine": 22,
+          "endLine": 34,
+          "params": [
+            "f"
+          ]
+        },
+        {
+          "name": "goHeaders",
+          "startLine": 46,
+          "endLine": 48,
+          "params": [
+            "userId",
+            "orgId"
+          ]
+        },
+        {
+          "name": "throwGoError",
+          "startLine": 50,
+          "endLine": 55,
+          "params": [
+            "res",
+            "message"
+          ]
+        },
+        {
+          "name": "assertFolderPermission",
+          "startLine": 57,
+          "endLine": 75,
+          "params": [
+            "userId",
+            "orgId",
+            "resourceId",
+            "action"
+          ]
+        },
+        {
+          "name": "fetchFolderList",
+          "startLine": 77,
+          "endLine": 86,
+          "params": [
+            "url",
+            "userId",
+            "orgId"
+          ]
+        },
+        {
+          "name": "handleGoResponse",
+          "startLine": 88,
+          "endLine": 102,
+          "params": [
+            "res",
+            "defaultMessage"
+          ]
+        },
+        {
+          "name": "writeFolder",
+          "startLine": 104,
+          "endLine": 121,
+          "params": [
+            "method",
+            "url",
+            "userId",
+            "orgId",
+            "body",
+            "message"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "folderResolvers",
+          "line": 123,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "assertFolderPermission",
+          "callee": "canDo",
+          "lineNumber": 63
+        },
+        {
+          "caller": "fetchFolderList",
+          "callee": "fetch",
+          "lineNumber": 82
+        },
+        {
+          "caller": "fetchFolderList",
+          "callee": "goHeaders",
+          "lineNumber": 82
+        },
+        {
+          "caller": "fetchFolderList",
+          "callee": "throwGoError",
+          "lineNumber": 83
+        },
+        {
+          "caller": "fetchFolderList",
+          "callee": "resp.json",
+          "lineNumber": 84
+        },
+        {
+          "caller": "handleGoResponse",
+          "callee": "res.json",
+          "lineNumber": 93
+        },
+        {
+          "caller": "handleGoResponse",
+          "callee": "toFolder",
+          "lineNumber": 99
+        },
+        {
+          "caller": "handleGoResponse",
+          "callee": "throwGoError",
+          "lineNumber": 101
+        },
+        {
+          "caller": "writeFolder",
+          "callee": "fetch",
+          "lineNumber": 112
+        },
+        {
+          "caller": "writeFolder",
+          "callee": "goHeaders",
+          "lineNumber": 115
+        },
+        {
+          "caller": "writeFolder",
+          "callee": "JSON.stringify",
+          "lineNumber": 118
+        },
+        {
+          "caller": "writeFolder",
+          "callee": "handleGoResponse",
+          "lineNumber": 120
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 302,
+      "nonEmptyLines": 277,
+      "functions": [
+        {
+          "name": "toMetadataItem",
+          "startLine": 57,
+          "endLine": 78,
+          "params": [
+            "m"
+          ]
+        },
+        {
+          "name": "goHeaders",
+          "startLine": 92,
+          "endLine": 94,
+          "params": [
+            "userId",
+            "orgId"
+          ]
+        },
+        {
+          "name": "throwGoError",
+          "startLine": 99,
+          "endLine": 104,
+          "params": [
+            "res",
+            "message"
+          ]
+        },
+        {
+          "name": "handleGoItemResponse",
+          "startLine": 107,
+          "endLine": 119,
+          "params": [
+            "response",
+            "message"
+          ]
+        },
+        {
+          "name": "assertMetadataPermission",
+          "startLine": 125,
+          "endLine": 144,
+          "params": [
+            "userId",
+            "orgId",
+            "resourceId",
+            "resourceType",
+            "action"
+          ]
+        },
+        {
+          "name": "validateAndParseJsonString",
+          "startLine": 150,
+          "endLine": 169,
+          "params": [
+            "jsonString"
+          ]
+        },
+        {
+          "name": "mapInputToSnakeCase",
+          "startLine": 174,
+          "endLine": 184,
+          "params": [
+            "input"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "metadataResolvers",
+          "line": 189,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "toMetadataItem",
+          "callee": "JSON.stringify",
+          "lineNumber": 71
+        },
+        {
+          "caller": "handleGoItemResponse",
+          "callee": "throwGoError",
+          "lineNumber": 111
+        },
+        {
+          "caller": "handleGoItemResponse",
+          "callee": "response.json",
+          "lineNumber": 112
+        },
+        {
+          "caller": "handleGoItemResponse",
+          "callee": "toMetadataItem",
+          "lineNumber": 118
+        },
+        {
+          "caller": "assertMetadataPermission",
+          "callee": "canDo",
+          "lineNumber": 132
+        },
+        {
+          "caller": "validateAndParseJsonString",
+          "callee": "JSON.parse",
+          "lineNumber": 156
+        },
+        {
+          "caller": "validateAndParseJsonString",
+          "callee": "Array.isArray",
+          "lineNumber": 157
+        },
+        {
+          "caller": "mapInputToSnakeCase",
+          "callee": "Object.entries",
+          "lineNumber": 176
+        },
+        {
+          "caller": "mapInputToSnakeCase",
+          "callee": "key.replace",
+          "lineNumber": 177
+        },
+        {
+          "caller": "mapInputToSnakeCase",
+          "callee": "letter.toLowerCase",
+          "lineNumber": 179
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/access-core/src/graphql/schema.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 8,
+      "nonEmptyLines": 7,
+      "exports": [
+        {
+          "name": "schema",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
       "path": "services/access-core/src/graphql/typeDefs.ts",
       "language": "typescript",
       "fileCategory": "code",
-      "totalLines": 80,
-      "nonEmptyLines": 73,
+      "totalLines": 191,
+      "nonEmptyLines": 177,
       "exports": [
         {
           "name": "typeDefs",
@@ -262,91 +965,6 @@
         "importCount": 0,
         "exportCount": 1,
         "functionCount": 0,
-        "classCount": 0
-      }
-    },
-    {
-      "path": "services/access-core/src/server.ts",
-      "language": "typescript",
-      "fileCategory": "code",
-      "totalLines": 33,
-      "nonEmptyLines": 28,
-      "functions": [
-        {
-          "name": "buildServer",
-          "startLine": 5,
-          "endLine": 33,
-          "params": []
-        }
-      ],
-      "exports": [
-        {
-          "name": "buildServer",
-          "line": 5,
-          "isDefault": false
-        }
-      ],
-      "callGraph": [
-        {
-          "caller": "buildServer",
-          "callee": "Fastify",
-          "lineNumber": 6
-        },
-        {
-          "caller": "buildServer",
-          "callee": "createYoga",
-          "lineNumber": 8
-        },
-        {
-          "caller": "buildServer",
-          "callee": "fastify.route",
-          "lineNumber": 14
-        },
-        {
-          "caller": "buildServer",
-          "callee": "yoga.fetch",
-          "lineNumber": 18
-        },
-        {
-          "caller": "buildServer",
-          "callee": "JSON.stringify",
-          "lineNumber": 21
-        },
-        {
-          "caller": "buildServer",
-          "callee": "response.headers.forEach",
-          "lineNumber": 23
-        },
-        {
-          "caller": "buildServer",
-          "callee": "reply.header",
-          "lineNumber": 23
-        },
-        {
-          "caller": "buildServer",
-          "callee": "reply.status",
-          "lineNumber": 24
-        },
-        {
-          "caller": "buildServer",
-          "callee": "response.text",
-          "lineNumber": 25
-        },
-        {
-          "caller": "buildServer",
-          "callee": "reply.send",
-          "lineNumber": 26
-        },
-        {
-          "caller": "buildServer",
-          "callee": "fastify.get",
-          "lineNumber": 30
-        }
-      ],
-      "metrics": {
-        "importCount": 1,
-        "exportCount": 1,
-        "functionCount": 1,
         "classCount": 0
       }
     }

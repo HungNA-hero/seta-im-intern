@@ -1,0 +1,185 @@
+{
+  "nodes": [
+    {
+      "id": "config:.understand-anything/intermediate/assemble-review.json",
+      "type": "config",
+      "name": "assemble-review.json",
+      "filePath": ".understand-anything/intermediate/assemble-review.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: assemble-review.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/assembled-graph.json",
+      "type": "config",
+      "name": "assembled-graph.json",
+      "filePath": ".understand-anything/intermediate/assembled-graph.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: assembled-graph.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/batch-1-part-1.json",
+      "type": "config",
+      "name": "batch-1-part-1.json",
+      "filePath": ".understand-anything/intermediate/batch-1-part-1.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-1-part-1.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/batch-1-part-2.json",
+      "type": "config",
+      "name": "batch-1-part-2.json",
+      "filePath": ".understand-anything/intermediate/batch-1-part-2.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-1-part-2.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/batch-2.json",
+      "type": "config",
+      "name": "batch-2.json",
+      "filePath": ".understand-anything/intermediate/batch-2.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-2.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/batch-3.json",
+      "type": "config",
+      "name": "batch-3.json",
+      "filePath": ".understand-anything/intermediate/batch-3.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-3.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/batch-6.json",
+      "type": "config",
+      "name": "batch-6.json",
+      "filePath": ".understand-anything/intermediate/batch-6.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-6.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/batch-7.json",
+      "type": "config",
+      "name": "batch-7.json",
+      "filePath": ".understand-anything/intermediate/batch-7.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-7.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/batch-999.json",
+      "type": "config",
+      "name": "batch-999.json",
+      "filePath": ".understand-anything/intermediate/batch-999.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: batch-999.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/batches.json",
+      "type": "config",
+      "name": "batches.json",
+      "filePath": ".understand-anything/intermediate/batches.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: batches.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/fingerprint-input.json",
+      "type": "config",
+      "name": "fingerprint-input.json",
+      "filePath": ".understand-anything/intermediate/fingerprint-input.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: fingerprint-input.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/layers.json",
+      "type": "config",
+      "name": "layers.json",
+      "filePath": ".understand-anything/intermediate/layers.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: layers.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/review.json",
+      "type": "config",
+      "name": "review.json",
+      "filePath": ".understand-anything/intermediate/review.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: review.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/scan-result.json",
+      "type": "config",
+      "name": "scan-result.json",
+      "filePath": ".understand-anything/intermediate/scan-result.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: scan-result.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/tour.json",
+      "type": "config",
+      "name": "tour.json",
+      "filePath": ".understand-anything/intermediate/tour.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: tour.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": []
+}

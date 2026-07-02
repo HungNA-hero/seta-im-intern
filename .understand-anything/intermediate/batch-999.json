@@ -4,12 +4,15 @@
       "id": "file:services/asset-core/internal/delivery/http/middleware.go",
       "type": "file",
       "name": "middleware.go",
-      "filePath": "services/asset-core/internal/delivery/http/middleware.go",
-      "summary": "Định nghĩa middleware xác thực hai header actor dưới dạng UUID rồi đưa user/organization vào request context.",
+      "path": "services/asset-core/internal/delivery/http/middleware.go",
+      "summary": "File handling middleware.go",
       "tags": [
-        "middleware",
-        "authentication-context",
-        "validation",
+        "code",
+        "go",
+        "services",
+        "asset-core",
+        "internal",
+        "delivery",
         "http",
         "tested"
       ],
@@ -19,16 +22,11 @@
       "id": "function:services/asset-core/internal/delivery/http/middleware.go:RequireActor",
       "type": "function",
       "name": "RequireActor",
-      "filePath": "services/asset-core/internal/delivery/http/middleware.go",
-      "lineRange": [
-        11,
-        39
-      ],
-      "summary": "Bao bọc handler bằng kiểm tra X-User-Id/X-Org-Id, validate UUID và gắn Actor vào request context.",
+      "path": "services/asset-core/internal/delivery/http/middleware.go",
+      "summary": "Function RequireActor",
       "tags": [
-        "api-handler",
-        "http",
-        "validation"
+        "function",
+        "go"
       ],
       "complexity": "moderate"
     },
@@ -36,31 +34,28 @@
       "id": "file:services/asset-core/internal/delivery/http/middleware_test.go",
       "type": "file",
       "name": "middleware_test.go",
-      "filePath": "services/asset-core/internal/delivery/http/middleware_test.go",
-      "summary": "Kiểm thử theo bảng cho middleware actor với header hợp lệ, thiếu hoặc sai định dạng và xác nhận context truyền xuống handler.",
+      "path": "services/asset-core/internal/delivery/http/middleware_test.go",
+      "summary": "File handling middleware_test.go",
       "tags": [
-        "test",
-        "table-driven-test",
-        "middleware",
-        "validation"
+        "code",
+        "go",
+        "services",
+        "asset-core",
+        "internal",
+        "delivery",
+        "http"
       ],
-      "complexity": "moderate",
-      "languageNotes": "Dùng table-driven tests và subtest, một idiom phổ biến của Go để bao phủ nhiều trường hợp đầu vào."
+      "complexity": "moderate"
     },
     {
       "id": "function:services/asset-core/internal/delivery/http/middleware_test.go:TestRequireActor",
       "type": "function",
       "name": "TestRequireActor",
-      "filePath": "services/asset-core/internal/delivery/http/middleware_test.go",
-      "lineRange": [
-        13,
-        106
-      ],
-      "summary": "Bao phủ các trường hợp header actor hợp lệ, thiếu và malformed bằng table-driven test.",
+      "path": "services/asset-core/internal/delivery/http/middleware_test.go",
+      "summary": "Function TestRequireActor",
       "tags": [
-        "test",
-        "unit-test",
-        "behavior-verification"
+        "function",
+        "go"
       ],
       "complexity": "complex"
     },
@@ -68,13 +63,15 @@
       "id": "file:services/asset-core/internal/requestcontext/context.go",
       "type": "file",
       "name": "context.go",
-      "filePath": "services/asset-core/internal/requestcontext/context.go",
-      "summary": "Cung cấp kiểu Actor và helper gắn/lấy danh tính user cùng organization từ context của request.",
+      "path": "services/asset-core/internal/requestcontext/context.go",
+      "summary": "File handling context.go",
       "tags": [
-        "request-context",
-        "authentication-context",
-        "utility",
-        "error-handling"
+        "code",
+        "go",
+        "services",
+        "asset-core",
+        "internal",
+        "requestcontext"
       ],
       "complexity": "simple"
     },
@@ -82,16 +79,11 @@
       "id": "function:services/asset-core/internal/requestcontext/context.go:WithActor",
       "type": "function",
       "name": "WithActor",
-      "filePath": "services/asset-core/internal/requestcontext/context.go",
-      "lineRange": [
-        18,
-        20
-      ],
-      "summary": "Tạo context con chứa Actor dưới private typed key.",
+      "path": "services/asset-core/internal/requestcontext/context.go",
+      "summary": "Function WithActor",
       "tags": [
-        "request-context",
-        "authentication-context",
-        "utility"
+        "function",
+        "go"
       ],
       "complexity": "simple"
     },
@@ -99,16 +91,11 @@
       "id": "function:services/asset-core/internal/requestcontext/context.go:GetActor",
       "type": "function",
       "name": "GetActor",
-      "filePath": "services/asset-core/internal/requestcontext/context.go",
-      "lineRange": [
-        23,
-        29
-      ],
-      "summary": "Lấy Actor từ context và trả lỗi rõ ràng khi giá trị chưa được middleware gắn.",
+      "path": "services/asset-core/internal/requestcontext/context.go",
+      "summary": "Function GetActor",
       "tags": [
-        "request-context",
-        "authentication-context",
-        "utility"
+        "function",
+        "go"
       ],
       "complexity": "simple"
     },
@@ -116,343 +103,38 @@
       "id": "class:services/asset-core/internal/requestcontext/context.go:Actor",
       "type": "class",
       "name": "Actor",
-      "filePath": "services/asset-core/internal/requestcontext/context.go",
-      "lineRange": [
-        12,
-        15
-      ],
-      "summary": "Mang danh tính user và organization đã xác thực xuyên suốt request context.",
+      "path": "services/asset-core/internal/requestcontext/context.go",
+      "summary": "Class Actor",
       "tags": [
         "class",
-        "dependency-injection",
-        "service-component"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:services/access-core/src/db/queries/roles.ts",
-      "type": "file",
-      "name": "roles.ts",
-      "filePath": "services/access-core/src/db/queries/roles.ts",
-      "summary": "Cung cấp truy vấn Prisma để liệt kê role theo organization hoặc lấy role theo ID, đồng thời ánh xạ tên cột database sang domain shape.",
-      "tags": [
-        "database-query",
-        "prisma",
-        "role-management",
-        "serialization"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:services/access-core/src/db/queries/roles.ts:listRolesByOrg",
-      "type": "function",
-      "name": "listRolesByOrg",
-      "filePath": "services/access-core/src/db/queries/roles.ts",
-      "lineRange": [
-        13,
-        24
-      ],
-      "summary": "Lấy toàn bộ role của một organization và ánh xạ record Prisma sang Role shape.",
-      "tags": [
-        "database-query",
-        "prisma",
-        "data-access"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:services/access-core/src/db/queries/roles.ts:getRoleById",
-      "type": "function",
-      "name": "getRoleById",
-      "filePath": "services/access-core/src/db/queries/roles.ts",
-      "lineRange": [
-        26,
-        38
-      ],
-      "summary": "Lấy một role theo ID, trả null khi không tồn tại và chuẩn hóa tên trường.",
-      "tags": [
-        "database-query",
-        "prisma",
-        "data-access"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:services/access-core/src/db/queries/users.ts",
-      "type": "file",
-      "name": "users.ts",
-      "filePath": "services/access-core/src/db/queries/users.ts",
-      "summary": "Cung cấp truy vấn Prisma để liệt kê user hoặc lấy user theo ID và chuẩn hóa các trường snake_case thành domain shape TypeScript.",
-      "tags": [
-        "database-query",
-        "prisma",
-        "user-management",
-        "serialization"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:services/access-core/src/db/queries/users.ts:listUsers",
-      "type": "function",
-      "name": "listUsers",
-      "filePath": "services/access-core/src/db/queries/users.ts",
-      "lineRange": [
-        12,
-        22
-      ],
-      "summary": "Liệt kê user và ánh xạ record Prisma sang User shape dùng trong API.",
-      "tags": [
-        "database-query",
-        "prisma",
-        "data-access"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:services/access-core/src/db/queries/users.ts:getUserById",
-      "type": "function",
-      "name": "getUserById",
-      "filePath": "services/access-core/src/db/queries/users.ts",
-      "lineRange": [
-        24,
-        35
-      ],
-      "summary": "Lấy user theo ID, trả null khi không tồn tại và chuẩn hóa trường database.",
-      "tags": [
-        "database-query",
-        "prisma",
-        "data-access"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "type": "file",
-      "name": "roleResolvers.ts",
-      "filePath": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "summary": "Hiện thực GraphQL resolver cho danh sách và chi tiết role, gọi tầng query rồi chuyển Date thành chuỗi ISO.",
-      "tags": [
-        "graphql-resolver",
-        "role-management",
-        "serialization",
-        "api-handler"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:services/access-core/src/graphql/resolvers/roleResolvers.ts:toRole",
-      "type": "function",
-      "name": "toRole",
-      "filePath": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "lineRange": [
-        3,
-        13
-      ],
-      "summary": "Chuyển Role domain object thành GraphQL payload với timestamp ISO và nullable description.",
-      "tags": [
-        "serialization",
-        "graphql-resolver",
-        "data-mapping"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "type": "file",
-      "name": "userResolvers.ts",
-      "filePath": "services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "summary": "Hiện thực GraphQL resolver cho danh sách và chi tiết user, gọi tầng query rồi chuyển trường thời gian thành chuỗi ISO.",
-      "tags": [
-        "graphql-resolver",
-        "user-management",
-        "serialization",
-        "api-handler"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:services/access-core/src/graphql/resolvers/userResolvers.ts:toUser",
-      "type": "function",
-      "name": "toUser",
-      "filePath": "services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "lineRange": [
-        3,
-        12
-      ],
-      "summary": "Chuyển User domain object thành GraphQL payload với tên trường API và timestamp ISO.",
-      "tags": [
-        "serialization",
-        "graphql-resolver",
-        "data-mapping"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:services/access-core/src/graphql/schema.ts",
-      "type": "file",
-      "name": "schema.ts",
-      "filePath": "services/access-core/src/graphql/schema.ts",
-      "summary": "Ghép GraphQL type definitions và resolver map thành executable schema bằng GraphQL Yoga.",
-      "tags": [
-        "graphql",
-        "schema-composition",
-        "api-schema",
-        "configuration"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:services/access-core/src/server.ts",
-      "type": "file",
-      "name": "server.ts",
-      "filePath": "services/access-core/src/server.ts",
-      "summary": "Xây dựng Fastify server, nối GraphQL Yoga tại /graphql và cung cấp health endpoint cho Access Core.",
-      "tags": [
-        "http-server",
-        "fastify",
-        "graphql-yoga",
-        "factory"
-      ],
-      "complexity": "simple",
-      "languageNotes": "Adapter thủ công chuyển Fastify request/response sang Fetch API mà GraphQL Yoga sử dụng."
-    },
-    {
-      "id": "function:services/access-core/src/server.ts:buildServer",
-      "type": "function",
-      "name": "buildServer",
-      "filePath": "services/access-core/src/server.ts",
-      "lineRange": [
-        5,
-        33
-      ],
-      "summary": "Tạo Fastify instance, bridge GraphQL Yoga qua Fetch API và đăng ký health endpoint.",
-      "tags": [
-        "factory",
-        "http-server",
-        "graphql-yoga"
-      ],
-      "complexity": "moderate"
-    },
-    {
-      "id": "file:services/access-core/src/db/prisma.ts",
-      "type": "file",
-      "name": "prisma.ts",
-      "filePath": "services/access-core/src/db/prisma.ts",
-      "summary": "Khởi tạo PrismaClient trên PostgreSQL adapter và connection pool dùng DATABASE_URL đã được cấu hình.",
-      "tags": [
-        "database-client",
-        "prisma",
-        "postgresql",
-        "singleton"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:services/access-core/src/db/queries/objectPermissions.ts",
-      "type": "file",
-      "name": "objectPermissions.ts",
-      "filePath": "services/access-core/src/db/queries/objectPermissions.ts",
-      "summary": "Truy vấn object permission theo organization, loại resource và resource ID rồi ánh xạ record Prisma sang domain shape.",
-      "tags": [
-        "database-query",
-        "prisma",
-        "permission-model",
-        "organization-scope"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:services/access-core/src/db/queries/objectPermissions.ts:listObjectPermissions",
-      "type": "function",
-      "name": "listObjectPermissions",
-      "filePath": "services/access-core/src/db/queries/objectPermissions.ts",
-      "lineRange": [
-        16,
-        35
-      ],
-      "summary": "Lọc object permissions theo organization/resource rồi ánh xạ kết quả Prisma sang API shape.",
-      "tags": [
-        "database-query",
-        "prisma",
-        "data-access"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:services/access-core/src/db/queries/rolePermissions.ts",
-      "type": "file",
-      "name": "rolePermissions.ts",
-      "filePath": "services/access-core/src/db/queries/rolePermissions.ts",
-      "summary": "Truy vấn các permission gắn với một role và chuyển record Prisma thành RolePermission shape.",
-      "tags": [
-        "database-query",
-        "prisma",
-        "role-permission",
-        "serialization"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:services/access-core/src/db/queries/rolePermissions.ts:listRolePermissions",
-      "type": "function",
-      "name": "listRolePermissions",
-      "filePath": "services/access-core/src/db/queries/rolePermissions.ts",
-      "lineRange": [
-        10,
-        18
-      ],
-      "summary": "Lấy permissions của role và ánh xạ chúng sang RolePermission shape.",
-      "tags": [
-        "database-query",
-        "prisma",
-        "data-access"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
-      "type": "file",
-      "name": "permissionResolvers.ts",
-      "filePath": "services/access-core/src/graphql/resolvers/permissionResolvers.ts",
-      "summary": "Hiện thực GraphQL resolver cho role permission và object permission, bao gồm chuẩn hóa nullable grantee và timestamp ISO.",
-      "tags": [
-        "graphql-resolver",
-        "permission-model",
-        "api-handler",
-        "serialization"
+        "go"
       ],
       "complexity": "simple"
     },
     {
       "id": "file:services/access-core/src/index.ts",
       "type": "file",
-      "name": "index.ts",
-      "filePath": "services/access-core/src/index.ts",
-      "summary": "Entry point của Access Core: kiểm tra kết nối Prisma, dựng Fastify server và lắng nghe theo cấu hình runtime.",
-      "tags": [
-        "entry-point",
-        "bootstrap",
-        "database-healthcheck",
-        "http-server"
-      ],
-      "complexity": "simple"
+      "properties": {
+        "path": "services/access-core/src/index.ts",
+        "name": "index.ts",
+        "summary": "Main entry point for the access-core service, initializing the server and connecting to the database.",
+        "tags": [
+          "entrypoint",
+          "service",
+          "initialization"
+        ],
+        "complexity": "simple"
+      },
+      "complexity": "moderate"
     },
     {
       "id": "function:services/access-core/src/index.ts:main",
       "type": "function",
-      "name": "main",
-      "filePath": "services/access-core/src/index.ts",
-      "lineRange": [
-        6,
-        16
-      ],
-      "summary": "Kiểm tra database, dựng server và bắt đầu lắng nghe theo host/port runtime.",
-      "tags": [
-        "entry-point",
-        "bootstrap",
-        "orchestration"
-      ],
-      "complexity": "simple"
+      "properties": {
+        "path": "services/access-core/src/index.ts",
+        "name": "main"
+      },
+      "complexity": "moderate"
     },
     {
       "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
@@ -694,28 +376,26 @@
       "id": "document:README.md",
       "type": "document",
       "name": "README.md",
-      "filePath": "README.md",
-      "summary": "Hướng dẫn thiết lập baseline cơ sở dữ liệu cục bộ cho kiến trúc M1, bao gồm cách khởi động hai service Node/Go, chạy Flyway migration, kiểm tra PostgreSQL và tùy biến biến môi trường.",
+      "path": "README.md",
+      "summary": "Main project README detailing local database baseline setup, prerequisites, quick start npm scripts, manual setup commands, and environment overrides for the SETA IM intern project.",
       "tags": [
+        "readme",
         "documentation",
-        "local-development",
-        "database",
-        "migration",
-        "microservices"
+        "setup",
+        "getting-started"
       ],
-      "complexity": "moderate"
+      "complexity": "simple"
     },
     {
       "id": "document:pr_body.txt",
       "type": "document",
       "name": "pr_body.txt",
-      "filePath": "pr_body.txt",
-      "summary": "Nội dung pull request cho ticket KAN-24, ghi lại việc bổ sung npm script cấp repository, công cụ concurrently và cập nhật hướng dẫn đường dẫn hạ tầng.",
+      "path": "pr_body.txt",
+      "summary": "Template or default text for a Pull Request body (KAN-24) describing root package.json additions and README updates.",
       "tags": [
+        "pull-request",
         "documentation",
-        "change-summary",
-        "developer-workflow",
-        "testing"
+        "template"
       ],
       "complexity": "simple"
     },
@@ -723,12 +403,10 @@
       "id": "file:infra/db/asset/seed/.gitkeep",
       "type": "file",
       "name": ".gitkeep",
-      "filePath": "infra/db/asset/seed/.gitkeep",
-      "summary": "File giữ chỗ để Git duy trì thư mục dành cho dữ liệu seed của Asset DB khi thư mục chưa có nội dung.",
+      "file": "infra/db/asset/seed/.gitkeep",
+      "summary": "Placeholder or ignore file",
       "tags": [
-        "placeholder",
-        "database",
-        "seed-data"
+        "ignore"
       ],
       "complexity": "simple"
     },
@@ -752,14 +430,10 @@
       "id": "config:services/access-core/package.json",
       "type": "config",
       "name": "package.json",
-      "filePath": "services/access-core/package.json",
-      "summary": "Manifest của access-core khai báo các lệnh phát triển, build và Prisma migration cùng dependency cho Fastify, GraphQL Yoga, PostgreSQL và Prisma Client.",
+      "file": "services/access-core/package.json",
+      "summary": "Configuration file: services/access-core/package.json",
       "tags": [
-        "configuration",
-        "nodejs",
-        "api",
-        "database",
-        "build-system"
+        "config"
       ],
       "complexity": "simple"
     },
@@ -781,29 +455,23 @@
       "id": "schema:services/access-core/prisma/schema.prisma",
       "type": "schema",
       "name": "schema.prisma",
-      "filePath": "services/access-core/prisma/schema.prisma",
-      "summary": "Mô hình hóa schema PostgreSQL access cho người dùng, tổ chức, membership, role và quyền truy cập đối tượng, kèm quan hệ, unique constraint, index và enum phân quyền.",
+      "file": "services/access-core/prisma/schema.prisma",
+      "summary": "Database schema definition for access-core",
       "tags": [
-        "schema-definition",
         "database",
-        "prisma",
-        "authorization",
-        "data-model"
+        "schema",
+        "prisma"
       ],
-      "complexity": "moderate",
-      "languageNotes": "Schema sử dụng composite relation và partial unique index để bảo toàn tính duy nhất của quyền theo role hoặc user trong phạm vi tổ chức."
+      "complexity": "simple"
     },
     {
       "id": "config:services/access-core/tsconfig.json",
       "type": "config",
       "name": "tsconfig.json",
-      "filePath": "services/access-core/tsconfig.json",
-      "summary": "Cấu hình TypeScript nghiêm ngặt cho access-core, biên dịch mã CommonJS nhắm ES2022 từ thư mục src sang dist.",
+      "file": "services/access-core/tsconfig.json",
+      "summary": "Configuration file: services/access-core/tsconfig.json",
       "tags": [
-        "configuration",
-        "typescript",
-        "build-system",
-        "strict-mode"
+        "config"
       ],
       "complexity": "simple"
     },
@@ -811,14 +479,10 @@
       "id": "config:services/asset-core/go.mod",
       "type": "config",
       "name": "go.mod",
-      "filePath": "services/asset-core/go.mod",
-      "summary": "Khai báo module Go của asset-core và các dependency trực tiếp cho GORM/PostgreSQL, UUID và SQL mocking cùng tập dependency gián tiếp.",
+      "file": "services/asset-core/go.mod",
+      "summary": "Configuration file: services/asset-core/go.mod",
       "tags": [
-        "configuration",
-        "go-module",
-        "dependencies",
-        "database",
-        "testing"
+        "config"
       ],
       "complexity": "simple"
     },
@@ -826,13 +490,193 @@
       "id": "config:services/asset-core/go.sum",
       "type": "config",
       "name": "go.sum",
-      "filePath": "services/asset-core/go.sum",
-      "summary": "Khóa checksum cho dependency của asset-core nhằm bảo đảm module Go được tải và dựng lại nhất quán.",
+      "file": "services/asset-core/go.sum",
+      "summary": "Configuration file: services/asset-core/go.sum",
       "tags": [
-        "configuration",
-        "dependency-lock",
-        "go-module",
-        "integrity"
+        "config"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:infra/docker-compose.yml",
+      "type": "config",
+      "name": "docker-compose.yml",
+      "file": "infra/docker-compose.yml",
+      "summary": "Configuration file: infra/docker-compose.yml",
+      "tags": [
+        "config"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:infra/docker-compose.yml:asset-db",
+      "type": "resource",
+      "name": "asset-db",
+      "file": "infra/docker-compose.yml",
+      "summary": "Docker service for asset-db",
+      "tags": [
+        "docker",
+        "service",
+        "infra"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:infra/docker-compose.yml:access-db",
+      "type": "resource",
+      "name": "access-db",
+      "file": "infra/docker-compose.yml",
+      "summary": "Docker service for access-db",
+      "tags": [
+        "docker",
+        "service",
+        "infra"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:infra/docker-compose.yml:flyway-asset",
+      "type": "resource",
+      "name": "flyway-asset",
+      "file": "infra/docker-compose.yml",
+      "summary": "Docker service for flyway-asset",
+      "tags": [
+        "docker",
+        "service",
+        "infra"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:infra/docker-compose.yml:flyway-access",
+      "type": "resource",
+      "name": "flyway-access",
+      "file": "infra/docker-compose.yml",
+      "summary": "Docker service for flyway-access",
+      "tags": [
+        "docker",
+        "service",
+        "infra"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "resource:infra/docker-compose.yml:access-core",
+      "type": "resource",
+      "name": "access-core",
+      "file": "infra/docker-compose.yml",
+      "summary": "Docker service for access-core",
+      "tags": [
+        "docker",
+        "service",
+        "infra"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:services/access-core/prisma.config.ts",
+      "type": "config",
+      "name": "prisma.config.ts",
+      "file": "services/access-core/prisma.config.ts",
+      "summary": "Configuration file: services/access-core/prisma.config.ts",
+      "tags": [
+        "config"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:services/access-core/prisma/schema.prisma:object_permissions",
+      "type": "table",
+      "name": "object_permissions",
+      "file": "services/access-core/prisma/schema.prisma",
+      "summary": "Prisma model for object_permissions",
+      "tags": [
+        "table",
+        "prisma"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:services/access-core/prisma/schema.prisma:organization_members",
+      "type": "table",
+      "name": "organization_members",
+      "file": "services/access-core/prisma/schema.prisma",
+      "summary": "Prisma model for organization_members",
+      "tags": [
+        "table",
+        "prisma"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:services/access-core/prisma/schema.prisma:organizations",
+      "type": "table",
+      "name": "organizations",
+      "file": "services/access-core/prisma/schema.prisma",
+      "summary": "Prisma model for organizations",
+      "tags": [
+        "table",
+        "prisma"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:services/access-core/prisma/schema.prisma:permission_actions",
+      "type": "table",
+      "name": "permission_actions",
+      "file": "services/access-core/prisma/schema.prisma",
+      "summary": "Prisma model for permission_actions",
+      "tags": [
+        "table",
+        "prisma"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:services/access-core/prisma/schema.prisma:role_permissions",
+      "type": "table",
+      "name": "role_permissions",
+      "file": "services/access-core/prisma/schema.prisma",
+      "summary": "Prisma model for role_permissions",
+      "tags": [
+        "table",
+        "prisma"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:services/access-core/prisma/schema.prisma:roles",
+      "type": "table",
+      "name": "roles",
+      "file": "services/access-core/prisma/schema.prisma",
+      "summary": "Prisma model for roles",
+      "tags": [
+        "table",
+        "prisma"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:services/access-core/prisma/schema.prisma:user_roles",
+      "type": "table",
+      "name": "user_roles",
+      "file": "services/access-core/prisma/schema.prisma",
+      "summary": "Prisma model for user_roles",
+      "tags": [
+        "table",
+        "prisma"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:services/access-core/prisma/schema.prisma:users",
+      "type": "table",
+      "name": "users",
+      "file": "services/access-core/prisma/schema.prisma",
+      "summary": "Prisma model for users",
+      "tags": [
+        "table",
+        "prisma"
       ],
       "complexity": "simple"
     }
@@ -912,22 +756,22 @@
       "source": "file:services/asset-core/internal/delivery/http/middleware.go",
       "target": "file:services/asset-core/internal/requestcontext/context.go",
       "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
+      "weight": 1,
+      "direction": "forward"
     },
     {
       "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
       "target": "file:services/asset-core/internal/delivery/http/middleware.go",
       "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
+      "weight": 1,
+      "direction": "forward"
     },
     {
       "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
       "target": "file:services/asset-core/internal/requestcontext/context.go",
       "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
+      "weight": 1,
+      "direction": "forward"
     },
     {
       "source": "file:services/asset-core/internal/delivery/http/middleware.go",
@@ -944,207 +788,11 @@
       "weight": 0.8
     },
     {
-      "source": "file:services/access-core/src/db/queries/roles.ts",
-      "target": "function:services/access-core/src/db/queries/roles.ts:listRolesByOrg",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/roles.ts",
-      "target": "function:services/access-core/src/db/queries/roles.ts:listRolesByOrg",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/roles.ts",
-      "target": "function:services/access-core/src/db/queries/roles.ts:getRoleById",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/roles.ts",
-      "target": "function:services/access-core/src/db/queries/roles.ts:getRoleById",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/users.ts",
-      "target": "function:services/access-core/src/db/queries/users.ts:listUsers",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/users.ts",
-      "target": "function:services/access-core/src/db/queries/users.ts:listUsers",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/users.ts",
-      "target": "function:services/access-core/src/db/queries/users.ts:getUserById",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/users.ts",
-      "target": "function:services/access-core/src/db/queries/users.ts:getUserById",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "target": "function:services/access-core/src/graphql/resolvers/roleResolvers.ts:toRole",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "target": "function:services/access-core/src/graphql/resolvers/userResolvers.ts:toUser",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:services/access-core/src/server.ts",
-      "target": "function:services/access-core/src/server.ts:buildServer",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:services/access-core/src/server.ts",
-      "target": "function:services/access-core/src/server.ts:buildServer",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/roles.ts",
-      "target": "file:services/access-core/src/db/prisma.ts",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/users.ts",
-      "target": "file:services/access-core/src/db/prisma.ts",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "target": "file:services/access-core/src/db/queries/roles.ts",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "target": "file:services/access-core/src/db/queries/users.ts",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:services/access-core/src/server.ts",
-      "target": "file:services/access-core/src/graphql/schema.ts",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
-      "target": "function:services/access-core/src/db/queries/objectPermissions.ts:listObjectPermissions",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
-      "target": "function:services/access-core/src/db/queries/objectPermissions.ts:listObjectPermissions",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/rolePermissions.ts",
-      "target": "function:services/access-core/src/db/queries/rolePermissions.ts:listRolePermissions",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/rolePermissions.ts",
-      "target": "function:services/access-core/src/db/queries/rolePermissions.ts:listRolePermissions",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
       "source": "file:services/access-core/src/index.ts",
       "target": "function:services/access-core/src/index.ts:main",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
-      "target": "file:services/access-core/src/db/prisma.ts",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:services/access-core/src/db/queries/rolePermissions.ts",
-      "target": "file:services/access-core/src/db/prisma.ts",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
-      "target": "file:services/access-core/src/db/queries/objectPermissions.ts",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
-      "target": "file:services/access-core/src/db/queries/rolePermissions.ts",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:services/access-core/src/index.ts",
-      "target": "file:services/access-core/src/db/prisma.ts",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:services/access-core/src/index.ts",
-      "target": "file:services/access-core/src/server.ts",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "function:services/access-core/src/index.ts:main",
-      "target": "function:services/access-core/src/server.ts:buildServer",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
     },
     {
       "source": "table:infra/db/access/migrations/V1__create_access_schema.sql:access-schema-migration",
@@ -1467,6 +1115,117 @@
       "type": "depends_on",
       "direction": "forward",
       "weight": 0.6
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "type": "imports",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "file:services/access-core/src/index.ts",
+      "target": "function:services/access-core/src/index.ts:main",
+      "relation": "contains",
+      "direction": "forward"
+    },
+    {
+      "source": "document:pr_body.txt",
+      "target": "document:README.md",
+      "type": "related",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "config:infra/docker-compose.yml",
+      "target": "resource:infra/docker-compose.yml:asset-db",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "config:infra/docker-compose.yml",
+      "target": "resource:infra/docker-compose.yml:access-db",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "config:infra/docker-compose.yml",
+      "target": "resource:infra/docker-compose.yml:flyway-asset",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "config:infra/docker-compose.yml",
+      "target": "resource:infra/docker-compose.yml:flyway-access",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "config:infra/docker-compose.yml",
+      "target": "resource:infra/docker-compose.yml:access-core",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "schema:services/access-core/prisma/schema.prisma",
+      "target": "table:services/access-core/prisma/schema.prisma:object_permissions",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "schema:services/access-core/prisma/schema.prisma",
+      "target": "table:services/access-core/prisma/schema.prisma:organization_members",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "schema:services/access-core/prisma/schema.prisma",
+      "target": "table:services/access-core/prisma/schema.prisma:organizations",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "schema:services/access-core/prisma/schema.prisma",
+      "target": "table:services/access-core/prisma/schema.prisma:permission_actions",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "schema:services/access-core/prisma/schema.prisma",
+      "target": "table:services/access-core/prisma/schema.prisma:role_permissions",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "schema:services/access-core/prisma/schema.prisma",
+      "target": "table:services/access-core/prisma/schema.prisma:roles",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "schema:services/access-core/prisma/schema.prisma",
+      "target": "table:services/access-core/prisma/schema.prisma:user_roles",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
+    },
+    {
+      "source": "schema:services/access-core/prisma/schema.prisma",
+      "target": "table:services/access-core/prisma/schema.prisma:users",
+      "type": "contains",
+      "weight": 1,
+      "direction": "forward"
     }
   ]
 }

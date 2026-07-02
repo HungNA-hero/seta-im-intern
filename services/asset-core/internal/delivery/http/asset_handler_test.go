@@ -23,16 +23,27 @@ type fakeAssetUsecase struct {
 	childrenErr  error
 	rootResp     []domain.Folder
 	rootErr      error
+	treeRootPath string
 	createInput  domain.CreateFolderInput
 	createErr    error
 	updateInput  domain.UpdateFolderInput
 	updateErr    error
+
+	metadataItemsResp   []domain.MetadataItem
+	metadataItemsErr    error
+	metadataItemResp    domain.MetadataItem
+	metadataItemErr     error
+	metadataCreateInput domain.CreateMetadataInput
+	metadataCreateErr   error
+	metadataUpdateInput domain.UpdateMetadataInput
+	metadataUpdateErr   error
 }
 
-func (f *fakeAssetUsecase) GetFolderTree(_ context.Context, orgID, _ string) ([]domain.Folder, error) {
+func (f *fakeAssetUsecase) GetFolderTree(_ context.Context, orgID, rootPath string) ([]domain.Folder, error) {
 	f.called = true
 	f.methodCalled = "GetFolderTree"
 	f.orgID = orgID
+	f.treeRootPath = rootPath
 	return []domain.Folder{}, nil
 }
 
@@ -87,6 +98,40 @@ func (f *fakeAssetUsecase) UpdateFolder(_ context.Context, orgID, userID, folder
 
 func (f *fakeAssetUsecase) EnsureRefs(_ context.Context, userID, orgID string) error {
 	return nil
+}
+
+// GetMetadataItemsByFolder captures metadata list delegation for handler assertions.
+func (f *fakeAssetUsecase) GetMetadataItemsByFolder(_ context.Context, orgID, folderID string) ([]domain.MetadataItem, error) {
+	f.called = true
+	f.methodCalled = "GetMetadataItemsByFolder"
+	f.orgID = orgID
+	return f.metadataItemsResp, f.metadataItemsErr
+}
+
+// GetMetadataItemByID captures metadata detail delegation for handler assertions.
+func (f *fakeAssetUsecase) GetMetadataItemByID(_ context.Context, orgID, id string) (domain.MetadataItem, error) {
+	f.called = true
+	f.methodCalled = "GetMetadataItemByID"
+	f.orgID = orgID
+	return f.metadataItemResp, f.metadataItemErr
+}
+
+// CreateMetadataItem captures decoded create input and returns configured results.
+func (f *fakeAssetUsecase) CreateMetadataItem(_ context.Context, orgID, userID string, input domain.CreateMetadataInput) (domain.MetadataItem, error) {
+	f.called = true
+	f.methodCalled = "CreateMetadataItem"
+	f.orgID = orgID
+	f.metadataCreateInput = input
+	return f.metadataItemResp, f.metadataCreateErr
+}
+
+// UpdateMetadataItem captures sparse update presence for handler assertions.
+func (f *fakeAssetUsecase) UpdateMetadataItem(_ context.Context, orgID, userID, id string, input domain.UpdateMetadataInput) (domain.MetadataItem, error) {
+	f.called = true
+	f.methodCalled = "UpdateMetadataItem"
+	f.orgID = orgID
+	f.metadataUpdateInput = input
+	return f.metadataItemResp, f.metadataUpdateErr
 }
 
 // ────────────────────────────────────────────────────────────
@@ -196,6 +241,36 @@ func TestHandleFoldersListWithoutRootPathCallsRootLevel(t *testing.T) {
 	}
 	if !usecase.called || usecase.methodCalled != "GetRootFolders" {
 		t.Fatal("expected GetRootFolders to be called for empty rootPath")
+	}
+}
+
+func TestHandleFoldersListFullTreeUsesSingleTreeQuery(t *testing.T) {
+	const userID = "00000000-0000-0000-0000-000000000001"
+	const orgID = "00000000-0000-0000-0000-000000000002"
+
+	usecase := &fakeAssetUsecase{}
+	mux := http.NewServeMux()
+	assetHTTP.NewAssetHandler(mux, usecase, nil)
+
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/internal/api/v1/folders?orgId="+orgID+"&tree=true",
+		nil,
+	)
+	req.Header.Set("X-User-Id", userID)
+	req.Header.Set("X-Org-Id", orgID)
+
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, req)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, response.Code)
+	}
+	if !usecase.called || usecase.methodCalled != "GetFolderTree" {
+		t.Fatal("expected GetFolderTree to be called for tree=true")
+	}
+	if usecase.treeRootPath != "" {
+		t.Fatalf("expected an empty tree root, got %q", usecase.treeRootPath)
 	}
 }
 

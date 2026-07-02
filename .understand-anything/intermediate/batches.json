@@ -1,34 +1,93 @@
 {
   "schemaVersion": 1,
   "algorithm": "louvain",
-  "totalFiles": 41,
-  "totalBatches": 5,
+  "totalFiles": 129,
+  "totalBatches": 12,
   "exportsByPath": {
     ".understand-anything/.understandignore": [],
+    ".understand-anything/tmp/build_graph.js": [],
+    ".understand-anything/tmp/ua-arch-analyze.js": [],
+    ".understand-anything/tmp/ua-arch-map-layers.js": [],
+    ".understand-anything/tmp/ua-arch-map-layers2.js": [],
+    ".understand-anything/tmp/ua-arch-prompt.js": [],
+    ".understand-anything/tmp/ua-build-batches-1-3.cjs": [],
+    ".understand-anything/tmp/ua-tour-analyze.js": [],
+    ".understand-anything/tmp/ua-tour-prompt.js": [],
     "infra/db/asset/seed/.gitkeep": [],
+    "scripts/generate_subagents.js": [],
+    "scripts/start-ua.js": [],
     "services/access-core/prisma.config.ts": [],
+    "services/access-core/prisma/prisma.config.ts": [],
+    "services/access-core/src/__tests__/canDo.test.ts": [],
+    "services/access-core/src/__tests__/context.test.ts": [],
+    "services/access-core/src/__tests__/folderResolvers.test.ts": [],
+    "services/access-core/src/__tests__/metadataE2E.e2e.test.ts": [],
+    "services/access-core/src/__tests__/metadataResolvers.test.ts": [],
+    "services/access-core/src/__tests__/metadataSchema.test.ts": [],
+    "services/access-core/src/__tests__/sameOrgDirective.test.ts": [],
     "services/access-core/src/config.ts": [
       "config"
     ],
     "services/access-core/src/db/prisma.ts": [
       "prisma"
     ],
+    "services/access-core/src/db/queries/canDo.ts": [
+      "canDo"
+    ],
     "services/access-core/src/db/queries/objectPermissions.ts": [
-      "listObjectPermissions"
+      "listObjectPermissions",
+      "grantObjectPermission",
+      "revokeObjectPermission"
+    ],
+    "services/access-core/src/db/queries/organizations.ts": [
+      "listOrganizations",
+      "getOrganizationById",
+      "addOrgMember",
+      "createOrganization"
     ],
     "services/access-core/src/db/queries/rolePermissions.ts": [
       "listRolePermissions"
     ],
     "services/access-core/src/db/queries/roles.ts": [
       "listRolesByOrg",
-      "getRoleById"
+      "getRoleById",
+      "createRole",
+      "updateRole"
+    ],
+    "services/access-core/src/db/queries/userRoles.ts": [
+      "assignRole",
+      "revokeRole"
     ],
     "services/access-core/src/db/queries/users.ts": [
       "listUsers",
-      "getUserById"
+      "getUserById",
+      "createUser",
+      "updateUser",
+      "deactivateUser"
+    ],
+    "services/access-core/src/graphql/context.ts": [
+      "assertAuthenticated",
+      "assertOrgMember",
+      "assertOrgContext",
+      "loadRequestContext"
+    ],
+    "services/access-core/src/graphql/directives.ts": [
+      "applyAuthDirectives"
+    ],
+    "services/access-core/src/graphql/resolvers/canDoResolvers.ts": [
+      "canDoResolvers"
+    ],
+    "services/access-core/src/graphql/resolvers/folderResolvers.ts": [
+      "folderResolvers"
     ],
     "services/access-core/src/graphql/resolvers/index.ts": [
       "resolvers"
+    ],
+    "services/access-core/src/graphql/resolvers/metadataResolvers.ts": [
+      "metadataResolvers"
+    ],
+    "services/access-core/src/graphql/resolvers/organizationResolvers.ts": [
+      "organizationResolvers"
     ],
     "services/access-core/src/graphql/resolvers/permissionResolvers.ts": [
       "permissionResolvers"
@@ -38,6 +97,11 @@
     ],
     "services/access-core/src/graphql/resolvers/userResolvers.ts": [
       "userResolvers"
+    ],
+    "services/access-core/src/graphql/resolvers/utils.ts": [
+      "serializeDates",
+      "serializePermission",
+      "rethrowPrismaError"
     ],
     "services/access-core/src/graphql/schema.ts": [
       "schema"
@@ -49,30 +113,65 @@
     "services/access-core/src/server.ts": [
       "buildServer"
     ],
+    "services/access-core/src/types/fastify.d.ts": [],
+    "services/access-core/vitest.config.ts": [],
+    "services/access-core/vitest.e2e.config.ts": [],
     "services/asset-core/cmd/server/main.go": [],
+    "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go": [
+      "TestHandleCreateFolder_Success",
+      "TestHandleUpdateFolder_Success",
+      "TestHandleCreateFolder_OrgMismatch",
+      "TestHandleCreateFolder_InvalidBody",
+      "TestHandleCreateFolder_RejectsTrailingJSON",
+      "TestHandleUpdateFolder_DescriptionPresence",
+      "TestHandleUpdateFolder_InvalidUUID",
+      "TestHandleCreateFolder_MapsDomainErrors"
+    ],
+    "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go": [
+      "TestHandleMetadata_List",
+      "TestHandleMetadata_GetRejectsAmbiguousSelector",
+      "TestHandleMetadata_DetailMapsNotFound",
+      "TestHandleMetadata_CreateRejectsMalformedFolderID",
+      "TestHandleMetadata_Create",
+      "TestHandleMetadata_UpdatePreservesExplicitNulls",
+      "TestHandleMetadata_RejectsOrganizationMismatch"
+    ],
     "services/asset-core/internal/delivery/http/asset_handler_test.go": [
       "GetFolderTree",
       "GetRootFolders",
       "GetFolderByID",
       "GetFolderChildren",
+      "CreateFolder",
+      "UpdateFolder",
       "EnsureRefs",
+      "GetMetadataItemsByFolder",
+      "GetMetadataItemByID",
+      "CreateMetadataItem",
+      "UpdateMetadataItem",
       "TestHandleFoldersListRejectsOrganizationContextMismatch",
       "TestHandleFoldersListUsesMatchingOrganizationContext",
       "TestHandleFoldersListMissingOrgId",
       "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+      "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
       "TestHandleFoldersListChildrenOnly",
       "TestHandleFoldersListChildrenMissingRootPathReturns400",
       "TestHandleFolderDetailValidRequest",
       "TestHandleFolderDetailNotFound",
       "TestHandleFolderDetailInvalidUUID",
-      "TestHandleFolderDetailOrgMismatch"
+      "TestHandleFolderDetailOrgMismatch",
+      "TestHandleFolderFactsReturnsScopedActiveFact",
+      "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase"
     ],
     "services/asset-core/internal/delivery/http/asset_handler.go": [
       "AssetHandler",
+      "UnmarshalJSON",
+      "UnmarshalJSON",
+      "UnmarshalJSON",
       "NewAssetHandler",
       "HandleHealth",
       "HandleFolders",
-      "HandleMetadataItems"
+      "HandleMetadataItems",
+      "HandleFolderFacts"
     ],
     "services/asset-core/internal/delivery/http/middleware_test.go": [
       "TestRequireActor"
@@ -81,6 +180,8 @@
       "RequireActor"
     ],
     "services/asset-core/internal/domain/asset.go": [
+      "CreateFolderInput",
+      "UpdateFolderInput",
       "OrganizationRef",
       "TableName",
       "UserRef",
@@ -89,8 +190,26 @@
       "TableName",
       "MetadataItem",
       "TableName",
+      "CreateMetadataInput",
+      "UpdateMetadataInput",
       "AssetRepository",
       "AssetUsecase"
+    ],
+    "services/asset-core/internal/repository/asset_repository_create_test.go": [
+      "TestCreateFolder_Root_Success",
+      "TestCreateFolder_Child_Success",
+      "TestCreateFolder_DuplicateSibling",
+      "TestCreateFolder_SiblingCheckFailureRollsBack",
+      "TestCreateFolder_ParentNotFoundRollsBack"
+    ],
+    "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go": [
+      "TestMetadataRepository_PostgresRoundTrip"
+    ],
+    "services/asset-core/internal/repository/asset_repository_metadata_test.go": [
+      "TestMetadataRepository_GetByFolder_EmptyList",
+      "TestMetadataRepository_GetByFolder_MissingFolder",
+      "TestMetadataRepository_CreateSuccess",
+      "TestMetadataRepository_UpdateRejectsInvalidFinalExternalPair"
     ],
     "services/asset-core/internal/repository/asset_repository_test.go": [
       "TestEnsureRefs_Success_RepeatedCall",
@@ -102,7 +221,15 @@
       "TestGetFolderChildren_Success",
       "TestGetRootFolders_Success",
       "TestGetFolderChildren_Empty",
-      "TestGetFolderTree_Success"
+      "TestGetFolderTree_Success",
+      "TestGetFolderTree_EmptyRootReturnsOrganizationForest"
+    ],
+    "services/asset-core/internal/repository/asset_repository_update_test.go": [
+      "TestUpdateFolder_Success",
+      "TestUpdateFolder_NotFound",
+      "TestUpdateFolder_ClearDescription",
+      "TestUpdateFolder_SiblingCheckFailureRollsBack",
+      "TestUpdateFolder_DuplicateSiblingRollsBack"
     ],
     "services/asset-core/internal/repository/asset_repository.go": [
       "NewAssetRepository",
@@ -110,12 +237,39 @@
       "GetFolderByID",
       "GetFolderChildren",
       "GetRootFolders",
-      "EnsureRefs"
+      "EnsureRefs",
+      "CreateFolder",
+      "UpdateFolder",
+      "GetMetadataItemsByFolder",
+      "GetMetadataItemByID",
+      "CreateMetadataItem",
+      "UpdateMetadataItem"
     ],
     "services/asset-core/internal/requestcontext/context.go": [
       "Actor",
       "WithActor",
       "GetActor"
+    ],
+    "services/asset-core/internal/usecase/asset_usecase_metadata_test.go": [
+      "TestAssetUsecase_CreateMetadata_Validation",
+      "TestAssetUsecase_CreateMetadata_NormalizesDefaults",
+      "TestAssetUsecase_UpdateMetadata_Validation",
+      "TestAssetUsecase_UpdateMetadata_ExplicitNullDefaults"
+    ],
+    "services/asset-core/internal/usecase/asset_usecase_test.go": [
+      "GetFolderTree",
+      "GetFolderByID",
+      "GetFolderChildren",
+      "GetRootFolders",
+      "EnsureRefs",
+      "CreateFolder",
+      "UpdateFolder",
+      "GetMetadataItemsByFolder",
+      "GetMetadataItemByID",
+      "CreateMetadataItem",
+      "UpdateMetadataItem",
+      "TestAssetUsecase_CreateFolder_Validation",
+      "TestAssetUsecase_UpdateFolder_Validation"
     ],
     "services/asset-core/internal/usecase/asset_usecase.go": [
       "NewAssetUsecase",
@@ -123,12 +277,542 @@
       "GetFolderByID",
       "GetFolderChildren",
       "GetRootFolders",
-      "EnsureRefs"
+      "EnsureRefs",
+      "CreateFolder",
+      "UpdateFolder",
+      "GetMetadataItemsByFolder",
+      "GetMetadataItemByID",
+      "CreateMetadataItem",
+      "UpdateMetadataItem"
     ]
   },
   "batches": [
     {
       "batchIndex": 1,
+      "files": [
+        {
+          "path": "services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
+          "language": "typescript",
+          "sizeLines": 530,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/config.ts",
+          "language": "typescript",
+          "sizeLines": 25,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/db/prisma.ts",
+          "language": "typescript",
+          "sizeLines": 17,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/db/queries/objectPermissions.ts",
+          "language": "typescript",
+          "sizeLines": 53,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/db/queries/organizations.ts",
+          "language": "typescript",
+          "sizeLines": 44,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/db/queries/rolePermissions.ts",
+          "language": "typescript",
+          "sizeLines": 20,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/db/queries/roles.ts",
+          "language": "typescript",
+          "sizeLines": 63,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/db/queries/userRoles.ts",
+          "language": "typescript",
+          "sizeLines": 17,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/db/queries/users.ts",
+          "language": "typescript",
+          "sizeLines": 57,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/resolvers/index.ts",
+          "language": "typescript",
+          "sizeLines": 28,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+          "language": "typescript",
+          "sizeLines": 55,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+          "language": "typescript",
+          "sizeLines": 84,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
+          "language": "typescript",
+          "sizeLines": 39,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/resolvers/userResolvers.ts",
+          "language": "typescript",
+          "sizeLines": 37,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/resolvers/utils.ts",
+          "language": "typescript",
+          "sizeLines": 21,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/index.ts",
+          "language": "typescript",
+          "sizeLines": 21,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/server.ts",
+          "language": "typescript",
+          "sizeLines": 97,
+          "fileCategory": "code"
+        }
+      ],
+      "batchImportData": {
+        "services/access-core/src/__tests__/metadataE2E.e2e.test.ts": [
+          "services/access-core/src/db/prisma.ts",
+          "services/access-core/src/server.ts"
+        ],
+        "services/access-core/src/config.ts": [],
+        "services/access-core/src/db/prisma.ts": [
+          "services/access-core/src/config.ts"
+        ],
+        "services/access-core/src/db/queries/objectPermissions.ts": [
+          "services/access-core/src/db/prisma.ts"
+        ],
+        "services/access-core/src/db/queries/organizations.ts": [
+          "services/access-core/src/db/prisma.ts"
+        ],
+        "services/access-core/src/db/queries/rolePermissions.ts": [
+          "services/access-core/src/db/prisma.ts"
+        ],
+        "services/access-core/src/db/queries/roles.ts": [
+          "services/access-core/src/db/prisma.ts"
+        ],
+        "services/access-core/src/db/queries/userRoles.ts": [
+          "services/access-core/src/db/prisma.ts"
+        ],
+        "services/access-core/src/db/queries/users.ts": [
+          "services/access-core/src/db/prisma.ts"
+        ],
+        "services/access-core/src/graphql/resolvers/index.ts": [
+          "services/access-core/src/graphql/resolvers/canDoResolvers.ts",
+          "services/access-core/src/graphql/resolvers/folderResolvers.ts",
+          "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+          "services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+          "services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+          "services/access-core/src/graphql/resolvers/roleResolvers.ts",
+          "services/access-core/src/graphql/resolvers/userResolvers.ts"
+        ],
+        "services/access-core/src/graphql/resolvers/organizationResolvers.ts": [
+          "services/access-core/src/db/queries/organizations.ts",
+          "services/access-core/src/db/queries/userRoles.ts",
+          "services/access-core/src/graphql/context.ts",
+          "services/access-core/src/graphql/resolvers/utils.ts"
+        ],
+        "services/access-core/src/graphql/resolvers/permissionResolvers.ts": [
+          "services/access-core/src/db/queries/objectPermissions.ts",
+          "services/access-core/src/db/queries/rolePermissions.ts",
+          "services/access-core/src/graphql/resolvers/utils.ts"
+        ],
+        "services/access-core/src/graphql/resolvers/roleResolvers.ts": [
+          "services/access-core/src/db/queries/roles.ts",
+          "services/access-core/src/graphql/context.ts",
+          "services/access-core/src/graphql/resolvers/utils.ts"
+        ],
+        "services/access-core/src/graphql/resolvers/userResolvers.ts": [
+          "services/access-core/src/db/queries/users.ts",
+          "services/access-core/src/graphql/resolvers/utils.ts"
+        ],
+        "services/access-core/src/graphql/resolvers/utils.ts": [],
+        "services/access-core/src/index.ts": [
+          "services/access-core/src/config.ts",
+          "services/access-core/src/db/prisma.ts",
+          "services/access-core/src/server.ts"
+        ],
+        "services/access-core/src/server.ts": [
+          "services/access-core/src/graphql/context.ts",
+          "services/access-core/src/graphql/schema.ts"
+        ]
+      },
+      "neighborMap": {
+        "services/access-core/src/config.ts": [
+          {
+            "path": "services/access-core/src/graphql/resolvers/folderResolvers.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "folderResolvers"
+            ]
+          },
+          {
+            "path": "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "metadataResolvers"
+            ]
+          }
+        ],
+        "services/access-core/src/db/prisma.ts": [
+          {
+            "path": "services/access-core/src/db/queries/canDo.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "canDo"
+            ]
+          },
+          {
+            "path": "services/access-core/src/graphql/context.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "assertAuthenticated",
+              "assertOrgMember",
+              "assertOrgContext",
+              "loadRequestContext"
+            ]
+          }
+        ],
+        "services/access-core/src/graphql/resolvers/index.ts": [
+          {
+            "path": "services/access-core/src/graphql/resolvers/canDoResolvers.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "canDoResolvers"
+            ]
+          },
+          {
+            "path": "services/access-core/src/graphql/resolvers/folderResolvers.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "folderResolvers"
+            ]
+          },
+          {
+            "path": "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "metadataResolvers"
+            ]
+          },
+          {
+            "path": "services/access-core/src/graphql/schema.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "schema"
+            ]
+          }
+        ],
+        "services/access-core/src/graphql/resolvers/organizationResolvers.ts": [
+          {
+            "path": "services/access-core/src/graphql/context.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "assertAuthenticated",
+              "assertOrgMember",
+              "assertOrgContext",
+              "loadRequestContext"
+            ]
+          }
+        ],
+        "services/access-core/src/graphql/resolvers/roleResolvers.ts": [
+          {
+            "path": "services/access-core/src/graphql/context.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "assertAuthenticated",
+              "assertOrgMember",
+              "assertOrgContext",
+              "loadRequestContext"
+            ]
+          }
+        ],
+        "services/access-core/src/server.ts": [
+          {
+            "path": "services/access-core/src/graphql/context.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "assertAuthenticated",
+              "assertOrgMember",
+              "assertOrgContext",
+              "loadRequestContext"
+            ]
+          },
+          {
+            "path": "services/access-core/src/graphql/schema.ts",
+            "batchIndex": 2,
+            "symbols": [
+              "schema"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "batchIndex": 2,
+      "files": [
+        {
+          "path": "services/access-core/src/__tests__/canDo.test.ts",
+          "language": "typescript",
+          "sizeLines": 172,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/__tests__/context.test.ts",
+          "language": "typescript",
+          "sizeLines": 155,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/__tests__/folderResolvers.test.ts",
+          "language": "typescript",
+          "sizeLines": 687,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/__tests__/metadataResolvers.test.ts",
+          "language": "typescript",
+          "sizeLines": 483,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/__tests__/metadataSchema.test.ts",
+          "language": "typescript",
+          "sizeLines": 113,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/__tests__/sameOrgDirective.test.ts",
+          "language": "typescript",
+          "sizeLines": 162,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/db/queries/canDo.ts",
+          "language": "typescript",
+          "sizeLines": 105,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/context.ts",
+          "language": "typescript",
+          "sizeLines": 96,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/directives.ts",
+          "language": "typescript",
+          "sizeLines": 46,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/resolvers/canDoResolvers.ts",
+          "language": "typescript",
+          "sizeLines": 24,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/resolvers/folderResolvers.ts",
+          "language": "typescript",
+          "sizeLines": 294,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+          "language": "typescript",
+          "sizeLines": 302,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/schema.ts",
+          "language": "typescript",
+          "sizeLines": 8,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/src/graphql/typeDefs.ts",
+          "language": "typescript",
+          "sizeLines": 191,
+          "fileCategory": "code"
+        }
+      ],
+      "batchImportData": {
+        "services/access-core/src/__tests__/canDo.test.ts": [
+          "services/access-core/src/db/queries/canDo.ts"
+        ],
+        "services/access-core/src/__tests__/context.test.ts": [
+          "services/access-core/src/graphql/context.ts"
+        ],
+        "services/access-core/src/__tests__/folderResolvers.test.ts": [
+          "services/access-core/src/graphql/context.ts",
+          "services/access-core/src/graphql/resolvers/folderResolvers.ts"
+        ],
+        "services/access-core/src/__tests__/metadataResolvers.test.ts": [
+          "services/access-core/src/graphql/context.ts",
+          "services/access-core/src/graphql/resolvers/metadataResolvers.ts"
+        ],
+        "services/access-core/src/__tests__/metadataSchema.test.ts": [
+          "services/access-core/src/graphql/context.ts",
+          "services/access-core/src/graphql/schema.ts"
+        ],
+        "services/access-core/src/__tests__/sameOrgDirective.test.ts": [
+          "services/access-core/src/graphql/context.ts",
+          "services/access-core/src/graphql/schema.ts"
+        ],
+        "services/access-core/src/db/queries/canDo.ts": [
+          "services/access-core/src/db/prisma.ts"
+        ],
+        "services/access-core/src/graphql/context.ts": [
+          "services/access-core/src/db/prisma.ts"
+        ],
+        "services/access-core/src/graphql/directives.ts": [
+          "services/access-core/src/graphql/context.ts"
+        ],
+        "services/access-core/src/graphql/resolvers/canDoResolvers.ts": [
+          "services/access-core/src/db/queries/canDo.ts",
+          "services/access-core/src/graphql/context.ts"
+        ],
+        "services/access-core/src/graphql/resolvers/folderResolvers.ts": [
+          "services/access-core/src/config.ts",
+          "services/access-core/src/db/queries/canDo.ts",
+          "services/access-core/src/graphql/context.ts"
+        ],
+        "services/access-core/src/graphql/resolvers/metadataResolvers.ts": [
+          "services/access-core/src/config.ts",
+          "services/access-core/src/db/queries/canDo.ts",
+          "services/access-core/src/graphql/context.ts"
+        ],
+        "services/access-core/src/graphql/schema.ts": [
+          "services/access-core/src/graphql/directives.ts",
+          "services/access-core/src/graphql/resolvers/index.ts",
+          "services/access-core/src/graphql/typeDefs.ts"
+        ],
+        "services/access-core/src/graphql/typeDefs.ts": []
+      },
+      "neighborMap": {
+        "services/access-core/src/db/queries/canDo.ts": [
+          {
+            "path": "services/access-core/src/db/prisma.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "prisma"
+            ]
+          }
+        ],
+        "services/access-core/src/graphql/context.ts": [
+          {
+            "path": "services/access-core/src/db/prisma.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "prisma"
+            ]
+          },
+          {
+            "path": "services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "organizationResolvers"
+            ]
+          },
+          {
+            "path": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "roleResolvers"
+            ]
+          },
+          {
+            "path": "services/access-core/src/server.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "buildServer"
+            ]
+          }
+        ],
+        "services/access-core/src/graphql/resolvers/canDoResolvers.ts": [
+          {
+            "path": "services/access-core/src/graphql/resolvers/index.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "resolvers"
+            ]
+          }
+        ],
+        "services/access-core/src/graphql/resolvers/folderResolvers.ts": [
+          {
+            "path": "services/access-core/src/config.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "config"
+            ]
+          },
+          {
+            "path": "services/access-core/src/graphql/resolvers/index.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "resolvers"
+            ]
+          }
+        ],
+        "services/access-core/src/graphql/resolvers/metadataResolvers.ts": [
+          {
+            "path": "services/access-core/src/config.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "config"
+            ]
+          },
+          {
+            "path": "services/access-core/src/graphql/resolvers/index.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "resolvers"
+            ]
+          }
+        ],
+        "services/access-core/src/graphql/schema.ts": [
+          {
+            "path": "services/access-core/src/graphql/resolvers/index.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "resolvers"
+            ]
+          },
+          {
+            "path": "services/access-core/src/server.ts",
+            "batchIndex": 1,
+            "symbols": [
+              "buildServer"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "batchIndex": 3,
       "files": [
         {
           "path": "services/asset-core/cmd/server/main.go",
@@ -137,15 +821,338 @@
           "fileCategory": "code"
         },
         {
+          "path": "services/asset-core/internal/domain/asset.go",
+          "language": "go",
+          "sizeLines": 184,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/asset-core/internal/repository/asset_repository.go",
+          "language": "go",
+          "sizeLines": 428,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/asset-core/internal/repository/asset_repository_create_test.go",
+          "language": "go",
+          "sizeLines": 221,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+          "language": "go",
+          "sizeLines": 112,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+          "language": "go",
+          "sizeLines": 156,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/asset-core/internal/repository/asset_repository_test.go",
+          "language": "go",
+          "sizeLines": 413,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/asset-core/internal/repository/asset_repository_update_test.go",
+          "language": "go",
+          "sizeLines": 221,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/asset-core/internal/usecase/asset_usecase.go",
+          "language": "go",
+          "sizeLines": 259,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+          "language": "go",
+          "sizeLines": 148,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/asset-core/internal/usecase/asset_usecase_test.go",
+          "language": "go",
+          "sizeLines": 162,
+          "fileCategory": "code"
+        }
+      ],
+      "batchImportData": {
+        "services/asset-core/cmd/server/main.go": [
+          "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+          "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+          "services/asset-core/internal/delivery/http/asset_handler_test.go",
+          "services/asset-core/internal/delivery/http/asset_handler.go",
+          "services/asset-core/internal/delivery/http/middleware_test.go",
+          "services/asset-core/internal/delivery/http/middleware.go",
+          "services/asset-core/internal/repository/asset_repository_create_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+          "services/asset-core/internal/repository/asset_repository_test.go",
+          "services/asset-core/internal/repository/asset_repository_update_test.go",
+          "services/asset-core/internal/repository/asset_repository.go",
+          "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+          "services/asset-core/internal/usecase/asset_usecase_test.go",
+          "services/asset-core/internal/usecase/asset_usecase.go"
+        ],
+        "services/asset-core/internal/domain/asset.go": [],
+        "services/asset-core/internal/repository/asset_repository.go": [
+          "services/asset-core/internal/domain/asset.go"
+        ],
+        "services/asset-core/internal/repository/asset_repository_create_test.go": [
+          "services/asset-core/internal/domain/asset.go",
+          "services/asset-core/internal/repository/asset_repository_create_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+          "services/asset-core/internal/repository/asset_repository_test.go",
+          "services/asset-core/internal/repository/asset_repository_update_test.go",
+          "services/asset-core/internal/repository/asset_repository.go"
+        ],
+        "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go": [
+          "services/asset-core/internal/domain/asset.go",
+          "services/asset-core/internal/repository/asset_repository_create_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+          "services/asset-core/internal/repository/asset_repository_test.go",
+          "services/asset-core/internal/repository/asset_repository_update_test.go",
+          "services/asset-core/internal/repository/asset_repository.go"
+        ],
+        "services/asset-core/internal/repository/asset_repository_metadata_test.go": [
+          "services/asset-core/internal/domain/asset.go",
+          "services/asset-core/internal/repository/asset_repository_create_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+          "services/asset-core/internal/repository/asset_repository_test.go",
+          "services/asset-core/internal/repository/asset_repository_update_test.go",
+          "services/asset-core/internal/repository/asset_repository.go"
+        ],
+        "services/asset-core/internal/repository/asset_repository_test.go": [
+          "services/asset-core/internal/repository/asset_repository_create_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+          "services/asset-core/internal/repository/asset_repository_test.go",
+          "services/asset-core/internal/repository/asset_repository_update_test.go",
+          "services/asset-core/internal/repository/asset_repository.go"
+        ],
+        "services/asset-core/internal/repository/asset_repository_update_test.go": [
+          "services/asset-core/internal/domain/asset.go",
+          "services/asset-core/internal/repository/asset_repository_create_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+          "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+          "services/asset-core/internal/repository/asset_repository_test.go",
+          "services/asset-core/internal/repository/asset_repository_update_test.go",
+          "services/asset-core/internal/repository/asset_repository.go"
+        ],
+        "services/asset-core/internal/usecase/asset_usecase.go": [
+          "services/asset-core/internal/domain/asset.go"
+        ],
+        "services/asset-core/internal/usecase/asset_usecase_metadata_test.go": [
+          "services/asset-core/internal/domain/asset.go",
+          "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+          "services/asset-core/internal/usecase/asset_usecase_test.go",
+          "services/asset-core/internal/usecase/asset_usecase.go"
+        ],
+        "services/asset-core/internal/usecase/asset_usecase_test.go": [
+          "services/asset-core/internal/domain/asset.go",
+          "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+          "services/asset-core/internal/usecase/asset_usecase_test.go",
+          "services/asset-core/internal/usecase/asset_usecase.go"
+        ]
+      },
+      "neighborMap": {
+        "services/asset-core/cmd/server/main.go": [
+          {
+            "path": "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+            "batchIndex": 4,
+            "symbols": [
+              "TestHandleCreateFolder_Success",
+              "TestHandleUpdateFolder_Success",
+              "TestHandleCreateFolder_OrgMismatch",
+              "TestHandleCreateFolder_InvalidBody",
+              "TestHandleCreateFolder_RejectsTrailingJSON",
+              "TestHandleUpdateFolder_DescriptionPresence",
+              "TestHandleUpdateFolder_InvalidUUID",
+              "TestHandleCreateFolder_MapsDomainErrors"
+            ]
+          },
+          {
+            "path": "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+            "batchIndex": 4,
+            "symbols": [
+              "TestHandleMetadata_List",
+              "TestHandleMetadata_GetRejectsAmbiguousSelector",
+              "TestHandleMetadata_DetailMapsNotFound",
+              "TestHandleMetadata_CreateRejectsMalformedFolderID",
+              "TestHandleMetadata_Create",
+              "TestHandleMetadata_UpdatePreservesExplicitNulls",
+              "TestHandleMetadata_RejectsOrganizationMismatch"
+            ]
+          },
+          {
+            "path": "services/asset-core/internal/delivery/http/asset_handler_test.go",
+            "batchIndex": 4,
+            "symbols": [
+              "GetFolderTree",
+              "GetRootFolders",
+              "GetFolderByID",
+              "GetFolderChildren",
+              "CreateFolder",
+              "UpdateFolder",
+              "EnsureRefs",
+              "GetMetadataItemsByFolder",
+              "GetMetadataItemByID",
+              "CreateMetadataItem",
+              "UpdateMetadataItem",
+              "TestHandleFoldersListRejectsOrganizationContextMismatch",
+              "TestHandleFoldersListUsesMatchingOrganizationContext",
+              "TestHandleFoldersListMissingOrgId",
+              "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+              "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+              "TestHandleFoldersListChildrenOnly",
+              "TestHandleFoldersListChildrenMissingRootPathReturns400",
+              "TestHandleFolderDetailValidRequest",
+              "TestHandleFolderDetailNotFound",
+              "TestHandleFolderDetailInvalidUUID",
+              "TestHandleFolderDetailOrgMismatch",
+              "TestHandleFolderFactsReturnsScopedActiveFact",
+              "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase"
+            ]
+          },
+          {
+            "path": "services/asset-core/internal/delivery/http/asset_handler.go",
+            "batchIndex": 4,
+            "symbols": [
+              "AssetHandler",
+              "UnmarshalJSON",
+              "UnmarshalJSON",
+              "UnmarshalJSON",
+              "NewAssetHandler",
+              "HandleHealth",
+              "HandleFolders",
+              "HandleMetadataItems",
+              "HandleFolderFacts"
+            ]
+          },
+          {
+            "path": "services/asset-core/internal/delivery/http/middleware_test.go",
+            "batchIndex": 4,
+            "symbols": [
+              "TestRequireActor"
+            ]
+          },
+          {
+            "path": "services/asset-core/internal/delivery/http/middleware.go",
+            "batchIndex": 4,
+            "symbols": [
+              "RequireActor"
+            ]
+          }
+        ],
+        "services/asset-core/internal/domain/asset.go": [
+          {
+            "path": "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+            "batchIndex": 4,
+            "symbols": [
+              "TestHandleCreateFolder_Success",
+              "TestHandleUpdateFolder_Success",
+              "TestHandleCreateFolder_OrgMismatch",
+              "TestHandleCreateFolder_InvalidBody",
+              "TestHandleCreateFolder_RejectsTrailingJSON",
+              "TestHandleUpdateFolder_DescriptionPresence",
+              "TestHandleUpdateFolder_InvalidUUID",
+              "TestHandleCreateFolder_MapsDomainErrors"
+            ]
+          },
+          {
+            "path": "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+            "batchIndex": 4,
+            "symbols": [
+              "TestHandleMetadata_List",
+              "TestHandleMetadata_GetRejectsAmbiguousSelector",
+              "TestHandleMetadata_DetailMapsNotFound",
+              "TestHandleMetadata_CreateRejectsMalformedFolderID",
+              "TestHandleMetadata_Create",
+              "TestHandleMetadata_UpdatePreservesExplicitNulls",
+              "TestHandleMetadata_RejectsOrganizationMismatch"
+            ]
+          },
+          {
+            "path": "services/asset-core/internal/delivery/http/asset_handler_test.go",
+            "batchIndex": 4,
+            "symbols": [
+              "GetFolderTree",
+              "GetRootFolders",
+              "GetFolderByID",
+              "GetFolderChildren",
+              "CreateFolder",
+              "UpdateFolder",
+              "EnsureRefs",
+              "GetMetadataItemsByFolder",
+              "GetMetadataItemByID",
+              "CreateMetadataItem",
+              "UpdateMetadataItem",
+              "TestHandleFoldersListRejectsOrganizationContextMismatch",
+              "TestHandleFoldersListUsesMatchingOrganizationContext",
+              "TestHandleFoldersListMissingOrgId",
+              "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+              "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+              "TestHandleFoldersListChildrenOnly",
+              "TestHandleFoldersListChildrenMissingRootPathReturns400",
+              "TestHandleFolderDetailValidRequest",
+              "TestHandleFolderDetailNotFound",
+              "TestHandleFolderDetailInvalidUUID",
+              "TestHandleFolderDetailOrgMismatch",
+              "TestHandleFolderFactsReturnsScopedActiveFact",
+              "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase"
+            ]
+          },
+          {
+            "path": "services/asset-core/internal/delivery/http/asset_handler.go",
+            "batchIndex": 4,
+            "symbols": [
+              "AssetHandler",
+              "UnmarshalJSON",
+              "UnmarshalJSON",
+              "UnmarshalJSON",
+              "NewAssetHandler",
+              "HandleHealth",
+              "HandleFolders",
+              "HandleMetadataItems",
+              "HandleFolderFacts"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "batchIndex": 4,
+      "files": [
+        {
           "path": "services/asset-core/internal/delivery/http/asset_handler.go",
           "language": "go",
-          "sizeLines": 102,
+          "sizeLines": 584,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+          "language": "go",
+          "sizeLines": 264,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+          "language": "go",
+          "sizeLines": 178,
           "fileCategory": "code"
         },
         {
           "path": "services/asset-core/internal/delivery/http/asset_handler_test.go",
           "language": "go",
-          "sizeLines": 81,
+          "sizeLines": 510,
           "fileCategory": "code"
         },
         {
@@ -161,51 +1168,38 @@
           "fileCategory": "code"
         },
         {
-          "path": "services/asset-core/internal/domain/asset.go",
-          "language": "go",
-          "sizeLines": 83,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/asset-core/internal/repository/asset_repository.go",
-          "language": "go",
-          "sizeLines": 47,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/asset-core/internal/repository/asset_repository_test.go",
-          "language": "go",
-          "sizeLines": 134,
-          "fileCategory": "code"
-        },
-        {
           "path": "services/asset-core/internal/requestcontext/context.go",
           "language": "go",
           "sizeLines": 29,
           "fileCategory": "code"
-        },
-        {
-          "path": "services/asset-core/internal/usecase/asset_usecase.go",
-          "language": "go",
-          "sizeLines": 26,
-          "fileCategory": "code"
         }
       ],
       "batchImportData": {
-        "services/asset-core/cmd/server/main.go": [
-          "services/asset-core/internal/delivery/http/asset_handler_test.go",
-          "services/asset-core/internal/delivery/http/asset_handler.go",
-          "services/asset-core/internal/delivery/http/middleware_test.go",
-          "services/asset-core/internal/delivery/http/middleware.go",
-          "services/asset-core/internal/repository/asset_repository_test.go",
-          "services/asset-core/internal/repository/asset_repository.go",
-          "services/asset-core/internal/usecase/asset_usecase.go"
-        ],
         "services/asset-core/internal/delivery/http/asset_handler.go": [
           "services/asset-core/internal/domain/asset.go",
           "services/asset-core/internal/requestcontext/context.go"
         ],
+        "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go": [
+          "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+          "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+          "services/asset-core/internal/delivery/http/asset_handler_test.go",
+          "services/asset-core/internal/delivery/http/asset_handler.go",
+          "services/asset-core/internal/delivery/http/middleware_test.go",
+          "services/asset-core/internal/delivery/http/middleware.go",
+          "services/asset-core/internal/domain/asset.go"
+        ],
+        "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go": [
+          "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+          "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+          "services/asset-core/internal/delivery/http/asset_handler_test.go",
+          "services/asset-core/internal/delivery/http/asset_handler.go",
+          "services/asset-core/internal/delivery/http/middleware_test.go",
+          "services/asset-core/internal/delivery/http/middleware.go",
+          "services/asset-core/internal/domain/asset.go"
+        ],
         "services/asset-core/internal/delivery/http/asset_handler_test.go": [
+          "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+          "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
           "services/asset-core/internal/delivery/http/asset_handler_test.go",
           "services/asset-core/internal/delivery/http/asset_handler.go",
           "services/asset-core/internal/delivery/http/middleware_test.go",
@@ -216,137 +1210,135 @@
           "services/asset-core/internal/requestcontext/context.go"
         ],
         "services/asset-core/internal/delivery/http/middleware_test.go": [
+          "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+          "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
           "services/asset-core/internal/delivery/http/asset_handler_test.go",
           "services/asset-core/internal/delivery/http/asset_handler.go",
           "services/asset-core/internal/delivery/http/middleware_test.go",
           "services/asset-core/internal/delivery/http/middleware.go",
           "services/asset-core/internal/requestcontext/context.go"
         ],
-        "services/asset-core/internal/domain/asset.go": [],
-        "services/asset-core/internal/repository/asset_repository.go": [
-          "services/asset-core/internal/domain/asset.go"
-        ],
-        "services/asset-core/internal/repository/asset_repository_test.go": [
-          "services/asset-core/internal/repository/asset_repository_test.go",
-          "services/asset-core/internal/repository/asset_repository.go"
-        ],
-        "services/asset-core/internal/requestcontext/context.go": [],
-        "services/asset-core/internal/usecase/asset_usecase.go": [
-          "services/asset-core/internal/domain/asset.go"
-        ]
-      },
-      "neighborMap": {}
-    },
-    {
-      "batchIndex": 2,
-      "files": [
-        {
-          "path": "services/access-core/src/db/queries/roles.ts",
-          "language": "typescript",
-          "sizeLines": 38,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/access-core/src/db/queries/users.ts",
-          "language": "typescript",
-          "sizeLines": 35,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/access-core/src/graphql/resolvers/index.ts",
-          "language": "typescript",
-          "sizeLines": 11,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
-          "language": "typescript",
-          "sizeLines": 24,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/access-core/src/graphql/resolvers/userResolvers.ts",
-          "language": "typescript",
-          "sizeLines": 22,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/access-core/src/graphql/schema.ts",
-          "language": "typescript",
-          "sizeLines": 5,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/access-core/src/graphql/typeDefs.ts",
-          "language": "typescript",
-          "sizeLines": 64,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/access-core/src/server.ts",
-          "language": "typescript",
-          "sizeLines": 33,
-          "fileCategory": "code"
-        }
-      ],
-      "batchImportData": {
-        "services/access-core/src/db/queries/roles.ts": [
-          "services/access-core/src/db/prisma.ts"
-        ],
-        "services/access-core/src/db/queries/users.ts": [
-          "services/access-core/src/db/prisma.ts"
-        ],
-        "services/access-core/src/graphql/resolvers/index.ts": [
-          "services/access-core/src/graphql/resolvers/permissionResolvers.ts",
-          "services/access-core/src/graphql/resolvers/roleResolvers.ts",
-          "services/access-core/src/graphql/resolvers/userResolvers.ts"
-        ],
-        "services/access-core/src/graphql/resolvers/roleResolvers.ts": [
-          "services/access-core/src/db/queries/roles.ts"
-        ],
-        "services/access-core/src/graphql/resolvers/userResolvers.ts": [
-          "services/access-core/src/db/queries/users.ts"
-        ],
-        "services/access-core/src/graphql/schema.ts": [
-          "services/access-core/src/graphql/resolvers/index.ts",
-          "services/access-core/src/graphql/typeDefs.ts"
-        ],
-        "services/access-core/src/graphql/typeDefs.ts": [],
-        "services/access-core/src/server.ts": [
-          "services/access-core/src/graphql/schema.ts"
-        ]
+        "services/asset-core/internal/requestcontext/context.go": []
       },
       "neighborMap": {
-        "services/access-core/src/db/queries/roles.ts": [
+        "services/asset-core/internal/delivery/http/asset_handler.go": [
           {
-            "path": "services/access-core/src/db/prisma.ts",
+            "path": "services/asset-core/internal/domain/asset.go",
             "batchIndex": 3,
             "symbols": [
-              "prisma"
+              "CreateFolderInput",
+              "UpdateFolderInput",
+              "OrganizationRef",
+              "TableName",
+              "UserRef",
+              "TableName",
+              "Folder",
+              "TableName",
+              "MetadataItem",
+              "TableName",
+              "CreateMetadataInput",
+              "UpdateMetadataInput",
+              "AssetRepository",
+              "AssetUsecase"
             ]
+          },
+          {
+            "path": "services/asset-core/cmd/server/main.go",
+            "batchIndex": 3,
+            "symbols": []
           }
         ],
-        "services/access-core/src/db/queries/users.ts": [
+        "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go": [
           {
-            "path": "services/access-core/src/db/prisma.ts",
+            "path": "services/asset-core/internal/domain/asset.go",
             "batchIndex": 3,
             "symbols": [
-              "prisma"
+              "CreateFolderInput",
+              "UpdateFolderInput",
+              "OrganizationRef",
+              "TableName",
+              "UserRef",
+              "TableName",
+              "Folder",
+              "TableName",
+              "MetadataItem",
+              "TableName",
+              "CreateMetadataInput",
+              "UpdateMetadataInput",
+              "AssetRepository",
+              "AssetUsecase"
             ]
+          },
+          {
+            "path": "services/asset-core/cmd/server/main.go",
+            "batchIndex": 3,
+            "symbols": []
           }
         ],
-        "services/access-core/src/graphql/resolvers/index.ts": [
+        "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go": [
           {
-            "path": "services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+            "path": "services/asset-core/internal/domain/asset.go",
             "batchIndex": 3,
             "symbols": [
-              "permissionResolvers"
+              "CreateFolderInput",
+              "UpdateFolderInput",
+              "OrganizationRef",
+              "TableName",
+              "UserRef",
+              "TableName",
+              "Folder",
+              "TableName",
+              "MetadataItem",
+              "TableName",
+              "CreateMetadataInput",
+              "UpdateMetadataInput",
+              "AssetRepository",
+              "AssetUsecase"
             ]
+          },
+          {
+            "path": "services/asset-core/cmd/server/main.go",
+            "batchIndex": 3,
+            "symbols": []
           }
         ],
-        "services/access-core/src/server.ts": [
+        "services/asset-core/internal/delivery/http/asset_handler_test.go": [
           {
-            "path": "services/access-core/src/index.ts",
+            "path": "services/asset-core/internal/domain/asset.go",
+            "batchIndex": 3,
+            "symbols": [
+              "CreateFolderInput",
+              "UpdateFolderInput",
+              "OrganizationRef",
+              "TableName",
+              "UserRef",
+              "TableName",
+              "Folder",
+              "TableName",
+              "MetadataItem",
+              "TableName",
+              "CreateMetadataInput",
+              "UpdateMetadataInput",
+              "AssetRepository",
+              "AssetUsecase"
+            ]
+          },
+          {
+            "path": "services/asset-core/cmd/server/main.go",
+            "batchIndex": 3,
+            "symbols": []
+          }
+        ],
+        "services/asset-core/internal/delivery/http/middleware.go": [
+          {
+            "path": "services/asset-core/cmd/server/main.go",
+            "batchIndex": 3,
+            "symbols": []
+          }
+        ],
+        "services/asset-core/internal/delivery/http/middleware_test.go": [
+          {
+            "path": "services/asset-core/cmd/server/main.go",
             "batchIndex": 3,
             "symbols": []
           }
@@ -354,107 +1346,426 @@
       }
     },
     {
-      "batchIndex": 3,
+      "batchIndex": 5,
       "files": [
         {
-          "path": "services/access-core/src/config.ts",
-          "language": "typescript",
-          "sizeLines": 18,
-          "fileCategory": "code"
+          "path": "infra/db/access/migrations/V1__create_access_schema.sql",
+          "language": "sql",
+          "sizeLines": 133,
+          "fileCategory": "data"
         },
         {
-          "path": "services/access-core/src/db/prisma.ts",
-          "language": "typescript",
-          "sizeLines": 17,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/access-core/src/db/queries/objectPermissions.ts",
-          "language": "typescript",
-          "sizeLines": 35,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/access-core/src/db/queries/rolePermissions.ts",
-          "language": "typescript",
-          "sizeLines": 18,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/access-core/src/graphql/resolvers/permissionResolvers.ts",
-          "language": "typescript",
-          "sizeLines": 35,
-          "fileCategory": "code"
-        },
-        {
-          "path": "services/access-core/src/index.ts",
-          "language": "typescript",
-          "sizeLines": 21,
-          "fileCategory": "code"
+          "path": "infra/db/access/migrations/V2__seed_access_schema.sql",
+          "language": "sql",
+          "sizeLines": 56,
+          "fileCategory": "data"
         }
       ],
       "batchImportData": {
-        "services/access-core/src/config.ts": [],
-        "services/access-core/src/db/prisma.ts": [
-          "services/access-core/src/config.ts"
-        ],
-        "services/access-core/src/db/queries/objectPermissions.ts": [
-          "services/access-core/src/db/prisma.ts"
-        ],
-        "services/access-core/src/db/queries/rolePermissions.ts": [
-          "services/access-core/src/db/prisma.ts"
-        ],
-        "services/access-core/src/graphql/resolvers/permissionResolvers.ts": [
-          "services/access-core/src/db/queries/objectPermissions.ts",
-          "services/access-core/src/db/queries/rolePermissions.ts"
-        ],
-        "services/access-core/src/index.ts": [
-          "services/access-core/src/config.ts",
-          "services/access-core/src/db/prisma.ts",
-          "services/access-core/src/server.ts"
-        ]
+        "infra/db/access/migrations/V1__create_access_schema.sql": [],
+        "infra/db/access/migrations/V2__seed_access_schema.sql": []
       },
-      "neighborMap": {
-        "services/access-core/src/db/prisma.ts": [
-          {
-            "path": "services/access-core/src/db/queries/roles.ts",
-            "batchIndex": 2,
-            "symbols": [
-              "listRolesByOrg",
-              "getRoleById"
-            ]
-          },
-          {
-            "path": "services/access-core/src/db/queries/users.ts",
-            "batchIndex": 2,
-            "symbols": [
-              "listUsers",
-              "getUserById"
-            ]
-          }
-        ],
-        "services/access-core/src/graphql/resolvers/permissionResolvers.ts": [
-          {
-            "path": "services/access-core/src/graphql/resolvers/index.ts",
-            "batchIndex": 2,
-            "symbols": [
-              "resolvers"
-            ]
-          }
-        ],
-        "services/access-core/src/index.ts": [
-          {
-            "path": "services/access-core/src/server.ts",
-            "batchIndex": 2,
-            "symbols": [
-              "buildServer"
-            ]
-          }
-        ]
-      }
+      "neighborMap": {}
     },
     {
       "batchIndex": 6,
+      "files": [
+        {
+          "path": "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+          "language": "sql",
+          "sizeLines": 142,
+          "fileCategory": "data"
+        },
+        {
+          "path": "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql",
+          "language": "sql",
+          "sizeLines": 81,
+          "fileCategory": "data"
+        }
+      ],
+      "batchImportData": {
+        "infra/db/asset/migrations/V1__asset_initial_schema.sql": [],
+        "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 7,
+      "files": [
+        {
+          "path": ".understand-anything/baseline-context.md",
+          "language": "markdown",
+          "sizeLines": 30,
+          "fileCategory": "docs"
+        },
+        {
+          "path": ".understand-anything/config.json",
+          "language": "json",
+          "sizeLines": 3,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/diff-overlay.json",
+          "language": "json",
+          "sizeLines": 71,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/fingerprints.json",
+          "language": "json",
+          "sizeLines": 77,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/knowledge-graph.json",
+          "language": "json",
+          "sizeLines": 4310,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/meta.json",
+          "language": "json",
+          "sizeLines": 5,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/understand-tour.md",
+          "language": "markdown",
+          "sizeLines": 41,
+          "fileCategory": "docs"
+        }
+      ],
+      "batchImportData": {
+        ".understand-anything/baseline-context.md": [],
+        ".understand-anything/config.json": [],
+        ".understand-anything/diff-overlay.json": [],
+        ".understand-anything/fingerprints.json": [],
+        ".understand-anything/knowledge-graph.json": [],
+        ".understand-anything/meta.json": [],
+        ".understand-anything/understand-tour.md": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 8,
+      "files": [
+        {
+          "path": ".understand-anything/intermediate/assemble-review.json",
+          "language": "json",
+          "sizeLines": 14,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/assembled-graph.json",
+          "language": "json",
+          "sizeLines": 4055,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/batch-1-part-1.json",
+          "language": "json",
+          "sizeLines": 1028,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/batch-1-part-2.json",
+          "language": "json",
+          "sizeLines": 1179,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/batch-2.json",
+          "language": "json",
+          "sizeLines": 286,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/batch-3.json",
+          "language": "json",
+          "sizeLines": 508,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/batch-6.json",
+          "language": "json",
+          "sizeLines": 77,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/batch-7.json",
+          "language": "json",
+          "sizeLines": 226,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/batch-999.json",
+          "language": "json",
+          "sizeLines": 1230,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/batches.json",
+          "language": "json",
+          "sizeLines": 569,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/fingerprint-input.json",
+          "language": "json",
+          "sizeLines": 23,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/layers.json",
+          "language": "json",
+          "sizeLines": 113,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/review.json",
+          "language": "json",
+          "sizeLines": 4,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/scan-result.json",
+          "language": "json",
+          "sizeLines": 380,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/intermediate/tour.json",
+          "language": "json",
+          "sizeLines": 113,
+          "fileCategory": "config"
+        }
+      ],
+      "batchImportData": {
+        ".understand-anything/intermediate/assemble-review.json": [],
+        ".understand-anything/intermediate/assembled-graph.json": [],
+        ".understand-anything/intermediate/batch-1-part-1.json": [],
+        ".understand-anything/intermediate/batch-1-part-2.json": [],
+        ".understand-anything/intermediate/batch-2.json": [],
+        ".understand-anything/intermediate/batch-3.json": [],
+        ".understand-anything/intermediate/batch-6.json": [],
+        ".understand-anything/intermediate/batch-7.json": [],
+        ".understand-anything/intermediate/batch-999.json": [],
+        ".understand-anything/intermediate/batches.json": [],
+        ".understand-anything/intermediate/fingerprint-input.json": [],
+        ".understand-anything/intermediate/layers.json": [],
+        ".understand-anything/intermediate/review.json": [],
+        ".understand-anything/intermediate/scan-result.json": [],
+        ".understand-anything/intermediate/tour.json": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 9,
+      "files": [
+        {
+          "path": ".understand-anything/tmp/batch-7-extract.json",
+          "language": "json",
+          "sizeLines": 77,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/changed-files.txt",
+          "language": "txt",
+          "sizeLines": 79,
+          "fileCategory": "docs"
+        },
+        {
+          "path": ".understand-anything/tmp/subagents-input.json",
+          "language": "json",
+          "sizeLines": 26,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-arch-input.json",
+          "language": "json",
+          "sizeLines": 2685,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-arch-prompt.txt",
+          "language": "txt",
+          "sizeLines": 2971,
+          "fileCategory": "docs"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-arch-results.json",
+          "language": "json",
+          "sizeLines": 403,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-batch-3-context.json",
+          "language": "json",
+          "sizeLines": 60,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-analyzer-input-1.json",
+          "language": "json",
+          "sizeLines": 58,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-analyzer-input-2.json",
+          "language": "json",
+          "sizeLines": 0,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-analyzer-input-3.json",
+          "language": "json",
+          "sizeLines": 40,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-analyzer-input-4.json",
+          "language": "json",
+          "sizeLines": 21,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-analyzer-input-5.json",
+          "language": "json",
+          "sizeLines": 21,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-analyzer-input-6.json",
+          "language": "json",
+          "sizeLines": 22,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-analyzer-input-7.json",
+          "language": "json",
+          "sizeLines": 64,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-extract-results-1.json",
+          "language": "json",
+          "sizeLines": 3224,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-extract-results-2.json",
+          "language": "json",
+          "sizeLines": 353,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-extract-results-3.json",
+          "language": "json",
+          "sizeLines": 200,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-extract-results-4.json",
+          "language": "json",
+          "sizeLines": 194,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-extract-results-5.json",
+          "language": "json",
+          "sizeLines": 155,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-file-extract-results-6.json",
+          "language": "json",
+          "sizeLines": 126,
+          "fileCategory": "config"
+        }
+      ],
+      "batchImportData": {
+        ".understand-anything/tmp/batch-7-extract.json": [],
+        ".understand-anything/tmp/changed-files.txt": [],
+        ".understand-anything/tmp/subagents-input.json": [],
+        ".understand-anything/tmp/ua-arch-input.json": [],
+        ".understand-anything/tmp/ua-arch-prompt.txt": [],
+        ".understand-anything/tmp/ua-arch-results.json": [],
+        ".understand-anything/tmp/ua-batch-3-context.json": [],
+        ".understand-anything/tmp/ua-file-analyzer-input-1.json": [],
+        ".understand-anything/tmp/ua-file-analyzer-input-2.json": [],
+        ".understand-anything/tmp/ua-file-analyzer-input-3.json": [],
+        ".understand-anything/tmp/ua-file-analyzer-input-4.json": [],
+        ".understand-anything/tmp/ua-file-analyzer-input-5.json": [],
+        ".understand-anything/tmp/ua-file-analyzer-input-6.json": [],
+        ".understand-anything/tmp/ua-file-analyzer-input-7.json": [],
+        ".understand-anything/tmp/ua-file-extract-results-1.json": [],
+        ".understand-anything/tmp/ua-file-extract-results-2.json": [],
+        ".understand-anything/tmp/ua-file-extract-results-3.json": [],
+        ".understand-anything/tmp/ua-file-extract-results-4.json": [],
+        ".understand-anything/tmp/ua-file-extract-results-5.json": [],
+        ".understand-anything/tmp/ua-file-extract-results-6.json": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 10,
+      "files": [
+        {
+          "path": ".understand-anything/tmp/ua-file-extract-results-7.json",
+          "language": "json",
+          "sizeLines": 188,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-import-map-input.json",
+          "language": "json",
+          "sizeLines": 105,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-import-map-output.json",
+          "language": "json",
+          "sizeLines": 112,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-scan-files.json",
+          "language": "json",
+          "sizeLines": 276,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-tour-input.json",
+          "language": "json",
+          "sizeLines": 2485,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-tour-prompt.txt",
+          "language": "txt",
+          "sizeLines": 2602,
+          "fileCategory": "docs"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-tour-results.json",
+          "language": "json",
+          "sizeLines": 1062,
+          "fileCategory": "config"
+        }
+      ],
+      "batchImportData": {
+        ".understand-anything/tmp/ua-file-extract-results-7.json": [],
+        ".understand-anything/tmp/ua-import-map-input.json": [],
+        ".understand-anything/tmp/ua-import-map-output.json": [],
+        ".understand-anything/tmp/ua-scan-files.json": [],
+        ".understand-anything/tmp/ua-tour-input.json": [],
+        ".understand-anything/tmp/ua-tour-prompt.txt": [],
+        ".understand-anything/tmp/ua-tour-results.json": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 11,
       "files": [
         {
           "path": "README.md",
@@ -465,7 +1776,7 @@
         {
           "path": "package.json",
           "language": "json",
-          "sizeLines": 19,
+          "sizeLines": 20,
           "fileCategory": "config"
         },
         {
@@ -483,7 +1794,7 @@
       "neighborMap": {}
     },
     {
-      "batchIndex": 7,
+      "batchIndex": 12,
       "files": [
         {
           "path": ".understand-anything/.understandignore",
@@ -492,10 +1803,52 @@
           "fileCategory": "code"
         },
         {
-          "path": ".understand-anything/config.json",
-          "language": "json",
-          "sizeLines": 3,
-          "fileCategory": "config"
+          "path": ".understand-anything/tmp/build_graph.js",
+          "language": "javascript",
+          "sizeLines": 198,
+          "fileCategory": "code"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-arch-analyze.js",
+          "language": "javascript",
+          "sizeLines": 292,
+          "fileCategory": "code"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-arch-map-layers.js",
+          "language": "javascript",
+          "sizeLines": 63,
+          "fileCategory": "code"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-arch-map-layers2.js",
+          "language": "javascript",
+          "sizeLines": 69,
+          "fileCategory": "code"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-arch-prompt.js",
+          "language": "javascript",
+          "sizeLines": 72,
+          "fileCategory": "code"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-build-batches-1-3.cjs",
+          "language": "javascript",
+          "sizeLines": 227,
+          "fileCategory": "code"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-tour-analyze.js",
+          "language": "javascript",
+          "sizeLines": 207,
+          "fileCategory": "code"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-tour-prompt.js",
+          "language": "javascript",
+          "sizeLines": 35,
+          "fileCategory": "code"
         },
         {
           "path": "infra/db/asset/seed/.gitkeep",
@@ -510,9 +1863,27 @@
           "fileCategory": "infra"
         },
         {
+          "path": "scripts/generate_subagents.js",
+          "language": "javascript",
+          "sizeLines": 44,
+          "fileCategory": "code"
+        },
+        {
+          "path": "scripts/run_e2e.ps1",
+          "language": "powershell",
+          "sizeLines": 140,
+          "fileCategory": "script"
+        },
+        {
+          "path": "scripts/start-ua.js",
+          "language": "javascript",
+          "sizeLines": 19,
+          "fileCategory": "code"
+        },
+        {
           "path": "services/access-core/package.json",
           "language": "json",
-          "sizeLines": 32,
+          "sizeLines": 36,
           "fileCategory": "config"
         },
         {
@@ -522,10 +1893,22 @@
           "fileCategory": "code"
         },
         {
+          "path": "services/access-core/prisma/prisma.config.ts",
+          "language": "typescript",
+          "sizeLines": 8,
+          "fileCategory": "code"
+        },
+        {
           "path": "services/access-core/prisma/schema.prisma",
           "language": "prisma",
-          "sizeLines": 150,
+          "sizeLines": 157,
           "fileCategory": "data"
+        },
+        {
+          "path": "services/access-core/src/types/fastify.d.ts",
+          "language": "typescript",
+          "sizeLines": 8,
+          "fileCategory": "code"
         },
         {
           "path": "services/access-core/tsconfig.json",
@@ -534,27 +1917,53 @@
           "fileCategory": "config"
         },
         {
+          "path": "services/access-core/vitest.config.ts",
+          "language": "typescript",
+          "sizeLines": 10,
+          "fileCategory": "code"
+        },
+        {
+          "path": "services/access-core/vitest.e2e.config.ts",
+          "language": "typescript",
+          "sizeLines": 12,
+          "fileCategory": "code"
+        },
+        {
           "path": "services/asset-core/go.mod",
           "language": "mod",
-          "sizeLines": 22,
+          "sizeLines": 23,
           "fileCategory": "config"
         },
         {
           "path": "services/asset-core/go.sum",
           "language": "sum",
-          "sizeLines": 41,
+          "sizeLines": 43,
           "fileCategory": "config"
         }
       ],
       "batchImportData": {
         ".understand-anything/.understandignore": [],
-        ".understand-anything/config.json": [],
+        ".understand-anything/tmp/build_graph.js": [],
+        ".understand-anything/tmp/ua-arch-analyze.js": [],
+        ".understand-anything/tmp/ua-arch-map-layers.js": [],
+        ".understand-anything/tmp/ua-arch-map-layers2.js": [],
+        ".understand-anything/tmp/ua-arch-prompt.js": [],
+        ".understand-anything/tmp/ua-build-batches-1-3.cjs": [],
+        ".understand-anything/tmp/ua-tour-analyze.js": [],
+        ".understand-anything/tmp/ua-tour-prompt.js": [],
         "infra/db/asset/seed/.gitkeep": [],
         "infra/docker-compose.yml": [],
+        "scripts/generate_subagents.js": [],
+        "scripts/run_e2e.ps1": [],
+        "scripts/start-ua.js": [],
         "services/access-core/package.json": [],
         "services/access-core/prisma.config.ts": [],
+        "services/access-core/prisma/prisma.config.ts": [],
         "services/access-core/prisma/schema.prisma": [],
+        "services/access-core/src/types/fastify.d.ts": [],
         "services/access-core/tsconfig.json": [],
+        "services/access-core/vitest.config.ts": [],
+        "services/access-core/vitest.e2e.config.ts": [],
         "services/asset-core/go.mod": [],
         "services/asset-core/go.sum": []
       },

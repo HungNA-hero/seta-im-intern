@@ -363,7 +363,7 @@ func TestGetFolderTree_Success(t *testing.T) {
 		AddRow("folder-2", orgID, "root.folder_2", "Folder 2", "user-1")
 
 	// Verify ordering assertion for folderTree
-	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE \\(org_id = \\$1 AND path <@ \\$2\\) AND \"folders\".\"deleted_at\" IS NULL ORDER BY path ASC$").
+	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE org_id = \\$1 AND path <@ \\$2 AND \"folders\".\"deleted_at\" IS NULL ORDER BY path ASC$").
 		WithArgs(orgID, rootPath).
 		WillReturnRows(rows)
 
@@ -376,5 +376,38 @@ func TestGetFolderTree_Success(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unfulfilled expectations: %s", err)
+	}
+}
+
+func TestGetFolderTree_EmptyRootReturnsOrganizationForest(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: db}), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open gorm db: %v", err)
+	}
+	repo := repository.NewAssetRepository(gormDB)
+	orgID := "org-1"
+	rows := sqlmock.NewRows([]string{"id", "org_id", "path", "name", "created_by"}).
+		AddRow("root", orgID, "root", "Root", "user-1").
+		AddRow("child", orgID, "root.child", "Child", "user-1")
+
+	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE org_id = \\$1 AND \"folders\"\\.\"deleted_at\" IS NULL ORDER BY path ASC$").
+		WithArgs(orgID).
+		WillReturnRows(rows)
+
+	folders, err := repo.GetFolderTree(context.Background(), orgID, "")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(folders) != 2 {
+		t.Fatalf("expected full two-node forest, got %d folders", len(folders))
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unfulfilled expectations: %s", err)
 	}
 }

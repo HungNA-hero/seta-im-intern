@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"seta-im-intern/go-asset-core/internal/domain"
 	"seta-im-intern/go-asset-core/internal/requestcontext"
@@ -19,11 +20,13 @@ type AssetHandler struct {
 	db      *gorm.DB // Kept for healthcheck
 }
 
+// optionalString preserves whether a nullable JSON string was omitted or explicitly provided.
 type optionalString struct {
 	Value *string
 	Set   bool
 }
 
+// UnmarshalJSON records field presence while preserving explicit null as a nil value.
 func (value *optionalString) UnmarshalJSON(data []byte) error {
 	value.Set = true
 	if bytes.Equal(bytes.TrimSpace(data), []byte("null")) {
@@ -39,9 +42,67 @@ func (value *optionalString) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// optionalStringArray preserves omitted, explicit-null, and provided array PATCH states.
+type optionalStringArray struct {
+	Value *[]string
+	Set   bool
+}
+
+// UnmarshalJSON records array field presence and leaves explicit null distinguishable from omission.
+func (value *optionalStringArray) UnmarshalJSON(data []byte) error {
+	value.Set = true
+	if bytes.Equal(bytes.TrimSpace(data), []byte("null")) {
+		value.Value = nil
+		return nil
+	}
+	var decoded []string
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = &decoded
+	return nil
+}
+
+// optionalRawMessage preserves metadata_json PATCH presence without weakening JSON syntax validation.
+type optionalRawMessage struct {
+	Value *json.RawMessage
+	Set   bool
+}
+
+// UnmarshalJSON records metadata_json presence and copies a syntactically valid raw JSON value.
+func (value *optionalRawMessage) UnmarshalJSON(data []byte) error {
+	value.Set = true
+	if bytes.Equal(bytes.TrimSpace(data), []byte("null")) {
+		value.Value = nil
+		return nil
+	}
+	var decoded json.RawMessage
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	value.Value = &decoded
+	return nil
+}
+
 type updateFolderRequest struct {
 	Name        optionalString `json:"name"`
 	Description optionalString `json:"description"`
+}
+
+// updateMetadataRequest mirrors every sparse metadata field so omitted and explicit-null values remain distinct.
+type updateMetadataRequest struct {
+	Title          optionalString      `json:"title"`
+	Description    optionalString      `json:"description"`
+	Labels         optionalStringArray `json:"labels"`
+	Category       optionalString      `json:"category"`
+	ExternalSource optionalString      `json:"external_source"`
+	ExternalID     optionalString      `json:"external_id"`
+	SourceURL      optionalString      `json:"source_url"`
+	ThumbnailURL   optionalString      `json:"thumbnail_url"`
+	License        optionalString      `json:"license"`
+	Author         optionalString      `json:"author"`
+	MetadataJSON   optionalRawMessage  `json:"metadata_json"`
+	Notes          optionalString      `json:"notes"`
 }
 
 // NewAssetHandler creates a new instance of AssetHandler.
@@ -143,6 +204,7 @@ func (h *AssetHandler) handleGetFolders(w http.ResponseWriter, r *http.Request, 
 
 	rootPath := r.URL.Query().Get("rootPath")
 	childrenOnly := r.URL.Query().Get("children") == "true"
+	fullTree := r.URL.Query().Get("tree") == "true"
 
 	var folders []domain.Folder
 	var err error
@@ -153,7 +215,7 @@ func (h *AssetHandler) handleGetFolders(w http.ResponseWriter, r *http.Request, 
 			return
 		}
 		folders, err = h.usecase.GetFolderChildren(r.Context(), orgID, rootPath)
-	} else if rootPath != "" {
+	} else if rootPath != "" || fullTree {
 		folders, err = h.usecase.GetFolderTree(r.Context(), orgID, rootPath)
 	} else {
 		folders, err = h.usecase.GetRootFolders(r.Context(), orgID)
@@ -241,11 +303,14 @@ func (h *AssetHandler) handleUpdateFolder(w http.ResponseWriter, r *http.Request
 	})
 }
 
+// mapDomainError converts typed domain failures into stable internal REST status codes.
 func (h *AssetHandler) mapDomainError(w http.ResponseWriter, err error) {
-	if errors.Is(err, domain.ErrFolderNotFound) {
-		http.Error(w, "Folder not found", http.StatusNotFound)
+	if errors.Is(err, domain.ErrFolderNotFound) || errors.Is(err, domain.ErrMetadataNotFound) {
+		http.Error(w, "Not found", http.StatusNotFound)
 	} else if errors.Is(err, domain.ErrFolderConflict) {
 		http.Error(w, "Conflict: sibling name or path already exists", http.StatusConflict)
+	} else if errors.Is(err, domain.ErrMetadataConflict) {
+		http.Error(w, "Conflict: external metadata identity already exists", http.StatusConflict)
 	} else if errors.Is(err, domain.ErrInvalidInput) {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 	} else {
@@ -270,15 +335,188 @@ func decodeJSONBody(r *http.Request, destination any) error {
 	return nil
 }
 
+// HandleMetadataItems dispatches org-scoped metadata list, detail, create, and update requests.
 func (h *AssetHandler) HandleMetadataItems(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		http.Error(w, "Missing actor context", http.StatusInternalServerError)
 		return
 	}
 
-	writeJSON(w, http.StatusNotImplemented, map[string]any{
-		"status":  "not_implemented",
-		"message": "Metadata item routes are reserved for the next Asset Core iteration.",
+	switch r.Method {
+	case http.MethodGet:
+		h.handleGetMetadataItems(w, r, actor)
+	case http.MethodPost:
+		h.handleCreateMetadataItem(w, r, actor)
+	case http.MethodPatch:
+		h.handleUpdateMetadataItem(w, r, actor)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// handleGetMetadataItems serves either one metadata detail or an active-folder metadata list.
+func (h *AssetHandler) handleGetMetadataItems(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor) {
+	orgID := r.URL.Query().Get("orgId")
+	if orgID == "" {
+		http.Error(w, "Missing orgId", http.StatusBadRequest)
+		return
+	}
+	if orgID != actor.OrgID {
+		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	folderID := r.URL.Query().Get("folderId")
+	if id != "" && folderID != "" {
+		http.Error(w, "Provide either id or folderId, not both", http.StatusBadRequest)
+		return
+	}
+	if id != "" {
+		if err := uuid.Validate(id); err != nil {
+			http.Error(w, "Invalid id format", http.StatusBadRequest)
+			return
+		}
+		item, err := h.usecase.GetMetadataItemByID(r.Context(), orgID, id)
+		if err != nil {
+			h.mapDomainError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"status": "success",
+			"item":   item,
+		})
+		return
+	}
+
+	if folderID != "" {
+		if err := uuid.Validate(folderID); err != nil {
+			http.Error(w, "Invalid folderId format", http.StatusBadRequest)
+			return
+		}
+		items, err := h.usecase.GetMetadataItemsByFolder(r.Context(), orgID, folderID)
+		if err != nil {
+			h.mapDomainError(w, err)
+			return
+		}
+		if items == nil {
+			items = []domain.MetadataItem{}
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"status": "success",
+			"count":  len(items),
+			"items":  items,
+		})
+		return
+	}
+
+	http.Error(w, "Missing id or folderId", http.StatusBadRequest)
+}
+
+// handleCreateMetadataItem validates transport context before delegating transactional creation to the use case.
+func (h *AssetHandler) handleCreateMetadataItem(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor) {
+	orgID := r.URL.Query().Get("orgId")
+	if orgID == "" {
+		http.Error(w, "Missing orgId", http.StatusBadRequest)
+		return
+	}
+	if orgID != actor.OrgID {
+		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		return
+	}
+
+	var input domain.CreateMetadataInput
+	if err := decodeJSONBody(r, &input); err != nil {
+		http.Error(w, "Invalid body", http.StatusBadRequest)
+		return
+	}
+	if err := uuid.Validate(input.FolderID); err != nil {
+		http.Error(w, "Invalid folder_id format", http.StatusBadRequest)
+		return
+	}
+
+	item, err := h.usecase.CreateMetadataItem(r.Context(), orgID, actor.UserID, input)
+	if err != nil {
+		h.mapDomainError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"status": "success",
+		"item":   item,
+	})
+}
+
+// handleUpdateMetadataItem translates PATCH presence semantics into the domain update contract.
+func (h *AssetHandler) handleUpdateMetadataItem(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor) {
+	id := r.URL.Query().Get("id")
+	orgID := r.URL.Query().Get("orgId")
+	if id == "" || orgID == "" {
+		http.Error(w, "Missing id or orgId", http.StatusBadRequest)
+		return
+	}
+	if err := uuid.Validate(id); err != nil {
+		http.Error(w, "Invalid metadata id format", http.StatusBadRequest)
+		return
+	}
+	if orgID != actor.OrgID {
+		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		return
+	}
+
+	var request updateMetadataRequest
+	if err := decodeJSONBody(r, &request); err != nil {
+		http.Error(w, "Invalid body", http.StatusBadRequest)
+		return
+	}
+
+	var pqLabels *pq.StringArray
+	if request.Labels.Set {
+		labels := pq.StringArray{}
+		if request.Labels.Value != nil {
+			labels = pq.StringArray(*request.Labels.Value)
+		}
+		// Both labels:null and labels:[] intentionally clear to the required empty PostgreSQL array.
+		pqLabels = &labels
+	}
+
+	input := domain.UpdateMetadataInput{
+		Title:             request.Title.Value,
+		TitleSet:          request.Title.Set,
+		Description:       request.Description.Value,
+		DescriptionSet:    request.Description.Set,
+		Labels:            pqLabels,
+		LabelsSet:         request.Labels.Set,
+		Category:          request.Category.Value,
+		CategorySet:       request.Category.Set,
+		ExternalSource:    request.ExternalSource.Value,
+		ExternalSourceSet: request.ExternalSource.Set,
+		ExternalID:        request.ExternalID.Value,
+		ExternalIDSet:     request.ExternalID.Set,
+		SourceURL:         request.SourceURL.Value,
+		SourceURLSet:      request.SourceURL.Set,
+		ThumbnailURL:      request.ThumbnailURL.Value,
+		ThumbnailURLSet:   request.ThumbnailURL.Set,
+		License:           request.License.Value,
+		LicenseSet:        request.License.Set,
+		Author:            request.Author.Value,
+		AuthorSet:         request.Author.Set,
+		MetadataJSON:      request.MetadataJSON.Value,
+		MetadataJSONSet:   request.MetadataJSON.Set,
+		Notes:             request.Notes.Value,
+		NotesSet:          request.Notes.Set,
+	}
+
+	item, err := h.usecase.UpdateMetadataItem(r.Context(), orgID, actor.UserID, id, input)
+	if err != nil {
+		h.mapDomainError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status": "success",
+		"item":   item,
 	})
 }
 

@@ -37,8 +37,10 @@ function assertSameOrg(
 }
 
 export function applyAuthDirectives(schema: GraphQLSchema): GraphQLSchema {
+  // Wrappers execute in reverse application order. Apply same-org first so
+  // authentication and membership always fail before argument-org checks.
+  schema = wrapField(schema, "sameOrg", assertSameOrg);
   schema = wrapField(schema, "auth", assertAuthenticated);
   schema = wrapField(schema, "orgMember", assertOrgMember);
-  schema = wrapField(schema, "sameOrg", assertSameOrg);
   return schema;
 }

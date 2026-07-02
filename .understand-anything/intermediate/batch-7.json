@@ -1,14 +1,13 @@
 {
-  "batchIndex": 7,
   "nodes": [
     {
-      "id": "file:.understand-anything/.understandignore",
-      "type": "file",
-      "name": ".understandignore",
-      "file": ".understand-anything/.understandignore",
-      "summary": "Placeholder or ignore file",
+      "id": "document:.understand-anything/baseline-context.md",
+      "type": "document",
+      "name": "baseline-context.md",
+      "filePath": ".understand-anything/baseline-context.md",
+      "summary": "Documentation file.",
       "tags": [
-        "ignore"
+        "documentation"
       ],
       "complexity": "simple"
     },
@@ -16,343 +15,76 @@
       "id": "config:.understand-anything/config.json",
       "type": "config",
       "name": "config.json",
-      "file": ".understand-anything/config.json",
-      "summary": "Configuration file: .understand-anything/config.json",
+      "filePath": ".understand-anything/config.json",
+      "summary": "Configuration file.",
       "tags": [
-        "config"
+        "configuration"
       ],
       "complexity": "simple"
     },
     {
-      "id": "file:infra/db/asset/seed/.gitkeep",
-      "type": "file",
-      "name": ".gitkeep",
-      "file": "infra/db/asset/seed/.gitkeep",
-      "summary": "Placeholder or ignore file",
-      "tags": [
-        "ignore"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "config:infra/docker-compose.yml",
+      "id": "config:.understand-anything/diff-overlay.json",
       "type": "config",
-      "name": "docker-compose.yml",
-      "file": "infra/docker-compose.yml",
-      "summary": "Configuration file: infra/docker-compose.yml",
+      "name": "diff-overlay.json",
+      "filePath": ".understand-anything/diff-overlay.json",
+      "summary": "Configuration file.",
       "tags": [
-        "config"
+        "configuration"
       ],
-      "complexity": "simple"
+      "complexity": "moderate"
     },
     {
-      "id": "resource:infra/docker-compose.yml:asset-db",
-      "type": "resource",
-      "name": "asset-db",
-      "file": "infra/docker-compose.yml",
-      "summary": "Docker service for asset-db",
-      "tags": [
-        "docker",
-        "service",
-        "infra"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "resource:infra/docker-compose.yml:access-db",
-      "type": "resource",
-      "name": "access-db",
-      "file": "infra/docker-compose.yml",
-      "summary": "Docker service for access-db",
-      "tags": [
-        "docker",
-        "service",
-        "infra"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "resource:infra/docker-compose.yml:flyway-asset",
-      "type": "resource",
-      "name": "flyway-asset",
-      "file": "infra/docker-compose.yml",
-      "summary": "Docker service for flyway-asset",
-      "tags": [
-        "docker",
-        "service",
-        "infra"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "resource:infra/docker-compose.yml:flyway-access",
-      "type": "resource",
-      "name": "flyway-access",
-      "file": "infra/docker-compose.yml",
-      "summary": "Docker service for flyway-access",
-      "tags": [
-        "docker",
-        "service",
-        "infra"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "resource:infra/docker-compose.yml:access-core",
-      "type": "resource",
-      "name": "access-core",
-      "file": "infra/docker-compose.yml",
-      "summary": "Docker service for access-core",
-      "tags": [
-        "docker",
-        "service",
-        "infra"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "config:services/access-core/package.json",
+      "id": "config:.understand-anything/fingerprints.json",
       "type": "config",
-      "name": "package.json",
-      "file": "services/access-core/package.json",
-      "summary": "Configuration file: services/access-core/package.json",
+      "name": "fingerprints.json",
+      "filePath": ".understand-anything/fingerprints.json",
+      "summary": "Configuration file.",
       "tags": [
-        "config"
+        "configuration"
       ],
-      "complexity": "simple"
+      "complexity": "moderate"
     },
     {
-      "id": "config:services/access-core/prisma.config.ts",
+      "id": "config:.understand-anything/knowledge-graph.json",
       "type": "config",
-      "name": "prisma.config.ts",
-      "file": "services/access-core/prisma.config.ts",
-      "summary": "Configuration file: services/access-core/prisma.config.ts",
+      "name": "knowledge-graph.json",
+      "filePath": ".understand-anything/knowledge-graph.json",
+      "summary": "Configuration file.",
       "tags": [
-        "config"
+        "configuration"
       ],
-      "complexity": "simple"
+      "complexity": "complex"
     },
     {
-      "id": "schema:services/access-core/prisma/schema.prisma",
-      "type": "schema",
-      "name": "schema.prisma",
-      "file": "services/access-core/prisma/schema.prisma",
-      "summary": "Database schema definition for access-core",
-      "tags": [
-        "database",
-        "schema",
-        "prisma"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "table:services/access-core/prisma/schema.prisma:object_permissions",
-      "type": "table",
-      "name": "object_permissions",
-      "file": "services/access-core/prisma/schema.prisma",
-      "summary": "Prisma model for object_permissions",
-      "tags": [
-        "table",
-        "prisma"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "table:services/access-core/prisma/schema.prisma:organization_members",
-      "type": "table",
-      "name": "organization_members",
-      "file": "services/access-core/prisma/schema.prisma",
-      "summary": "Prisma model for organization_members",
-      "tags": [
-        "table",
-        "prisma"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "table:services/access-core/prisma/schema.prisma:organizations",
-      "type": "table",
-      "name": "organizations",
-      "file": "services/access-core/prisma/schema.prisma",
-      "summary": "Prisma model for organizations",
-      "tags": [
-        "table",
-        "prisma"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "table:services/access-core/prisma/schema.prisma:permission_actions",
-      "type": "table",
-      "name": "permission_actions",
-      "file": "services/access-core/prisma/schema.prisma",
-      "summary": "Prisma model for permission_actions",
-      "tags": [
-        "table",
-        "prisma"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "table:services/access-core/prisma/schema.prisma:role_permissions",
-      "type": "table",
-      "name": "role_permissions",
-      "file": "services/access-core/prisma/schema.prisma",
-      "summary": "Prisma model for role_permissions",
-      "tags": [
-        "table",
-        "prisma"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "table:services/access-core/prisma/schema.prisma:roles",
-      "type": "table",
-      "name": "roles",
-      "file": "services/access-core/prisma/schema.prisma",
-      "summary": "Prisma model for roles",
-      "tags": [
-        "table",
-        "prisma"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "table:services/access-core/prisma/schema.prisma:user_roles",
-      "type": "table",
-      "name": "user_roles",
-      "file": "services/access-core/prisma/schema.prisma",
-      "summary": "Prisma model for user_roles",
-      "tags": [
-        "table",
-        "prisma"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "table:services/access-core/prisma/schema.prisma:users",
-      "type": "table",
-      "name": "users",
-      "file": "services/access-core/prisma/schema.prisma",
-      "summary": "Prisma model for users",
-      "tags": [
-        "table",
-        "prisma"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "config:services/access-core/tsconfig.json",
+      "id": "config:.understand-anything/meta.json",
       "type": "config",
-      "name": "tsconfig.json",
-      "file": "services/access-core/tsconfig.json",
-      "summary": "Configuration file: services/access-core/tsconfig.json",
+      "name": "meta.json",
+      "filePath": ".understand-anything/meta.json",
+      "summary": "Configuration file.",
       "tags": [
-        "config"
+        "configuration"
       ],
       "complexity": "simple"
     },
     {
-      "id": "config:services/asset-core/go.mod",
-      "type": "config",
-      "name": "go.mod",
-      "file": "services/asset-core/go.mod",
-      "summary": "Configuration file: services/asset-core/go.mod",
+      "id": "document:.understand-anything/understand-tour.md",
+      "type": "document",
+      "name": "understand-tour.md",
+      "filePath": ".understand-anything/understand-tour.md",
+      "summary": "Documentation file.",
       "tags": [
-        "config"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "config:services/asset-core/go.sum",
-      "type": "config",
-      "name": "go.sum",
-      "file": "services/asset-core/go.sum",
-      "summary": "Configuration file: services/asset-core/go.sum",
-      "tags": [
-        "config"
+        "documentation"
       ],
       "complexity": "simple"
     }
   ],
   "edges": [
     {
-      "source": "config:infra/docker-compose.yml",
-      "target": "resource:infra/docker-compose.yml:asset-db",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "config:infra/docker-compose.yml",
-      "target": "resource:infra/docker-compose.yml:access-db",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "config:infra/docker-compose.yml",
-      "target": "resource:infra/docker-compose.yml:flyway-asset",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "config:infra/docker-compose.yml",
-      "target": "resource:infra/docker-compose.yml:flyway-access",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "config:infra/docker-compose.yml",
-      "target": "resource:infra/docker-compose.yml:access-core",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "schema:services/access-core/prisma/schema.prisma",
-      "target": "table:services/access-core/prisma/schema.prisma:object_permissions",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "schema:services/access-core/prisma/schema.prisma",
-      "target": "table:services/access-core/prisma/schema.prisma:organization_members",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "schema:services/access-core/prisma/schema.prisma",
-      "target": "table:services/access-core/prisma/schema.prisma:organizations",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "schema:services/access-core/prisma/schema.prisma",
-      "target": "table:services/access-core/prisma/schema.prisma:permission_actions",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "schema:services/access-core/prisma/schema.prisma",
-      "target": "table:services/access-core/prisma/schema.prisma:role_permissions",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "schema:services/access-core/prisma/schema.prisma",
-      "target": "table:services/access-core/prisma/schema.prisma:roles",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "schema:services/access-core/prisma/schema.prisma",
-      "target": "table:services/access-core/prisma/schema.prisma:user_roles",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "schema:services/access-core/prisma/schema.prisma",
-      "target": "table:services/access-core/prisma/schema.prisma:users",
-      "type": "contains",
-      "weight": 1
+      "source": "config:.understand-anything/config.json",
+      "target": "file:services/access-core/src/index.ts",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
     }
   ]
 }

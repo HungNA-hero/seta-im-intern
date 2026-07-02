@@ -1,41 +1,317 @@
 {
+  "projectRoot": "c:/Users/admin/Downloads/Seta Im Intern/seta-im-intern",
   "batchFiles": [
     {
-      "path": "services/access-core/src/config.ts",
-      "language": "typescript",
-      "sizeLines": 18,
+      "path": "services/asset-core/cmd/server/main.go",
+      "language": "go",
+      "sizeLines": 82,
       "fileCategory": "code"
     },
     {
-      "path": "services/access-core/src/db/prisma.ts",
-      "language": "typescript",
-      "sizeLines": 17,
+      "path": "services/asset-core/internal/domain/asset.go",
+      "language": "go",
+      "sizeLines": 184,
       "fileCategory": "code"
     },
     {
-      "path": "services/access-core/src/db/queries/objectPermissions.ts",
-      "language": "typescript",
-      "sizeLines": 35,
+      "path": "services/asset-core/internal/repository/asset_repository.go",
+      "language": "go",
+      "sizeLines": 428,
       "fileCategory": "code"
     },
     {
-      "path": "services/access-core/src/db/queries/rolePermissions.ts",
-      "language": "typescript",
-      "sizeLines": 18,
+      "path": "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "language": "go",
+      "sizeLines": 221,
       "fileCategory": "code"
     },
     {
-      "path": "services/access-core/src/graphql/resolvers/permissionResolvers.ts",
-      "language": "typescript",
-      "sizeLines": 35,
+      "path": "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "language": "go",
+      "sizeLines": 112,
       "fileCategory": "code"
     },
     {
-      "path": "services/access-core/src/index.ts",
-      "language": "typescript",
-      "sizeLines": 21,
+      "path": "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "language": "go",
+      "sizeLines": 156,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/repository/asset_repository_test.go",
+      "language": "go",
+      "sizeLines": 413,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "language": "go",
+      "sizeLines": 221,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/usecase/asset_usecase.go",
+      "language": "go",
+      "sizeLines": 259,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "language": "go",
+      "sizeLines": 148,
+      "fileCategory": "code"
+    },
+    {
+      "path": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "language": "go",
+      "sizeLines": 162,
       "fileCategory": "code"
     }
   ],
-  "projectRoot": "c:\\Users\\admin\\Downloads\\Seta Im Intern\\seta-im-intern"
+  "batchImportData": {
+    "services/asset-core/cmd/server/main.go": [
+      "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "services/asset-core/internal/delivery/http/asset_handler.go",
+      "services/asset-core/internal/delivery/http/middleware_test.go",
+      "services/asset-core/internal/delivery/http/middleware.go",
+      "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "services/asset-core/internal/repository/asset_repository_test.go",
+      "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "services/asset-core/internal/repository/asset_repository.go",
+      "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "services/asset-core/internal/usecase/asset_usecase.go"
+    ],
+    "services/asset-core/internal/domain/asset.go": [],
+    "services/asset-core/internal/repository/asset_repository.go": [
+      "services/asset-core/internal/domain/asset.go"
+    ],
+    "services/asset-core/internal/repository/asset_repository_create_test.go": [
+      "services/asset-core/internal/domain/asset.go",
+      "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "services/asset-core/internal/repository/asset_repository_test.go",
+      "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "services/asset-core/internal/repository/asset_repository.go"
+    ],
+    "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go": [
+      "services/asset-core/internal/domain/asset.go",
+      "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "services/asset-core/internal/repository/asset_repository_test.go",
+      "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "services/asset-core/internal/repository/asset_repository.go"
+    ],
+    "services/asset-core/internal/repository/asset_repository_metadata_test.go": [
+      "services/asset-core/internal/domain/asset.go",
+      "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "services/asset-core/internal/repository/asset_repository_test.go",
+      "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "services/asset-core/internal/repository/asset_repository.go"
+    ],
+    "services/asset-core/internal/repository/asset_repository_test.go": [
+      "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "services/asset-core/internal/repository/asset_repository_test.go",
+      "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "services/asset-core/internal/repository/asset_repository.go"
+    ],
+    "services/asset-core/internal/repository/asset_repository_update_test.go": [
+      "services/asset-core/internal/domain/asset.go",
+      "services/asset-core/internal/repository/asset_repository_create_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "services/asset-core/internal/repository/asset_repository_test.go",
+      "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "services/asset-core/internal/repository/asset_repository.go"
+    ],
+    "services/asset-core/internal/usecase/asset_usecase.go": [
+      "services/asset-core/internal/domain/asset.go"
+    ],
+    "services/asset-core/internal/usecase/asset_usecase_metadata_test.go": [
+      "services/asset-core/internal/domain/asset.go",
+      "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "services/asset-core/internal/usecase/asset_usecase.go"
+    ],
+    "services/asset-core/internal/usecase/asset_usecase_test.go": [
+      "services/asset-core/internal/domain/asset.go",
+      "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "services/asset-core/internal/usecase/asset_usecase.go"
+    ]
+  },
+  "neighborMap": {
+    "services/asset-core/cmd/server/main.go": [
+      {
+        "path": "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+        "batchIndex": 4,
+        "symbols": [
+          "TestHandleCreateFolder_Success",
+          "TestHandleUpdateFolder_Success",
+          "TestHandleCreateFolder_OrgMismatch",
+          "TestHandleCreateFolder_InvalidBody",
+          "TestHandleCreateFolder_RejectsTrailingJSON",
+          "TestHandleUpdateFolder_DescriptionPresence",
+          "TestHandleUpdateFolder_InvalidUUID",
+          "TestHandleCreateFolder_MapsDomainErrors"
+        ]
+      },
+      {
+        "path": "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+        "batchIndex": 4,
+        "symbols": [
+          "TestHandleMetadata_List",
+          "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "TestHandleMetadata_DetailMapsNotFound",
+          "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "TestHandleMetadata_Create",
+          "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "TestHandleMetadata_RejectsOrganizationMismatch"
+        ]
+      },
+      {
+        "path": "services/asset-core/internal/delivery/http/asset_handler_test.go",
+        "batchIndex": 4,
+        "symbols": [
+          "GetFolderTree",
+          "GetRootFolders",
+          "GetFolderByID",
+          "GetFolderChildren",
+          "CreateFolder",
+          "UpdateFolder",
+          "EnsureRefs",
+          "GetMetadataItemsByFolder",
+          "GetMetadataItemByID",
+          "CreateMetadataItem",
+          "UpdateMetadataItem",
+          "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "TestHandleFoldersListMissingOrgId",
+          "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "TestHandleFoldersListChildrenOnly",
+          "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "TestHandleFolderDetailValidRequest",
+          "TestHandleFolderDetailNotFound",
+          "TestHandleFolderDetailInvalidUUID",
+          "TestHandleFolderDetailOrgMismatch",
+          "TestHandleFolderFactsReturnsScopedActiveFact",
+          "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase"
+        ]
+      },
+      {
+        "path": "services/asset-core/internal/delivery/http/asset_handler.go",
+        "batchIndex": 4,
+        "symbols": [
+          "AssetHandler",
+          "UnmarshalJSON",
+          "UnmarshalJSON",
+          "UnmarshalJSON",
+          "NewAssetHandler",
+          "HandleHealth",
+          "HandleFolders",
+          "HandleMetadataItems",
+          "HandleFolderFacts"
+        ]
+      },
+      {
+        "path": "services/asset-core/internal/delivery/http/middleware_test.go",
+        "batchIndex": 4,
+        "symbols": [
+          "TestRequireActor"
+        ]
+      },
+      {
+        "path": "services/asset-core/internal/delivery/http/middleware.go",
+        "batchIndex": 4,
+        "symbols": [
+          "RequireActor"
+        ]
+      }
+    ],
+    "services/asset-core/internal/domain/asset.go": [
+      {
+        "path": "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+        "batchIndex": 4,
+        "symbols": [
+          "TestHandleCreateFolder_Success",
+          "TestHandleUpdateFolder_Success",
+          "TestHandleCreateFolder_OrgMismatch",
+          "TestHandleCreateFolder_InvalidBody",
+          "TestHandleCreateFolder_RejectsTrailingJSON",
+          "TestHandleUpdateFolder_DescriptionPresence",
+          "TestHandleUpdateFolder_InvalidUUID",
+          "TestHandleCreateFolder_MapsDomainErrors"
+        ]
+      },
+      {
+        "path": "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+        "batchIndex": 4,
+        "symbols": [
+          "TestHandleMetadata_List",
+          "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "TestHandleMetadata_DetailMapsNotFound",
+          "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "TestHandleMetadata_Create",
+          "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "TestHandleMetadata_RejectsOrganizationMismatch"
+        ]
+      },
+      {
+        "path": "services/asset-core/internal/delivery/http/asset_handler_test.go",
+        "batchIndex": 4,
+        "symbols": [
+          "GetFolderTree",
+          "GetRootFolders",
+          "GetFolderByID",
+          "GetFolderChildren",
+          "CreateFolder",
+          "UpdateFolder",
+          "EnsureRefs",
+          "GetMetadataItemsByFolder",
+          "GetMetadataItemByID",
+          "CreateMetadataItem",
+          "UpdateMetadataItem",
+          "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "TestHandleFoldersListMissingOrgId",
+          "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "TestHandleFoldersListChildrenOnly",
+          "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "TestHandleFolderDetailValidRequest",
+          "TestHandleFolderDetailNotFound",
+          "TestHandleFolderDetailInvalidUUID",
+          "TestHandleFolderDetailOrgMismatch",
+          "TestHandleFolderFactsReturnsScopedActiveFact",
+          "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase"
+        ]
+      },
+      {
+        "path": "services/asset-core/internal/delivery/http/asset_handler.go",
+        "batchIndex": 4,
+        "symbols": [
+          "AssetHandler",
+          "UnmarshalJSON",
+          "UnmarshalJSON",
+          "UnmarshalJSON",
+          "NewAssetHandler",
+          "HandleHealth",
+          "HandleFolders",
+          "HandleMetadataItems",
+          "HandleFolderFacts"
+        ]
+      }
+    ]
+  }
 }

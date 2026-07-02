@@ -1,0 +1,1329 @@
+{
+  "nodes": [
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "type": "file",
+      "name": "asset_handler.go",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler.go",
+      "summary": "API handler for specific endpoints.",
+      "tags": [
+        "api-handler"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:UnmarshalJSON",
+      "type": "function",
+      "name": "UnmarshalJSON",
+      "summary": "Function UnmarshalJSON.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        30,
+        43
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:UnmarshalJSON",
+      "type": "function",
+      "name": "UnmarshalJSON",
+      "summary": "Function UnmarshalJSON.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        52,
+        64
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:UnmarshalJSON",
+      "type": "function",
+      "name": "UnmarshalJSON",
+      "summary": "Function UnmarshalJSON.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        73,
+        85
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:NewAssetHandler",
+      "type": "function",
+      "name": "NewAssetHandler",
+      "summary": "Function NewAssetHandler.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        109,
+        119
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleHealth",
+      "type": "function",
+      "name": "HandleHealth",
+      "summary": "Function HandleHealth.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        121,
+        137
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleFolders",
+      "type": "function",
+      "name": "HandleFolders",
+      "summary": "Function HandleFolders.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        145,
+        162
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleGetFolders",
+      "type": "function",
+      "name": "handleGetFolders",
+      "summary": "Function handleGetFolders.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        164,
+        234
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleCreateFolder",
+      "type": "function",
+      "name": "handleCreateFolder",
+      "summary": "Function handleCreateFolder.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        236,
+        263
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleUpdateFolder",
+      "type": "function",
+      "name": "handleUpdateFolder",
+      "summary": "Function handleUpdateFolder.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        265,
+        304
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:mapDomainError",
+      "type": "function",
+      "name": "mapDomainError",
+      "summary": "Function mapDomainError.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        307,
+        319
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:decodeJSONBody",
+      "type": "function",
+      "name": "decodeJSONBody",
+      "summary": "Function decodeJSONBody.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        321,
+        336
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleMetadataItems",
+      "type": "function",
+      "name": "HandleMetadataItems",
+      "summary": "Function HandleMetadataItems.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        339,
+        356
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleGetMetadataItems",
+      "type": "function",
+      "name": "handleGetMetadataItems",
+      "summary": "Function handleGetMetadataItems.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        359,
+        415
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleCreateMetadataItem",
+      "type": "function",
+      "name": "handleCreateMetadataItem",
+      "summary": "Function handleCreateMetadataItem.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        418,
+        449
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleUpdateMetadataItem",
+      "type": "function",
+      "name": "handleUpdateMetadataItem",
+      "summary": "Function handleUpdateMetadataItem.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        452,
+        521
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleFolderFacts",
+      "type": "function",
+      "name": "HandleFolderFacts",
+      "summary": "Function HandleFolderFacts.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        527,
+        576
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/delivery/http/asset_handler.go:AssetHandler",
+      "type": "class",
+      "name": "AssetHandler",
+      "summary": "Class AssetHandler.",
+      "tags": [
+        "data-model"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        18,
+        21
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "type": "file",
+      "name": "asset_handler_create_update_test.go",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "summary": "Test file.",
+      "tags": [
+        "test"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_Success",
+      "type": "function",
+      "name": "TestHandleCreateFolder_Success",
+      "summary": "Function TestHandleCreateFolder_Success.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        17,
+        42
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleUpdateFolder_Success",
+      "type": "function",
+      "name": "TestHandleUpdateFolder_Success",
+      "summary": "Function TestHandleUpdateFolder_Success.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        44,
+        70
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_OrgMismatch",
+      "type": "function",
+      "name": "TestHandleCreateFolder_OrgMismatch",
+      "summary": "Function TestHandleCreateFolder_OrgMismatch.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        72,
+        92
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_InvalidBody",
+      "type": "function",
+      "name": "TestHandleCreateFolder_InvalidBody",
+      "summary": "Function TestHandleCreateFolder_InvalidBody.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        94,
+        113
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_RejectsTrailingJSON",
+      "type": "function",
+      "name": "TestHandleCreateFolder_RejectsTrailingJSON",
+      "summary": "Function TestHandleCreateFolder_RejectsTrailingJSON.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        115,
+        138
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleUpdateFolder_DescriptionPresence",
+      "type": "function",
+      "name": "TestHandleUpdateFolder_DescriptionPresence",
+      "summary": "Function TestHandleUpdateFolder_DescriptionPresence.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        140,
+        198
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleUpdateFolder_InvalidUUID",
+      "type": "function",
+      "name": "TestHandleUpdateFolder_InvalidUUID",
+      "summary": "Function TestHandleUpdateFolder_InvalidUUID.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        200,
+        223
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_MapsDomainErrors",
+      "type": "function",
+      "name": "TestHandleCreateFolder_MapsDomainErrors",
+      "summary": "Function TestHandleCreateFolder_MapsDomainErrors.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        225,
+        260
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "type": "file",
+      "name": "asset_handler_metadata_test.go",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "summary": "Test file.",
+      "tags": [
+        "test"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_List",
+      "type": "function",
+      "name": "TestHandleMetadata_List",
+      "summary": "Function TestHandleMetadata_List.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        28,
+        54
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_GetRejectsAmbiguousSelector",
+      "type": "function",
+      "name": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+      "summary": "Function TestHandleMetadata_GetRejectsAmbiguousSelector.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        57,
+        73
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_DetailMapsNotFound",
+      "type": "function",
+      "name": "TestHandleMetadata_DetailMapsNotFound",
+      "summary": "Function TestHandleMetadata_DetailMapsNotFound.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        76,
+        89
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_CreateRejectsMalformedFolderID",
+      "type": "function",
+      "name": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+      "summary": "Function TestHandleMetadata_CreateRejectsMalformedFolderID.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        92,
+        108
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_Create",
+      "type": "function",
+      "name": "TestHandleMetadata_Create",
+      "summary": "Function TestHandleMetadata_Create.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        111,
+        131
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_UpdatePreservesExplicitNulls",
+      "type": "function",
+      "name": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+      "summary": "Function TestHandleMetadata_UpdatePreservesExplicitNulls.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        134,
+        158
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_RejectsOrganizationMismatch",
+      "type": "function",
+      "name": "TestHandleMetadata_RejectsOrganizationMismatch",
+      "summary": "Function TestHandleMetadata_RejectsOrganizationMismatch.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        161,
+        178
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "type": "file",
+      "name": "asset_handler_test.go",
+      "filePath": "services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "summary": "Test file.",
+      "tags": [
+        "test"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderByID",
+      "type": "function",
+      "name": "GetFolderByID",
+      "summary": "Function GetFolderByID.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        60,
+        71
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListRejectsOrganizationContextMismatch",
+      "type": "function",
+      "name": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+      "summary": "Function TestHandleFoldersListRejectsOrganizationContextMismatch.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        141,
+        167
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListUsesMatchingOrganizationContext",
+      "type": "function",
+      "name": "TestHandleFoldersListUsesMatchingOrganizationContext",
+      "summary": "Function TestHandleFoldersListUsesMatchingOrganizationContext.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        169,
+        194
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListMissingOrgId",
+      "type": "function",
+      "name": "TestHandleFoldersListMissingOrgId",
+      "summary": "Function TestHandleFoldersListMissingOrgId.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        196,
+        218
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListWithoutRootPathCallsRootLevel",
+      "type": "function",
+      "name": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+      "summary": "Function TestHandleFoldersListWithoutRootPathCallsRootLevel.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        220,
+        245
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+      "type": "function",
+      "name": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+      "summary": "Function TestHandleFoldersListFullTreeUsesSingleTreeQuery.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        247,
+        275
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListChildrenOnly",
+      "type": "function",
+      "name": "TestHandleFoldersListChildrenOnly",
+      "summary": "Function TestHandleFoldersListChildrenOnly.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        277,
+        306
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListChildrenMissingRootPathReturns400",
+      "type": "function",
+      "name": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+      "summary": "Function TestHandleFoldersListChildrenMissingRootPathReturns400.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        308,
+        330
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailValidRequest",
+      "type": "function",
+      "name": "TestHandleFolderDetailValidRequest",
+      "summary": "Function TestHandleFolderDetailValidRequest.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        336,
+        369
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailNotFound",
+      "type": "function",
+      "name": "TestHandleFolderDetailNotFound",
+      "summary": "Function TestHandleFolderDetailNotFound.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        371,
+        396
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailInvalidUUID",
+      "type": "function",
+      "name": "TestHandleFolderDetailInvalidUUID",
+      "summary": "Function TestHandleFolderDetailInvalidUUID.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        398,
+        423
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailOrgMismatch",
+      "type": "function",
+      "name": "TestHandleFolderDetailOrgMismatch",
+      "summary": "Function TestHandleFolderDetailOrgMismatch.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        425,
+        452
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderFactsReturnsScopedActiveFact",
+      "type": "function",
+      "name": "TestHandleFolderFactsReturnsScopedActiveFact",
+      "summary": "Function TestHandleFolderFactsReturnsScopedActiveFact.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        454,
+        486
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+      "type": "function",
+      "name": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+      "summary": "Function TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        488,
+        510
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/delivery/http/asset_handler_test.go:fakeAssetUsecase",
+      "type": "class",
+      "name": "fakeAssetUsecase",
+      "summary": "Class fakeAssetUsecase.",
+      "tags": [
+        "data-model"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        16,
+        40
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/middleware.go",
+      "type": "file",
+      "name": "middleware.go",
+      "filePath": "services/asset-core/internal/delivery/http/middleware.go",
+      "summary": "Middleware logic.",
+      "tags": [
+        "middleware"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/middleware.go:RequireActor",
+      "type": "function",
+      "name": "RequireActor",
+      "summary": "Function RequireActor.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        11,
+        39
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "type": "file",
+      "name": "middleware_test.go",
+      "filePath": "services/asset-core/internal/delivery/http/middleware_test.go",
+      "summary": "Test file.",
+      "tags": [
+        "test"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/delivery/http/middleware_test.go:TestRequireActor",
+      "type": "function",
+      "name": "TestRequireActor",
+      "summary": "Function TestRequireActor.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        13,
+        106
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/requestcontext/context.go",
+      "type": "file",
+      "name": "context.go",
+      "filePath": "services/asset-core/internal/requestcontext/context.go",
+      "summary": "Request context handling.",
+      "tags": [
+        "utility"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "file:services/asset-core/internal/requestcontext/context.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:UnmarshalJSON",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:UnmarshalJSON",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:UnmarshalJSON",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:NewAssetHandler",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleHealth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleFolders",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleGetFolders",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleCreateFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleUpdateFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:mapDomainError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:decodeJSONBody",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleMetadataItems",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleGetMetadataItems",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleCreateMetadataItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:handleUpdateMetadataItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler.go:HandleFolderFacts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "target": "class:services/asset-core/internal/delivery/http/asset_handler.go:AssetHandler",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_Success",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleUpdateFolder_Success",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_OrgMismatch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_InvalidBody",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_RejectsTrailingJSON",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleUpdateFolder_DescriptionPresence",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleUpdateFolder_InvalidUUID",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go:TestHandleCreateFolder_MapsDomainErrors",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_List",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_GetRejectsAmbiguousSelector",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_DetailMapsNotFound",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_CreateRejectsMalformedFolderID",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_Create",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_UpdatePreservesExplicitNulls",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go:TestHandleMetadata_RejectsOrganizationMismatch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:GetFolderByID",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListRejectsOrganizationContextMismatch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListUsesMatchingOrganizationContext",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListMissingOrgId",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListWithoutRootPathCallsRootLevel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListChildrenOnly",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFoldersListChildrenMissingRootPathReturns400",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailValidRequest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailNotFound",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailInvalidUUID",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderDetailOrgMismatch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderFactsReturnsScopedActiveFact",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/asset_handler_test.go:TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "target": "class:services/asset-core/internal/delivery/http/asset_handler_test.go:fakeAssetUsecase",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware.go",
+      "target": "file:services/asset-core/internal/requestcontext/context.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware.go",
+      "target": "function:services/asset-core/internal/delivery/http/middleware.go:RequireActor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/asset_handler.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "target": "file:services/asset-core/internal/delivery/http/middleware.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "target": "file:services/asset-core/internal/requestcontext/context.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
+      "target": "function:services/asset-core/internal/delivery/http/middleware_test.go:TestRequireActor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    }
+  ]
+}

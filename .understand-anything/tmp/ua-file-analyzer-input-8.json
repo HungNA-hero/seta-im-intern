@@ -1,0 +1,112 @@
+{
+  "projectRoot": "c:/Users/admin/Downloads/Seta Im Intern/seta-im-intern",
+  "batchFiles": [
+    {
+      "path": ".understand-anything/intermediate/assemble-review.json",
+      "language": "json",
+      "sizeLines": 14,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/assembled-graph.json",
+      "language": "json",
+      "sizeLines": 4055,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/batch-1-part-1.json",
+      "language": "json",
+      "sizeLines": 1028,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/batch-1-part-2.json",
+      "language": "json",
+      "sizeLines": 1179,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/batch-2.json",
+      "language": "json",
+      "sizeLines": 286,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/batch-3.json",
+      "language": "json",
+      "sizeLines": 508,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/batch-6.json",
+      "language": "json",
+      "sizeLines": 77,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/batch-7.json",
+      "language": "json",
+      "sizeLines": 226,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/batch-999.json",
+      "language": "json",
+      "sizeLines": 1230,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/batches.json",
+      "language": "json",
+      "sizeLines": 569,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/fingerprint-input.json",
+      "language": "json",
+      "sizeLines": 23,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/layers.json",
+      "language": "json",
+      "sizeLines": 113,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/review.json",
+      "language": "json",
+      "sizeLines": 4,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/scan-result.json",
+      "language": "json",
+      "sizeLines": 380,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/tour.json",
+      "language": "json",
+      "sizeLines": 113,
+      "fileCategory": "config"
+    }
+  ],
+  "batchImportData": {
+    ".understand-anything/intermediate/assemble-review.json": [],
+    ".understand-anything/intermediate/assembled-graph.json": [],
+    ".understand-anything/intermediate/batch-1-part-1.json": [],
+    ".understand-anything/intermediate/batch-1-part-2.json": [],
+    ".understand-anything/intermediate/batch-2.json": [],
+    ".understand-anything/intermediate/batch-3.json": [],
+    ".understand-anything/intermediate/batch-6.json": [],
+    ".understand-anything/intermediate/batch-7.json": [],
+    ".understand-anything/intermediate/batch-999.json": [],
+    ".understand-anything/intermediate/batches.json": [],
+    ".understand-anything/intermediate/fingerprint-input.json": [],
+    ".understand-anything/intermediate/layers.json": [],
+    ".understand-anything/intermediate/review.json": [],
+    ".understand-anything/intermediate/scan-result.json": [],
+    ".understand-anything/intermediate/tour.json": []
+  }
+}

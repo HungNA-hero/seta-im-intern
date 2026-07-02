@@ -1,0 +1,89 @@
+{
+  "nodes": [
+    {
+      "id": "config:.understand-anything/tmp/ua-file-extract-results-7.json",
+      "type": "config",
+      "name": "ua-file-extract-results-7.json",
+      "filePath": ".understand-anything/tmp/ua-file-extract-results-7.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-file-extract-results-7.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:.understand-anything/tmp/ua-import-map-input.json",
+      "type": "config",
+      "name": "ua-import-map-input.json",
+      "filePath": ".understand-anything/tmp/ua-import-map-input.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-import-map-input.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:.understand-anything/tmp/ua-import-map-output.json",
+      "type": "config",
+      "name": "ua-import-map-output.json",
+      "filePath": ".understand-anything/tmp/ua-import-map-output.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-import-map-output.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/tmp/ua-scan-files.json",
+      "type": "config",
+      "name": "ua-scan-files.json",
+      "filePath": ".understand-anything/tmp/ua-scan-files.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-scan-files.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/tmp/ua-tour-input.json",
+      "type": "config",
+      "name": "ua-tour-input.json",
+      "filePath": ".understand-anything/tmp/ua-tour-input.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-tour-input.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:.understand-anything/tmp/ua-tour-prompt.txt",
+      "type": "document",
+      "name": "ua-tour-prompt.txt",
+      "filePath": ".understand-anything/tmp/ua-tour-prompt.txt",
+      "summary": "Intermediate text prompt used by Understand Anything plugin: ua-tour-prompt.txt.",
+      "tags": [
+        "documentation",
+        "configuration"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "config:.understand-anything/tmp/ua-tour-results.json",
+      "type": "config",
+      "name": "ua-tour-results.json",
+      "filePath": ".understand-anything/tmp/ua-tour-results.json",
+      "summary": "Intermediate artifact from Understand Anything plugin: ua-tour-results.json.",
+      "tags": [
+        "configuration",
+        "build-system"
+      ],
+      "complexity": "complex"
+    }
+  ],
+  "edges": []
+}

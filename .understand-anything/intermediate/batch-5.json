@@ -1,0 +1,230 @@
+{
+  "nodes": [
+    {
+      "id": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "type": "table",
+      "name": "V1__create_access_schema.sql",
+      "filePath": "infra/db/access/migrations/V1__create_access_schema.sql",
+      "summary": "Database schema migration script.",
+      "tags": [
+        "database",
+        "migration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "table",
+      "name": "access",
+      "summary": "Table access definition.",
+      "tags": [
+        "database",
+        "data-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "table",
+      "name": "access",
+      "summary": "Table access definition.",
+      "tags": [
+        "database",
+        "data-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "table",
+      "name": "access",
+      "summary": "Table access definition.",
+      "tags": [
+        "database",
+        "data-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "table",
+      "name": "access",
+      "summary": "Table access definition.",
+      "tags": [
+        "database",
+        "data-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "table",
+      "name": "access",
+      "summary": "Table access definition.",
+      "tags": [
+        "database",
+        "data-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "table",
+      "name": "access",
+      "summary": "Table access definition.",
+      "tags": [
+        "database",
+        "data-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "table",
+      "name": "access",
+      "summary": "Table access definition.",
+      "tags": [
+        "database",
+        "data-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "table",
+      "name": "access",
+      "summary": "Table access definition.",
+      "tags": [
+        "database",
+        "data-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "table:infra/db/access/migrations/V2__seed_access_schema.sql",
+      "type": "table",
+      "name": "V2__seed_access_schema.sql",
+      "filePath": "infra/db/access/migrations/V2__seed_access_schema.sql",
+      "summary": "Database schema migration script.",
+      "tags": [
+        "database",
+        "migration"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "table:infra/db/access/migrations/V1__create_access_schema.sql",
+      "target": "table:infra/db/access/migrations/V1__create_access_schema.sql:access",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

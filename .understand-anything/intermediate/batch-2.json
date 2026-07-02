@@ -1,226 +1,1058 @@
 {
   "nodes": [
     {
-      "id": "file:services/access-core/src/db/queries/roles.ts",
+      "id": "file:services/access-core/src/__tests__/canDo.test.ts",
       "type": "file",
-      "name": "roles.ts",
-      "path": "services/access-core/src/db/queries/roles.ts",
-      "summary": "Database queries for retrieving Role records using Prisma.",
-      "tags": ["db", "prisma", "queries", "role"],
-      "complexity": "simple"
+      "name": "canDo.test.ts",
+      "filePath": "services/access-core/src/__tests__/canDo.test.ts",
+      "summary": "Source code file canDo.test.ts.",
+      "tags": [
+        "test",
+        "component",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
     },
     {
-      "id": "function:services/access-core/src/db/queries/roles.ts:listRolesByOrg",
-      "type": "function",
-      "name": "listRolesByOrg",
-      "path": "services/access-core/src/db/queries/roles.ts",
-      "summary": "Retrieves all roles associated with a specific organization.",
-      "tags": ["db-read", "role"],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:services/access-core/src/db/queries/roles.ts:getRoleById",
-      "type": "function",
-      "name": "getRoleById",
-      "path": "services/access-core/src/db/queries/roles.ts",
-      "summary": "Fetches a single role by its unique identifier.",
-      "tags": ["db-read", "role"],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:services/access-core/src/db/queries/users.ts",
+      "id": "file:services/access-core/src/__tests__/context.test.ts",
       "type": "file",
-      "name": "users.ts",
-      "path": "services/access-core/src/db/queries/users.ts",
-      "summary": "Database queries for retrieving User records using Prisma.",
-      "tags": ["db", "prisma", "queries", "user"],
-      "complexity": "simple"
+      "name": "context.test.ts",
+      "filePath": "services/access-core/src/__tests__/context.test.ts",
+      "summary": "Source code file context.test.ts.",
+      "tags": [
+        "test",
+        "component",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
     },
     {
-      "id": "function:services/access-core/src/db/queries/users.ts:listUsers",
-      "type": "function",
-      "name": "listUsers",
-      "path": "services/access-core/src/db/queries/users.ts",
-      "summary": "Retrieves a list of all users.",
-      "tags": ["db-read", "user"],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:services/access-core/src/db/queries/users.ts:getUserById",
-      "type": "function",
-      "name": "getUserById",
-      "path": "services/access-core/src/db/queries/users.ts",
-      "summary": "Fetches a single user by their unique identifier.",
-      "tags": ["db-read", "user"],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "id": "file:services/access-core/src/__tests__/folderResolvers.test.ts",
       "type": "file",
-      "name": "index.ts",
-      "path": "services/access-core/src/graphql/resolvers/index.ts",
-      "summary": "Aggregates and exports all GraphQL resolvers for the access-core service.",
-      "tags": ["graphql", "resolvers", "entrypoint"],
-      "complexity": "simple"
+      "name": "folderResolvers.test.ts",
+      "filePath": "services/access-core/src/__tests__/folderResolvers.test.ts",
+      "summary": "Source code file folderResolvers.test.ts.",
+      "tags": [
+        "test",
+        "component",
+        "module",
+        "file"
+      ],
+      "complexity": "complex"
     },
     {
-      "id": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "type": "file",
-      "name": "roleResolvers.ts",
-      "path": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "summary": "GraphQL resolvers and mappers for Role entities.",
-      "tags": ["graphql", "resolvers", "role"],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:services/access-core/src/graphql/resolvers/roleResolvers.ts:toRole",
+      "id": "function:services/access-core/src/__tests__/folderResolvers.test.ts:makeGoFolder",
       "type": "function",
-      "name": "toRole",
-      "path": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "summary": "Maps a database Role record to a GraphQL Role object.",
-      "tags": ["mapper", "graphql"],
-      "complexity": "simple"
+      "name": "makeGoFolder",
+      "filePath": "services/access-core/src/__tests__/folderResolvers.test.ts",
+      "summary": "Function makeGoFolder in folderResolvers.test.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        31,
+        44
+      ]
     },
     {
-      "id": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "id": "file:services/access-core/src/__tests__/metadataResolvers.test.ts",
       "type": "file",
-      "name": "userResolvers.ts",
-      "path": "services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "summary": "GraphQL resolvers and mappers for User entities.",
-      "tags": ["graphql", "resolvers", "user"],
+      "name": "metadataResolvers.test.ts",
+      "filePath": "services/access-core/src/__tests__/metadataResolvers.test.ts",
+      "summary": "Source code file metadataResolvers.test.ts.",
+      "tags": [
+        "test",
+        "component",
+        "module",
+        "file"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:services/access-core/src/__tests__/metadataResolvers.test.ts:makeGoMetadataItem",
+      "type": "function",
+      "name": "makeGoMetadataItem",
+      "filePath": "services/access-core/src/__tests__/metadataResolvers.test.ts",
+      "summary": "Function makeGoMetadataItem in metadataResolvers.test.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        33,
+        55
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/__tests__/metadataSchema.test.ts",
+      "type": "file",
+      "name": "metadataSchema.test.ts",
+      "filePath": "services/access-core/src/__tests__/metadataSchema.test.ts",
+      "summary": "Source code file metadataSchema.test.ts.",
+      "tags": [
+        "test",
+        "component",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/access-core/src/__tests__/metadataSchema.test.ts:metadataContext",
+      "type": "function",
+      "name": "metadataContext",
+      "filePath": "services/access-core/src/__tests__/metadataSchema.test.ts",
+      "summary": "Function metadataContext in metadataSchema.test.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        24,
+        35
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/__tests__/metadataSchema.test.ts:executeMetadataOperation",
+      "type": "function",
+      "name": "executeMetadataOperation",
+      "filePath": "services/access-core/src/__tests__/metadataSchema.test.ts",
+      "summary": "Function executeMetadataOperation in metadataSchema.test.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        38,
+        55
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/__tests__/sameOrgDirective.test.ts",
+      "type": "file",
+      "name": "sameOrgDirective.test.ts",
+      "filePath": "services/access-core/src/__tests__/sameOrgDirective.test.ts",
+      "summary": "Source code file sameOrgDirective.test.ts.",
+      "tags": [
+        "test",
+        "component",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/access-core/src/__tests__/sameOrgDirective.test.ts:run",
+      "type": "function",
+      "name": "run",
+      "filePath": "services/access-core/src/__tests__/sameOrgDirective.test.ts",
+      "summary": "Function run in sameOrgDirective.test.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        34,
+        48
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/canDo.ts",
+      "type": "file",
+      "name": "canDo.ts",
+      "filePath": "services/access-core/src/db/queries/canDo.ts",
+      "summary": "Source code file canDo.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/canDo.ts:getPermActionId",
+      "type": "function",
+      "name": "getPermActionId",
+      "filePath": "services/access-core/src/db/queries/canDo.ts",
+      "summary": "Function getPermActionId in canDo.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        6,
+        19
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/canDo.ts:canDo",
+      "type": "function",
+      "name": "canDo",
+      "filePath": "services/access-core/src/db/queries/canDo.ts",
+      "summary": "Function canDo in canDo.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        41,
+        105
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/graphql/context.ts",
+      "type": "file",
+      "name": "context.ts",
+      "filePath": "services/access-core/src/graphql/context.ts",
+      "summary": "Source code file context.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/access-core/src/graphql/context.ts:assertAuthenticated",
+      "type": "function",
+      "name": "assertAuthenticated",
+      "filePath": "services/access-core/src/graphql/context.ts",
+      "summary": "Function assertAuthenticated in context.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        12,
+        20
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/context.ts:assertOrgMember",
+      "type": "function",
+      "name": "assertOrgMember",
+      "filePath": "services/access-core/src/graphql/context.ts",
+      "summary": "Function assertOrgMember in context.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        22,
+        31
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/context.ts:assertOrgContext",
+      "type": "function",
+      "name": "assertOrgContext",
+      "filePath": "services/access-core/src/graphql/context.ts",
+      "summary": "Function assertOrgContext in context.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        33,
+        40
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/context.ts:loadRequestContext",
+      "type": "function",
+      "name": "loadRequestContext",
+      "filePath": "services/access-core/src/graphql/context.ts",
+      "summary": "Function loadRequestContext in context.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        52,
+        96
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/graphql/directives.ts",
+      "type": "file",
+      "name": "directives.ts",
+      "filePath": "services/access-core/src/graphql/directives.ts",
+      "summary": "Source code file directives.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
       "complexity": "simple"
     },
     {
-      "id": "function:services/access-core/src/graphql/resolvers/userResolvers.ts:toUser",
+      "id": "function:services/access-core/src/graphql/directives.ts:wrapField",
       "type": "function",
-      "name": "toUser",
-      "path": "services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "summary": "Maps a database User record to a GraphQL User object.",
-      "tags": ["mapper", "graphql"],
+      "name": "wrapField",
+      "filePath": "services/access-core/src/graphql/directives.ts",
+      "summary": "Function wrapField in directives.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        12,
+        30
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/directives.ts:applyAuthDirectives",
+      "type": "function",
+      "name": "applyAuthDirectives",
+      "filePath": "services/access-core/src/graphql/directives.ts",
+      "summary": "Function applyAuthDirectives in directives.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        39,
+        46
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/canDoResolvers.ts",
+      "type": "file",
+      "name": "canDoResolvers.ts",
+      "filePath": "services/access-core/src/graphql/resolvers/canDoResolvers.ts",
+      "summary": "Source code file canDoResolvers.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
       "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "type": "file",
+      "name": "folderResolvers.ts",
+      "filePath": "services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "summary": "Source code file folderResolvers.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:toFolder",
+      "type": "function",
+      "name": "toFolder",
+      "filePath": "services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "summary": "Function toFolder in folderResolvers.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        22,
+        34
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:assertFolderPermission",
+      "type": "function",
+      "name": "assertFolderPermission",
+      "filePath": "services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "summary": "Function assertFolderPermission in folderResolvers.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        57,
+        75
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:handleGoResponse",
+      "type": "function",
+      "name": "handleGoResponse",
+      "filePath": "services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "summary": "Function handleGoResponse in folderResolvers.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        88,
+        102
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:writeFolder",
+      "type": "function",
+      "name": "writeFolder",
+      "filePath": "services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "summary": "Function writeFolder in folderResolvers.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        104,
+        121
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "type": "file",
+      "name": "metadataResolvers.ts",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "summary": "Source code file metadataResolvers.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:toMetadataItem",
+      "type": "function",
+      "name": "toMetadataItem",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "summary": "Function toMetadataItem in metadataResolvers.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        57,
+        78
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:handleGoItemResponse",
+      "type": "function",
+      "name": "handleGoItemResponse",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "summary": "Function handleGoItemResponse in metadataResolvers.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        107,
+        119
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:assertMetadataPermission",
+      "type": "function",
+      "name": "assertMetadataPermission",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "summary": "Function assertMetadataPermission in metadataResolvers.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        125,
+        144
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:validateAndParseJsonString",
+      "type": "function",
+      "name": "validateAndParseJsonString",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "summary": "Function validateAndParseJsonString in metadataResolvers.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        150,
+        169
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:mapInputToSnakeCase",
+      "type": "function",
+      "name": "mapInputToSnakeCase",
+      "filePath": "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "summary": "Function mapInputToSnakeCase in metadataResolvers.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        174,
+        184
+      ]
     },
     {
       "id": "file:services/access-core/src/graphql/schema.ts",
       "type": "file",
       "name": "schema.ts",
-      "path": "services/access-core/src/graphql/schema.ts",
-      "summary": "Constructs the executable GraphQL schema by combining type definitions and resolvers.",
-      "tags": ["graphql", "schema"],
+      "filePath": "services/access-core/src/graphql/schema.ts",
+      "summary": "Source code file schema.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
       "complexity": "simple"
     },
     {
       "id": "file:services/access-core/src/graphql/typeDefs.ts",
       "type": "file",
       "name": "typeDefs.ts",
-      "path": "services/access-core/src/graphql/typeDefs.ts",
-      "summary": "Defines the GraphQL schema types, queries, and mutations.",
-      "tags": ["graphql", "typedefs"],
-      "complexity": "moderate"
-    },
-    {
-      "id": "file:services/access-core/src/server.ts",
-      "type": "file",
-      "name": "server.ts",
-      "path": "services/access-core/src/server.ts",
-      "summary": "Sets up the Fastify HTTP server with GraphQL Yoga integration.",
-      "tags": ["server", "fastify", "graphql-yoga"],
-      "complexity": "moderate"
-    },
-    {
-      "id": "function:services/access-core/src/server.ts:buildServer",
-      "type": "function",
-      "name": "buildServer",
-      "path": "services/access-core/src/server.ts",
-      "summary": "Initializes and configures the Fastify server and registers the GraphQL endpoint.",
-      "tags": ["server-init"],
+      "filePath": "services/access-core/src/graphql/typeDefs.ts",
+      "summary": "Source code file typeDefs.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
       "complexity": "moderate"
     }
   ],
   "edges": [
     {
-      "source": "file:services/access-core/src/db/queries/roles.ts",
-      "target": "function:services/access-core/src/db/queries/roles.ts:listRolesByOrg",
-      "type": "contains"
+      "source": "file:services/access-core/src/__tests__/canDo.test.ts",
+      "target": "file:services/access-core/src/db/queries/canDo.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
     },
     {
-      "source": "file:services/access-core/src/db/queries/roles.ts",
-      "target": "function:services/access-core/src/db/queries/roles.ts:getRoleById",
-      "type": "contains"
+      "source": "file:services/access-core/src/db/queries/canDo.ts",
+      "target": "file:services/access-core/src/__tests__/canDo.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
     },
     {
-      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "source": "file:services/access-core/src/__tests__/context.test.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "file:services/access-core/src/__tests__/context.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/folderResolvers.test.ts",
+      "target": "function:services/access-core/src/__tests__/folderResolvers.test.ts:makeGoFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/folderResolvers.test.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/folderResolvers.test.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "file:services/access-core/src/__tests__/folderResolvers.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "target": "file:services/access-core/src/__tests__/folderResolvers.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/metadataResolvers.test.ts",
+      "target": "function:services/access-core/src/__tests__/metadataResolvers.test.ts:makeGoMetadataItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/metadataResolvers.test.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/metadataResolvers.test.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "file:services/access-core/src/__tests__/metadataResolvers.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "target": "file:services/access-core/src/__tests__/metadataResolvers.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/metadataSchema.test.ts",
+      "target": "function:services/access-core/src/__tests__/metadataSchema.test.ts:metadataContext",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/metadataSchema.test.ts",
+      "target": "function:services/access-core/src/__tests__/metadataSchema.test.ts:executeMetadataOperation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/metadataSchema.test.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/metadataSchema.test.ts",
+      "target": "file:services/access-core/src/graphql/schema.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "file:services/access-core/src/__tests__/metadataSchema.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/access-core/src/graphql/schema.ts",
+      "target": "file:services/access-core/src/__tests__/metadataSchema.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/sameOrgDirective.test.ts",
+      "target": "function:services/access-core/src/__tests__/sameOrgDirective.test.ts:run",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/sameOrgDirective.test.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/sameOrgDirective.test.ts",
+      "target": "file:services/access-core/src/graphql/schema.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "file:services/access-core/src/__tests__/sameOrgDirective.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/access-core/src/graphql/schema.ts",
+      "target": "file:services/access-core/src/__tests__/sameOrgDirective.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/canDo.ts",
+      "target": "function:services/access-core/src/db/queries/canDo.ts:getPermActionId",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/canDo.ts",
+      "target": "function:services/access-core/src/db/queries/canDo.ts:canDo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/canDo.ts",
+      "target": "function:services/access-core/src/db/queries/canDo.ts:canDo",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/canDo.ts",
       "target": "file:services/access-core/src/db/prisma.ts",
-      "type": "imports"
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
     },
     {
-      "source": "file:services/access-core/src/db/queries/users.ts",
-      "target": "function:services/access-core/src/db/queries/users.ts:listUsers",
-      "type": "contains"
+      "source": "function:services/access-core/src/db/queries/canDo.ts:canDo",
+      "target": "function:services/access-core/src/db/queries/canDo.ts:getPermActionId",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
-      "source": "file:services/access-core/src/db/queries/users.ts",
-      "target": "function:services/access-core/src/db/queries/users.ts:getUserById",
-      "type": "contains"
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "function:services/access-core/src/graphql/context.ts:assertAuthenticated",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
     },
     {
-      "source": "file:services/access-core/src/db/queries/users.ts",
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "function:services/access-core/src/graphql/context.ts:assertAuthenticated",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "function:services/access-core/src/graphql/context.ts:assertOrgMember",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "function:services/access-core/src/graphql/context.ts:assertOrgMember",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "function:services/access-core/src/graphql/context.ts:assertOrgContext",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "function:services/access-core/src/graphql/context.ts:assertOrgContext",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "function:services/access-core/src/graphql/context.ts:loadRequestContext",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
+      "target": "function:services/access-core/src/graphql/context.ts:loadRequestContext",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/graphql/context.ts",
       "target": "file:services/access-core/src/db/prisma.ts",
-      "type": "imports"
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
     },
     {
-      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
-      "target": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
-      "type": "imports"
+      "source": "function:services/access-core/src/graphql/context.ts:assertOrgMember",
+      "target": "function:services/access-core/src/graphql/context.ts:assertAuthenticated",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
-      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
-      "target": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "type": "imports"
+      "source": "file:services/access-core/src/graphql/directives.ts",
+      "target": "function:services/access-core/src/graphql/directives.ts:wrapField",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
     },
     {
-      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
-      "target": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "type": "imports"
+      "source": "file:services/access-core/src/graphql/directives.ts",
+      "target": "function:services/access-core/src/graphql/directives.ts:applyAuthDirectives",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
     },
     {
-      "source": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "target": "function:services/access-core/src/graphql/resolvers/roleResolvers.ts:toRole",
-      "type": "contains"
+      "source": "file:services/access-core/src/graphql/directives.ts",
+      "target": "function:services/access-core/src/graphql/directives.ts:applyAuthDirectives",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
-      "source": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
-      "target": "file:services/access-core/src/db/queries/roles.ts",
-      "type": "imports"
+      "source": "file:services/access-core/src/graphql/directives.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
     },
     {
-      "source": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "target": "function:services/access-core/src/graphql/resolvers/userResolvers.ts:toUser",
-      "type": "contains"
+      "source": "function:services/access-core/src/graphql/directives.ts:applyAuthDirectives",
+      "target": "function:services/access-core/src/graphql/directives.ts:wrapField",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
-      "source": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
-      "target": "file:services/access-core/src/db/queries/users.ts",
-      "type": "imports"
+      "source": "function:services/access-core/src/graphql/directives.ts:applyAuthDirectives",
+      "target": "function:services/access-core/src/graphql/directives.ts:wrapField",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:services/access-core/src/graphql/directives.ts:applyAuthDirectives",
+      "target": "function:services/access-core/src/graphql/directives.ts:wrapField",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/canDoResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/canDo.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/canDoResolvers.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:toFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:assertFolderPermission",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:handleGoResponse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:writeFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "target": "file:services/access-core/src/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/canDo.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:handleGoResponse",
+      "target": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:toFolder",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:writeFolder",
+      "target": "function:services/access-core/src/graphql/resolvers/folderResolvers.ts:handleGoResponse",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:toMetadataItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:handleGoItemResponse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:assertMetadataPermission",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:validateAndParseJsonString",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:mapInputToSnakeCase",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "target": "file:services/access-core/src/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/canDo.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:handleGoItemResponse",
+      "target": "function:services/access-core/src/graphql/resolvers/metadataResolvers.ts:toMetadataItem",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/graphql/schema.ts",
+      "target": "file:services/access-core/src/graphql/directives.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
     },
     {
       "source": "file:services/access-core/src/graphql/schema.ts",
       "target": "file:services/access-core/src/graphql/resolvers/index.ts",
-      "type": "imports"
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
     },
     {
       "source": "file:services/access-core/src/graphql/schema.ts",
       "target": "file:services/access-core/src/graphql/typeDefs.ts",
-      "type": "imports"
-    },
-    {
-      "source": "file:services/access-core/src/server.ts",
-      "target": "function:services/access-core/src/server.ts:buildServer",
-      "type": "contains"
-    },
-    {
-      "source": "file:services/access-core/src/server.ts",
-      "target": "file:services/access-core/src/graphql/schema.ts",
-      "type": "imports"
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
     }
   ]
 }

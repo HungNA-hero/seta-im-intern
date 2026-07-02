@@ -1,0 +1,1418 @@
+{
+  "nodes": [
+    {
+      "id": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "file",
+      "name": "asset_repository_update_test.go",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "summary": "Source code file asset_repository_update_test.go.",
+      "tags": [
+        "test",
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_Success",
+      "type": "function",
+      "name": "TestUpdateFolder_Success",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "summary": "Function TestUpdateFolder_Success in asset_repository_update_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        16,
+        65
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_NotFound",
+      "type": "function",
+      "name": "TestUpdateFolder_NotFound",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "summary": "Function TestUpdateFolder_NotFound in asset_repository_update_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        67,
+        100
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_ClearDescription",
+      "type": "function",
+      "name": "TestUpdateFolder_ClearDescription",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "summary": "Function TestUpdateFolder_ClearDescription in asset_repository_update_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        102,
+        140
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_SiblingCheckFailureRollsBack",
+      "type": "function",
+      "name": "TestUpdateFolder_SiblingCheckFailureRollsBack",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "summary": "Function TestUpdateFolder_SiblingCheckFailureRollsBack in asset_repository_update_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        142,
+        181
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_DuplicateSiblingRollsBack",
+      "type": "function",
+      "name": "TestUpdateFolder_DuplicateSiblingRollsBack",
+      "filePath": "services/asset-core/internal/repository/asset_repository_update_test.go",
+      "summary": "Function TestUpdateFolder_DuplicateSiblingRollsBack in asset_repository_update_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        183,
+        221
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "type": "file",
+      "name": "asset_usecase.go",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Source code file asset_usecase.go.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:NewAssetUsecase",
+      "type": "function",
+      "name": "NewAssetUsecase",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function NewAssetUsecase in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        23,
+        25
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderTree",
+      "type": "function",
+      "name": "GetFolderTree",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function GetFolderTree in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        27,
+        31
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderByID",
+      "type": "function",
+      "name": "GetFolderByID",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function GetFolderByID in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        33,
+        35
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderChildren",
+      "type": "function",
+      "name": "GetFolderChildren",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function GetFolderChildren in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        37,
+        39
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetRootFolders",
+      "type": "function",
+      "name": "GetRootFolders",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function GetRootFolders in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        41,
+        43
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:EnsureRefs",
+      "type": "function",
+      "name": "EnsureRefs",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function EnsureRefs in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        45,
+        47
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:CreateFolder",
+      "type": "function",
+      "name": "CreateFolder",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function CreateFolder in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        49,
+        65
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:UpdateFolder",
+      "type": "function",
+      "name": "UpdateFolder",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function UpdateFolder in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        67,
+        82
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetMetadataItemsByFolder",
+      "type": "function",
+      "name": "GetMetadataItemsByFolder",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function GetMetadataItemsByFolder in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        85,
+        87
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetMetadataItemByID",
+      "type": "function",
+      "name": "GetMetadataItemByID",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function GetMetadataItemByID in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        90,
+        92
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:normalizeLabels",
+      "type": "function",
+      "name": "normalizeLabels",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function normalizeLabels in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        95,
+        109
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:CreateMetadataItem",
+      "type": "function",
+      "name": "CreateMetadataItem",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function CreateMetadataItem in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        138,
+        182
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase.go:UpdateMetadataItem",
+      "type": "function",
+      "name": "UpdateMetadataItem",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Function UpdateMetadataItem in asset_usecase.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "moderate",
+      "lineRange": [
+        185,
+        259
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/usecase/asset_usecase.go:assetUsecase",
+      "type": "class",
+      "name": "assetUsecase",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Class assetUsecase in asset_usecase.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        18,
+        20
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "type": "file",
+      "name": "asset_usecase_metadata_test.go",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "summary": "Source code file asset_usecase_metadata_test.go.",
+      "tags": [
+        "test",
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_CreateMetadata_Validation",
+      "type": "function",
+      "name": "TestAssetUsecase_CreateMetadata_Validation",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "summary": "Function TestAssetUsecase_CreateMetadata_Validation in asset_usecase_metadata_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        16,
+        58
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_CreateMetadata_NormalizesDefaults",
+      "type": "function",
+      "name": "TestAssetUsecase_CreateMetadata_NormalizesDefaults",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "summary": "Function TestAssetUsecase_CreateMetadata_NormalizesDefaults in asset_usecase_metadata_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        61,
+        88
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_UpdateMetadata_Validation",
+      "type": "function",
+      "name": "TestAssetUsecase_UpdateMetadata_Validation",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "summary": "Function TestAssetUsecase_UpdateMetadata_Validation in asset_usecase_metadata_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        91,
+        116
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_UpdateMetadata_ExplicitNullDefaults",
+      "type": "function",
+      "name": "TestAssetUsecase_UpdateMetadata_ExplicitNullDefaults",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "summary": "Function TestAssetUsecase_UpdateMetadata_ExplicitNullDefaults in asset_usecase_metadata_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        119,
+        136
+      ]
+    },
+    {
+      "id": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "type": "file",
+      "name": "asset_usecase_test.go",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Source code file asset_usecase_test.go.",
+      "tags": [
+        "test",
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderTree",
+      "type": "function",
+      "name": "GetFolderTree",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function GetFolderTree in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        21,
+        23
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderByID",
+      "type": "function",
+      "name": "GetFolderByID",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function GetFolderByID in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        24,
+        26
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderChildren",
+      "type": "function",
+      "name": "GetFolderChildren",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function GetFolderChildren in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        27,
+        29
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetRootFolders",
+      "type": "function",
+      "name": "GetRootFolders",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function GetRootFolders in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        30,
+        32
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:EnsureRefs",
+      "type": "function",
+      "name": "EnsureRefs",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function EnsureRefs in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        33,
+        35
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:CreateFolder",
+      "type": "function",
+      "name": "CreateFolder",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function CreateFolder in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        36,
+        39
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:UpdateFolder",
+      "type": "function",
+      "name": "UpdateFolder",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function UpdateFolder in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        40,
+        43
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetMetadataItemsByFolder",
+      "type": "function",
+      "name": "GetMetadataItemsByFolder",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function GetMetadataItemsByFolder in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        46,
+        48
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetMetadataItemByID",
+      "type": "function",
+      "name": "GetMetadataItemByID",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function GetMetadataItemByID in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        51,
+        53
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:CreateMetadataItem",
+      "type": "function",
+      "name": "CreateMetadataItem",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function CreateMetadataItem in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        56,
+        59
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:UpdateMetadataItem",
+      "type": "function",
+      "name": "UpdateMetadataItem",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function UpdateMetadataItem in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        62,
+        65
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:TestAssetUsecase_CreateFolder_Validation",
+      "type": "function",
+      "name": "TestAssetUsecase_CreateFolder_Validation",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function TestAssetUsecase_CreateFolder_Validation in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        67,
+        109
+      ]
+    },
+    {
+      "id": "function:services/asset-core/internal/usecase/asset_usecase_test.go:TestAssetUsecase_UpdateFolder_Validation",
+      "type": "function",
+      "name": "TestAssetUsecase_UpdateFolder_Validation",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Function TestAssetUsecase_UpdateFolder_Validation in asset_usecase_test.go.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        115,
+        162
+      ]
+    },
+    {
+      "id": "class:services/asset-core/internal/usecase/asset_usecase_test.go:fakeAssetRepo",
+      "type": "class",
+      "name": "fakeAssetRepo",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase_test.go",
+      "summary": "Class fakeAssetRepo in asset_usecase_test.go.",
+      "tags": [
+        "class",
+        "data-model",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        14,
+        19
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_Success",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_Success",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_NotFound",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_NotFound",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_ClearDescription",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_ClearDescription",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_SiblingCheckFailureRollsBack",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_SiblingCheckFailureRollsBack",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_DuplicateSiblingRollsBack",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_update_test.go:TestUpdateFolder_DuplicateSiblingRollsBack",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_create_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_metadata_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_update_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:NewAssetUsecase",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:NewAssetUsecase",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderTree",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderTree",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderByID",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderByID",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderChildren",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderChildren",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetRootFolders",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetRootFolders",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:EnsureRefs",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:EnsureRefs",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:CreateFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:CreateFolder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:UpdateFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:UpdateFolder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetMetadataItemsByFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetMetadataItemsByFolder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetMetadataItemByID",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetMetadataItemByID",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:normalizeLabels",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:CreateMetadataItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:CreateMetadataItem",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:UpdateMetadataItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:UpdateMetadataItem",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "class:services/asset-core/internal/usecase/asset_usecase.go:assetUsecase",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:services/asset-core/internal/usecase/asset_usecase.go:CreateMetadataItem",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:normalizeLabels",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:services/asset-core/internal/usecase/asset_usecase.go:UpdateMetadataItem",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:normalizeLabels",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_CreateMetadata_Validation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_CreateMetadata_Validation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_CreateMetadata_NormalizesDefaults",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_CreateMetadata_NormalizesDefaults",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_UpdateMetadata_Validation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_UpdateMetadata_Validation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_UpdateMetadata_ExplicitNullDefaults",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_metadata_test.go:TestAssetUsecase_UpdateMetadata_ExplicitNullDefaults",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderTree",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderTree",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderByID",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderByID",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderChildren",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetFolderChildren",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetRootFolders",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetRootFolders",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:EnsureRefs",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:EnsureRefs",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:CreateFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:CreateFolder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:UpdateFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:UpdateFolder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetMetadataItemsByFolder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetMetadataItemsByFolder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetMetadataItemByID",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:GetMetadataItemByID",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:CreateMetadataItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:CreateMetadataItem",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:UpdateMetadataItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:UpdateMetadataItem",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:TestAssetUsecase_CreateFolder_Validation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:TestAssetUsecase_CreateFolder_Validation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:TestAssetUsecase_UpdateFolder_Validation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase_test.go:TestAssetUsecase_UpdateFolder_Validation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "class:services/asset-core/internal/usecase/asset_usecase_test.go:fakeAssetRepo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "file:services/asset-core/internal/domain/asset.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "file:services/asset-core/internal/usecase/asset_usecase_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

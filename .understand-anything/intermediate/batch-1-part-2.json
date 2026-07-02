@@ -1,78 +1,154 @@
 {
   "nodes": [
     {
+      "id": "file:services/asset-core/internal/domain/asset.go",
+      "type": "file",
+      "name": "asset.go",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "summary": "Domain models and entities for the asset domain.",
+      "tags": [
+        "data-model",
+        "golang",
+        "golang"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "function",
+      "name": "TableName",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "lineRange": [
+        69,
+        71
+      ],
+      "summary": "Implementation of TableName.",
+      "tags": [
+        "function",
+        "data-model",
+        "golang",
+        "golang"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:services/asset-core/internal/domain/asset.go:OrganizationRef",
+      "type": "class",
+      "name": "OrganizationRef",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "lineRange": [
+        11,
+        13
+      ],
+      "summary": "Definition of class/struct OrganizationRef.",
+      "tags": [
+        "class",
+        "data-model",
+        "golang",
+        "golang"
+      ],
+      "complexity": "moderate"
+    },
+    {
       "id": "class:services/asset-core/internal/domain/asset.go:UserRef",
       "type": "class",
       "name": "UserRef",
-      "path": "services/asset-core/internal/domain/asset.go",
-      "summary": "Class UserRef",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "lineRange": [
+        20,
+        22
+      ],
+      "summary": "Definition of class/struct UserRef.",
       "tags": [
         "class",
-        "go"
+        "data-model",
+        "golang",
+        "golang"
       ],
-      "complexity": "simple"
+      "complexity": "moderate"
     },
     {
       "id": "class:services/asset-core/internal/domain/asset.go:Folder",
       "type": "class",
       "name": "Folder",
-      "path": "services/asset-core/internal/domain/asset.go",
-      "summary": "Class Folder",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "lineRange": [
+        29,
+        40
+      ],
+      "summary": "Definition of class/struct Folder.",
       "tags": [
         "class",
-        "go"
+        "data-model",
+        "golang",
+        "golang"
       ],
-      "complexity": "simple"
+      "complexity": "moderate"
     },
     {
       "id": "class:services/asset-core/internal/domain/asset.go:MetadataItem",
       "type": "class",
       "name": "MetadataItem",
-      "path": "services/asset-core/internal/domain/asset.go",
-      "summary": "Class MetadataItem",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "lineRange": [
+        47,
+        67
+      ],
+      "summary": "Definition of class/struct MetadataItem.",
       "tags": [
         "class",
-        "go"
+        "data-model",
+        "golang",
+        "golang"
       ],
-      "complexity": "simple"
+      "complexity": "moderate"
     },
     {
       "id": "class:services/asset-core/internal/domain/asset.go:AssetRepository",
       "type": "class",
       "name": "AssetRepository",
-      "path": "services/asset-core/internal/domain/asset.go",
-      "summary": "Class AssetRepository",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "lineRange": [
+        74,
+        80
+      ],
+      "summary": "Definition of class/struct AssetRepository.",
       "tags": [
         "class",
-        "go"
+        "data-model",
+        "golang",
+        "golang"
       ],
-      "complexity": "simple"
+      "complexity": "moderate"
     },
     {
       "id": "class:services/asset-core/internal/domain/asset.go:AssetUsecase",
       "type": "class",
       "name": "AssetUsecase",
-      "path": "services/asset-core/internal/domain/asset.go",
-      "summary": "Class AssetUsecase",
+      "filePath": "services/asset-core/internal/domain/asset.go",
+      "lineRange": [
+        83,
+        89
+      ],
+      "summary": "Definition of class/struct AssetUsecase.",
       "tags": [
         "class",
-        "go"
+        "data-model",
+        "golang",
+        "golang"
       ],
-      "complexity": "simple"
+      "complexity": "moderate"
     },
     {
       "id": "file:services/asset-core/internal/repository/asset_repository.go",
       "type": "file",
       "name": "asset_repository.go",
-      "path": "services/asset-core/internal/repository/asset_repository.go",
-      "summary": "File handling asset_repository.go",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "summary": "Database repository for persistent storage of assets.",
       "tags": [
-        "code",
-        "go",
-        "services",
-        "asset-core",
-        "internal",
-        "repository"
+        "database",
+        "golang",
+        "golang"
       ],
       "complexity": "moderate"
     },
@@ -80,11 +156,17 @@
       "id": "function:services/asset-core/internal/repository/asset_repository.go:NewAssetRepository",
       "type": "function",
       "name": "NewAssetRepository",
-      "path": "services/asset-core/internal/repository/asset_repository.go",
-      "summary": "Function NewAssetRepository",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "lineRange": [
+        15,
+        17
+      ],
+      "summary": "Implementation of NewAssetRepository.",
       "tags": [
         "function",
-        "go"
+        "database",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -92,11 +174,17 @@
       "id": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderTree",
       "type": "function",
       "name": "GetFolderTree",
-      "path": "services/asset-core/internal/repository/asset_repository.go",
-      "summary": "Function GetFolderTree",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "lineRange": [
+        19,
+        30
+      ],
+      "summary": "Implementation of GetFolderTree.",
       "tags": [
         "function",
-        "go"
+        "database",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -104,11 +192,17 @@
       "id": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderByID",
       "type": "function",
       "name": "GetFolderByID",
-      "path": "services/asset-core/internal/repository/asset_repository.go",
-      "summary": "Function GetFolderByID",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "lineRange": [
+        32,
+        40
+      ],
+      "summary": "Implementation of GetFolderByID.",
       "tags": [
         "function",
-        "go"
+        "database",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -116,11 +210,17 @@
       "id": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderChildren",
       "type": "function",
       "name": "GetFolderChildren",
-      "path": "services/asset-core/internal/repository/asset_repository.go",
-      "summary": "Function GetFolderChildren",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "lineRange": [
+        42,
+        54
+      ],
+      "summary": "Implementation of GetFolderChildren.",
       "tags": [
         "function",
-        "go"
+        "database",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -128,11 +228,17 @@
       "id": "function:services/asset-core/internal/repository/asset_repository.go:GetRootFolders",
       "type": "function",
       "name": "GetRootFolders",
-      "path": "services/asset-core/internal/repository/asset_repository.go",
-      "summary": "Function GetRootFolders",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "lineRange": [
+        56,
+        66
+      ],
+      "summary": "Implementation of GetRootFolders.",
       "tags": [
         "function",
-        "go"
+        "database",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -140,11 +246,17 @@
       "id": "function:services/asset-core/internal/repository/asset_repository.go:EnsureRefs",
       "type": "function",
       "name": "EnsureRefs",
-      "path": "services/asset-core/internal/repository/asset_repository.go",
-      "summary": "Function EnsureRefs",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "lineRange": [
+        68,
+        84
+      ],
+      "summary": "Implementation of EnsureRefs.",
       "tags": [
         "function",
-        "go"
+        "database",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -152,27 +264,30 @@
       "id": "class:services/asset-core/internal/repository/asset_repository.go:assetRepository",
       "type": "class",
       "name": "assetRepository",
-      "path": "services/asset-core/internal/repository/asset_repository.go",
-      "summary": "Class assetRepository",
+      "filePath": "services/asset-core/internal/repository/asset_repository.go",
+      "lineRange": [
+        10,
+        12
+      ],
+      "summary": "Definition of class/struct assetRepository.",
       "tags": [
         "class",
-        "go"
+        "database",
+        "golang",
+        "golang"
       ],
-      "complexity": "simple"
+      "complexity": "moderate"
     },
     {
       "id": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "type": "file",
       "name": "asset_repository_test.go",
-      "path": "services/asset-core/internal/repository/asset_repository_test.go",
-      "summary": "File handling asset_repository_test.go",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "summary": "Test suite for asset_repository.",
       "tags": [
-        "code",
-        "go",
-        "services",
-        "asset-core",
-        "internal",
-        "repository"
+        "test",
+        "database",
+        "golang"
       ],
       "complexity": "complex"
     },
@@ -180,135 +295,192 @@
       "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_Success_RepeatedCall",
       "type": "function",
       "name": "TestEnsureRefs_Success_RepeatedCall",
-      "path": "services/asset-core/internal/repository/asset_repository_test.go",
-      "summary": "Function TestEnsureRefs_Success_RepeatedCall",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "lineRange": [
+        14,
+        63
+      ],
+      "summary": "Implementation of TestEnsureRefs_Success_RepeatedCall.",
       "tags": [
         "function",
-        "go"
+        "test",
+        "database",
+        "golang"
       ],
-      "complexity": "moderate"
+      "complexity": "simple"
     },
     {
       "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_OrganizationFailurePropagated",
       "type": "function",
       "name": "TestEnsureRefs_OrganizationFailurePropagated",
-      "path": "services/asset-core/internal/repository/asset_repository_test.go",
-      "summary": "Function TestEnsureRefs_OrganizationFailurePropagated",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "lineRange": [
+        65,
+        98
+      ],
+      "summary": "Implementation of TestEnsureRefs_OrganizationFailurePropagated.",
       "tags": [
         "function",
-        "go"
+        "test",
+        "database",
+        "golang"
       ],
-      "complexity": "moderate"
+      "complexity": "simple"
     },
     {
       "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_DBFailurePropagated",
       "type": "function",
       "name": "TestEnsureRefs_DBFailurePropagated",
-      "path": "services/asset-core/internal/repository/asset_repository_test.go",
-      "summary": "Function TestEnsureRefs_DBFailurePropagated",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "lineRange": [
+        100,
+        134
+      ],
+      "summary": "Implementation of TestEnsureRefs_DBFailurePropagated.",
       "tags": [
         "function",
-        "go"
+        "test",
+        "database",
+        "golang"
       ],
-      "complexity": "moderate"
+      "complexity": "simple"
     },
     {
       "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_Success",
       "type": "function",
       "name": "TestGetFolderByID_Success",
-      "path": "services/asset-core/internal/repository/asset_repository_test.go",
-      "summary": "Function TestGetFolderByID_Success",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "lineRange": [
+        136,
+        170
+      ],
+      "summary": "Implementation of TestGetFolderByID_Success.",
       "tags": [
         "function",
-        "go"
+        "test",
+        "database",
+        "golang"
       ],
-      "complexity": "moderate"
+      "complexity": "simple"
     },
     {
       "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_NotFoundOrOrgMismatch",
       "type": "function",
       "name": "TestGetFolderByID_NotFoundOrOrgMismatch",
-      "path": "services/asset-core/internal/repository/asset_repository_test.go",
-      "summary": "Function TestGetFolderByID_NotFoundOrOrgMismatch",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "lineRange": [
+        172,
+        200
+      ],
+      "summary": "Implementation of TestGetFolderByID_NotFoundOrOrgMismatch.",
       "tags": [
         "function",
-        "go"
+        "test",
+        "database",
+        "golang"
       ],
-      "complexity": "moderate"
+      "complexity": "simple"
     },
     {
       "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_SoftDeleted",
       "type": "function",
       "name": "TestGetFolderByID_SoftDeleted",
-      "path": "services/asset-core/internal/repository/asset_repository_test.go",
-      "summary": "Function TestGetFolderByID_SoftDeleted",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "lineRange": [
+        202,
+        231
+      ],
+      "summary": "Implementation of TestGetFolderByID_SoftDeleted.",
       "tags": [
         "function",
-        "go"
+        "test",
+        "database",
+        "golang"
       ],
-      "complexity": "moderate"
+      "complexity": "simple"
     },
     {
       "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Success",
       "type": "function",
       "name": "TestGetFolderChildren_Success",
-      "path": "services/asset-core/internal/repository/asset_repository_test.go",
-      "summary": "Function TestGetFolderChildren_Success",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "lineRange": [
+        233,
+        271
+      ],
+      "summary": "Implementation of TestGetFolderChildren_Success.",
       "tags": [
         "function",
-        "go"
+        "test",
+        "database",
+        "golang"
       ],
-      "complexity": "moderate"
+      "complexity": "simple"
     },
     {
       "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetRootFolders_Success",
       "type": "function",
       "name": "TestGetRootFolders_Success",
-      "path": "services/asset-core/internal/repository/asset_repository_test.go",
-      "summary": "Function TestGetRootFolders_Success",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "lineRange": [
+        273,
+        307
+      ],
+      "summary": "Implementation of TestGetRootFolders_Success.",
       "tags": [
         "function",
-        "go"
+        "test",
+        "database",
+        "golang"
       ],
-      "complexity": "moderate"
+      "complexity": "simple"
     },
     {
       "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Empty",
       "type": "function",
       "name": "TestGetFolderChildren_Empty",
-      "path": "services/asset-core/internal/repository/asset_repository_test.go",
-      "summary": "Function TestGetFolderChildren_Empty",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "lineRange": [
+        309,
+        342
+      ],
+      "summary": "Implementation of TestGetFolderChildren_Empty.",
       "tags": [
         "function",
-        "go"
+        "test",
+        "database",
+        "golang"
       ],
-      "complexity": "moderate"
+      "complexity": "simple"
     },
     {
       "id": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_Success",
       "type": "function",
       "name": "TestGetFolderTree_Success",
-      "path": "services/asset-core/internal/repository/asset_repository_test.go",
-      "summary": "Function TestGetFolderTree_Success",
+      "filePath": "services/asset-core/internal/repository/asset_repository_test.go",
+      "lineRange": [
+        344,
+        380
+      ],
+      "summary": "Implementation of TestGetFolderTree_Success.",
       "tags": [
         "function",
-        "go"
+        "test",
+        "database",
+        "golang"
       ],
-      "complexity": "moderate"
+      "complexity": "simple"
     },
     {
       "id": "file:services/asset-core/internal/requestcontext/context.go",
       "type": "file",
       "name": "context.go",
-      "path": "services/asset-core/internal/requestcontext/context.go",
-      "summary": "File handling context.go",
+      "filePath": "services/asset-core/internal/requestcontext/context.go",
+      "summary": "Code file in the asset-core service.",
       "tags": [
-        "code",
-        "go",
-        "services",
-        "asset-core",
-        "internal",
-        "requestcontext"
+        "utility",
+        "component",
+        "module"
       ],
       "complexity": "simple"
     },
@@ -316,11 +488,17 @@
       "id": "function:services/asset-core/internal/requestcontext/context.go:WithActor",
       "type": "function",
       "name": "WithActor",
-      "path": "services/asset-core/internal/requestcontext/context.go",
-      "summary": "Function WithActor",
+      "filePath": "services/asset-core/internal/requestcontext/context.go",
+      "lineRange": [
+        18,
+        20
+      ],
+      "summary": "Implementation of WithActor.",
       "tags": [
         "function",
-        "go"
+        "utility",
+        "component",
+        "module"
       ],
       "complexity": "simple"
     },
@@ -328,11 +506,17 @@
       "id": "function:services/asset-core/internal/requestcontext/context.go:GetActor",
       "type": "function",
       "name": "GetActor",
-      "path": "services/asset-core/internal/requestcontext/context.go",
-      "summary": "Function GetActor",
+      "filePath": "services/asset-core/internal/requestcontext/context.go",
+      "lineRange": [
+        23,
+        29
+      ],
+      "summary": "Implementation of GetActor.",
       "tags": [
         "function",
-        "go"
+        "utility",
+        "component",
+        "module"
       ],
       "complexity": "simple"
     },
@@ -340,27 +524,30 @@
       "id": "class:services/asset-core/internal/requestcontext/context.go:Actor",
       "type": "class",
       "name": "Actor",
-      "path": "services/asset-core/internal/requestcontext/context.go",
-      "summary": "Class Actor",
+      "filePath": "services/asset-core/internal/requestcontext/context.go",
+      "lineRange": [
+        12,
+        15
+      ],
+      "summary": "Definition of class/struct Actor.",
       "tags": [
         "class",
-        "go"
+        "utility",
+        "component",
+        "module"
       ],
-      "complexity": "simple"
+      "complexity": "moderate"
     },
     {
       "id": "file:services/asset-core/internal/usecase/asset_usecase.go",
       "type": "file",
       "name": "asset_usecase.go",
-      "path": "services/asset-core/internal/usecase/asset_usecase.go",
-      "summary": "File handling asset_usecase.go",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "summary": "Business logic use cases for assets.",
       "tags": [
-        "code",
-        "go",
-        "services",
-        "asset-core",
-        "internal",
-        "usecase"
+        "service",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -368,11 +555,17 @@
       "id": "function:services/asset-core/internal/usecase/asset_usecase.go:NewAssetUsecase",
       "type": "function",
       "name": "NewAssetUsecase",
-      "path": "services/asset-core/internal/usecase/asset_usecase.go",
-      "summary": "Function NewAssetUsecase",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "lineRange": [
+        14,
+        16
+      ],
+      "summary": "Implementation of NewAssetUsecase.",
       "tags": [
         "function",
-        "go"
+        "service",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -380,11 +573,17 @@
       "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderTree",
       "type": "function",
       "name": "GetFolderTree",
-      "path": "services/asset-core/internal/usecase/asset_usecase.go",
-      "summary": "Function GetFolderTree",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "lineRange": [
+        18,
+        22
+      ],
+      "summary": "Implementation of GetFolderTree.",
       "tags": [
         "function",
-        "go"
+        "service",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -392,11 +591,17 @@
       "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderByID",
       "type": "function",
       "name": "GetFolderByID",
-      "path": "services/asset-core/internal/usecase/asset_usecase.go",
-      "summary": "Function GetFolderByID",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "lineRange": [
+        24,
+        26
+      ],
+      "summary": "Implementation of GetFolderByID.",
       "tags": [
         "function",
-        "go"
+        "service",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -404,11 +609,17 @@
       "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderChildren",
       "type": "function",
       "name": "GetFolderChildren",
-      "path": "services/asset-core/internal/usecase/asset_usecase.go",
-      "summary": "Function GetFolderChildren",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "lineRange": [
+        28,
+        30
+      ],
+      "summary": "Implementation of GetFolderChildren.",
       "tags": [
         "function",
-        "go"
+        "service",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -416,11 +627,17 @@
       "id": "function:services/asset-core/internal/usecase/asset_usecase.go:GetRootFolders",
       "type": "function",
       "name": "GetRootFolders",
-      "path": "services/asset-core/internal/usecase/asset_usecase.go",
-      "summary": "Function GetRootFolders",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "lineRange": [
+        32,
+        34
+      ],
+      "summary": "Implementation of GetRootFolders.",
       "tags": [
         "function",
-        "go"
+        "service",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -428,11 +645,17 @@
       "id": "function:services/asset-core/internal/usecase/asset_usecase.go:EnsureRefs",
       "type": "function",
       "name": "EnsureRefs",
-      "path": "services/asset-core/internal/usecase/asset_usecase.go",
-      "summary": "Function EnsureRefs",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "lineRange": [
+        36,
+        38
+      ],
+      "summary": "Implementation of EnsureRefs.",
       "tags": [
         "function",
-        "go"
+        "service",
+        "golang",
+        "golang"
       ],
       "complexity": "simple"
     },
@@ -440,273 +663,518 @@
       "id": "class:services/asset-core/internal/usecase/asset_usecase.go:assetUsecase",
       "type": "class",
       "name": "assetUsecase",
-      "path": "services/asset-core/internal/usecase/asset_usecase.go",
-      "summary": "Class assetUsecase",
+      "filePath": "services/asset-core/internal/usecase/asset_usecase.go",
+      "lineRange": [
+        9,
+        11
+      ],
+      "summary": "Definition of class/struct assetUsecase.",
       "tags": [
         "class",
-        "go"
+        "service",
+        "golang",
+        "golang"
       ],
-      "complexity": "simple"
+      "complexity": "moderate"
     }
   ],
   "edges": [
     {
-      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
-      "target": "file:services/asset-core/internal/delivery/http/middleware.go",
-      "type": "imports",
-      "weight": 1
-    },
-    {
-      "source": "file:services/asset-core/internal/delivery/http/middleware_test.go",
-      "target": "file:services/asset-core/internal/requestcontext/context.go",
-      "type": "imports",
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
+      "type": "contains",
+      "direction": "forward",
       "weight": 1
     },
     {
       "source": "file:services/asset-core/internal/domain/asset.go",
       "target": "function:services/asset-core/internal/domain/asset.go:TableName",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "file:services/asset-core/internal/domain/asset.go",
-      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "file:services/asset-core/internal/domain/asset.go",
-      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
-      "type": "contains",
-      "weight": 1
-    },
-    {
-      "source": "file:services/asset-core/internal/domain/asset.go",
-      "target": "function:services/asset-core/internal/domain/asset.go:TableName",
-      "type": "contains",
-      "weight": 1
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/domain/asset.go",
       "target": "class:services/asset-core/internal/domain/asset.go:OrganizationRef",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:OrganizationRef",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/domain/asset.go",
       "target": "class:services/asset-core/internal/domain/asset.go:UserRef",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:UserRef",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/domain/asset.go",
       "target": "class:services/asset-core/internal/domain/asset.go:Folder",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:Folder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/domain/asset.go",
       "target": "class:services/asset-core/internal/domain/asset.go:MetadataItem",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:MetadataItem",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/domain/asset.go",
       "target": "class:services/asset-core/internal/domain/asset.go:AssetRepository",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:AssetRepository",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/domain/asset.go",
       "target": "class:services/asset-core/internal/domain/asset.go:AssetUsecase",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/domain/asset.go",
+      "target": "class:services/asset-core/internal/domain/asset.go:AssetUsecase",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository.go",
       "target": "function:services/asset-core/internal/repository/asset_repository.go:NewAssetRepository",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:NewAssetRepository",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository.go",
       "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderTree",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderTree",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository.go",
       "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderByID",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderByID",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository.go",
       "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderChildren",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetFolderChildren",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository.go",
       "target": "function:services/asset-core/internal/repository/asset_repository.go:GetRootFolders",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:GetRootFolders",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository.go",
       "target": "function:services/asset-core/internal/repository/asset_repository.go:EnsureRefs",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository.go:EnsureRefs",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository.go",
       "target": "class:services/asset-core/internal/repository/asset_repository.go:assetRepository",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository.go",
       "target": "file:services/asset-core/internal/domain/asset.go",
       "type": "imports",
-      "weight": 1
+      "direction": "forward",
+      "weight": 0.7
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_Success_RepeatedCall",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_Success_RepeatedCall",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_OrganizationFailurePropagated",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_OrganizationFailurePropagated",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_DBFailurePropagated",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestEnsureRefs_DBFailurePropagated",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_Success",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_Success",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_NotFoundOrOrgMismatch",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_NotFoundOrOrgMismatch",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_SoftDeleted",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderByID_SoftDeleted",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Success",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Success",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetRootFolders_Success",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetRootFolders_Success",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Empty",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderChildren_Empty",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_Success",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "target": "function:services/asset-core/internal/repository/asset_repository_test.go:TestGetFolderTree_Success",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "type": "imports",
-      "weight": 1
+      "direction": "forward",
+      "weight": 0.7
     },
     {
       "source": "file:services/asset-core/internal/repository/asset_repository_test.go",
       "target": "file:services/asset-core/internal/repository/asset_repository.go",
       "type": "imports",
-      "weight": 1
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/asset-core/internal/repository/asset_repository.go",
+      "target": "file:services/asset-core/internal/repository/asset_repository_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
     },
     {
       "source": "file:services/asset-core/internal/requestcontext/context.go",
       "target": "function:services/asset-core/internal/requestcontext/context.go:WithActor",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/requestcontext/context.go",
+      "target": "function:services/asset-core/internal/requestcontext/context.go:WithActor",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/requestcontext/context.go",
       "target": "function:services/asset-core/internal/requestcontext/context.go:GetActor",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/requestcontext/context.go",
+      "target": "function:services/asset-core/internal/requestcontext/context.go:GetActor",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/requestcontext/context.go",
       "target": "class:services/asset-core/internal/requestcontext/context.go:Actor",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/requestcontext/context.go",
+      "target": "class:services/asset-core/internal/requestcontext/context.go:Actor",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
       "target": "function:services/asset-core/internal/usecase/asset_usecase.go:NewAssetUsecase",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:NewAssetUsecase",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
       "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderTree",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderTree",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
       "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderByID",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderByID",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
       "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderChildren",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetFolderChildren",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
       "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetRootFolders",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:GetRootFolders",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
       "target": "function:services/asset-core/internal/usecase/asset_usecase.go:EnsureRefs",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
+      "target": "function:services/asset-core/internal/usecase/asset_usecase.go:EnsureRefs",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
       "target": "class:services/asset-core/internal/usecase/asset_usecase.go:assetUsecase",
       "type": "contains",
+      "direction": "forward",
       "weight": 1
     },
     {
       "source": "file:services/asset-core/internal/usecase/asset_usecase.go",
       "target": "file:services/asset-core/internal/domain/asset.go",
       "type": "imports",
-      "weight": 1
+      "direction": "forward",
+      "weight": 0.7
     }
   ]
 }

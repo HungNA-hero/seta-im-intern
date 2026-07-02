@@ -1,0 +1,1357 @@
+{
+  "nodes": [
+    {
+      "id": "file:services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
+      "type": "file",
+      "name": "metadataE2E.e2e.test.ts",
+      "filePath": "services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
+      "summary": "Source code file metadataE2E.e2e.test.ts.",
+      "tags": [
+        "test",
+        "component",
+        "module",
+        "file"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:services/access-core/src/__tests__/metadataE2E.e2e.test.ts:queryGraphQL",
+      "type": "function",
+      "name": "queryGraphQL",
+      "filePath": "services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
+      "summary": "Function queryGraphQL in metadataE2E.e2e.test.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        50,
+        69
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/config.ts",
+      "type": "file",
+      "name": "config.ts",
+      "filePath": "services/access-core/src/config.ts",
+      "summary": "Source code file config.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/db/prisma.ts",
+      "type": "file",
+      "name": "prisma.ts",
+      "filePath": "services/access-core/src/db/prisma.ts",
+      "summary": "Source code file prisma.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "type": "file",
+      "name": "objectPermissions.ts",
+      "filePath": "services/access-core/src/db/queries/objectPermissions.ts",
+      "summary": "Source code file objectPermissions.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/objectPermissions.ts:listObjectPermissions",
+      "type": "function",
+      "name": "listObjectPermissions",
+      "filePath": "services/access-core/src/db/queries/objectPermissions.ts",
+      "summary": "Function listObjectPermissions in objectPermissions.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        16,
+        24
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/objectPermissions.ts:grantObjectPermission",
+      "type": "function",
+      "name": "grantObjectPermission",
+      "filePath": "services/access-core/src/db/queries/objectPermissions.ts",
+      "summary": "Function grantObjectPermission in objectPermissions.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        26,
+        49
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/objectPermissions.ts:revokeObjectPermission",
+      "type": "function",
+      "name": "revokeObjectPermission",
+      "filePath": "services/access-core/src/db/queries/objectPermissions.ts",
+      "summary": "Function revokeObjectPermission in objectPermissions.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        51,
+        53
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/organizations.ts",
+      "type": "file",
+      "name": "organizations.ts",
+      "filePath": "services/access-core/src/db/queries/organizations.ts",
+      "summary": "Source code file organizations.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/organizations.ts:listOrganizations",
+      "type": "function",
+      "name": "listOrganizations",
+      "filePath": "services/access-core/src/db/queries/organizations.ts",
+      "summary": "Function listOrganizations in organizations.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        12,
+        22
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/organizations.ts:getOrganizationById",
+      "type": "function",
+      "name": "getOrganizationById",
+      "filePath": "services/access-core/src/db/queries/organizations.ts",
+      "summary": "Function getOrganizationById in organizations.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        24,
+        35
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/organizations.ts:addOrgMember",
+      "type": "function",
+      "name": "addOrgMember",
+      "filePath": "services/access-core/src/db/queries/organizations.ts",
+      "summary": "Function addOrgMember in organizations.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        37,
+        39
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/organizations.ts:createOrganization",
+      "type": "function",
+      "name": "createOrganization",
+      "filePath": "services/access-core/src/db/queries/organizations.ts",
+      "summary": "Function createOrganization in organizations.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        41,
+        44
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "type": "file",
+      "name": "rolePermissions.ts",
+      "filePath": "services/access-core/src/db/queries/rolePermissions.ts",
+      "summary": "Source code file rolePermissions.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/rolePermissions.ts:listRolePermissions",
+      "type": "function",
+      "name": "listRolePermissions",
+      "filePath": "services/access-core/src/db/queries/rolePermissions.ts",
+      "summary": "Function listRolePermissions in rolePermissions.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        10,
+        20
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/roles.ts",
+      "type": "file",
+      "name": "roles.ts",
+      "filePath": "services/access-core/src/db/queries/roles.ts",
+      "summary": "Source code file roles.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/roles.ts:toRole",
+      "type": "function",
+      "name": "toRole",
+      "filePath": "services/access-core/src/db/queries/roles.ts",
+      "summary": "Function toRole in roles.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        13,
+        31
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/roles.ts:listRolesByOrg",
+      "type": "function",
+      "name": "listRolesByOrg",
+      "filePath": "services/access-core/src/db/queries/roles.ts",
+      "summary": "Function listRolesByOrg in roles.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        33,
+        36
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/roles.ts:getRoleById",
+      "type": "function",
+      "name": "getRoleById",
+      "filePath": "services/access-core/src/db/queries/roles.ts",
+      "summary": "Function getRoleById in roles.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        38,
+        41
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/roles.ts:createRole",
+      "type": "function",
+      "name": "createRole",
+      "filePath": "services/access-core/src/db/queries/roles.ts",
+      "summary": "Function createRole in roles.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        43,
+        51
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/roles.ts:updateRole",
+      "type": "function",
+      "name": "updateRole",
+      "filePath": "services/access-core/src/db/queries/roles.ts",
+      "summary": "Function updateRole in roles.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        53,
+        63
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/userRoles.ts",
+      "type": "file",
+      "name": "userRoles.ts",
+      "filePath": "services/access-core/src/db/queries/userRoles.ts",
+      "summary": "Source code file userRoles.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/userRoles.ts:assignRole",
+      "type": "function",
+      "name": "assignRole",
+      "filePath": "services/access-core/src/db/queries/userRoles.ts",
+      "summary": "Function assignRole in userRoles.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        3,
+        9
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/userRoles.ts:revokeRole",
+      "type": "function",
+      "name": "revokeRole",
+      "filePath": "services/access-core/src/db/queries/userRoles.ts",
+      "summary": "Function revokeRole in userRoles.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        11,
+        17
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/db/queries/users.ts",
+      "type": "file",
+      "name": "users.ts",
+      "filePath": "services/access-core/src/db/queries/users.ts",
+      "summary": "Source code file users.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/users.ts:toUser",
+      "type": "function",
+      "name": "toUser",
+      "filePath": "services/access-core/src/db/queries/users.ts",
+      "summary": "Function toUser in users.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        12,
+        28
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/users.ts:listUsers",
+      "type": "function",
+      "name": "listUsers",
+      "filePath": "services/access-core/src/db/queries/users.ts",
+      "summary": "Function listUsers in users.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        30,
+        33
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/users.ts:getUserById",
+      "type": "function",
+      "name": "getUserById",
+      "filePath": "services/access-core/src/db/queries/users.ts",
+      "summary": "Function getUserById in users.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        35,
+        38
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/users.ts:createUser",
+      "type": "function",
+      "name": "createUser",
+      "filePath": "services/access-core/src/db/queries/users.ts",
+      "summary": "Function createUser in users.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        40,
+        42
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/users.ts:updateUser",
+      "type": "function",
+      "name": "updateUser",
+      "filePath": "services/access-core/src/db/queries/users.ts",
+      "summary": "Function updateUser in users.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        44,
+        46
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/db/queries/users.ts:deactivateUser",
+      "type": "function",
+      "name": "deactivateUser",
+      "filePath": "services/access-core/src/db/queries/users.ts",
+      "summary": "Function deactivateUser in users.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        48,
+        57
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "services/access-core/src/graphql/resolvers/index.ts",
+      "summary": "Source code file index.ts.",
+      "tags": [
+        "entry-point",
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+      "type": "file",
+      "name": "organizationResolvers.ts",
+      "filePath": "services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+      "summary": "Source code file organizationResolvers.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "type": "file",
+      "name": "permissionResolvers.ts",
+      "filePath": "services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "summary": "Source code file permissionResolvers.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "type": "file",
+      "name": "roleResolvers.ts",
+      "filePath": "services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "summary": "Source code file roleResolvers.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "type": "file",
+      "name": "userResolvers.ts",
+      "filePath": "services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "summary": "Source code file userResolvers.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "type": "file",
+      "name": "utils.ts",
+      "filePath": "services/access-core/src/graphql/resolvers/utils.ts",
+      "summary": "Source code file utils.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/utils.ts:serializeDates",
+      "type": "function",
+      "name": "serializeDates",
+      "filePath": "services/access-core/src/graphql/resolvers/utils.ts",
+      "summary": "Function serializeDates in utils.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        3,
+        5
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/utils.ts:serializePermission",
+      "type": "function",
+      "name": "serializePermission",
+      "filePath": "services/access-core/src/graphql/resolvers/utils.ts",
+      "summary": "Function serializePermission in utils.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        7,
+        9
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/graphql/resolvers/utils.ts:rethrowPrismaError",
+      "type": "function",
+      "name": "rethrowPrismaError",
+      "filePath": "services/access-core/src/graphql/resolvers/utils.ts",
+      "summary": "Function rethrowPrismaError in utils.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        11,
+        21
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "services/access-core/src/index.ts",
+      "summary": "Source code file index.ts.",
+      "tags": [
+        "entry-point",
+        "component",
+        "module",
+        "file"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:services/access-core/src/index.ts:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "services/access-core/src/index.ts",
+      "summary": "Function main in index.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        6,
+        16
+      ]
+    },
+    {
+      "id": "file:services/access-core/src/server.ts",
+      "type": "file",
+      "name": "server.ts",
+      "filePath": "services/access-core/src/server.ts",
+      "summary": "Source code file server.ts.",
+      "tags": [
+        "utility",
+        "module",
+        "file"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:services/access-core/src/server.ts:maskGraphQLError",
+      "type": "function",
+      "name": "maskGraphQLError",
+      "filePath": "services/access-core/src/server.ts",
+      "summary": "Function maskGraphQLError in server.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        17,
+        55
+      ]
+    },
+    {
+      "id": "function:services/access-core/src/server.ts:buildServer",
+      "type": "function",
+      "name": "buildServer",
+      "filePath": "services/access-core/src/server.ts",
+      "summary": "Function buildServer in server.ts.",
+      "tags": [
+        "function",
+        "utility",
+        "code"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        57,
+        97
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
+      "target": "function:services/access-core/src/__tests__/metadataE2E.e2e.test.ts:queryGraphQL",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
+      "target": "file:services/access-core/src/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/db/prisma.ts",
+      "target": "file:services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/access-core/src/server.ts",
+      "target": "file:services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:services/access-core/src/db/prisma.ts",
+      "target": "file:services/access-core/src/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "target": "function:services/access-core/src/db/queries/objectPermissions.ts:listObjectPermissions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "target": "function:services/access-core/src/db/queries/objectPermissions.ts:listObjectPermissions",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "target": "function:services/access-core/src/db/queries/objectPermissions.ts:grantObjectPermission",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "target": "function:services/access-core/src/db/queries/objectPermissions.ts:grantObjectPermission",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "target": "function:services/access-core/src/db/queries/objectPermissions.ts:revokeObjectPermission",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "target": "function:services/access-core/src/db/queries/objectPermissions.ts:revokeObjectPermission",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/organizations.ts",
+      "target": "function:services/access-core/src/db/queries/organizations.ts:listOrganizations",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/organizations.ts",
+      "target": "function:services/access-core/src/db/queries/organizations.ts:listOrganizations",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/organizations.ts",
+      "target": "function:services/access-core/src/db/queries/organizations.ts:getOrganizationById",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/organizations.ts",
+      "target": "function:services/access-core/src/db/queries/organizations.ts:getOrganizationById",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/organizations.ts",
+      "target": "function:services/access-core/src/db/queries/organizations.ts:addOrgMember",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/organizations.ts",
+      "target": "function:services/access-core/src/db/queries/organizations.ts:addOrgMember",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/organizations.ts",
+      "target": "function:services/access-core/src/db/queries/organizations.ts:createOrganization",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/organizations.ts",
+      "target": "function:services/access-core/src/db/queries/organizations.ts:createOrganization",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/organizations.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "target": "function:services/access-core/src/db/queries/rolePermissions.ts:listRolePermissions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "target": "function:services/access-core/src/db/queries/rolePermissions.ts:listRolePermissions",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "function:services/access-core/src/db/queries/roles.ts:toRole",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "function:services/access-core/src/db/queries/roles.ts:listRolesByOrg",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "function:services/access-core/src/db/queries/roles.ts:listRolesByOrg",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "function:services/access-core/src/db/queries/roles.ts:getRoleById",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "function:services/access-core/src/db/queries/roles.ts:getRoleById",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "function:services/access-core/src/db/queries/roles.ts:createRole",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "function:services/access-core/src/db/queries/roles.ts:createRole",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "function:services/access-core/src/db/queries/roles.ts:updateRole",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "function:services/access-core/src/db/queries/roles.ts:updateRole",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/roles.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:services/access-core/src/db/queries/roles.ts:getRoleById",
+      "target": "function:services/access-core/src/db/queries/roles.ts:toRole",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:services/access-core/src/db/queries/roles.ts:createRole",
+      "target": "function:services/access-core/src/db/queries/roles.ts:toRole",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:services/access-core/src/db/queries/roles.ts:updateRole",
+      "target": "function:services/access-core/src/db/queries/roles.ts:toRole",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/userRoles.ts",
+      "target": "function:services/access-core/src/db/queries/userRoles.ts:assignRole",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/userRoles.ts",
+      "target": "function:services/access-core/src/db/queries/userRoles.ts:assignRole",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/userRoles.ts",
+      "target": "function:services/access-core/src/db/queries/userRoles.ts:revokeRole",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/userRoles.ts",
+      "target": "function:services/access-core/src/db/queries/userRoles.ts:revokeRole",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/userRoles.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:toUser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:listUsers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:listUsers",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:getUserById",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:getUserById",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:createUser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:createUser",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:updateUser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:updateUser",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:deactivateUser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "function:services/access-core/src/db/queries/users.ts:deactivateUser",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/db/queries/users.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:services/access-core/src/db/queries/users.ts:getUserById",
+      "target": "function:services/access-core/src/db/queries/users.ts:toUser",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:services/access-core/src/db/queries/users.ts:createUser",
+      "target": "function:services/access-core/src/db/queries/users.ts:toUser",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:services/access-core/src/db/queries/users.ts:updateUser",
+      "target": "function:services/access-core/src/db/queries/users.ts:toUser",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:services/access-core/src/db/queries/users.ts:deactivateUser",
+      "target": "function:services/access-core/src/db/queries/users.ts:toUser",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/canDoResolvers.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/index.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/organizations.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/userRoles.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/organizationResolvers.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/objectPermissions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/rolePermissions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/roles.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/roleResolvers.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "target": "file:services/access-core/src/db/queries/users.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/userResolvers.ts",
+      "target": "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/utils.ts:serializeDates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/utils.ts:serializeDates",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/utils.ts:serializePermission",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/utils.ts:serializePermission",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/utils.ts:rethrowPrismaError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/graphql/resolvers/utils.ts",
+      "target": "function:services/access-core/src/graphql/resolvers/utils.ts:rethrowPrismaError",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/index.ts",
+      "target": "function:services/access-core/src/index.ts:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/index.ts",
+      "target": "file:services/access-core/src/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/index.ts",
+      "target": "file:services/access-core/src/db/prisma.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/index.ts",
+      "target": "file:services/access-core/src/server.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/server.ts",
+      "target": "function:services/access-core/src/server.ts:maskGraphQLError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/server.ts",
+      "target": "function:services/access-core/src/server.ts:buildServer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:services/access-core/src/server.ts",
+      "target": "function:services/access-core/src/server.ts:buildServer",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:services/access-core/src/server.ts",
+      "target": "file:services/access-core/src/graphql/context.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:services/access-core/src/server.ts",
+      "target": "file:services/access-core/src/graphql/schema.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

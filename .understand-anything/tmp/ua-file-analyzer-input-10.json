@@ -1,0 +1,56 @@
+{
+  "projectRoot": "c:/Users/admin/Downloads/Seta Im Intern/seta-im-intern",
+  "batchFiles": [
+    {
+      "path": ".understand-anything/tmp/ua-file-extract-results-7.json",
+      "language": "json",
+      "sizeLines": 188,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-import-map-input.json",
+      "language": "json",
+      "sizeLines": 105,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-import-map-output.json",
+      "language": "json",
+      "sizeLines": 112,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-scan-files.json",
+      "language": "json",
+      "sizeLines": 276,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-tour-input.json",
+      "language": "json",
+      "sizeLines": 2485,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-tour-prompt.txt",
+      "language": "txt",
+      "sizeLines": 2602,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-tour-results.json",
+      "language": "json",
+      "sizeLines": 1062,
+      "fileCategory": "config"
+    }
+  ],
+  "batchImportData": {
+    ".understand-anything/tmp/ua-file-extract-results-7.json": [],
+    ".understand-anything/tmp/ua-import-map-input.json": [],
+    ".understand-anything/tmp/ua-import-map-output.json": [],
+    ".understand-anything/tmp/ua-scan-files.json": [],
+    ".understand-anything/tmp/ua-tour-input.json": [],
+    ".understand-anything/tmp/ua-tour-prompt.txt": [],
+    ".understand-anything/tmp/ua-tour-results.json": []
+  }
+}

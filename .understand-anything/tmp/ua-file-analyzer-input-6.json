@@ -1,23 +1,25 @@
 {
-  "projectRoot": "c:\\\\Users\\\\admin\\\\Downloads\\\\Seta Im Intern\\\\seta-im-intern",
-  "batchFiles": [
-    {
-      "path": "README.md",
-      "language": "markdown",
-      "sizeLines": 136,
-      "fileCategory": "docs"
-    },
-    {
-      "path": "package.json",
-      "language": "json",
-      "sizeLines": 19,
-      "fileCategory": "config"
-    },
-    {
-      "path": "pr_body.txt",
-      "language": "txt",
-      "sizeLines": 11,
-      "fileCategory": "docs"
-    }
-  ]
+    "projectRoot":  "c:\\Users\\admin\\Downloads\\Seta Im Intern\\seta-im-intern",
+    "batchImportData":  {
+                            "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql":  [
+
+                                                                                       ],
+                            "infra/db/asset/migrations/V1__asset_initial_schema.sql":  [
+
+                                                                                       ]
+                        },
+    "batchFiles":  [
+                       {
+                           "fileCategory":  "data",
+                           "path":  "infra/db/asset/migrations/V1__asset_initial_schema.sql",
+                           "language":  "sql",
+                           "sizeLines":  142
+                       },
+                       {
+                           "fileCategory":  "data",
+                           "path":  "infra/db/asset/migrations/V2__asset_seed_demo_tree.sql",
+                           "language":  "sql",
+                           "sizeLines":  81
+                       }
+                   ]
 }

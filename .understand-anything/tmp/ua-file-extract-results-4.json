@@ -1,194 +1,3724 @@
 {
   "scriptCompleted": true,
-  "filesAnalyzed": 2,
+  "filesAnalyzed": 7,
   "filesSkipped": [],
   "results": [
     {
-      "path": "infra/db/access/migrations/V1__create_access_schema.sql",
-      "language": "sql",
-      "fileCategory": "data",
-      "totalLines": 133,
-      "nonEmptyLines": 112,
-      "definitions": [
+      "path": "services/asset-core/internal/delivery/http/asset_handler.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 584,
+      "nonEmptyLines": 518,
+      "functions": [
         {
-          "name": "access",
-          "kind": "table",
-          "fields": [
-            "id",
-            "email",
-            "display_name",
-            "is_active",
-            "created_at",
-            "updated_at",
-            "deleted_at"
-          ],
-          "startLine": 20,
-          "endLine": 28
+          "name": "UnmarshalJSON",
+          "startLine": 30,
+          "endLine": 43,
+          "params": [
+            "data"
+          ]
         },
         {
-          "name": "access",
-          "kind": "table",
-          "fields": [
-            "id",
-            "code",
-            "name",
-            "olp_enabled",
-            "created_at",
-            "updated_at"
-          ],
-          "startLine": 34,
-          "endLine": 43
+          "name": "UnmarshalJSON",
+          "startLine": 52,
+          "endLine": 64,
+          "params": [
+            "data"
+          ]
         },
         {
-          "name": "access",
-          "kind": "table",
-          "fields": [
-            "id",
-            "org_id",
-            "user_id",
-            "joined_at"
-          ],
-          "startLine": 49,
-          "endLine": 55
+          "name": "UnmarshalJSON",
+          "startLine": 73,
+          "endLine": 85,
+          "params": [
+            "data"
+          ]
         },
         {
-          "name": "access",
-          "kind": "table",
-          "fields": [
-            "id",
-            "org_id",
-            "code",
-            "name",
-            "description",
-            "created_at",
-            "updated_at"
-          ],
-          "startLine": 59,
-          "endLine": 69
+          "name": "NewAssetHandler",
+          "startLine": 109,
+          "endLine": 119,
+          "params": [
+            "mux",
+            "usecase",
+            "db"
+          ]
         },
         {
-          "name": "access",
-          "kind": "table",
-          "fields": [
-            "id",
-            "org_id",
-            "user_id",
-            "role_id",
-            "assigned_at"
-          ],
-          "startLine": 77,
-          "endLine": 86
+          "name": "HandleHealth",
+          "startLine": 121,
+          "endLine": 137,
+          "params": [
+            "w",
+            "r"
+          ]
         },
         {
-          "name": "access",
-          "kind": "table",
-          "fields": [
-            "id",
-            "code",
-            "description"
-          ],
-          "startLine": 90,
-          "endLine": 94
+          "name": "HandleFolders",
+          "startLine": 145,
+          "endLine": 162,
+          "params": [
+            "w",
+            "r"
+          ]
         },
         {
-          "name": "access",
-          "kind": "table",
-          "fields": [
-            "id",
-            "role_id",
-            "action_id",
-            "resource_type"
-          ],
-          "startLine": 96,
-          "endLine": 102
+          "name": "handleGetFolders",
+          "startLine": 164,
+          "endLine": 234,
+          "params": [
+            "w",
+            "r",
+            "actor"
+          ]
         },
         {
-          "name": "access",
-          "kind": "table",
-          "fields": [
-            "id",
-            "org_id",
-            "resource_type",
-            "resource_id",
-            "grantee_user_id",
-            "grantee_role_id",
-            "action_id",
-            "granted_by",
-            "granted_at"
-          ],
-          "startLine": 106,
-          "endLine": 122
+          "name": "handleCreateFolder",
+          "startLine": 236,
+          "endLine": 263,
+          "params": [
+            "w",
+            "r",
+            "actor"
+          ]
         },
         {
-          "name": "idx_org_members_user",
-          "kind": "index",
-          "fields": [],
+          "name": "handleUpdateFolder",
+          "startLine": 265,
+          "endLine": 304,
+          "params": [
+            "w",
+            "r",
+            "actor"
+          ]
+        },
+        {
+          "name": "mapDomainError",
+          "startLine": 307,
+          "endLine": 319,
+          "params": [
+            "w",
+            "err"
+          ]
+        },
+        {
+          "name": "decodeJSONBody",
+          "startLine": 321,
+          "endLine": 336,
+          "params": [
+            "r",
+            "destination"
+          ]
+        },
+        {
+          "name": "HandleMetadataItems",
+          "startLine": 339,
+          "endLine": 356,
+          "params": [
+            "w",
+            "r"
+          ]
+        },
+        {
+          "name": "handleGetMetadataItems",
+          "startLine": 359,
+          "endLine": 415,
+          "params": [
+            "w",
+            "r",
+            "actor"
+          ]
+        },
+        {
+          "name": "handleCreateMetadataItem",
+          "startLine": 418,
+          "endLine": 449,
+          "params": [
+            "w",
+            "r",
+            "actor"
+          ]
+        },
+        {
+          "name": "handleUpdateMetadataItem",
+          "startLine": 452,
+          "endLine": 521,
+          "params": [
+            "w",
+            "r",
+            "actor"
+          ]
+        },
+        {
+          "name": "HandleFolderFacts",
+          "startLine": 527,
+          "endLine": 576,
+          "params": [
+            "w",
+            "r"
+          ]
+        },
+        {
+          "name": "writeJSON",
+          "startLine": 578,
+          "endLine": 584,
+          "params": [
+            "w",
+            "statusCode",
+            "payload"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "AssetHandler",
+          "startLine": 18,
+          "endLine": 21,
+          "methods": [
+            "HandleHealth",
+            "HandleFolders",
+            "handleGetFolders",
+            "handleCreateFolder",
+            "handleUpdateFolder",
+            "mapDomainError",
+            "HandleMetadataItems",
+            "handleGetMetadataItems",
+            "handleCreateMetadataItem",
+            "handleUpdateMetadataItem",
+            "HandleFolderFacts"
+          ],
+          "properties": [
+            "usecase",
+            "db"
+          ]
+        },
+        {
+          "name": "optionalString",
+          "startLine": 24,
+          "endLine": 27,
+          "methods": [
+            "UnmarshalJSON"
+          ],
+          "properties": [
+            "Value",
+            "Set"
+          ]
+        },
+        {
+          "name": "optionalStringArray",
+          "startLine": 46,
+          "endLine": 49,
+          "methods": [
+            "UnmarshalJSON"
+          ],
+          "properties": [
+            "Value",
+            "Set"
+          ]
+        },
+        {
+          "name": "optionalRawMessage",
+          "startLine": 67,
+          "endLine": 70,
+          "methods": [
+            "UnmarshalJSON"
+          ],
+          "properties": [
+            "Value",
+            "Set"
+          ]
+        },
+        {
+          "name": "updateFolderRequest",
+          "startLine": 87,
+          "endLine": 90,
+          "methods": [],
+          "properties": [
+            "Name",
+            "Description"
+          ]
+        },
+        {
+          "name": "updateMetadataRequest",
+          "startLine": 93,
+          "endLine": 106,
+          "methods": [],
+          "properties": [
+            "Title",
+            "Description",
+            "Labels",
+            "Category",
+            "ExternalSource",
+            "ExternalID",
+            "SourceURL",
+            "ThumbnailURL",
+            "License",
+            "Author",
+            "MetadataJSON",
+            "Notes"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AssetHandler",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "UnmarshalJSON",
+          "line": 30,
+          "isDefault": false
+        },
+        {
+          "name": "UnmarshalJSON",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "UnmarshalJSON",
+          "line": 73,
+          "isDefault": false
+        },
+        {
+          "name": "NewAssetHandler",
+          "line": 109,
+          "isDefault": false
+        },
+        {
+          "name": "HandleHealth",
+          "line": 121,
+          "isDefault": false
+        },
+        {
+          "name": "HandleFolders",
+          "line": 145,
+          "isDefault": false
+        },
+        {
+          "name": "HandleMetadataItems",
+          "line": 339,
+          "isDefault": false
+        },
+        {
+          "name": "HandleFolderFacts",
+          "line": 527,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "UnmarshalJSON",
+          "callee": "bytes.Equal",
+          "lineNumber": 32
+        },
+        {
+          "caller": "UnmarshalJSON",
+          "callee": "bytes.TrimSpace",
+          "lineNumber": 32
+        },
+        {
+          "caller": "UnmarshalJSON",
+          "callee": "json.Unmarshal",
+          "lineNumber": 38
+        },
+        {
+          "caller": "UnmarshalJSON",
+          "callee": "bytes.Equal",
+          "lineNumber": 54
+        },
+        {
+          "caller": "UnmarshalJSON",
+          "callee": "bytes.TrimSpace",
+          "lineNumber": 54
+        },
+        {
+          "caller": "UnmarshalJSON",
+          "callee": "json.Unmarshal",
+          "lineNumber": 59
+        },
+        {
+          "caller": "UnmarshalJSON",
+          "callee": "bytes.Equal",
+          "lineNumber": 75
+        },
+        {
+          "caller": "UnmarshalJSON",
+          "callee": "bytes.TrimSpace",
+          "lineNumber": 75
+        },
+        {
+          "caller": "UnmarshalJSON",
+          "callee": "json.Unmarshal",
+          "lineNumber": 80
+        },
+        {
+          "caller": "NewAssetHandler",
+          "callee": "mux.HandleFunc",
+          "lineNumber": 115
+        },
+        {
+          "caller": "NewAssetHandler",
+          "callee": "mux.HandleFunc",
+          "lineNumber": 116
+        },
+        {
+          "caller": "NewAssetHandler",
+          "callee": "RequireActor",
+          "lineNumber": 116
+        },
+        {
+          "caller": "NewAssetHandler",
+          "callee": "mux.HandleFunc",
+          "lineNumber": 117
+        },
+        {
+          "caller": "NewAssetHandler",
+          "callee": "RequireActor",
+          "lineNumber": 117
+        },
+        {
+          "caller": "NewAssetHandler",
+          "callee": "mux.HandleFunc",
+          "lineNumber": 118
+        },
+        {
+          "caller": "NewAssetHandler",
+          "callee": "RequireActor",
+          "lineNumber": 118
+        },
+        {
+          "caller": "HandleHealth",
+          "callee": "http.Error",
+          "lineNumber": 123
+        },
+        {
+          "caller": "HandleHealth",
+          "callee": "writeJSON",
+          "lineNumber": 133
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "requestcontext.GetActor",
+          "lineNumber": 146
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "r.Context",
+          "lineNumber": 146
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "http.Error",
+          "lineNumber": 148
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "h.handleGetFolders",
+          "lineNumber": 154
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "h.handleCreateFolder",
+          "lineNumber": 156
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "h.handleUpdateFolder",
+          "lineNumber": 158
+        },
+        {
+          "caller": "HandleFolders",
+          "callee": "http.Error",
+          "lineNumber": 160
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 166
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.URL.Query",
+          "lineNumber": 166
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 167
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.URL.Query",
+          "lineNumber": 167
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "http.Error",
+          "lineNumber": 171
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "uuid.Validate",
+          "lineNumber": 177
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "http.Error",
+          "lineNumber": 178
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "h.usecase.GetFolderByID",
+          "lineNumber": 182
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.Context",
+          "lineNumber": 182
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "errors.Is",
+          "lineNumber": 184
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "http.Error",
+          "lineNumber": 185
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "http.Error",
+          "lineNumber": 188
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "writeJSON",
+          "lineNumber": 192
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "http.Error",
+          "lineNumber": 201
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 205
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.URL.Query",
+          "lineNumber": 205
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 206
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.URL.Query",
+          "lineNumber": 206
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 207
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.URL.Query",
+          "lineNumber": 207
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "http.Error",
+          "lineNumber": 214
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "h.usecase.GetFolderChildren",
+          "lineNumber": 217
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.Context",
+          "lineNumber": 217
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "h.usecase.GetFolderTree",
+          "lineNumber": 219
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.Context",
+          "lineNumber": 219
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "h.usecase.GetRootFolders",
+          "lineNumber": 221
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "r.Context",
+          "lineNumber": 221
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "http.Error",
+          "lineNumber": 225
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "writeJSON",
+          "lineNumber": 229
+        },
+        {
+          "caller": "handleGetFolders",
+          "callee": "len",
+          "lineNumber": 231
+        },
+        {
+          "caller": "handleCreateFolder",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 237
+        },
+        {
+          "caller": "handleCreateFolder",
+          "callee": "r.URL.Query",
+          "lineNumber": 237
+        },
+        {
+          "caller": "handleCreateFolder",
+          "callee": "http.Error",
+          "lineNumber": 239
+        },
+        {
+          "caller": "handleCreateFolder",
+          "callee": "http.Error",
+          "lineNumber": 243
+        },
+        {
+          "caller": "handleCreateFolder",
+          "callee": "decodeJSONBody",
+          "lineNumber": 248
+        },
+        {
+          "caller": "handleCreateFolder",
+          "callee": "http.Error",
+          "lineNumber": 249
+        },
+        {
+          "caller": "handleCreateFolder",
+          "callee": "h.usecase.CreateFolder",
+          "lineNumber": 253
+        },
+        {
+          "caller": "handleCreateFolder",
+          "callee": "r.Context",
+          "lineNumber": 253
+        },
+        {
+          "caller": "handleCreateFolder",
+          "callee": "h.mapDomainError",
+          "lineNumber": 255
+        },
+        {
+          "caller": "handleCreateFolder",
+          "callee": "writeJSON",
+          "lineNumber": 259
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 266
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "r.URL.Query",
+          "lineNumber": 266
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 267
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "r.URL.Query",
+          "lineNumber": 267
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "http.Error",
+          "lineNumber": 269
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "uuid.Validate",
+          "lineNumber": 272
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "http.Error",
+          "lineNumber": 273
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "http.Error",
+          "lineNumber": 277
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "decodeJSONBody",
+          "lineNumber": 282
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "http.Error",
+          "lineNumber": 283
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "h.usecase.UpdateFolder",
+          "lineNumber": 294
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "r.Context",
+          "lineNumber": 294
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "h.mapDomainError",
+          "lineNumber": 296
+        },
+        {
+          "caller": "handleUpdateFolder",
+          "callee": "writeJSON",
+          "lineNumber": 300
+        },
+        {
+          "caller": "mapDomainError",
+          "callee": "errors.Is",
+          "lineNumber": 308
+        },
+        {
+          "caller": "mapDomainError",
+          "callee": "errors.Is",
+          "lineNumber": 308
+        },
+        {
+          "caller": "mapDomainError",
+          "callee": "http.Error",
+          "lineNumber": 309
+        },
+        {
+          "caller": "mapDomainError",
+          "callee": "errors.Is",
+          "lineNumber": 310
+        },
+        {
+          "caller": "mapDomainError",
+          "callee": "http.Error",
+          "lineNumber": 311
+        },
+        {
+          "caller": "mapDomainError",
+          "callee": "errors.Is",
+          "lineNumber": 312
+        },
+        {
+          "caller": "mapDomainError",
+          "callee": "http.Error",
+          "lineNumber": 313
+        },
+        {
+          "caller": "mapDomainError",
+          "callee": "errors.Is",
+          "lineNumber": 314
+        },
+        {
+          "caller": "mapDomainError",
+          "callee": "http.Error",
+          "lineNumber": 315
+        },
+        {
+          "caller": "mapDomainError",
+          "callee": "http.Error",
+          "lineNumber": 317
+        },
+        {
+          "caller": "decodeJSONBody",
+          "callee": "json.NewDecoder",
+          "lineNumber": 322
+        },
+        {
+          "caller": "decodeJSONBody",
+          "callee": "decoder.DisallowUnknownFields",
+          "lineNumber": 323
+        },
+        {
+          "caller": "decodeJSONBody",
+          "callee": "decoder.Decode",
+          "lineNumber": 324
+        },
+        {
+          "caller": "decodeJSONBody",
+          "callee": "decoder.Decode",
+          "lineNumber": 329
+        },
+        {
+          "caller": "decodeJSONBody",
+          "callee": "errors.Is",
+          "lineNumber": 329
+        },
+        {
+          "caller": "decodeJSONBody",
+          "callee": "errors.New",
+          "lineNumber": 331
+        },
+        {
+          "caller": "HandleMetadataItems",
+          "callee": "requestcontext.GetActor",
+          "lineNumber": 340
+        },
+        {
+          "caller": "HandleMetadataItems",
+          "callee": "r.Context",
+          "lineNumber": 340
+        },
+        {
+          "caller": "HandleMetadataItems",
+          "callee": "http.Error",
+          "lineNumber": 342
+        },
+        {
+          "caller": "HandleMetadataItems",
+          "callee": "h.handleGetMetadataItems",
+          "lineNumber": 348
+        },
+        {
+          "caller": "HandleMetadataItems",
+          "callee": "h.handleCreateMetadataItem",
+          "lineNumber": 350
+        },
+        {
+          "caller": "HandleMetadataItems",
+          "callee": "h.handleUpdateMetadataItem",
+          "lineNumber": 352
+        },
+        {
+          "caller": "HandleMetadataItems",
+          "callee": "http.Error",
+          "lineNumber": 354
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 360
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "r.URL.Query",
+          "lineNumber": 360
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "http.Error",
+          "lineNumber": 362
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "http.Error",
+          "lineNumber": 366
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 370
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "r.URL.Query",
+          "lineNumber": 370
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 371
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "r.URL.Query",
+          "lineNumber": 371
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "http.Error",
+          "lineNumber": 373
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "uuid.Validate",
+          "lineNumber": 377
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "http.Error",
+          "lineNumber": 378
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "h.usecase.GetMetadataItemByID",
+          "lineNumber": 381
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "r.Context",
+          "lineNumber": 381
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "h.mapDomainError",
+          "lineNumber": 383
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "writeJSON",
+          "lineNumber": 386
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "uuid.Validate",
+          "lineNumber": 394
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "http.Error",
+          "lineNumber": 395
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "h.usecase.GetMetadataItemsByFolder",
+          "lineNumber": 398
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "r.Context",
+          "lineNumber": 398
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "h.mapDomainError",
+          "lineNumber": 400
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "writeJSON",
+          "lineNumber": 406
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "len",
+          "lineNumber": 408
+        },
+        {
+          "caller": "handleGetMetadataItems",
+          "callee": "http.Error",
+          "lineNumber": 414
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 419
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "r.URL.Query",
+          "lineNumber": 419
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "http.Error",
+          "lineNumber": 421
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "http.Error",
+          "lineNumber": 425
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "decodeJSONBody",
+          "lineNumber": 430
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "http.Error",
+          "lineNumber": 431
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "uuid.Validate",
+          "lineNumber": 434
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "http.Error",
+          "lineNumber": 435
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "h.usecase.CreateMetadataItem",
+          "lineNumber": 439
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "r.Context",
+          "lineNumber": 439
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "h.mapDomainError",
+          "lineNumber": 441
+        },
+        {
+          "caller": "handleCreateMetadataItem",
+          "callee": "writeJSON",
+          "lineNumber": 445
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 453
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "r.URL.Query",
+          "lineNumber": 453
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 454
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "r.URL.Query",
+          "lineNumber": 454
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "http.Error",
+          "lineNumber": 456
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "uuid.Validate",
+          "lineNumber": 459
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "http.Error",
+          "lineNumber": 460
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "http.Error",
+          "lineNumber": 464
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "decodeJSONBody",
+          "lineNumber": 469
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "http.Error",
+          "lineNumber": 470
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "pq.StringArray",
+          "lineNumber": 478
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "h.usecase.UpdateMetadataItem",
+          "lineNumber": 511
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "r.Context",
+          "lineNumber": 511
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "h.mapDomainError",
+          "lineNumber": 513
+        },
+        {
+          "caller": "handleUpdateMetadataItem",
+          "callee": "writeJSON",
+          "lineNumber": 517
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "requestcontext.GetActor",
+          "lineNumber": 528
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "r.Context",
+          "lineNumber": 528
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "http.Error",
+          "lineNumber": 530
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "http.Error",
+          "lineNumber": 535
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 539
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "r.URL.Query",
+          "lineNumber": 539
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "http.Error",
+          "lineNumber": 541
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "http.Error",
+          "lineNumber": 545
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "r.URL.Query().Get",
+          "lineNumber": 549
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "r.URL.Query",
+          "lineNumber": 549
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "http.Error",
+          "lineNumber": 551
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "uuid.Validate",
+          "lineNumber": 554
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "http.Error",
+          "lineNumber": 555
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "h.usecase.GetFolderByID",
+          "lineNumber": 559
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "r.Context",
+          "lineNumber": 559
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "errors.Is",
+          "lineNumber": 561
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "errors.Is",
+          "lineNumber": 561
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "http.Error",
+          "lineNumber": 562
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "http.Error",
+          "lineNumber": 565
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "w.Header().Set",
+          "lineNumber": 569
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "w.Header",
+          "lineNumber": 569
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "json.NewEncoder(w).Encode",
+          "lineNumber": 570
+        },
+        {
+          "caller": "HandleFolderFacts",
+          "callee": "json.NewEncoder",
+          "lineNumber": 570
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "w.Header().Set",
+          "lineNumber": 579
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "w.Header",
+          "lineNumber": 579
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "w.WriteHeader",
+          "lineNumber": 580
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "json.NewEncoder(w).Encode",
+          "lineNumber": 581
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "json.NewEncoder",
+          "lineNumber": 581
+        },
+        {
+          "caller": "writeJSON",
+          "callee": "http.Error",
+          "lineNumber": 582
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 9,
+        "functionCount": 17,
+        "classCount": 6
+      }
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 264,
+      "nonEmptyLines": 220,
+      "functions": [
+        {
+          "name": "TestHandleCreateFolder_Success",
+          "startLine": 17,
+          "endLine": 42,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleUpdateFolder_Success",
+          "startLine": 44,
+          "endLine": 70,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleCreateFolder_OrgMismatch",
+          "startLine": 72,
+          "endLine": 92,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleCreateFolder_InvalidBody",
+          "startLine": 94,
+          "endLine": 113,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "startLine": 115,
+          "endLine": 138,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleUpdateFolder_DescriptionPresence",
+          "startLine": 140,
+          "endLine": 198,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleUpdateFolder_InvalidUUID",
+          "startLine": 200,
+          "endLine": 223,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleCreateFolder_MapsDomainErrors",
+          "startLine": 225,
+          "endLine": 260,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "stringPointer",
+          "startLine": 262,
+          "endLine": 264,
+          "params": [
+            "value"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "TestHandleCreateFolder_Success",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleUpdateFolder_Success",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleCreateFolder_OrgMismatch",
+          "line": 72,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleCreateFolder_InvalidBody",
+          "line": 94,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "line": 115,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleUpdateFolder_DescriptionPresence",
+          "line": 140,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleUpdateFolder_InvalidUUID",
+          "line": 200,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleCreateFolder_MapsDomainErrors",
+          "line": 225,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "http.NewServeMux",
+          "lineNumber": 18
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 20
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "uuid.NewString",
+          "lineNumber": 22
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 25
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "bytes.NewBufferString",
+          "lineNumber": 25
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "req.Header.Set",
+          "lineNumber": 26
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "req.Header.Set",
+          "lineNumber": 27
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "uuid.NewString",
+          "lineNumber": 27
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "req.Header.Set",
+          "lineNumber": 28
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 30
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 31
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 34
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "json.NewDecoder(rr.Body).Decode",
+          "lineNumber": 38
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "json.NewDecoder",
+          "lineNumber": 38
+        },
+        {
+          "caller": "TestHandleCreateFolder_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 40
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "http.NewServeMux",
+          "lineNumber": 45
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 47
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "uuid.NewString",
+          "lineNumber": 49
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "uuid.NewString",
+          "lineNumber": 50
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 53
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "bytes.NewBufferString",
+          "lineNumber": 53
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "req.Header.Set",
+          "lineNumber": 54
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "req.Header.Set",
+          "lineNumber": 55
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "uuid.NewString",
+          "lineNumber": 55
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "req.Header.Set",
+          "lineNumber": 56
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 58
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 59
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 62
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "json.NewDecoder(rr.Body).Decode",
+          "lineNumber": 66
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "json.NewDecoder",
+          "lineNumber": 66
+        },
+        {
+          "caller": "TestHandleUpdateFolder_Success",
+          "callee": "t.Errorf",
+          "lineNumber": 68
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "http.NewServeMux",
+          "lineNumber": 73
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 75
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "uuid.NewString",
+          "lineNumber": 77
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "uuid.NewString",
+          "lineNumber": 78
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 81
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "bytes.NewBufferString",
+          "lineNumber": 81
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "req.Header.Set",
+          "lineNumber": 82
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "req.Header.Set",
+          "lineNumber": 83
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "uuid.NewString",
+          "lineNumber": 83
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "req.Header.Set",
+          "lineNumber": 84
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 86
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 87
+        },
+        {
+          "caller": "TestHandleCreateFolder_OrgMismatch",
+          "callee": "t.Errorf",
+          "lineNumber": 90
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "http.NewServeMux",
+          "lineNumber": 95
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 97
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "uuid.NewString",
+          "lineNumber": 99
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 102
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "bytes.NewBufferString",
+          "lineNumber": 102
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "req.Header.Set",
+          "lineNumber": 103
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "req.Header.Set",
+          "lineNumber": 104
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "uuid.NewString",
+          "lineNumber": 104
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "req.Header.Set",
+          "lineNumber": 105
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 107
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 108
+        },
+        {
+          "caller": "TestHandleCreateFolder_InvalidBody",
+          "callee": "t.Errorf",
+          "lineNumber": 111
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "http.NewServeMux",
+          "lineNumber": 116
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 118
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "uuid.NewString",
+          "lineNumber": 120
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 121
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "bytes.NewBufferString",
+          "lineNumber": 124
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "req.Header.Set",
+          "lineNumber": 126
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "uuid.NewString",
+          "lineNumber": 126
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "req.Header.Set",
+          "lineNumber": 127
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 129
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 130
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "t.Fatalf",
+          "lineNumber": 133
+        },
+        {
+          "caller": "TestHandleCreateFolder_RejectsTrailingJSON",
+          "callee": "t.Fatal",
+          "lineNumber": 136
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "stringPointer",
+          "lineNumber": 161
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "t.Run",
+          "lineNumber": 166
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "http.NewServeMux",
+          "lineNumber": 167
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 169
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "uuid.NewString",
+          "lineNumber": 171
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 172
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "uuid.NewString",
+          "lineNumber": 174
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "bytes.NewBufferString",
+          "lineNumber": 175
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "req.Header.Set",
+          "lineNumber": 177
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "uuid.NewString",
+          "lineNumber": 177
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "req.Header.Set",
+          "lineNumber": 178
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 180
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 181
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "t.Fatalf",
+          "lineNumber": 184
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "t.Fatalf",
+          "lineNumber": 187
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "t.Fatalf",
+          "lineNumber": 191
+        },
+        {
+          "caller": "TestHandleUpdateFolder_DescriptionPresence",
+          "callee": "t.Fatalf",
+          "lineNumber": 194
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "http.NewServeMux",
+          "lineNumber": 201
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 203
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "uuid.NewString",
+          "lineNumber": 205
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 206
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "bytes.NewBufferString",
+          "lineNumber": 209
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "req.Header.Set",
+          "lineNumber": 211
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "uuid.NewString",
+          "lineNumber": 211
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "req.Header.Set",
+          "lineNumber": 212
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 214
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 215
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "t.Fatalf",
+          "lineNumber": 218
+        },
+        {
+          "caller": "TestHandleUpdateFolder_InvalidUUID",
+          "callee": "t.Fatal",
+          "lineNumber": 221
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "errors.New",
+          "lineNumber": 234
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "t.Run",
+          "lineNumber": 238
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "http.NewServeMux",
+          "lineNumber": 239
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 241
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "uuid.NewString",
+          "lineNumber": 243
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 244
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "bytes.NewBufferString",
+          "lineNumber": 247
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "req.Header.Set",
+          "lineNumber": 249
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "uuid.NewString",
+          "lineNumber": 249
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "req.Header.Set",
+          "lineNumber": 250
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 252
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 253
+        },
+        {
+          "caller": "TestHandleCreateFolder_MapsDomainErrors",
+          "callee": "t.Fatalf",
+          "lineNumber": 256
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 8,
+        "functionCount": 9,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 178,
+      "nonEmptyLines": 153,
+      "functions": [
+        {
+          "name": "metadataRequest",
+          "startLine": 17,
+          "endLine": 25,
+          "params": [
+            "method",
+            "target",
+            "orgID",
+            "body"
+          ]
+        },
+        {
+          "name": "TestHandleMetadata_List",
+          "startLine": 28,
+          "endLine": 54,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleMetadata_GetRejectsAmbiguousSelector",
           "startLine": 57,
-          "endLine": 57
+          "endLine": 73,
+          "params": [
+            "t"
+          ]
         },
         {
-          "name": "idx_roles_org",
-          "kind": "index",
-          "fields": [],
-          "startLine": 75,
-          "endLine": 75
+          "name": "TestHandleMetadata_DetailMapsNotFound",
+          "startLine": 76,
+          "endLine": 89,
+          "params": [
+            "t"
+          ]
         },
         {
-          "name": "idx_user_roles_org_user",
-          "kind": "index",
-          "fields": [],
-          "startLine": 88,
-          "endLine": 88
+          "name": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "startLine": 92,
+          "endLine": 108,
+          "params": [
+            "t"
+          ]
         },
         {
-          "name": "idx_role_perms_role",
-          "kind": "index",
-          "fields": [],
+          "name": "TestHandleMetadata_Create",
+          "startLine": 111,
+          "endLine": 131,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "startLine": 134,
+          "endLine": 158,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "startLine": 161,
+          "endLine": 178,
+          "params": [
+            "t"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "TestHandleMetadata_List",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "line": 57,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleMetadata_DetailMapsNotFound",
+          "line": 76,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "line": 92,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleMetadata_Create",
+          "line": 111,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "line": 134,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "line": 161,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "metadataRequest",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 18
+        },
+        {
+          "caller": "metadataRequest",
+          "callee": "bytes.NewBufferString",
+          "lineNumber": 18
+        },
+        {
+          "caller": "metadataRequest",
+          "callee": "request.Header.Set",
+          "lineNumber": 19
+        },
+        {
+          "caller": "metadataRequest",
+          "callee": "uuid.NewString",
+          "lineNumber": 19
+        },
+        {
+          "caller": "metadataRequest",
+          "callee": "request.Header.Set",
+          "lineNumber": 20
+        },
+        {
+          "caller": "metadataRequest",
+          "callee": "request.Header.Set",
+          "lineNumber": 22
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "http.NewServeMux",
+          "lineNumber": 29
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 31
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "uuid.NewString",
+          "lineNumber": 33
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "uuid.NewString",
+          "lineNumber": 34
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "metadataRequest",
+          "lineNumber": 35
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 36
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 37
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "t.Fatalf",
+          "lineNumber": 40
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "t.Fatalf",
+          "lineNumber": 43
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "json.NewDecoder(response.Body).Decode",
+          "lineNumber": 48
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "json.NewDecoder",
+          "lineNumber": 48
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "t.Fatalf",
+          "lineNumber": 49
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "len",
+          "lineNumber": 51
+        },
+        {
+          "caller": "TestHandleMetadata_List",
+          "callee": "t.Fatalf",
+          "lineNumber": 52
+        },
+        {
+          "caller": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "callee": "http.NewServeMux",
+          "lineNumber": 58
+        },
+        {
+          "caller": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 60
+        },
+        {
+          "caller": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "callee": "uuid.NewString",
+          "lineNumber": 62
+        },
+        {
+          "caller": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "callee": "uuid.NewString",
+          "lineNumber": 63
+        },
+        {
+          "caller": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "callee": "uuid.NewString",
+          "lineNumber": 63
+        },
+        {
+          "caller": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 64
+        },
+        {
+          "caller": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 65
+        },
+        {
+          "caller": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "callee": "metadataRequest",
+          "lineNumber": 65
+        },
+        {
+          "caller": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "callee": "t.Fatalf",
+          "lineNumber": 68
+        },
+        {
+          "caller": "TestHandleMetadata_GetRejectsAmbiguousSelector",
+          "callee": "t.Fatal",
+          "lineNumber": 71
+        },
+        {
+          "caller": "TestHandleMetadata_DetailMapsNotFound",
+          "callee": "http.NewServeMux",
+          "lineNumber": 77
+        },
+        {
+          "caller": "TestHandleMetadata_DetailMapsNotFound",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 79
+        },
+        {
+          "caller": "TestHandleMetadata_DetailMapsNotFound",
+          "callee": "uuid.NewString",
+          "lineNumber": 81
+        },
+        {
+          "caller": "TestHandleMetadata_DetailMapsNotFound",
+          "callee": "uuid.NewString",
+          "lineNumber": 82
+        },
+        {
+          "caller": "TestHandleMetadata_DetailMapsNotFound",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 83
+        },
+        {
+          "caller": "TestHandleMetadata_DetailMapsNotFound",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 84
+        },
+        {
+          "caller": "TestHandleMetadata_DetailMapsNotFound",
+          "callee": "metadataRequest",
+          "lineNumber": 84
+        },
+        {
+          "caller": "TestHandleMetadata_DetailMapsNotFound",
+          "callee": "t.Fatalf",
+          "lineNumber": 87
+        },
+        {
+          "caller": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "callee": "http.NewServeMux",
+          "lineNumber": 93
+        },
+        {
+          "caller": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 95
+        },
+        {
+          "caller": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "callee": "uuid.NewString",
+          "lineNumber": 97
+        },
+        {
+          "caller": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 99
+        },
+        {
+          "caller": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 100
+        },
+        {
+          "caller": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "callee": "metadataRequest",
+          "lineNumber": 100
+        },
+        {
+          "caller": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "callee": "t.Fatalf",
+          "lineNumber": 103
+        },
+        {
+          "caller": "TestHandleMetadata_CreateRejectsMalformedFolderID",
+          "callee": "t.Fatal",
+          "lineNumber": 106
+        },
+        {
+          "caller": "TestHandleMetadata_Create",
+          "callee": "http.NewServeMux",
+          "lineNumber": 112
+        },
+        {
+          "caller": "TestHandleMetadata_Create",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 114
+        },
+        {
+          "caller": "TestHandleMetadata_Create",
+          "callee": "uuid.NewString",
+          "lineNumber": 116
+        },
+        {
+          "caller": "TestHandleMetadata_Create",
+          "callee": "uuid.NewString",
+          "lineNumber": 117
+        },
+        {
+          "caller": "TestHandleMetadata_Create",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 119
+        },
+        {
+          "caller": "TestHandleMetadata_Create",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 120
+        },
+        {
+          "caller": "TestHandleMetadata_Create",
+          "callee": "metadataRequest",
+          "lineNumber": 120
+        },
+        {
+          "caller": "TestHandleMetadata_Create",
+          "callee": "t.Fatalf",
+          "lineNumber": 123
+        },
+        {
+          "caller": "TestHandleMetadata_Create",
+          "callee": "t.Fatalf",
+          "lineNumber": 126
+        },
+        {
+          "caller": "TestHandleMetadata_Create",
+          "callee": "t.Fatalf",
+          "lineNumber": 129
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "http.NewServeMux",
+          "lineNumber": 135
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 137
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "uuid.NewString",
+          "lineNumber": 139
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "uuid.NewString",
+          "lineNumber": 140
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 142
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 143
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "metadataRequest",
+          "lineNumber": 143
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "t.Fatalf",
+          "lineNumber": 146
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "t.Fatalf",
+          "lineNumber": 150
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "len",
+          "lineNumber": 152
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "t.Fatalf",
+          "lineNumber": 153
+        },
+        {
+          "caller": "TestHandleMetadata_UpdatePreservesExplicitNulls",
+          "callee": "t.Fatalf",
+          "lineNumber": 156
+        },
+        {
+          "caller": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "callee": "http.NewServeMux",
+          "lineNumber": 162
+        },
+        {
+          "caller": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 164
+        },
+        {
+          "caller": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "callee": "uuid.NewString",
+          "lineNumber": 166
+        },
+        {
+          "caller": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "callee": "uuid.NewString",
+          "lineNumber": 167
+        },
+        {
+          "caller": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "callee": "uuid.NewString",
+          "lineNumber": 168
+        },
+        {
+          "caller": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 169
+        },
+        {
+          "caller": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 170
+        },
+        {
+          "caller": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "callee": "metadataRequest",
+          "lineNumber": 170
+        },
+        {
+          "caller": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "callee": "t.Fatalf",
+          "lineNumber": 173
+        },
+        {
+          "caller": "TestHandleMetadata_RejectsOrganizationMismatch",
+          "callee": "t.Fatal",
+          "lineNumber": 176
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 7,
+        "functionCount": 8,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/asset_handler_test.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 510,
+      "nonEmptyLines": 431,
+      "functions": [
+        {
+          "name": "GetFolderTree",
+          "startLine": 42,
+          "endLine": 48,
+          "params": [
+            "_",
+            "orgID",
+            "rootPath"
+          ]
+        },
+        {
+          "name": "GetRootFolders",
+          "startLine": 50,
+          "endLine": 58,
+          "params": [
+            "_",
+            "orgID"
+          ]
+        },
+        {
+          "name": "GetFolderByID",
+          "startLine": 60,
+          "endLine": 71,
+          "params": [
+            "_",
+            "orgID",
+            "folderID"
+          ]
+        },
+        {
+          "name": "GetFolderChildren",
+          "startLine": 73,
+          "endLine": 81,
+          "params": [
+            "_",
+            "orgID",
+            "parentPath"
+          ]
+        },
+        {
+          "name": "CreateFolder",
+          "startLine": 83,
+          "endLine": 89,
+          "params": [
+            "_",
+            "orgID",
+            "userID",
+            "input"
+          ]
+        },
+        {
+          "name": "UpdateFolder",
+          "startLine": 91,
+          "endLine": 97,
+          "params": [
+            "_",
+            "orgID",
+            "userID",
+            "folderID",
+            "input"
+          ]
+        },
+        {
+          "name": "EnsureRefs",
+          "startLine": 99,
+          "endLine": 101,
+          "params": [
+            "_",
+            "userID",
+            "orgID"
+          ]
+        },
+        {
+          "name": "GetMetadataItemsByFolder",
           "startLine": 104,
-          "endLine": 104
+          "endLine": 109,
+          "params": [
+            "_",
+            "orgID",
+            "folderID"
+          ]
         },
         {
-          "name": "uniq_object_perm_user",
-          "kind": "index",
-          "fields": [],
-          "startLine": 124,
-          "endLine": 124
+          "name": "GetMetadataItemByID",
+          "startLine": 112,
+          "endLine": 117,
+          "params": [
+            "_",
+            "orgID",
+            "id"
+          ]
         },
         {
-          "name": "uniq_object_perm_role",
-          "kind": "index",
-          "fields": [],
-          "startLine": 128,
-          "endLine": 128
+          "name": "CreateMetadataItem",
+          "startLine": 120,
+          "endLine": 126,
+          "params": [
+            "_",
+            "orgID",
+            "userID",
+            "input"
+          ]
         },
         {
-          "name": "idx_object_perm_object",
-          "kind": "index",
-          "fields": [],
-          "startLine": 132,
-          "endLine": 132
+          "name": "UpdateMetadataItem",
+          "startLine": 129,
+          "endLine": 135,
+          "params": [
+            "_",
+            "orgID",
+            "userID",
+            "id",
+            "input"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "startLine": 141,
+          "endLine": 167,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "startLine": 169,
+          "endLine": 194,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListMissingOrgId",
+          "startLine": 196,
+          "endLine": 218,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "startLine": 220,
+          "endLine": 245,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "startLine": 247,
+          "endLine": 275,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListChildrenOnly",
+          "startLine": 277,
+          "endLine": 306,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "startLine": 308,
+          "endLine": 330,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFolderDetailValidRequest",
+          "startLine": 336,
+          "endLine": 369,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFolderDetailNotFound",
+          "startLine": 371,
+          "endLine": 396,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFolderDetailInvalidUUID",
+          "startLine": 398,
+          "endLine": 423,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFolderDetailOrgMismatch",
+          "startLine": 425,
+          "endLine": 452,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "startLine": 454,
+          "endLine": 486,
+          "params": [
+            "t"
+          ]
+        },
+        {
+          "name": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+          "startLine": 488,
+          "endLine": 510,
+          "params": [
+            "t"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "fakeAssetUsecase",
+          "startLine": 16,
+          "endLine": 40,
+          "methods": [
+            "GetFolderTree",
+            "GetRootFolders",
+            "GetFolderByID",
+            "GetFolderChildren",
+            "CreateFolder",
+            "UpdateFolder",
+            "EnsureRefs",
+            "GetMetadataItemsByFolder",
+            "GetMetadataItemByID",
+            "CreateMetadataItem",
+            "UpdateMetadataItem"
+          ],
+          "properties": [
+            "called",
+            "methodCalled",
+            "orgID",
+            "folderByID",
+            "folderByErr",
+            "childrenResp",
+            "childrenErr",
+            "rootResp",
+            "rootErr",
+            "treeRootPath",
+            "createInput",
+            "createErr",
+            "updateInput",
+            "updateErr",
+            "metadataItemsResp",
+            "metadataItemsErr",
+            "metadataItemResp",
+            "metadataItemErr",
+            "metadataCreateInput",
+            "metadataCreateErr",
+            "metadataUpdateInput",
+            "metadataUpdateErr"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "GetFolderTree",
+          "line": 42,
+          "isDefault": false
+        },
+        {
+          "name": "GetRootFolders",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "GetFolderByID",
+          "line": 60,
+          "isDefault": false
+        },
+        {
+          "name": "GetFolderChildren",
+          "line": 73,
+          "isDefault": false
+        },
+        {
+          "name": "CreateFolder",
+          "line": 83,
+          "isDefault": false
+        },
+        {
+          "name": "UpdateFolder",
+          "line": 91,
+          "isDefault": false
+        },
+        {
+          "name": "EnsureRefs",
+          "line": 99,
+          "isDefault": false
+        },
+        {
+          "name": "GetMetadataItemsByFolder",
+          "line": 104,
+          "isDefault": false
+        },
+        {
+          "name": "GetMetadataItemByID",
+          "line": 112,
+          "isDefault": false
+        },
+        {
+          "name": "CreateMetadataItem",
+          "line": 120,
+          "isDefault": false
+        },
+        {
+          "name": "UpdateMetadataItem",
+          "line": 129,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "line": 141,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "line": 169,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListMissingOrgId",
+          "line": 196,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "line": 220,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "line": 247,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListChildrenOnly",
+          "line": 277,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "line": 308,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFolderDetailValidRequest",
+          "line": 336,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFolderDetailNotFound",
+          "line": 371,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFolderDetailInvalidUUID",
+          "line": 398,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFolderDetailOrgMismatch",
+          "line": 425,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "line": 454,
+          "isDefault": false
+        },
+        {
+          "name": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+          "line": 488,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "http.NewServeMux",
+          "lineNumber": 147
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 148
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 150
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "req.Header.Set",
+          "lineNumber": 155
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "req.Header.Set",
+          "lineNumber": 156
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 158
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 159
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "t.Fatalf",
+          "lineNumber": 162
+        },
+        {
+          "caller": "TestHandleFoldersListRejectsOrganizationContextMismatch",
+          "callee": "t.Fatal",
+          "lineNumber": 165
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "http.NewServeMux",
+          "lineNumber": 174
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 175
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 177
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "req.Header.Set",
+          "lineNumber": 182
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "req.Header.Set",
+          "lineNumber": 183
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 185
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 186
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "t.Fatalf",
+          "lineNumber": 189
+        },
+        {
+          "caller": "TestHandleFoldersListUsesMatchingOrganizationContext",
+          "callee": "t.Fatalf",
+          "lineNumber": 192
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "http.NewServeMux",
+          "lineNumber": 201
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 202
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 204
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "req.Header.Set",
+          "lineNumber": 209
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "req.Header.Set",
+          "lineNumber": 210
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 212
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 213
+        },
+        {
+          "caller": "TestHandleFoldersListMissingOrgId",
+          "callee": "t.Fatalf",
+          "lineNumber": 216
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "http.NewServeMux",
+          "lineNumber": 225
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 226
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 228
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "req.Header.Set",
+          "lineNumber": 233
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "req.Header.Set",
+          "lineNumber": 234
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 236
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 237
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "t.Fatalf",
+          "lineNumber": 240
+        },
+        {
+          "caller": "TestHandleFoldersListWithoutRootPathCallsRootLevel",
+          "callee": "t.Fatal",
+          "lineNumber": 243
+        },
+        {
+          "caller": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "callee": "http.NewServeMux",
+          "lineNumber": 252
+        },
+        {
+          "caller": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 253
+        },
+        {
+          "caller": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 255
+        },
+        {
+          "caller": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "callee": "req.Header.Set",
+          "lineNumber": 260
+        },
+        {
+          "caller": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "callee": "req.Header.Set",
+          "lineNumber": 261
+        },
+        {
+          "caller": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 263
+        },
+        {
+          "caller": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 264
+        },
+        {
+          "caller": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "callee": "t.Fatalf",
+          "lineNumber": 267
+        },
+        {
+          "caller": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "callee": "t.Fatal",
+          "lineNumber": 270
+        },
+        {
+          "caller": "TestHandleFoldersListFullTreeUsesSingleTreeQuery",
+          "callee": "t.Fatalf",
+          "lineNumber": 273
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "http.NewServeMux",
+          "lineNumber": 286
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 287
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 289
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "req.Header.Set",
+          "lineNumber": 294
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "req.Header.Set",
+          "lineNumber": 295
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 297
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 298
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "t.Fatalf",
+          "lineNumber": 301
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenOnly",
+          "callee": "t.Fatal",
+          "lineNumber": 304
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "http.NewServeMux",
+          "lineNumber": 313
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 314
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 316
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "req.Header.Set",
+          "lineNumber": 321
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "req.Header.Set",
+          "lineNumber": 322
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 324
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 325
+        },
+        {
+          "caller": "TestHandleFoldersListChildrenMissingRootPathReturns400",
+          "callee": "t.Fatalf",
+          "lineNumber": 328
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "http.NewServeMux",
+          "lineNumber": 349
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 350
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 352
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "req.Header.Set",
+          "lineNumber": 357
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "req.Header.Set",
+          "lineNumber": 358
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 360
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 361
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "t.Fatalf",
+          "lineNumber": 364
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "response.Body.String",
+          "lineNumber": 364
+        },
+        {
+          "caller": "TestHandleFolderDetailValidRequest",
+          "callee": "t.Fatal",
+          "lineNumber": 367
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "http.NewServeMux",
+          "lineNumber": 379
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 380
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 382
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "req.Header.Set",
+          "lineNumber": 387
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "req.Header.Set",
+          "lineNumber": 388
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 390
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 391
+        },
+        {
+          "caller": "TestHandleFolderDetailNotFound",
+          "callee": "t.Fatalf",
+          "lineNumber": 394
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "http.NewServeMux",
+          "lineNumber": 403
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 404
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 406
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "req.Header.Set",
+          "lineNumber": 411
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "req.Header.Set",
+          "lineNumber": 412
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 414
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 415
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "t.Fatalf",
+          "lineNumber": 418
+        },
+        {
+          "caller": "TestHandleFolderDetailInvalidUUID",
+          "callee": "t.Fatal",
+          "lineNumber": 421
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "http.NewServeMux",
+          "lineNumber": 432
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 433
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 435
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "req.Header.Set",
+          "lineNumber": 440
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "req.Header.Set",
+          "lineNumber": 441
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 443
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 444
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "t.Fatalf",
+          "lineNumber": 447
+        },
+        {
+          "caller": "TestHandleFolderDetailOrgMismatch",
+          "callee": "t.Fatal",
+          "lineNumber": 450
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "http.NewServeMux",
+          "lineNumber": 462
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 463
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 464
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "req.Header.Set",
+          "lineNumber": 466
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "req.Header.Set",
+          "lineNumber": 467
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 468
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 469
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "t.Fatalf",
+          "lineNumber": 472
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "response.Body.String",
+          "lineNumber": 472
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "json.Unmarshal",
+          "lineNumber": 480
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "response.Body.Bytes",
+          "lineNumber": 480
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "t.Fatalf",
+          "lineNumber": 481
+        },
+        {
+          "caller": "TestHandleFolderFactsReturnsScopedActiveFact",
+          "callee": "t.Fatalf",
+          "lineNumber": 484
+        },
+        {
+          "caller": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+          "callee": "http.NewServeMux",
+          "lineNumber": 495
+        },
+        {
+          "caller": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+          "callee": "assetHTTP.NewAssetHandler",
+          "lineNumber": 496
+        },
+        {
+          "caller": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 497
+        },
+        {
+          "caller": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+          "callee": "req.Header.Set",
+          "lineNumber": 499
+        },
+        {
+          "caller": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+          "callee": "req.Header.Set",
+          "lineNumber": 500
+        },
+        {
+          "caller": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 501
+        },
+        {
+          "caller": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+          "callee": "mux.ServeHTTP",
+          "lineNumber": 502
+        },
+        {
+          "caller": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+          "callee": "t.Fatalf",
+          "lineNumber": 505
+        },
+        {
+          "caller": "TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase",
+          "callee": "t.Fatal",
+          "lineNumber": 508
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 24,
+        "functionCount": 24,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/middleware.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 31,
+      "functions": [
+        {
+          "name": "RequireActor",
+          "startLine": 11,
+          "endLine": 39,
+          "params": [
+            "next"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "RequireActor",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "RequireActor",
+          "callee": "r.Header.Get",
+          "lineNumber": 13
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "r.Header.Get",
+          "lineNumber": 14
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "http.Error",
+          "lineNumber": 17
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "uuid.Validate",
+          "lineNumber": 21
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "http.Error",
+          "lineNumber": 22
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "uuid.Validate",
+          "lineNumber": 26
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "http.Error",
+          "lineNumber": 27
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "requestcontext.WithActor",
+          "lineNumber": 36
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "r.Context",
+          "lineNumber": 36
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "next",
+          "lineNumber": 37
+        },
+        {
+          "caller": "RequireActor",
+          "callee": "r.WithContext",
+          "lineNumber": 37
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/asset-core/internal/delivery/http/middleware_test.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 106,
+      "nonEmptyLines": 96,
+      "functions": [
+        {
+          "name": "TestRequireActor",
+          "startLine": 13,
+          "endLine": 106,
+          "params": [
+            "t"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "TestRequireActor",
+          "line": 13,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 23
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 24
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 31
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 37
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 45
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "uuid.NewString",
+          "lineNumber": 51
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Run",
+          "lineNumber": 59
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "http.HandlerFunc",
+          "lineNumber": 63
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "requestcontext.GetActor",
+          "lineNumber": 64
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "r.Context",
+          "lineNumber": 64
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "w.WriteHeader",
+          "lineNumber": 69
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "assetHttp.RequireActor",
+          "lineNumber": 72
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "httptest.NewRequest",
+          "lineNumber": 74
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "req.Header.Set",
+          "lineNumber": 76
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "req.Header.Set",
+          "lineNumber": 79
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "httptest.NewRecorder",
+          "lineNumber": 82
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "handler.ServeHTTP",
+          "lineNumber": 83
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Errorf",
+          "lineNumber": 86
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Errorf",
+          "lineNumber": 91
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Errorf",
+          "lineNumber": 94
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Errorf",
+          "lineNumber": 97
+        },
+        {
+          "caller": "TestRequireActor",
+          "callee": "t.Errorf",
+          "lineNumber": 101
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "services/asset-core/internal/requestcontext/context.go",
+      "language": "go",
+      "fileCategory": "code",
+      "totalLines": 29,
+      "nonEmptyLines": 23,
+      "functions": [
+        {
+          "name": "WithActor",
+          "startLine": 18,
+          "endLine": 20,
+          "params": [
+            "ctx",
+            "actor"
+          ]
+        },
+        {
+          "name": "GetActor",
+          "startLine": 23,
+          "endLine": 29,
+          "params": [
+            "ctx"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "Actor",
+          "startLine": 12,
+          "endLine": 15,
+          "methods": [],
+          "properties": [
+            "UserID",
+            "OrgID"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "Actor",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "WithActor",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "GetActor",
+          "line": 23,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "WithActor",
+          "callee": "context.WithValue",
+          "lineNumber": 19
+        },
+        {
+          "caller": "GetActor",
+          "callee": "ctx.Value",
+          "lineNumber": 24
+        },
+        {
+          "caller": "GetActor",
+          "callee": "errors.New",
+          "lineNumber": 26
         }
       ],
       "metrics": {
         "importCount": 0,
-        "exportCount": 0,
-        "functionCount": 0,
-        "classCount": 0,
-        "definitionCount": 15
-      }
-    },
-    {
-      "path": "infra/db/access/migrations/V2__seed_access_schema.sql",
-      "language": "sql",
-      "fileCategory": "data",
-      "totalLines": 56,
-      "nonEmptyLines": 50,
-      "metrics": {
-        "importCount": 0,
-        "exportCount": 0,
-        "functionCount": 0,
-        "classCount": 0,
-        "definitionCount": 0
+        "exportCount": 3,
+        "functionCount": 2,
+        "classCount": 1
       }
     }
   ]

@@ -1,15 +1,58 @@
 {
   "scriptCompleted": true,
-  "filesAnalyzed": 10,
+  "filesAnalyzed": 7,
   "filesSkipped": [],
   "results": [
     {
-      "path": ".understand-anything/.understandignore",
-      "language": "unknown",
-      "fileCategory": "code",
-      "totalLines": 25,
-      "nonEmptyLines": 22,
-      "metrics": {}
+      "path": ".understand-anything/baseline-context.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 30,
+      "nonEmptyLines": 25,
+      "sections": [
+        {
+          "heading": "Seta IM Intern - Baseline Context",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Project Statistics",
+          "level": 2,
+          "line": 4
+        },
+        {
+          "heading": "Architecture Grouping",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "Data Pipeline",
+          "level": 2,
+          "line": 15
+        },
+        {
+          "heading": "Schemas",
+          "level": 3,
+          "line": 16
+        },
+        {
+          "heading": "Models",
+          "level": 3,
+          "line": 22
+        },
+        {
+          "heading": "Deployment Topology",
+          "level": 2,
+          "line": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 7
+      }
     },
     {
       "path": ".understand-anything/config.json",
@@ -33,85 +76,41 @@
       }
     },
     {
-      "path": "infra/db/asset/seed/.gitkeep",
-      "language": "unknown",
-      "fileCategory": "code",
-      "totalLines": 1,
-      "nonEmptyLines": 0,
-      "metrics": {}
-    },
-    {
-      "path": "infra/docker-compose.yml",
-      "language": "yaml",
-      "fileCategory": "infra",
-      "totalLines": 88,
-      "nonEmptyLines": 82,
-      "sections": [
-        {
-          "heading": "name",
-          "level": 1,
-          "line": 1
-        },
-        {
-          "heading": "services",
-          "level": 1,
-          "line": 3
-        },
-        {
-          "heading": "volumes",
-          "level": 1,
-          "line": 86
-        }
-      ],
-      "metrics": {
-        "importCount": 0,
-        "exportCount": 0,
-        "functionCount": 0,
-        "classCount": 0,
-        "sectionCount": 3
-      }
-    },
-    {
-      "path": "services/access-core/package.json",
+      "path": ".understand-anything/diff-overlay.json",
       "language": "json",
       "fileCategory": "config",
-      "totalLines": 32,
-      "nonEmptyLines": 32,
+      "totalLines": 71,
+      "nonEmptyLines": 71,
       "sections": [
         {
-          "heading": "name",
+          "heading": "version",
           "level": 1,
           "line": 2
         },
         {
-          "heading": "version",
+          "heading": "baseBranch",
           "level": 1,
           "line": 3
         },
         {
-          "heading": "private",
+          "heading": "generatedAt",
           "level": 1,
           "line": 4
         },
         {
-          "heading": "scripts",
+          "heading": "changedFiles",
           "level": 1,
           "line": 5
         },
         {
-          "heading": "dependencies",
+          "heading": "changedNodeIds",
           "level": 1,
-          "line": 12
+          "line": 34
         },
         {
-          "heading": "devDependencies",
+          "heading": "affectedNodeIds",
           "level": 1,
-          "line": 21
-        },
-        {
-          "heading": "allowScripts",
-          "level": 1,
-          "line": 28
+          "line": 59
         }
       ],
       "metrics": {
@@ -119,46 +118,35 @@
         "exportCount": 0,
         "functionCount": 0,
         "classCount": 0,
-        "sectionCount": 7
+        "sectionCount": 6
       }
     },
     {
-      "path": "services/access-core/prisma.config.ts",
-      "language": "typescript",
-      "fileCategory": "code",
-      "totalLines": 14,
-      "nonEmptyLines": 13,
-      "metrics": {
-        "importCount": 0,
-        "exportCount": 0,
-        "functionCount": 0,
-        "classCount": 0
-      }
-    },
-    {
-      "path": "services/access-core/prisma/schema.prisma",
-      "language": "prisma",
-      "fileCategory": "data",
-      "totalLines": 150,
-      "nonEmptyLines": 129,
-      "metrics": {}
-    },
-    {
-      "path": "services/access-core/tsconfig.json",
+      "path": ".understand-anything/fingerprints.json",
       "language": "json",
       "fileCategory": "config",
-      "totalLines": 13,
-      "nonEmptyLines": 13,
+      "totalLines": 78,
+      "nonEmptyLines": 78,
       "sections": [
         {
-          "heading": "compilerOptions",
+          "heading": "version",
           "level": 1,
           "line": 2
         },
         {
-          "heading": "include",
+          "heading": "gitCommitHash",
           "level": 1,
-          "line": 12
+          "line": 3
+        },
+        {
+          "heading": "generatedAt",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "files",
+          "level": 1,
+          "line": 5
         }
       ],
       "metrics": {
@@ -166,24 +154,151 @@
         "exportCount": 0,
         "functionCount": 0,
         "classCount": 0,
-        "sectionCount": 2
+        "sectionCount": 4
       }
     },
     {
-      "path": "services/asset-core/go.mod",
-      "language": "mod",
+      "path": ".understand-anything/knowledge-graph.json",
+      "language": "json",
       "fileCategory": "config",
-      "totalLines": 22,
-      "nonEmptyLines": 19,
-      "metrics": {}
+      "totalLines": 4311,
+      "nonEmptyLines": 4311,
+      "sections": [
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "project",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "nodes",
+          "level": 1,
+          "line": 29
+        },
+        {
+          "heading": "edges",
+          "level": 1,
+          "line": 2460
+        },
+        {
+          "heading": "layers",
+          "level": 1,
+          "line": 4083
+        },
+        {
+          "heading": "tour",
+          "level": 1,
+          "line": 4197
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 6
+      }
     },
     {
-      "path": "services/asset-core/go.sum",
-      "language": "sum",
+      "path": ".understand-anything/meta.json",
+      "language": "json",
       "fileCategory": "config",
+      "totalLines": 6,
+      "nonEmptyLines": 6,
+      "sections": [
+        {
+          "heading": "lastAnalyzedAt",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "gitCommitHash",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "analyzedFiles",
+          "level": 1,
+          "line": 5
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 4
+      }
+    },
+    {
+      "path": ".understand-anything/understand-tour.md",
+      "language": "markdown",
+      "fileCategory": "docs",
       "totalLines": 41,
-      "nonEmptyLines": 41,
-      "metrics": {}
+      "nonEmptyLines": 32,
+      "sections": [
+        {
+          "heading": "Seta IM Intern - Understand Anything Tour",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "High Level Architecture",
+          "level": 2,
+          "line": 5
+        },
+        {
+          "heading": "Key Modules and Entry Points",
+          "level": 2,
+          "line": 13
+        },
+        {
+          "heading": "`services/asset-core/cmd/server/main.go`",
+          "level": 3,
+          "line": 15
+        },
+        {
+          "heading": "`services/access-core/src/index.ts`",
+          "level": 3,
+          "line": 19
+        },
+        {
+          "heading": "Data Pipeline & Topology",
+          "level": 2,
+          "line": 23
+        },
+        {
+          "heading": "Schema & Migrations",
+          "level": 3,
+          "line": 24
+        },
+        {
+          "heading": "Deployment Topology",
+          "level": 3,
+          "line": 31
+        },
+        {
+          "heading": "Complex Files (May need refactoring)",
+          "level": 2,
+          "line": 35
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 9
+      }
     }
   ]
 }

@@ -1,0 +1,147 @@
+{
+  "projectRoot": "c:/Users/admin/Downloads/Seta Im Intern/seta-im-intern",
+  "batchFiles": [
+    {
+      "path": ".understand-anything/tmp/batch-7-extract.json",
+      "language": "json",
+      "sizeLines": 77,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/changed-files.txt",
+      "language": "txt",
+      "sizeLines": 79,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".understand-anything/tmp/subagents-input.json",
+      "language": "json",
+      "sizeLines": 26,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-arch-input.json",
+      "language": "json",
+      "sizeLines": 2685,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-arch-prompt.txt",
+      "language": "txt",
+      "sizeLines": 2971,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-arch-results.json",
+      "language": "json",
+      "sizeLines": 403,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-batch-3-context.json",
+      "language": "json",
+      "sizeLines": 60,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-analyzer-input-1.json",
+      "language": "json",
+      "sizeLines": 58,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-analyzer-input-2.json",
+      "language": "json",
+      "sizeLines": 0,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-analyzer-input-3.json",
+      "language": "json",
+      "sizeLines": 40,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-analyzer-input-4.json",
+      "language": "json",
+      "sizeLines": 21,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-analyzer-input-5.json",
+      "language": "json",
+      "sizeLines": 21,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-analyzer-input-6.json",
+      "language": "json",
+      "sizeLines": 22,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-analyzer-input-7.json",
+      "language": "json",
+      "sizeLines": 64,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-extract-results-1.json",
+      "language": "json",
+      "sizeLines": 3224,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-extract-results-2.json",
+      "language": "json",
+      "sizeLines": 353,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-extract-results-3.json",
+      "language": "json",
+      "sizeLines": 200,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-extract-results-4.json",
+      "language": "json",
+      "sizeLines": 194,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-extract-results-5.json",
+      "language": "json",
+      "sizeLines": 155,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/tmp/ua-file-extract-results-6.json",
+      "language": "json",
+      "sizeLines": 126,
+      "fileCategory": "config"
+    }
+  ],
+  "batchImportData": {
+    ".understand-anything/tmp/batch-7-extract.json": [],
+    ".understand-anything/tmp/changed-files.txt": [],
+    ".understand-anything/tmp/subagents-input.json": [],
+    ".understand-anything/tmp/ua-arch-input.json": [],
+    ".understand-anything/tmp/ua-arch-prompt.txt": [],
+    ".understand-anything/tmp/ua-arch-results.json": [],
+    ".understand-anything/tmp/ua-batch-3-context.json": [],
+    ".understand-anything/tmp/ua-file-analyzer-input-1.json": [],
+    ".understand-anything/tmp/ua-file-analyzer-input-2.json": [],
+    ".understand-anything/tmp/ua-file-analyzer-input-3.json": [],
+    ".understand-anything/tmp/ua-file-analyzer-input-4.json": [],
+    ".understand-anything/tmp/ua-file-analyzer-input-5.json": [],
+    ".understand-anything/tmp/ua-file-analyzer-input-6.json": [],
+    ".understand-anything/tmp/ua-file-analyzer-input-7.json": [],
+    ".understand-anything/tmp/ua-file-extract-results-1.json": [],
+    ".understand-anything/tmp/ua-file-extract-results-2.json": [],
+    ".understand-anything/tmp/ua-file-extract-results-3.json": [],
+    ".understand-anything/tmp/ua-file-extract-results-4.json": [],
+    ".understand-anything/tmp/ua-file-extract-results-5.json": [],
+    ".understand-anything/tmp/ua-file-extract-results-6.json": []
+  }
+}

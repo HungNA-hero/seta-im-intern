@@ -6,6 +6,6 @@
   "typesRemapped": 0,
   "complexityRemapped": 0,
   "notes": [
-    "Removed 3 self-import edges in test files."
+    "Dropped edges had blank source/target, no recovery needed."
   ]
 }
