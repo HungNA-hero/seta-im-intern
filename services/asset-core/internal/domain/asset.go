@@ -13,6 +13,8 @@ import (
 var (
 	ErrFolderNotFound   = errors.New("folder not found")
 	ErrFolderConflict   = errors.New("folder conflict: sibling name or path already exists")
+	ErrFolderNotEmpty   = errors.New("folder is not empty")
+	ErrCycleDetected    = errors.New("cycle detected: cannot move folder into its own descendant")
 	ErrMetadataNotFound = errors.New("metadata not found")
 	ErrMetadataConflict = errors.New("metadata conflict: external identity already exists")
 	ErrInvalidInput     = errors.New("invalid input")
@@ -31,6 +33,11 @@ type UpdateFolderInput struct {
 	NameSet        bool
 	Description    *string
 	DescriptionSet bool
+}
+
+// MoveFolderInput holds the data required to move a folder.
+type MoveFolderInput struct {
+	DestinationParentID *string `json:"destination_parent_id"`
 }
 
 // OrganizationRef acts as a shadow reference to Access DB organizations.
@@ -151,6 +158,10 @@ type AssetRepository interface {
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
 	CreateFolder(ctx context.Context, orgID, userID string, input CreateFolderInput) (Folder, error)
 	UpdateFolder(ctx context.Context, orgID, userID, folderID string, input UpdateFolderInput) (Folder, error)
+	// MoveFolder updates the folder and its descendants' paths in a single transaction.
+	MoveFolder(ctx context.Context, orgID, userID, folderID string, input MoveFolderInput) (Folder, error)
+	// DeleteFolder soft-deletes an empty folder.
+	DeleteFolder(ctx context.Context, orgID, userID, folderID string) error
 	EnsureRefs(ctx context.Context, userID, orgID string) error
 
 	// GetMetadataItemsByFolder returns active metadata only when the containing folder is active and org-scoped.
@@ -171,6 +182,10 @@ type AssetUsecase interface {
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
 	CreateFolder(ctx context.Context, orgID, userID string, input CreateFolderInput) (Folder, error)
 	UpdateFolder(ctx context.Context, orgID, userID, folderID string, input UpdateFolderInput) (Folder, error)
+	// MoveFolder validates and applies a folder move, updating descendant paths.
+	MoveFolder(ctx context.Context, orgID, userID, folderID string, input MoveFolderInput) (Folder, error)
+	// DeleteFolder validates and soft-deletes a folder if it is empty.
+	DeleteFolder(ctx context.Context, orgID, userID, folderID string) error
 	EnsureRefs(ctx context.Context, userID, orgID string) error
 
 	// GetMetadataItemsByFolder lists active metadata in an active org-scoped folder.

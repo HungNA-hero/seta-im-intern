@@ -114,6 +114,7 @@ func NewAssetHandler(mux *http.ServeMux, usecase domain.AssetUsecase, db *gorm.D
 
 	mux.HandleFunc("/healthz", handler.HandleHealth)
 	mux.HandleFunc("/internal/api/v1/folders", RequireActor(handler.HandleFolders))
+	mux.HandleFunc("/internal/api/v1/folders/move", RequireActor(handler.HandleMoveFolder))
 	mux.HandleFunc("/internal/api/v1/facts/folders", RequireActor(handler.HandleFolderFacts))
 	mux.HandleFunc("/internal/api/v1/metadata-items", RequireActor(handler.HandleMetadataItems))
 }
@@ -156,6 +157,8 @@ func (h *AssetHandler) HandleFolders(w http.ResponseWriter, r *http.Request) {
 		h.handleCreateFolder(w, r, actor)
 	case http.MethodPatch:
 		h.handleUpdateFolder(w, r, actor)
+	case http.MethodDelete:
+		h.handleDeleteFolder(w, r, actor)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -303,12 +306,98 @@ func (h *AssetHandler) handleUpdateFolder(w http.ResponseWriter, r *http.Request
 	})
 }
 
+// handleDeleteFolder processes DELETE requests to soft-delete a specific folder.
+func (h *AssetHandler) handleDeleteFolder(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor) {
+	folderID := r.URL.Query().Get("id")
+	orgID := r.URL.Query().Get("orgId")
+	if folderID == "" || orgID == "" {
+		http.Error(w, "Missing id or orgId", http.StatusBadRequest)
+		return
+	}
+	if err := uuid.Validate(folderID); err != nil {
+		http.Error(w, "Invalid folder id format", http.StatusBadRequest)
+		return
+	}
+	if orgID != actor.OrgID {
+		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		return
+	}
+
+	if err := h.usecase.DeleteFolder(r.Context(), orgID, actor.UserID, folderID); err != nil {
+		h.mapDomainError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// HandleMoveFolder processes PATCH requests to move a folder to a new parent or to the organization root.
+func (h *AssetHandler) HandleMoveFolder(w http.ResponseWriter, r *http.Request) {
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		http.Error(w, "Missing actor context", http.StatusInternalServerError)
+		return
+	}
+
+	if r.Method != http.MethodPatch {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	folderID := r.URL.Query().Get("id")
+	orgID := r.URL.Query().Get("orgId")
+	if folderID == "" || orgID == "" {
+		http.Error(w, "Missing id or orgId", http.StatusBadRequest)
+		return
+	}
+	if err := uuid.Validate(folderID); err != nil {
+		http.Error(w, "Invalid folder id format", http.StatusBadRequest)
+		return
+	}
+	if orgID != actor.OrgID {
+		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		return
+	}
+
+	var input domain.MoveFolderInput
+	if err := decodeJSONBody(r, &input); err != nil {
+		http.Error(w, "Invalid body", http.StatusBadRequest)
+		return
+	}
+
+	if input.DestinationParentID != nil {
+		if *input.DestinationParentID == "" {
+			http.Error(w, "Invalid destination parent id format", http.StatusBadRequest)
+			return
+		}
+		if err := uuid.Validate(*input.DestinationParentID); err != nil {
+			http.Error(w, "Invalid destination parent id format", http.StatusBadRequest)
+			return
+		}
+	}
+
+	folder, err := h.usecase.MoveFolder(r.Context(), orgID, actor.UserID, folderID, input)
+	if err != nil {
+		h.mapDomainError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status": "success",
+		"folder": folder,
+	})
+}
+
 // mapDomainError converts typed domain failures into stable internal REST status codes.
 func (h *AssetHandler) mapDomainError(w http.ResponseWriter, err error) {
 	if errors.Is(err, domain.ErrFolderNotFound) || errors.Is(err, domain.ErrMetadataNotFound) {
 		http.Error(w, "Not found", http.StatusNotFound)
 	} else if errors.Is(err, domain.ErrFolderConflict) {
 		http.Error(w, "Conflict: sibling name or path already exists", http.StatusConflict)
+	} else if errors.Is(err, domain.ErrFolderNotEmpty) {
+		http.Error(w, "Conflict: folder is not empty", http.StatusConflict)
+	} else if errors.Is(err, domain.ErrCycleDetected) {
+		http.Error(w, "Conflict: cycle detected", http.StatusConflict)
 	} else if errors.Is(err, domain.ErrMetadataConflict) {
 		http.Error(w, "Conflict: external metadata identity already exists", http.StatusConflict)
 	} else if errors.Is(err, domain.ErrInvalidInput) {
