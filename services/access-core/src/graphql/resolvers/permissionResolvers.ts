@@ -3,6 +3,7 @@ import {
   listObjectPermissions,
   grantObjectPermission,
   revokeObjectPermission,
+  getObjectPermissionById,
 } from "../../db/queries/objectPermissions";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { GraphQLError } from "graphql";
@@ -95,13 +96,31 @@ export const permissionResolvers = {
         });
       }
     },
-    revokeObjectPermission: async (_: unknown, { id }: { id: string }) => {
-      try {
-        await revokeObjectPermission(id);
-        return true;
-      } catch (err) {
-        rethrowPrismaError(err, { P2025: "Object permission not found" });
+    revokeObjectPermission: async (
+      _: unknown,
+      { id }: { id: string },
+      ctx: GraphQLContext,
+    ) => {
+      assertAuthenticated(ctx);
+      const existing = await getObjectPermissionById(id);
+      if (!existing) {
+        throw new GraphQLError("Object permission not found", {
+          extensions: { code: "NOT_FOUND" },
+        });
       }
+      if (ctx.currentOrgId !== existing.orgId) {
+        throw new GraphQLError("Forbidden", {
+          extensions: { code: "FORBIDDEN" },
+        });
+      }
+      await assertManagePermission(
+        ctx.userId,
+        existing.orgId,
+        existing.resourceType as ResourceType,
+        existing.resourceId,
+      );
+      await revokeObjectPermission(id);
+      return true;
     },
   },
 };

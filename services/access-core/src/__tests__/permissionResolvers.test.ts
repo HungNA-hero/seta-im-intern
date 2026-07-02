@@ -1,15 +1,18 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 
-const { mockCanDo, mockGrant } = vi.hoisted(() => ({
+const { mockCanDo, mockGrant, mockGetById, mockRevoke } = vi.hoisted(() => ({
   mockCanDo: vi.fn(),
   mockGrant: vi.fn(),
+  mockGetById: vi.fn(),
+  mockRevoke: vi.fn(),
 }));
 
 vi.mock("../db/queries/canDo", () => ({ canDo: mockCanDo }));
 vi.mock("../db/queries/objectPermissions", () => ({
   grantObjectPermission: mockGrant,
   listObjectPermissions: vi.fn(),
-  revokeObjectPermission: vi.fn(),
+  revokeObjectPermission: mockRevoke,
+  getObjectPermissionById: mockGetById,
 }));
 vi.mock("../db/queries/rolePermissions", () => ({ listRolePermissions: vi.fn() }));
 
@@ -46,6 +49,8 @@ beforeEach(() => {
   vi.resetAllMocks();
   mockCanDo.mockResolvedValue({ allowed: true, reason: null });
   mockGrant.mockResolvedValue(makeGrantRow());
+  mockGetById.mockResolvedValue(makeGrantRow());
+  mockRevoke.mockResolvedValue(undefined);
 });
 
 describe("Mutation.grantObjectPermission", () => {
@@ -166,5 +171,93 @@ describe("Mutation.grantObjectPermission", () => {
     ).rejects.toThrow(
       expect.objectContaining({ extensions: { code: "CONFLICT" } }),
     );
+  });
+});
+
+describe("Mutation.revokeObjectPermission", () => {
+  test("authorized grantor removes exactly the targeted direct grant", async () => {
+    mockGetById.mockResolvedValueOnce(makeGrantRow({ id: "perm-1" }));
+
+    const result = await permissionResolvers.Mutation.revokeObjectPermission(
+      undefined,
+      { id: "perm-1" },
+      makeCtx(),
+    );
+
+    expect(mockCanDo).toHaveBeenCalledWith(
+      "user-1",
+      "manage_permissions",
+      "folder",
+      "folder-1",
+      "org-1",
+    );
+    expect(mockRevoke).toHaveBeenCalledTimes(1);
+    expect(mockRevoke).toHaveBeenCalledWith("perm-1");
+    expect(result).toBe(true);
+  });
+
+  test("throws FORBIDDEN and does not delete when canDo denies", async () => {
+    mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "no object permission" });
+
+    await expect(
+      permissionResolvers.Mutation.revokeObjectPermission(
+        undefined,
+        { id: "perm-1" },
+        makeCtx(),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+    );
+
+    expect(mockRevoke).not.toHaveBeenCalled();
+  });
+
+  test("throws NOT_FOUND and does not delete when the grant is missing", async () => {
+    mockGetById.mockResolvedValueOnce(null);
+
+    await expect(
+      permissionResolvers.Mutation.revokeObjectPermission(
+        undefined,
+        { id: "missing" },
+        makeCtx(),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "NOT_FOUND" } }),
+    );
+
+    expect(mockCanDo).not.toHaveBeenCalled();
+    expect(mockRevoke).not.toHaveBeenCalled();
+  });
+
+  test("throws FORBIDDEN when the grant belongs to another org", async () => {
+    mockGetById.mockResolvedValueOnce(makeGrantRow({ orgId: "org-2" }));
+
+    await expect(
+      permissionResolvers.Mutation.revokeObjectPermission(
+        undefined,
+        { id: "perm-1" },
+        makeCtx({ currentOrgId: "org-1" }),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+    );
+
+    expect(mockCanDo).not.toHaveBeenCalled();
+    expect(mockRevoke).not.toHaveBeenCalled();
+  });
+
+  test("throws UNAUTHENTICATED when the caller is not authenticated", async () => {
+    await expect(
+      permissionResolvers.Mutation.revokeObjectPermission(
+        undefined,
+        { id: "perm-1" },
+        makeCtx({ userId: null }),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "UNAUTHENTICATED" } }),
+    );
+
+    expect(mockGetById).not.toHaveBeenCalled();
+    expect(mockRevoke).not.toHaveBeenCalled();
   });
 });
