@@ -7,29 +7,8 @@ import {
 } from "../../db/queries/objectPermissions";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { GraphQLError } from "graphql";
-import { canDo } from "../../db/queries/canDo";
-import { assertAuthenticated, GraphQLContext } from "../context";
+import { assertAuthenticated, assertCan, GraphQLContext } from "../context";
 import { serializePermission, rethrowPrismaError } from "./utils";
-
-async function assertManagePermission(
-  userId: string,
-  orgId: string,
-  resourceType: ResourceType,
-  resourceId: string,
-) {
-  const { allowed, reason } = await canDo(
-    userId,
-    "manage_permissions",
-    resourceType,
-    resourceId,
-    orgId,
-  );
-  if (!allowed) {
-    throw new GraphQLError(reason ?? "Forbidden", {
-      extensions: { code: "FORBIDDEN" },
-    });
-  }
-}
 
 export const permissionResolvers = {
   Query: {
@@ -76,7 +55,13 @@ export const permissionResolvers = {
           },
         );
       }
-      await assertManagePermission(ctx.userId, orgId, resourceType, resourceId);
+      await assertCan(
+        ctx.userId,
+        "manage_permissions",
+        resourceType,
+        resourceId,
+        orgId,
+      );
       try {
         return serializePermission(
           await grantObjectPermission(
@@ -113,11 +98,12 @@ export const permissionResolvers = {
           extensions: { code: "FORBIDDEN" },
         });
       }
-      await assertManagePermission(
+      await assertCan(
         ctx.userId,
-        existing.orgId,
+        "manage_permissions",
         existing.resourceType as ResourceType,
         existing.resourceId,
+        existing.orgId,
       );
       await revokeObjectPermission(id);
       return true;
