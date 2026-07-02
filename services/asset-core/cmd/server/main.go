@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -15,6 +16,10 @@ import (
 )
 
 func main() {
+	for _, p := range []string{"../../.env", ".env"} {
+		_ = godotenv.Load(p)
+	}
+
 	// 1. Setup Database Connection
 	db, err := openAssetDB(assetDSNFromEnv())
 	if err != nil {

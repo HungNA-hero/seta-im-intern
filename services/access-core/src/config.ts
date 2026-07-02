@@ -1,5 +1,7 @@
 import { config as loadEnv } from "dotenv";
-loadEnv();
+import path from "node:path";
+
+loadEnv({ path: path.resolve(__dirname, "../../../.env") });
 
 const dbHost = process.env.ACCESS_DB_HOST ?? "localhost";
 const dbPort = process.env.ACCESS_DB_PORT ?? "5434";

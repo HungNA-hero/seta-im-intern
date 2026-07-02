@@ -89,8 +89,7 @@ export const typeDefs = /* GraphQL */ `
       action: PermissionAction!
       granteeUserId: ID
       granteeRoleId: ID
-      grantedBy: ID!
-    ): ObjectPermission! @orgMember
+    ): ObjectPermission! @orgMember @sameOrg
     revokeObjectPermission(id: ID!): Boolean! @orgMember
     createFolder(orgId: ID!, parentPath: String, name: String!, description: String): Folder! @orgMember @sameOrg
     updateFolder(orgId: ID!, id: ID!, name: String, description: String): Folder! @orgMember @sameOrg

@@ -48,6 +48,12 @@ export async function grantObjectPermission(
   });
 }
 
+export async function getObjectPermissionById(
+  id: string,
+): Promise<ObjectPermission | null> {
+  return prisma.objectPermission.findUnique({ where: { id } });
+}
+
 export async function revokeObjectPermission(id: string): Promise<void> {
   await prisma.objectPermission.delete({ where: { id } });
 }
