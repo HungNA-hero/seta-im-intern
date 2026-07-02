@@ -1,21 +1,21 @@
 -- Seed permission actions (read, write, delete, manage_permissions)
 INSERT INTO access.permission_actions (id, code, description) VALUES
-    ('a0000000-0000-0000-0000-000000000001', 'read',               'Allows viewing a resource'),
-    ('a0000000-0000-0000-0000-000000000002', 'write',              'Allows creating or updating a resource'),
-    ('a0000000-0000-0000-0000-000000000003', 'delete',             'Allows deleting a resource'),
-    ('a0000000-0000-0000-0000-000000000004', 'manage_permissions', 'Allows granting or revoking access on a resource')
+    ('30000000-0000-0000-0000-000000000001', 'read',               'Allows viewing a resource'),
+    ('30000000-0000-0000-0000-000000000002', 'write',              'Allows creating or updating a resource'),
+    ('30000000-0000-0000-0000-000000000003', 'delete',             'Allows deleting a resource'),
+    ('30000000-0000-0000-0000-000000000004', 'manage_permissions', 'Allows granting or revoking access on a resource')
 ON CONFLICT (code) DO NOTHING;
 
 -- Seed demo organization
 INSERT INTO access.organizations (id, code, name, olp_enabled) VALUES
-    ('c0000000-0000-0000-0000-000000000001', 'seta', 'Seta', false)
+    ('00000000-0000-0000-0000-000000000010', 'seta', 'Seta', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed roles for Seta org (org_admin = global override; viewer = read-only ceiling)
 INSERT INTO access.roles (id, org_id, code, name, description) VALUES
-    ('b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001',
+    ('40000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000010',
      'org_admin', 'Org Admin', 'Full access to all resources and permissions within the org'),
-    ('b0000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000001',
+    ('40000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000010',
      'viewer',    'Viewer',    'Read-only access to all resources within the org')
 ON CONFLICT (id) DO NOTHING;
 
@@ -27,16 +27,16 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Add both users to Seta org
 INSERT INTO access.organization_members (id, org_id, user_id) VALUES
-    ('d0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001'),
-    ('d0000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002')
+    ('50000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001'),
+    ('50000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000002')
 ON CONFLICT (org_id, user_id) DO NOTHING;
 
 -- Assign roles: admin → org_admin, dung → viewer
 INSERT INTO access.user_roles (id, org_id, user_id, role_id) VALUES
-    ('e0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001',
-     '00000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001'),
-    ('e0000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000001',
-     '00000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000002')
+    ('60000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000010',
+     '00000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001'),
+    ('60000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000010',
+     '00000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000002')
 ON CONFLICT (org_id, user_id, role_id) DO NOTHING;
 
 -- RBAC ceilings:

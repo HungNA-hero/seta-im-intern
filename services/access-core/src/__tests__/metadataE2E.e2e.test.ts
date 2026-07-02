@@ -23,7 +23,6 @@ const ORG_ID = "00000000-0000-0000-0000-000000000010";
 const OTHER_ORG_ID = "00000000-0000-0000-0000-000000000099";
 const ROOT_FOLDER_ID = "10000000-0000-0000-0000-000000000000";
 const USER_ID = "00000000-0000-0000-0000-000000000001";
-const ACCESS_MEMBER_ID = "f0000000-0000-0000-0000-000000000001";
 
 interface GraphQLErrorResult {
   message?: string;
@@ -43,7 +42,6 @@ interface MetadataSummary {
 
 let app: FastifyInstance;
 let assetDb: Client;
-let accessDb: Client;
 let createdItemId = "";
 
 /** Executes GraphQL through Fastify/Yoga with the same identity headers as production. */
@@ -79,24 +77,10 @@ beforeAll(async () => {
       process.env.ASSET_DB_URL ??
       "postgresql://asset_user:asset_password@127.0.0.1:5433/asset_db",
   });
-  accessDb = new Client({
-    connectionString:
-      process.env.DATABASE_URL ??
-      "postgresql://access_user:access_password@127.0.0.1:5434/access_db",
-  });
-  await Promise.all([assetDb.connect(), accessDb.connect()]);
+  await assetDb.connect();
 
+  // Org (…010) and USER_ID's membership come from the committed access seed (V2).
   await assetDb.query("DELETE FROM metadata_items WHERE title LIKE 'E2E:%'");
-  await accessDb.query(
-    `INSERT INTO access.organizations (id, code, name, olp_enabled)
-     VALUES ($1, 'metadata-e2e', 'Metadata E2E', false)`,
-    [ORG_ID],
-  );
-  await accessDb.query(
-    `INSERT INTO access.organization_members (id, org_id, user_id)
-     VALUES ($1, $2, $3)`,
-    [ACCESS_MEMBER_ID, ORG_ID, USER_ID],
-  );
 
   app = await buildServer();
 });
@@ -105,16 +89,9 @@ afterAll(async () => {
   if (assetDb) {
     await assetDb.query("DELETE FROM metadata_items WHERE title LIKE 'E2E:%'");
   }
-  if (accessDb) {
-    await accessDb.query(
-      "DELETE FROM access.organization_members WHERE id = $1",
-      [ACCESS_MEMBER_ID],
-    );
-    await accessDb.query("DELETE FROM access.organizations WHERE id = $1", [ORG_ID]);
-  }
   if (app) await app.close();
   await prisma.$disconnect();
-  await Promise.all([assetDb?.end(), accessDb?.end()]);
+  await assetDb?.end();
 });
 
 beforeEach(() => {
