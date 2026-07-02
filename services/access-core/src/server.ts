@@ -4,7 +4,6 @@ import { GraphQLError } from "graphql";
 import { schema } from "./graphql/schema";
 import { loadRequestContext } from "./graphql/context";
 
-/** Error codes whose messages are safe to expose through the public GraphQL API. */
 const PUBLIC_ERROR_CODES = new Set([
   "BAD_USER_INPUT",
   "UNAUTHENTICATED",
@@ -13,13 +12,11 @@ const PUBLIC_ERROR_CODES = new Set([
   "CONFLICT",
 ]);
 
-/** Preserves approved API errors while masking unexpected resolver failures. */
 function maskGraphQLError(error: unknown, fallbackMessage: string): Error {
   const executionError = error instanceof GraphQLError ? error : undefined;
   const visited = new Set<unknown>();
   let current: unknown = error;
 
-  // GraphQL execution and directive wrappers can create more than one originalError layer.
   while (current && typeof current === "object" && !visited.has(current)) {
     visited.add(current);
     const candidate = current as {
