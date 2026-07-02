@@ -1,0 +1,170 @@
+import { describe, test, expect, vi, beforeEach } from "vitest";
+
+const { mockCanDo, mockGrant } = vi.hoisted(() => ({
+  mockCanDo: vi.fn(),
+  mockGrant: vi.fn(),
+}));
+
+vi.mock("../db/queries/canDo", () => ({ canDo: mockCanDo }));
+vi.mock("../db/queries/objectPermissions", () => ({
+  grantObjectPermission: mockGrant,
+  listObjectPermissions: vi.fn(),
+  revokeObjectPermission: vi.fn(),
+}));
+vi.mock("../db/queries/rolePermissions", () => ({ listRolePermissions: vi.fn() }));
+
+import { permissionResolvers } from "../graphql/resolvers/permissionResolvers";
+import type { GraphQLContext } from "../graphql/context";
+
+function makeCtx(overrides: Partial<GraphQLContext> = {}): GraphQLContext {
+  return {
+    userId: "user-1",
+    currentOrgId: "org-1",
+    isMember: true,
+    roles: ["org_admin"],
+    olpEnabled: false,
+    ...overrides,
+  };
+}
+
+function makeGrantRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "perm-1",
+    orgId: "org-1",
+    resourceType: "folder",
+    resourceId: "folder-1",
+    granteeUserId: "grantee-1",
+    granteeRoleId: null,
+    actionId: "action-read",
+    grantedBy: "user-1",
+    grantedAt: new Date("2024-01-01T00:00:00Z"),
+    ...overrides,
+  };
+}
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  mockCanDo.mockResolvedValue({ allowed: true, reason: null });
+  mockGrant.mockResolvedValue(makeGrantRow());
+});
+
+describe("Mutation.grantObjectPermission", () => {
+  const base = {
+    orgId: "org-1",
+    resourceType: "folder" as const,
+    resourceId: "folder-1",
+    action: "read" as const,
+  };
+
+  test("grants to a user when caller has manage_permissions", async () => {
+    const result = await permissionResolvers.Mutation.grantObjectPermission(
+      undefined,
+      { ...base, granteeUserId: "grantee-1" },
+      makeCtx(),
+    );
+
+    expect(mockCanDo).toHaveBeenCalledWith(
+      "user-1",
+      "manage_permissions",
+      "folder",
+      "folder-1",
+      "org-1",
+    );
+    expect(mockGrant).toHaveBeenCalledWith(
+      "org-1",
+      "folder",
+      "folder-1",
+      "read",
+      "user-1",
+      "grantee-1",
+      undefined,
+    );
+    expect(result).toMatchObject({ id: "perm-1", grantedBy: "user-1" });
+  });
+
+  test("grants to a role when caller has manage_permissions", async () => {
+    await permissionResolvers.Mutation.grantObjectPermission(
+      undefined,
+      { ...base, granteeRoleId: "role-1" },
+      makeCtx(),
+    );
+
+    expect(mockGrant).toHaveBeenCalledWith(
+      "org-1",
+      "folder",
+      "folder-1",
+      "read",
+      "user-1",
+      undefined,
+      "role-1",
+    );
+  });
+
+  test("records the authenticated caller as grantor, not a client value", async () => {
+    await permissionResolvers.Mutation.grantObjectPermission(
+      undefined,
+      { ...base, granteeUserId: "grantee-1", grantedBy: "spoofed" } as any,
+      makeCtx({ userId: "caller-9" }),
+    );
+
+    expect(mockGrant.mock.calls[0][4]).toBe("caller-9");
+  });
+
+  test("throws FORBIDDEN and does not grant when canDo denies", async () => {
+    mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "no object permission" });
+
+    await expect(
+      permissionResolvers.Mutation.grantObjectPermission(
+        undefined,
+        { ...base, granteeUserId: "grantee-1" },
+        makeCtx(),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+    );
+
+    expect(mockGrant).not.toHaveBeenCalled();
+  });
+
+  test("throws BAD_USER_INPUT when both grantee fields are set", async () => {
+    await expect(
+      permissionResolvers.Mutation.grantObjectPermission(
+        undefined,
+        { ...base, granteeUserId: "grantee-1", granteeRoleId: "role-1" },
+        makeCtx(),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+    );
+
+    expect(mockGrant).not.toHaveBeenCalled();
+  });
+
+  test("throws BAD_USER_INPUT when neither grantee field is set", async () => {
+    await expect(
+      permissionResolvers.Mutation.grantObjectPermission(
+        undefined,
+        { ...base },
+        makeCtx(),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+    );
+
+    expect(mockGrant).not.toHaveBeenCalled();
+  });
+
+  test("maps a duplicate grant to CONFLICT", async () => {
+    mockGrant.mockRejectedValueOnce({ code: "P2002" });
+
+    await expect(
+      permissionResolvers.Mutation.grantObjectPermission(
+        undefined,
+        { ...base, granteeUserId: "grantee-1" },
+        makeCtx(),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "CONFLICT" } }),
+    );
+  });
+});

@@ -6,7 +6,29 @@ import {
 } from "../../db/queries/objectPermissions";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { GraphQLError } from "graphql";
+import { canDo } from "../../db/queries/canDo";
+import { assertAuthenticated, GraphQLContext } from "../context";
 import { serializePermission, rethrowPrismaError } from "./utils";
+
+async function assertManagePermission(
+  userId: string,
+  orgId: string,
+  resourceType: ResourceType,
+  resourceId: string,
+) {
+  const { allowed, reason } = await canDo(
+    userId,
+    "manage_permissions",
+    resourceType,
+    resourceId,
+    orgId,
+  );
+  if (!allowed) {
+    throw new GraphQLError(reason ?? "Forbidden", {
+      extensions: { code: "FORBIDDEN" },
+    });
+  }
+}
 
 export const permissionResolvers = {
   Query: {
@@ -34,7 +56,6 @@ export const permissionResolvers = {
         action,
         granteeUserId,
         granteeRoleId,
-        grantedBy,
       }: {
         orgId: string;
         resourceType: ResourceType;
@@ -42,17 +63,19 @@ export const permissionResolvers = {
         action: PermissionActionCode;
         granteeUserId?: string | null;
         granteeRoleId?: string | null;
-        grantedBy: string;
       },
+      ctx: GraphQLContext,
     ) => {
+      assertAuthenticated(ctx);
       if (!!granteeUserId === !!granteeRoleId) {
         throw new GraphQLError(
           "Exactly one of granteeUserId or granteeRoleId must be set",
           {
-            extensions: { code: "BAD_INPUT" },
+            extensions: { code: "BAD_USER_INPUT" },
           },
         );
       }
+      await assertManagePermission(ctx.userId, orgId, resourceType, resourceId);
       try {
         return serializePermission(
           await grantObjectPermission(
@@ -60,7 +83,7 @@ export const permissionResolvers = {
             resourceType,
             resourceId,
             action,
-            grantedBy,
+            ctx.userId,
             granteeUserId,
             granteeRoleId,
           ),
