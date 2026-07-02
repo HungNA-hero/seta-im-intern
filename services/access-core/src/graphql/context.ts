@@ -1,5 +1,7 @@
 import { GraphQLError } from "graphql";
+import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { prisma } from "../db/prisma";
+import { canDo } from "../db/queries/canDo";
 
 export interface GraphQLContext {
   userId: string | null;
@@ -25,6 +27,27 @@ export function assertOrgMember(
   assertAuthenticated(ctx);
   if (!ctx.isMember) {
     throw new GraphQLError("Forbidden: not a member of this organization", {
+      extensions: { code: "FORBIDDEN" },
+    });
+  }
+}
+
+export async function assertCan(
+  userId: string,
+  action: PermissionActionCode,
+  resourceType: ResourceType,
+  resourceId: string,
+  orgId: string | null,
+): Promise<void> {
+  const { allowed, reason } = await canDo(
+    userId,
+    action,
+    resourceType,
+    resourceId,
+    orgId,
+  );
+  if (!allowed) {
+    throw new GraphQLError(reason ?? "Forbidden", {
       extensions: { code: "FORBIDDEN" },
     });
   }
