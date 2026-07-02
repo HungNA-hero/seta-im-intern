@@ -41,6 +41,12 @@ func (f *fakeAssetRepo) UpdateFolder(_ context.Context, _, _, _ string, _ domain
 	f.updateCalled = true
 	return domain.Folder{}, nil
 }
+func (f *fakeAssetRepo) MoveFolder(_ context.Context, _, _, _ string, _ domain.MoveFolderInput) (domain.Folder, error) {
+	return domain.Folder{}, nil
+}
+func (f *fakeAssetRepo) DeleteFolder(_ context.Context, _, _, _ string) error {
+	return nil
+}
 
 // GetMetadataItemsByFolder satisfies the metadata list repository contract for use-case tests.
 func (f *fakeAssetRepo) GetMetadataItemsByFolder(ctx context.Context, orgID, folderID string) ([]domain.MetadataItem, error) {

@@ -91,10 +91,30 @@ export const typeDefs = /* GraphQL */ `
       granteeRoleId: ID
     ): ObjectPermission! @orgMember @sameOrg
     revokeObjectPermission(id: ID!): Boolean! @orgMember
-    createFolder(orgId: ID!, parentPath: String, name: String!, description: String): Folder! @orgMember @sameOrg
-    updateFolder(orgId: ID!, id: ID!, name: String, description: String): Folder! @orgMember @sameOrg
-    createMetadata(orgId: ID!, input: CreateMetadataInput!): MetadataItem! @orgMember @sameOrg
-    updateMetadata(orgId: ID!, id: ID!, input: UpdateMetadataInput!): MetadataItem! @orgMember @sameOrg
+    createFolder(
+      orgId: ID!
+      parentPath: String
+      name: String!
+      description: String
+    ): Folder! @orgMember @sameOrg
+    updateFolder(
+      orgId: ID!
+      id: ID!
+      name: String
+      description: String
+    ): Folder! @orgMember @sameOrg
+    moveFolder(orgId: ID!, id: ID!, destinationParentId: ID): Folder!
+      @orgMember
+      @sameOrg
+    deleteFolder(orgId: ID!, id: ID!): Boolean! @orgMember @sameOrg
+    createMetadata(orgId: ID!, input: CreateMetadataInput!): MetadataItem!
+      @orgMember
+      @sameOrg
+    updateMetadata(
+      orgId: ID!
+      id: ID!
+      input: UpdateMetadataInput!
+    ): MetadataItem! @orgMember @sameOrg
   }
 
   type Folder {
@@ -184,7 +204,9 @@ export const typeDefs = /* GraphQL */ `
     folder(orgId: ID!, id: ID!): Folder @auth @sameOrg
     folderTree(orgId: ID!, rootPath: String): [Folder!]! @auth @sameOrg
     folderChildren(orgId: ID!, parentPath: String!): [Folder!]! @auth @sameOrg
-    metadataItems(orgId: ID!, folderId: ID!): [MetadataItem!]! @orgMember @sameOrg
+    metadataItems(orgId: ID!, folderId: ID!): [MetadataItem!]!
+      @orgMember
+      @sameOrg
     metadataItem(orgId: ID!, id: ID!): MetadataItem @orgMember @sameOrg
   }
 `;

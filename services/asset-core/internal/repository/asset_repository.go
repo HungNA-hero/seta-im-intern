@@ -238,6 +238,174 @@ func (r *assetRepository) UpdateFolder(ctx context.Context, orgID, userID, folde
 	return folder, err
 }
 
+// MoveFolder safely shifts a folder and its descendants to a new parent in a single transaction.
+func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderID string, input domain.MoveFolderInput) (domain.Folder, error) {
+	var folder domain.Folder
+
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. Ensure refs
+		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("INSERT INTO organization_ref (org_id) VALUES (?) ON CONFLICT (org_id) DO NOTHING", orgID).Error; err != nil {
+			return err
+		}
+
+		// 2. Lock active source
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ? AND org_id = ?", folderID, orgID).
+			First(&folder).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return domain.ErrFolderNotFound
+			}
+			return err
+		}
+
+		// 3. Lock active destination if provided
+		var destPath string
+		if input.DestinationParentID != nil && *input.DestinationParentID != "" {
+			var destFolder domain.Folder
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+				Where("id = ? AND org_id = ?", *input.DestinationParentID, orgID).
+				First(&destFolder).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return domain.ErrFolderNotFound
+				}
+				return err
+			}
+
+			// 4. Reject cycle (destination == source or destination is descendant of source)
+			if destFolder.ID == folder.ID {
+				return domain.ErrCycleDetected
+			}
+			// Check if destPath starts with sourcePath
+			// In DB we can use ltree <@ but since we loaded it we can just check string prefix
+			if strings.HasPrefix(destFolder.Path, folder.Path+".") || destFolder.Path == folder.Path {
+				return domain.ErrCycleDetected
+			}
+
+			destPath = destFolder.Path
+		}
+
+		// 5. Compute new path
+		segment := strings.ReplaceAll(folder.ID, "-", "")
+		var newPath string
+		if destPath != "" {
+			newPath = destPath + "." + segment
+		} else {
+			newPath = segment
+		}
+
+		// If path isn't actually changing, we could return early, but we still run it or just check
+		if folder.Path == newPath {
+			return nil
+		}
+
+		// 6. Pre-check sibling uniqueness at destination
+		var siblingCount int64
+		var countErr error
+		if destPath != "" {
+			countErr = tx.Model(&domain.Folder{}).
+				Where("org_id = ? AND path <@ ?::ltree AND nlevel(path) = nlevel(?::ltree) + 1 AND name = ? AND id != ?",
+					orgID, destPath, destPath, folder.Name, folder.ID).
+				Count(&siblingCount).Error
+		} else {
+			countErr = tx.Model(&domain.Folder{}).
+				Where("org_id = ? AND nlevel(path) = 1 AND name = ? AND id != ?", orgID, folder.Name, folder.ID).
+				Count(&siblingCount).Error
+		}
+		if countErr != nil {
+			return countErr
+		}
+		if siblingCount > 0 {
+			return domain.ErrFolderConflict
+		}
+
+		// 7. Update source and descendants in one statement
+		updateQuery := `
+			UPDATE folders
+			SET path = CASE
+			    WHEN path = ?::ltree THEN ?::ltree
+			    ELSE ?::ltree || subpath(path, nlevel(?::ltree))
+			END,
+			    updated_by = ?
+			WHERE org_id = ? AND path <@ ?::ltree AND deleted_at IS NULL
+		`
+		if err := tx.Exec(updateQuery, folder.Path, newPath, newPath, folder.Path, userID, orgID, folder.Path).Error; err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+				return domain.ErrFolderConflict
+			}
+			return err
+		}
+
+		// 8. Reload the row to get the database-updated timestamp and exact state
+		if err := tx.Where("id = ? AND org_id = ?", folder.ID, orgID).First(&folder).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return folder, err
+}
+
+// DeleteFolder soft-deletes a folder, ensuring it contains no descendants and no attached metadata.
+func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, userID, folderID string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. Ensure refs
+		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("INSERT INTO organization_ref (org_id) VALUES (?) ON CONFLICT (org_id) DO NOTHING", orgID).Error; err != nil {
+			return err
+		}
+
+		// 2. Lock active source
+		var folder domain.Folder
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ? AND org_id = ?", folderID, orgID).
+			First(&folder).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return domain.ErrFolderNotFound
+			}
+			return err
+		}
+
+		// 3. Reject if any active descendant exists (path <@ folder.Path and id != folder.ID)
+		var childCount int64
+		if err := tx.Model(&domain.Folder{}).
+			Where("org_id = ? AND path <@ ?::ltree AND id != ?", orgID, folder.Path, folder.ID).
+			Count(&childCount).Error; err != nil {
+			return err
+		}
+		if childCount > 0 {
+			return domain.ErrFolderNotEmpty
+		}
+
+		// 4. Reject if any active metadata exists for this folder
+		var metaCount int64
+		if err := tx.Model(&domain.MetadataItem{}).
+			Where("folder_id = ?", folder.ID).
+			Count(&metaCount).Error; err != nil {
+			return err
+		}
+		if metaCount > 0 {
+			return domain.ErrFolderNotEmpty
+		}
+
+		// 5. Soft delete the folder
+		if err := tx.Model(&folder).Updates(map[string]interface{}{
+			"deleted_at": gorm.Expr("now()"),
+			"updated_by": userID,
+		}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 // GetMetadataItemsByFolder retrieves all active metadata items for a given folder in an organization.
 func (r *assetRepository) GetMetadataItemsByFolder(ctx context.Context, orgID, folderID string) ([]domain.MetadataItem, error) {
 	var items []domain.MetadataItem

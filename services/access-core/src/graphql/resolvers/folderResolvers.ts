@@ -290,5 +290,80 @@ export const folderResolvers = {
         "Failed to update folder",
       );
     },
+
+    moveFolder: async (
+      _: unknown,
+      {
+        orgId,
+        id,
+        destinationParentId,
+      }: {
+        orgId: string;
+        id: string;
+        destinationParentId?: string | null;
+      },
+      ctx: GraphQLContext,
+    ) => {
+      assertAuthenticated(ctx);
+
+      if (id === orgId) {
+        throw new GraphQLError("Cannot move root folder", {
+          extensions: { code: "FORBIDDEN" },
+        });
+      }
+
+      await assertFolderPermission(ctx.userId, orgId, id, "write");
+      const destId = destinationParentId ?? orgId;
+      await assertFolderPermission(ctx.userId, orgId, destId, "write");
+
+      const body = {
+        destination_parent_id: destinationParentId ?? null,
+      };
+
+      return writeFolder(
+        "PATCH",
+        `${config.goAssetUrl}/internal/api/v1/folders/move?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
+        ctx.userId,
+        orgId,
+        body,
+        "Failed to move folder",
+      );
+    },
+
+    deleteFolder: async (
+      _: unknown,
+      {
+        orgId,
+        id,
+      }: {
+        orgId: string;
+        id: string;
+      },
+      ctx: GraphQLContext,
+    ) => {
+      assertAuthenticated(ctx);
+
+      if (id === orgId) {
+        throw new GraphQLError("Cannot delete root folder", {
+          extensions: { code: "FORBIDDEN" },
+        });
+      }
+
+      await assertFolderPermission(ctx.userId, orgId, id, "delete");
+
+      const res = await fetch(
+        `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+          headers: goHeaders(ctx.userId, orgId),
+        },
+      );
+
+      if (res.status === 204) {
+        return true;
+      }
+
+      throwGoError(res, "Failed to delete folder");
+    },
   },
 };

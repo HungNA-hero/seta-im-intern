@@ -37,6 +37,9 @@ type fakeAssetUsecase struct {
 	metadataCreateErr   error
 	metadataUpdateInput domain.UpdateMetadataInput
 	metadataUpdateErr   error
+
+	moveFolderFunc   func(ctx context.Context, orgID, userID, folderID string, input domain.MoveFolderInput) (domain.Folder, error)
+	deleteFolderFunc func(ctx context.Context, orgID, userID, folderID string) error
 }
 
 func (f *fakeAssetUsecase) GetFolderTree(_ context.Context, orgID, rootPath string) ([]domain.Folder, error) {
@@ -94,6 +97,25 @@ func (f *fakeAssetUsecase) UpdateFolder(_ context.Context, orgID, userID, folder
 	f.orgID = orgID
 	f.updateInput = input
 	return domain.Folder{}, f.updateErr
+}
+func (f *fakeAssetUsecase) MoveFolder(ctx context.Context, orgID, userID, folderID string, input domain.MoveFolderInput) (domain.Folder, error) {
+	f.called = true
+	f.methodCalled = "MoveFolder"
+	f.orgID = orgID
+	if f.moveFolderFunc != nil {
+		return f.moveFolderFunc(ctx, orgID, userID, folderID, input)
+	}
+	return domain.Folder{}, nil
+}
+
+func (f *fakeAssetUsecase) DeleteFolder(ctx context.Context, orgID, userID, folderID string) error {
+	f.called = true
+	f.methodCalled = "DeleteFolder"
+	f.orgID = orgID
+	if f.deleteFolderFunc != nil {
+		return f.deleteFolderFunc(ctx, orgID, userID, folderID)
+	}
+	return nil
 }
 
 func (f *fakeAssetUsecase) EnsureRefs(_ context.Context, userID, orgID string) error {

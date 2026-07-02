@@ -81,6 +81,16 @@ func (u *assetUsecase) UpdateFolder(ctx context.Context, orgID, userID, folderID
 	return u.repo.UpdateFolder(ctx, orgID, userID, folderID, input)
 }
 
+// MoveFolder delegates moving a folder to a new parent to the repository.
+func (u *assetUsecase) MoveFolder(ctx context.Context, orgID, userID, folderID string, input domain.MoveFolderInput) (domain.Folder, error) {
+	return u.repo.MoveFolder(ctx, orgID, userID, folderID, input)
+}
+
+// DeleteFolder delegates soft-deleting a folder to the repository.
+func (u *assetUsecase) DeleteFolder(ctx context.Context, orgID, userID, folderID string) error {
+	return u.repo.DeleteFolder(ctx, orgID, userID, folderID)
+}
+
 // GetMetadataItemsByFolder delegates an org-scoped active-folder metadata query to the repository.
 func (u *assetUsecase) GetMetadataItemsByFolder(ctx context.Context, orgID, folderID string) ([]domain.MetadataItem, error) {
 	return u.repo.GetMetadataItemsByFolder(ctx, orgID, folderID)
