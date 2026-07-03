@@ -5,6 +5,11 @@ import {
   revokeObjectPermission,
   getObjectPermissionById,
 } from "../../db/queries/objectPermissions";
+import {
+  isActiveOrgMember,
+  roleBelongsToOrg,
+} from "../../db/queries/organizations";
+import { assertResourceInOrg } from "../../clients/resourceOrg";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { GraphQLError } from "graphql";
 import { assertAuthenticated, assertCan, GraphQLContext } from "../context";
@@ -62,6 +67,19 @@ export const permissionResolvers = {
         resourceId,
         orgId,
       );
+      if (granteeUserId && !(await isActiveOrgMember(orgId, granteeUserId))) {
+        throw new GraphQLError(
+          "Grantee is not an active member of this organization",
+          { extensions: { code: "BAD_USER_INPUT" } },
+        );
+      }
+      if (granteeRoleId && !(await roleBelongsToOrg(orgId, granteeRoleId))) {
+        throw new GraphQLError(
+          "Grantee role does not belong to this organization",
+          { extensions: { code: "BAD_USER_INPUT" } },
+        );
+      }
+      await assertResourceInOrg(resourceType, resourceId, orgId, ctx.userId);
       try {
         return serializePermission(
           await grantObjectPermission(
