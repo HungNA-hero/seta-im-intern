@@ -44,6 +44,14 @@ function toFolder(f: GoFolder) {
 
 type FolderNode = ReturnType<typeof toFolder>;
 
+function assertNotRootFolder(id: string, orgId: string, action: string): void {
+  if (id === orgId) {
+    throw new GraphQLError(`Cannot ${action} root folder`, {
+      extensions: { code: "FORBIDDEN" },
+    });
+  }
+}
+
 async function fetchFolderList(
   path: string,
   userId: string,
@@ -242,20 +250,11 @@ export const folderResolvers = {
       ctx: GraphQLContext,
     ) => {
       assertAuthenticated(ctx);
-
-      if (id === orgId) {
-        throw new GraphQLError("Cannot move root folder", {
-          extensions: { code: "FORBIDDEN" },
-        });
-      }
+      assertNotRootFolder(id, orgId, "move");
 
       await assertCan(ctx.userId, "write", "folder", id, orgId);
       const destId = destinationParentId ?? orgId;
       await assertCan(ctx.userId, "write", "folder", destId, orgId);
-
-      const body = {
-        destination_parent_id: destinationParentId ?? null,
-      };
 
       const res = await assetFetch(
         assetPath(`${FOLDERS_PATH}/move`, { orgId, id }),
@@ -263,10 +262,9 @@ export const folderResolvers = {
           userId: ctx.userId,
           orgId,
           method: "PATCH",
-          body,
+          body: { destination_parent_id: destinationParentId ?? null },
         },
       );
-
       return unwrapEnvelope(res, "folder", toFolder, "Failed to move folder");
     },
 
@@ -282,12 +280,7 @@ export const folderResolvers = {
       ctx: GraphQLContext,
     ) => {
       assertAuthenticated(ctx);
-
-      if (id === orgId) {
-        throw new GraphQLError("Cannot delete root folder", {
-          extensions: { code: "FORBIDDEN" },
-        });
-      }
+      assertNotRootFolder(id, orgId, "delete");
 
       await assertCan(ctx.userId, "delete", "folder", id, orgId);
 
