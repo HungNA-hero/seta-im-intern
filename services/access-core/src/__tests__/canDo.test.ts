@@ -6,7 +6,7 @@ const { mockPrisma } = vi.hoisted(() => ({
     organization: { findUnique: vi.fn() },
     permissionAction: { findMany: vi.fn() },
     rolePermission: { findFirst: vi.fn() },
-    objectPermission: { findFirst: vi.fn(), findMany: vi.fn() },
+    objectPermission: { findMany: vi.fn() },
   },
 }));
 
@@ -40,7 +40,6 @@ beforeEach(() => {
   mockPrisma.organization.findUnique.mockResolvedValue({ olpEnabled: false });
   mockPrisma.user.findUnique.mockResolvedValue(activeUser());
   mockPrisma.rolePermission.findFirst.mockResolvedValue(null);
-  mockPrisma.objectPermission.findFirst.mockResolvedValue(null);
   mockPrisma.objectPermission.findMany.mockResolvedValue([]);
 });
 
@@ -50,7 +49,7 @@ beforeEach(() => {
 describe("permActionCache", () => {
   test("calls permissionAction.findMany only once across multiple canDo calls", async () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
-    mockPrisma.objectPermission.findFirst.mockResolvedValue({ id: "op-1" });
+    mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "f1" }]);
 
     await canDo("user-1", "read", "folder", "f1", "org-1");
     await canDo("user-1", "write", "folder", "f2", "org-1");
@@ -106,21 +105,21 @@ describe("early exits (before DB permission checks)", () => {
 describe("RBAC path (olpEnabled = false)", () => {
   test("allows when RBAC ceiling AND object grant both exist", async () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
-    mockPrisma.objectPermission.findFirst.mockResolvedValue({ id: "op-1" });
+    mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "f1" }]);
     const result = await canDo("user-1", "read", "folder", "f1", "org-1");
     expect(result).toEqual({ allowed: true, reason: null });
   });
 
-  test("denies with 'no RBAC ceiling' when no ceiling (grant present)", async () => {
+  test("denies with 'no RBAC ceiling' when no ceiling, without querying object permissions", async () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue(null);
-    mockPrisma.objectPermission.findFirst.mockResolvedValue({ id: "op-1" });
     const result = await canDo("user-1", "read", "folder", "f1", "org-1");
     expect(result).toEqual({ allowed: false, reason: "no RBAC ceiling" });
+    expect(mockPrisma.objectPermission.findMany).not.toHaveBeenCalled();
   });
 
   test("denies with 'no object permission' when ceiling exists but no grant", async () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
-    mockPrisma.objectPermission.findFirst.mockResolvedValue(null);
+    mockPrisma.objectPermission.findMany.mockResolvedValue([]);
     const result = await canDo("user-1", "read", "folder", "f1", "org-1");
     expect(result).toEqual({ allowed: false, reason: "no object permission" });
   });
@@ -128,11 +127,12 @@ describe("RBAC path (olpEnabled = false)", () => {
   test("denies with 'no RBAC ceiling' when neither ceiling nor grant exists", async () => {
     const result = await canDo("user-1", "read", "folder", "f1", "org-1");
     expect(result).toEqual({ allowed: false, reason: "no RBAC ceiling" });
+    expect(mockPrisma.objectPermission.findMany).not.toHaveBeenCalled();
   });
 
   test("queries rolePermission with correct actionId and resourceType", async () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
-    mockPrisma.objectPermission.findFirst.mockResolvedValue({ id: "op-1" });
+    mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "f1" }]);
     await canDo("user-1", "write", "folder", "f1", "org-1");
     expect(mockPrisma.rolePermission.findFirst).toHaveBeenCalledWith({
       where: {
@@ -145,25 +145,26 @@ describe("RBAC path (olpEnabled = false)", () => {
 
   test("queries objectPermission with correct fields in RBAC mode", async () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
-    mockPrisma.objectPermission.findFirst.mockResolvedValue({ id: "op-1" });
+    mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "folder-abc" }]);
     await canDo("user-1", "write", "folder", "folder-abc", "org-1");
-    expect(mockPrisma.objectPermission.findFirst).toHaveBeenCalledWith({
+    expect(mockPrisma.objectPermission.findMany).toHaveBeenCalledWith({
       where: {
         orgId: "org-1",
         resourceType: "folder",
-        resourceId: "folder-abc",
         actionId: "action-write",
+        resourceId: { in: ["folder-abc"] },
         OR: [{ granteeUserId: "user-1" }, { granteeRoleId: { in: ["role-1"] } }],
       },
+      select: { resourceId: true },
     });
   });
 
-  test("queries both rolePermission and objectPermission in parallel", async () => {
+  test("checks the ceiling before querying object permissions, once each, when ceiling exists", async () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
-    mockPrisma.objectPermission.findFirst.mockResolvedValue({ id: "op-1" });
+    mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "f1" }]);
     await canDo("user-1", "read", "folder", "f1", "org-1");
     expect(mockPrisma.rolePermission.findFirst).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.objectPermission.findFirst).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.objectPermission.findMany).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -175,49 +176,51 @@ describe("OLP path (olpEnabled = true)", () => {
   });
 
   test("allows when object permission grant exists", async () => {
-    mockPrisma.objectPermission.findFirst.mockResolvedValue({ id: "op-1" });
+    mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "f1" }]);
     const result = await canDo("user-1", "read", "folder", "f1", "org-1");
     expect(result).toEqual({ allowed: true, reason: null });
   });
 
-  test("allows when grant exists even without RBAC ceiling", async () => {
+  test("allows when grant exists even without RBAC ceiling, without querying the ceiling", async () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue(null);
-    mockPrisma.objectPermission.findFirst.mockResolvedValue({ id: "op-1" });
+    mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "f1" }]);
     const result = await canDo("user-1", "read", "folder", "f1", "org-1");
     expect(result).toEqual({ allowed: true, reason: null });
+    expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
   });
 
-  test("denies with 'no object permission' when ceiling exists but no grant", async () => {
+  test("denies with 'no object permission' when no grant, ceiling irrelevant", async () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
-    mockPrisma.objectPermission.findFirst.mockResolvedValue(null);
+    mockPrisma.objectPermission.findMany.mockResolvedValue([]);
     const result = await canDo("user-1", "read", "folder", "f1", "org-1");
     expect(result).toEqual({ allowed: false, reason: "no object permission" });
   });
 
-  test("denies with 'no RBAC ceiling' when no grant and no ceiling", async () => {
+  test("denies with 'no object permission' when no grant and no ceiling", async () => {
     const result = await canDo("user-1", "read", "folder", "f1", "org-1");
-    expect(result).toEqual({ allowed: false, reason: "no RBAC ceiling" });
+    expect(result).toEqual({ allowed: false, reason: "no object permission" });
   });
 
   test("queries objectPermission with correct orgId, resourceType, resourceId, and actionId", async () => {
-    mockPrisma.objectPermission.findFirst.mockResolvedValue({ id: "op-1" });
+    mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "folder-abc" }]);
     await canDo("user-1", "write", "folder", "folder-abc", "org-1");
-    expect(mockPrisma.objectPermission.findFirst).toHaveBeenCalledWith({
+    expect(mockPrisma.objectPermission.findMany).toHaveBeenCalledWith({
       where: {
         orgId: "org-1",
         resourceType: "folder",
-        resourceId: "folder-abc",
         actionId: "action-write",
+        resourceId: { in: ["folder-abc"] },
         OR: [{ granteeUserId: "user-1" }, { granteeRoleId: { in: ["role-1"] } }],
       },
+      select: { resourceId: true },
     });
   });
 
-  test("queries both rolePermission and objectPermission in parallel", async () => {
-    mockPrisma.objectPermission.findFirst.mockResolvedValue({ id: "op-1" });
+  test("queries objectPermission only, skipping the RBAC ceiling entirely", async () => {
+    mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "f1" }]);
     await canDo("user-1", "read", "folder", "f1", "org-1");
-    expect(mockPrisma.rolePermission.findFirst).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.objectPermission.findFirst).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.objectPermission.findMany).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -254,19 +257,19 @@ describe("filterAllowedResourceIds", () => {
     expect(result).toEqual(new Set(["f1"]));
   });
 
-  test("RBAC mode: returns empty set when no ceiling, even if grants exist", async () => {
+  test("RBAC mode: returns empty set when no ceiling, without querying grants", async () => {
     mockPrisma.organization.findUnique.mockResolvedValue({ olpEnabled: false });
     mockPrisma.rolePermission.findFirst.mockResolvedValue(null);
-    mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "f1" }]);
     const result = await filterAllowedResourceIds("user-1", "org-1", "read", "folder", ["f1", "f2"]);
     expect(result).toEqual(new Set());
+    expect(mockPrisma.objectPermission.findMany).not.toHaveBeenCalled();
   });
 
-  test("OLP mode: returns granted IDs regardless of ceiling", async () => {
+  test("OLP mode: returns granted IDs without querying the ceiling", async () => {
     mockPrisma.organization.findUnique.mockResolvedValue({ olpEnabled: true });
-    mockPrisma.rolePermission.findFirst.mockResolvedValue(null);
     mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "f2" }]);
     const result = await filterAllowedResourceIds("user-1", "org-1", "read", "folder", ["f1", "f2"]);
     expect(result).toEqual(new Set(["f2"]));
+    expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
   });
 });

@@ -19,18 +19,13 @@ async function getPermActionId(
 }
 
 type RoleResolution =
-  | { decided: true; allowed: boolean; reason: string | null }
-  | {
-      decided: false;
-      roleIds: string[];
-      olpEnabled: boolean;
-      permActionId: string;
-    };
+  | { allowed: boolean; reason: string | null }
+  | { roleIds: string[]; olpEnabled: boolean; permActionId: string };
 
 /**
  * Resolves the trainer_admin/org_admin bypasses shared by `canDo` and
- * `filterAllowedResourceIds` — everything needed before the caller can run
- * its own ceiling + object-permission grant queries in parallel.
+ * `filterAllowedResourceIds` — everything needed before the caller runs
+ * its own ceiling + object-permission grant queries via `resolveGrant`.
  */
 async function resolveRoles(
   userId: string,
@@ -47,16 +42,16 @@ async function resolveRoles(
   });
 
   if (!user || !user.isActive)
-    return { decided: true, allowed: false, reason: "user not found" };
+    return { allowed: false, reason: "user not found" };
 
   if (user.userRoles.some((ur) => ur.role.code === "trainer_admin")) {
-    return { decided: true, allowed: true, reason: "trainer_admin" };
+    return { allowed: true, reason: "trainer_admin" };
   }
 
   const orgRoles = user.userRoles.filter((ur) => ur.orgId === orgId);
 
   if (orgRoles.some((ur) => ur.role.code === "org_admin")) {
-    return { decided: true, allowed: true, reason: "org_admin" };
+    return { allowed: true, reason: "org_admin" };
   }
 
   const roleIds = orgRoles.map((ur) => ur.roleId);
@@ -69,20 +64,57 @@ async function resolveRoles(
     getPermActionId(action),
   ]);
 
-  if (!permActionId)
-    return { decided: true, allowed: false, reason: "unknown action" };
+  if (!permActionId) return { allowed: false, reason: "unknown action" };
 
-  return {
-    decided: false,
-    roleIds,
-    olpEnabled: org?.olpEnabled ?? false,
-    permActionId,
-  };
+  return { roleIds, olpEnabled: org?.olpEnabled ?? false, permActionId };
+}
+
+type DecidedRoles = Extract<RoleResolution, { roleIds: string[] }>;
+
+/**
+ * Runs the ceiling + grant queries shared by `canDo` and
+ * `filterAllowedResourceIds`. In OLP mode the ceiling is irrelevant, so it's
+ * never queried; in RBAC mode a missing ceiling short-circuits before the
+ * (potentially large) object-permission lookup runs.
+ */
+async function resolveGrant(
+  userId: string,
+  orgId: string,
+  resourceType: ResourceType,
+  resourceIds: string[],
+  resolution: DecidedRoles,
+): Promise<{ rbacAllows: boolean; grantedIds: Set<string> }> {
+  if (!resolution.olpEnabled) {
+    const rbacAllows = await prisma.rolePermission
+      .findFirst({
+        where: {
+          roleId: { in: resolution.roleIds },
+          actionId: resolution.permActionId,
+          resourceType,
+        },
+      })
+      .then(Boolean);
+    if (!rbacAllows) return { rbacAllows: false, grantedIds: new Set() };
+  }
+
+  const rows = await prisma.objectPermission.findMany({
+    where: {
+      orgId,
+      resourceType,
+      actionId: resolution.permActionId,
+      resourceId: { in: resourceIds },
+      OR: [
+        { granteeUserId: userId },
+        { granteeRoleId: { in: resolution.roleIds } },
+      ],
+    },
+    select: { resourceId: true },
+  });
+  return { rbacAllows: true, grantedIds: new Set(rows.map((r) => r.resourceId)) };
 }
 
 /**
  * Evaluates whether a user can perform a specific action on a given resource.
- * This is the core authorization function that supports two modes depending on the Organization's settings:
  * Combined rule (after trainer_admin / org_admin bypasses):
  *   allowed = grantExists && (org.olpEnabled || ceilingExists)
  *
@@ -91,12 +123,7 @@ async function resolveRoles(
  *    AND an object-level grant (the specific resource was shared with them).
  *
  * 2. OLP mode (olpEnabled = true):
- *    Only the object-level grant matters — ceiling is ignored.
- *
- * Hierarchy of checks:
- * - System Admin (`trainer_admin`) -> Always Allowed
- * - Org Admin (`org_admin` in current Org) -> Always Allowed
- * - Regular Member -> ceiling checked first ("no RBAC ceiling"), then grant ("no object permission").
+ *    Only the object-level grant matters — ceiling is ignored and never queried.
  *
  * @param userId - The ID of the user requesting access.
  * @param action - The permission action code (e.g., READ_FOLDER, WRITE_METADATA).
@@ -115,38 +142,23 @@ export async function canDo(
   if (!orgId) return { allowed: false, reason: "no org context" };
 
   const resolution = await resolveRoles(userId, orgId, action);
-  if (resolution.decided) {
+  if (!("roleIds" in resolution)) {
     return { allowed: resolution.allowed, reason: resolution.reason };
   }
 
-  const [rbacAllows, olpAllows] = await Promise.all([
-    prisma.rolePermission
-      .findFirst({
-        where: {
-          roleId: { in: resolution.roleIds },
-          actionId: resolution.permActionId,
-          resourceType,
-        },
-      })
-      .then(Boolean),
-    prisma.objectPermission
-      .findFirst({
-        where: {
-          orgId,
-          resourceType,
-          resourceId,
-          actionId: resolution.permActionId,
-          OR: [
-            { granteeUserId: userId },
-            { granteeRoleId: { in: resolution.roleIds } },
-          ],
-        },
-      })
-      .then(Boolean),
-  ]);
+  const { rbacAllows, grantedIds } = await resolveGrant(
+    userId,
+    orgId,
+    resourceType,
+    [resourceId],
+    resolution,
+  );
+  const olpAllows = grantedIds.has(resourceId);
 
-  if (resolution.olpEnabled && olpAllows) {
-    return { allowed: true, reason: null };
+  if (resolution.olpEnabled) {
+    return olpAllows
+      ? { allowed: true, reason: null }
+      : { allowed: false, reason: "no object permission" };
   }
 
   if (!rbacAllows) {
@@ -168,39 +180,18 @@ export async function filterAllowedResourceIds(
   if (resourceIds.length === 0) return new Set();
 
   const resolution = await resolveRoles(userId, orgId, action);
-  if (resolution.decided) {
+  if (!("roleIds" in resolution)) {
     return resolution.allowed ? new Set(resourceIds) : new Set();
   }
 
-  const [rbacAllows, olpAllowedResourceIds] = await Promise.all([
-    prisma.rolePermission
-      .findFirst({
-        where: {
-          roleId: { in: resolution.roleIds },
-          actionId: resolution.permActionId,
-          resourceType,
-        },
-      })
-      .then(Boolean),
-    prisma.objectPermission
-      .findMany({
-        where: {
-          orgId,
-          resourceType,
-          actionId: resolution.permActionId,
-          resourceId: { in: resourceIds },
-          OR: [
-            { granteeUserId: userId },
-            { granteeRoleId: { in: resolution.roleIds } },
-          ],
-        },
-        select: { resourceId: true },
-      })
-      .then((rows) => rows.map((r) => r.resourceId)),
-  ]);
-
-  if (!resolution.olpEnabled && !rbacAllows) return new Set();
-  return new Set(olpAllowedResourceIds);
+  const { grantedIds } = await resolveGrant(
+    userId,
+    orgId,
+    resourceType,
+    resourceIds,
+    resolution,
+  );
+  return grantedIds;
 }
 
 /**
