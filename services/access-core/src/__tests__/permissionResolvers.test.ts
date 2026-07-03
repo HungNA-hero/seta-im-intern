@@ -210,7 +210,7 @@ describe("Mutation.grantObjectPermission", () => {
       expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
     );
 
-    expect(mockAssertResourceInOrg).not.toHaveBeenCalled();
+    expect(mockAssertResourceInOrg).toHaveBeenCalled();
     expect(mockGrant).not.toHaveBeenCalled();
   });
 
@@ -227,8 +227,19 @@ describe("Mutation.grantObjectPermission", () => {
       expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
     );
 
-    expect(mockAssertResourceInOrg).not.toHaveBeenCalled();
+    expect(mockAssertResourceInOrg).toHaveBeenCalled();
     expect(mockGrant).not.toHaveBeenCalled();
+  });
+
+  test("runs the grantee check and resource-in-org check concurrently", async () => {
+    await permissionResolvers.Mutation.grantObjectPermission(
+      undefined,
+      { ...base, granteeUserId: "grantee-1" },
+      makeCtx(),
+    );
+
+    expect(mockIsActiveOrgMember).toHaveBeenCalledTimes(1);
+    expect(mockAssertResourceInOrg).toHaveBeenCalledTimes(1);
   });
 
   test("propagates NOT_FOUND and does not grant when the resource is not in the org", async () => {

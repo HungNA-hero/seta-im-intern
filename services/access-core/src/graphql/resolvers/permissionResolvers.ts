@@ -67,19 +67,28 @@ export const permissionResolvers = {
         resourceId,
         orgId,
       );
-      if (granteeUserId && !(await isActiveOrgMember(orgId, granteeUserId))) {
-        throw new GraphQLError(
-          "Grantee is not an active member of this organization",
-          { extensions: { code: "BAD_USER_INPUT" } },
-        );
-      }
-      if (granteeRoleId && !(await roleBelongsToOrg(orgId, granteeRoleId))) {
-        throw new GraphQLError(
-          "Grantee role does not belong to this organization",
-          { extensions: { code: "BAD_USER_INPUT" } },
-        );
-      }
-      await assertResourceInOrg(resourceType, resourceId, orgId, ctx.userId);
+      const granteeIsValid = granteeUserId
+        ? isActiveOrgMember(orgId, granteeUserId).then((ok) => {
+            if (!ok) {
+              throw new GraphQLError(
+                "Grantee is not an active member of this organization",
+                { extensions: { code: "BAD_USER_INPUT" } },
+              );
+            }
+          })
+        : roleBelongsToOrg(orgId, granteeRoleId!).then((ok) => {
+            if (!ok) {
+              throw new GraphQLError(
+                "Grantee role does not belong to this organization",
+                { extensions: { code: "BAD_USER_INPUT" } },
+              );
+            }
+          });
+
+      await Promise.all([
+        granteeIsValid,
+        assertResourceInOrg(resourceType, resourceId, orgId, ctx.userId),
+      ]);
       try {
         return serializePermission(
           await grantObjectPermission(
