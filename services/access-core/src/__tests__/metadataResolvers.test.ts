@@ -110,15 +110,27 @@ describe("Query.metadataItems", () => {
       ctx,
     );
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "read", "folder", folder, org);
+    expect(mockCanDo).toHaveBeenCalledWith(
+      "user-1",
+      "read",
+      "folder",
+      folder,
+      org,
+    );
   });
 
   test("throws FORBIDDEN when canDo denies", async () => {
     mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "denied" });
 
     await expect(
-      metadataResolvers.Query.metadataItems(undefined, { orgId: org, folderId: folder }, ctx),
-    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "FORBIDDEN" } }));
+      metadataResolvers.Query.metadataItems(
+        undefined,
+        { orgId: org, folderId: folder },
+        ctx,
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+    );
     expect(mockFetch).not.toHaveBeenCalled();
   });
 });
@@ -162,7 +174,13 @@ describe("Query.metadataItem", () => {
       ctx,
     );
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "read", "metadata_item", id, org);
+    expect(mockCanDo).toHaveBeenCalledWith(
+      "user-1",
+      "read",
+      "metadata_item",
+      id,
+      org,
+    );
   });
 });
 
@@ -192,14 +210,23 @@ describe("Mutation.createMetadata", () => {
       ctx,
     );
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", "folder-1", org);
+    expect(mockCanDo).toHaveBeenCalledWith(
+      "user-1",
+      "write",
+      "folder",
+      "folder-1",
+      org,
+    );
   });
 
   test("parses metadataJson and passes object to Go", async () => {
     fetchOk(makeGoMetadataItem());
     await metadataResolvers.Mutation.createMetadata(
       undefined,
-      { orgId: org, input: { folderId: "f", title: "t", metadataJson: '{"key":"value"}' } },
+      {
+        orgId: org,
+        input: { folderId: "f", title: "t", metadataJson: '{"key":"value"}' },
+      },
       ctx,
     );
 
@@ -226,7 +253,10 @@ describe("Mutation.createMetadata", () => {
     await expect(
       metadataResolvers.Mutation.createMetadata(
         undefined,
-        { orgId: org, input: { folderId: "f", title: "t", metadataJson: 'invalid' } },
+        {
+          orgId: org,
+          input: { folderId: "f", title: "t", metadataJson: "invalid" },
+        },
         ctx,
       ),
     ).rejects.toThrow(
@@ -256,8 +286,14 @@ describe("Mutation.updateMetadata", () => {
 
   test("throws BAD_USER_INPUT if input is empty", async () => {
     await expect(
-      metadataResolvers.Mutation.updateMetadata(undefined, { orgId: org, id, input: {} }, ctx)
-    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }));
+      metadataResolvers.Mutation.updateMetadata(
+        undefined,
+        { orgId: org, id, input: {} },
+        ctx,
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+    );
   });
 
   test("calls canDo with write metadata_item permission", async () => {
@@ -268,7 +304,13 @@ describe("Mutation.updateMetadata", () => {
       ctx,
     );
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "metadata_item", id, org);
+    expect(mockCanDo).toHaveBeenCalledWith(
+      "user-1",
+      "write",
+      "metadata_item",
+      id,
+      org,
+    );
   });
 
   test("handles explicit null for metadataJson", async () => {
@@ -329,7 +371,9 @@ describe("metadata transport and failure gates", () => {
     );
 
     const [url, request] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("http://go-mock/internal/api/v1/metadata-items?orgId=org-1");
+    expect(url).toBe(
+      "http://go-mock/internal/api/v1/metadata-items?orgId=org-1",
+    );
     expect(request.method).toBe("POST");
     expect(request.headers).toEqual({
       "X-User-Id": "user-1",
@@ -479,5 +523,215 @@ describe("metadata transport and failure gates", () => {
         extensions: { code: "INTERNAL_SERVER_ERROR" },
       }),
     );
+  });
+});
+
+// ── Query.searchMetadata ──────────────────────────────────────────────────────
+
+describe("Query.searchMetadata", () => {
+  const org = "org-1";
+  const ctx = makeCtx();
+
+  test("returns items that pass policy check", async () => {
+    fetchListOk([
+      makeGoMetadataItem({ id: "meta-1" }),
+      makeGoMetadataItem({ id: "meta-2" }),
+    ]);
+    mockCanDo.mockImplementation(async (userId, action, kind, id) => {
+      if (id === "meta-1") return { allowed: true, reason: null };
+      return { allowed: false, reason: "denied" };
+    });
+
+    const result = await metadataResolvers.Query.searchMetadata(
+      undefined,
+      {
+        orgId: org,
+        input: { query: "test", limit: 10, offset: 0, folderId: "f1" },
+      },
+      ctx,
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: "meta-1" });
+    const url = mockFetch.mock.calls[0][0];
+    expect(url).toContain("limit=10");
+    expect(url).toContain("offset=0");
+    expect(url).toContain("folderId=f1");
+    expect(url).toContain("query=test");
+  });
+
+  test("does not check folder permission before fetching", async () => {
+    fetchListOk([]);
+    await metadataResolvers.Query.searchMetadata(
+      undefined,
+      { orgId: org, input: { folderId: "f1" } },
+      ctx,
+    );
+
+    expect(mockFetch).toHaveBeenCalled();
+    const calls = mockCanDo.mock.calls.filter((c) => c[2] === "folder");
+    expect(calls).toHaveLength(0);
+  });
+
+  test("aborts without partial data if a later policy check fails", async () => {
+    fetchListOk([
+      makeGoMetadataItem({ id: "meta-1" }),
+      makeGoMetadataItem({ id: "meta-2" }),
+    ]);
+    mockCanDo
+      .mockResolvedValueOnce({ allowed: true, reason: null })
+      .mockRejectedValueOnce(new Error("policy exception"));
+
+    await expect(
+      metadataResolvers.Query.searchMetadata(
+        undefined,
+        { orgId: org, input: { query: "test" } },
+        ctx,
+      ),
+    ).rejects.toThrow("policy exception");
+    expect(mockCanDo).toHaveBeenCalledTimes(2);
+  });
+
+  test.each([
+    [{ query: " " }, "query"],
+    [{ query: "a" }, "query"],
+    [{ labels: ["valid", " "] }, "labels"],
+    [{ limit: 0, query: "valid" }, "limit"],
+    [{ limit: 101, query: "valid" }, "limit"],
+    [{ offset: -1, query: "valid" }, "offset"],
+    [{}, "filter"],
+  ])("rejects invalid search input before Go: %s", async (input, message) => {
+    await expect(
+      metadataResolvers.Query.searchMetadata(
+        undefined,
+        { orgId: org, input },
+        ctx,
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ message: expect.stringContaining(message) }),
+    );
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockCanDo).not.toHaveBeenCalled();
+  });
+
+  test("normalizes filters and de-duplicates labels before Go", async () => {
+    fetchListOk([]);
+
+    await metadataResolvers.Query.searchMetadata(
+      undefined,
+      {
+        orgId: org,
+        input: {
+          query: "  test query  ",
+          labels: [" alpha ", "alpha", "beta"],
+          category: " photos ",
+          externalSource: " dam ",
+        },
+      },
+      ctx,
+    );
+
+    expect(mockFetch.mock.calls[0][0]).toBe(
+      "http://go-mock/internal/api/v1/metadata-items/search?orgId=org-1&query=test%20query&label=alpha&label=beta&category=photos&externalSource=dam&limit=50&offset=0",
+    );
+  });
+
+  test("passes all filter combinations including repeated labels to Go", async () => {
+    fetchListOk([]);
+    await metadataResolvers.Query.searchMetadata(
+      undefined,
+      {
+        orgId: org,
+        input: {
+          folderId: "f1",
+          query: "test",
+          labels: ["a", "b"],
+          category: "cat1",
+          externalSource: "ext1",
+          limit: 20,
+          offset: 5,
+        },
+      },
+      ctx,
+    );
+
+    const url = mockFetch.mock.calls[0][0];
+    expect(url).toContain("folderId=f1");
+    expect(url).toContain("query=test");
+    expect(url).toContain("label=a");
+    expect(url).toContain("label=b");
+    expect(url).toContain("category=cat1");
+    expect(url).toContain("externalSource=ext1");
+    expect(url).toContain("limit=20");
+    expect(url).toContain("offset=5");
+  });
+});
+
+// ── Mutation.deleteMetadata ───────────────────────────────────────────────────
+
+describe("Mutation.deleteMetadata", () => {
+  const org = "org-1";
+  const id = "meta-1";
+  const ctx = makeCtx();
+
+  test("deletes metadata and returns true", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
+
+    const result = await metadataResolvers.Mutation.deleteMetadata(
+      undefined,
+      { orgId: org, id },
+      ctx,
+    );
+
+    expect(result).toBe(true);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://go-mock/internal/api/v1/metadata-items?orgId=org-1&id=meta-1",
+      expect.objectContaining({ method: "DELETE" }),
+    );
+  });
+
+  test("calls canDo with delete metadata_item permission", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
+    await metadataResolvers.Mutation.deleteMetadata(
+      undefined,
+      { orgId: org, id },
+      ctx,
+    );
+
+    expect(mockCanDo).toHaveBeenCalledWith(
+      "user-1",
+      "delete",
+      "metadata_item",
+      id,
+      org,
+    );
+  });
+
+  test("denied delete stops before Go", async () => {
+    mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "denied" });
+
+    await expect(
+      metadataResolvers.Mutation.deleteMetadata(
+        undefined,
+        { orgId: org, id },
+        ctx,
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+    );
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("policy exception stops before Go", async () => {
+    mockCanDo.mockRejectedValueOnce(new Error("policy error"));
+
+    await expect(
+      metadataResolvers.Mutation.deleteMetadata(
+        undefined,
+        { orgId: org, id },
+        ctx,
+      ),
+    ).rejects.toThrow("policy error");
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

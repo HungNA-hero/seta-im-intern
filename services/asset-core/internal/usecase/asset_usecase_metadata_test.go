@@ -146,3 +146,36 @@ func rawMessagePointer(value string) *json.RawMessage {
 	message := json.RawMessage(value)
 	return &message
 }
+
+func TestAssetUsecase_SearchMetadata_Validation(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   domain.MetadataSearchFilter
+		wantErr error
+	}{
+		{name: "limit <= 0", input: domain.MetadataSearchFilter{Limit: 0}, wantErr: domain.ErrInvalidInput},
+		{name: "limit > 100", input: domain.MetadataSearchFilter{Limit: 101}, wantErr: domain.ErrInvalidInput},
+		{name: "offset < 0", input: domain.MetadataSearchFilter{Limit: 50, Offset: -1}, wantErr: domain.ErrInvalidInput},
+		{name: "invalid query", input: domain.MetadataSearchFilter{Limit: 50, Query: stringPointer("a")}, wantErr: domain.ErrInvalidInput},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			repo := &fakeAssetRepo{}
+			uc := usecase.NewAssetUsecase(repo)
+			_, err := uc.SearchMetadataItems(context.Background(), "org-1", testCase.input)
+			if !errors.Is(err, testCase.wantErr) {
+				t.Fatalf("expected %v, got %v", testCase.wantErr, err)
+			}
+		})
+	}
+}
+
+func TestAssetUsecase_DeleteMetadataItem(t *testing.T) {
+	repo := &fakeAssetRepo{}
+	uc := usecase.NewAssetUsecase(repo)
+	err := uc.DeleteMetadataItem(context.Background(), "org-1", "user-1", "id-1")
+	if err != nil {
+		t.Fatalf("unexpected err: %v", err)
+	}
+}

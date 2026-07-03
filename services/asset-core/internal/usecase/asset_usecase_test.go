@@ -70,6 +70,16 @@ func (f *fakeAssetRepo) UpdateMetadataItem(ctx context.Context, orgID, userID, i
 	return domain.MetadataItem{}, nil
 }
 
+// DeleteMetadataItem satisfies the metadata delete repository contract for use-case tests.
+func (f *fakeAssetRepo) DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error {
+	return nil
+}
+
+// SearchMetadataItems satisfies the metadata search repository contract for use-case tests.
+func (f *fakeAssetRepo) SearchMetadataItems(ctx context.Context, orgID string, filter domain.MetadataSearchFilter) ([]domain.MetadataItem, error) {
+	return nil, nil
+}
+
 func TestAssetUsecase_CreateFolder_Validation(t *testing.T) {
 	repo := &fakeAssetRepo{}
 	uc := usecase.NewAssetUsecase(repo)

@@ -23,6 +23,13 @@ const ORG_ID = "00000000-0000-0000-0000-000000000010";
 const OTHER_ORG_ID = "00000000-0000-0000-0000-000000000099";
 const ROOT_FOLDER_ID = "10000000-0000-0000-0000-000000000000";
 const USER_ID = "00000000-0000-0000-0000-000000000001";
+const SEARCH_ALLOWED_ID = "20000000-0000-0000-0000-000000000101";
+const SEARCH_DENIED_ID = "20000000-0000-0000-0000-000000000102";
+const SEARCH_DELETED_ID = "20000000-0000-0000-0000-000000000103";
+const SEARCH_DELETED_FOLDER_ITEM_ID = "20000000-0000-0000-0000-000000000104";
+const SEARCH_CROSS_ORG_ID = "20000000-0000-0000-0000-000000000105";
+const DELETED_FOLDER_ID = "30000000-0000-0000-0000-000000000001";
+const OTHER_ORG_FOLDER_ID = "30000000-0000-0000-0000-000000000002";
 
 interface GraphQLErrorResult {
   message?: string;
@@ -81,6 +88,19 @@ beforeAll(async () => {
 
   // Org (…010) and USER_ID's membership come from the committed access seed (V2).
   await assetDb.query("DELETE FROM metadata_items WHERE title LIKE 'E2E:%'");
+  await assetDb.query("DELETE FROM folders WHERE name LIKE 'E2E:%'");
+
+  await assetDb.query(
+    "INSERT INTO organization_ref (org_id) VALUES ($1) ON CONFLICT (org_id) DO NOTHING",
+    [OTHER_ORG_ID],
+  );
+  await assetDb.query(
+    `INSERT INTO folders (id, org_id, path, name, created_by, deleted_at)
+     VALUES
+       ($1::uuid, $3, replace($1::text, '-', '')::ltree, 'E2E: Deleted search folder', $4, NULL),
+       ($2::uuid, $5, replace($2::text, '-', '')::ltree, 'E2E: Other organization folder', $4, NULL)`,
+    [DELETED_FOLDER_ID, OTHER_ORG_FOLDER_ID, ORG_ID, USER_ID, OTHER_ORG_ID],
+  );
 
   app = await buildServer();
 });
@@ -88,6 +108,7 @@ beforeAll(async () => {
 afterAll(async () => {
   if (assetDb) {
     await assetDb.query("DELETE FROM metadata_items WHERE title LIKE 'E2E:%'");
+    await assetDb.query("DELETE FROM folders WHERE name LIKE 'E2E:%'");
   }
   if (app) await app.close();
   await prisma.$disconnect();
@@ -123,7 +144,9 @@ describe("Folder tree regression", () => {
       }`,
       { orgId: ORG_ID },
     );
-    const root = result.data?.folderTree.find((folder) => folder.name === "Root");
+    const root = result.data?.folderTree.find(
+      (folder) => folder.name === "Root",
+    );
 
     expect(result.errors).toBeUndefined();
     expect(root?.children[0].name).toBe("Animals");
@@ -147,7 +170,10 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
   });
 
   test("2. creates metadata and persists fields plus audit values", async () => {
-    const before = await assetDb.query("SELECT COUNT(*) FROM metadata_items");
+    const before = await assetDb.query(
+      "SELECT COUNT(*) FROM metadata_items WHERE folder_id = $1",
+      [ROOT_FOLDER_ID],
+    );
     const result = await queryGraphQL<{
       createMetadata: MetadataSummary & {
         description: string;
@@ -198,9 +224,16 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       created_by: USER_ID,
       updated_by: null,
     });
-    expect(Number((await assetDb.query("SELECT COUNT(*) FROM metadata_items")).rows[0].count)).toBe(
-      Number(before.rows[0].count) + 1,
-    );
+    expect(
+      Number(
+        (
+          await assetDb.query(
+            "SELECT COUNT(*) FROM metadata_items WHERE folder_id = $1",
+            [ROOT_FOLDER_ID],
+          )
+        ).rows[0].count,
+      ),
+    ).toBe(Number(before.rows[0].count) + 1);
   });
 
   test("3. lists the created item", async () => {
@@ -248,7 +281,10 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       [createdItemId],
     );
     const result = await queryGraphQL<{
-      updateMetadata: MetadataSummary & { metadataJson: string; updatedAt: string };
+      updateMetadata: MetadataSummary & {
+        metadataJson: string;
+        updatedAt: string;
+      };
     }>(
       `mutation($orgId: ID!, $id: ID!, $input: UpdateMetadataInput!) {
         updateMetadata(orgId: $orgId, id: $id, input: $input) {
@@ -303,7 +339,10 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     );
 
     expect(result.errors).toBeUndefined();
-    expect(result.data?.updateMetadata).toEqual({ description: null, category: null });
+    expect(result.data?.updateMetadata).toEqual({
+      description: null,
+      category: null,
+    });
     const persisted = await assetDb.query(
       "SELECT description, category FROM metadata_items WHERE id = $1",
       [createdItemId],
@@ -444,7 +483,9 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
 
   test("12. policy denial performs no Go request and leaves DB unchanged", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
-    const countBefore = await assetDb.query("SELECT COUNT(*) FROM metadata_items");
+    const countBefore = await assetDb.query(
+      "SELECT COUNT(*) FROM metadata_items",
+    );
     const rowBefore = await assetDb.query(
       "SELECT title, updated_at FROM metadata_items WHERE id = $1",
       [createdItemId],
@@ -495,7 +536,9 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     expect(policyFailure.errors?.[0]?.message).toBe("Unexpected error.");
 
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(await assetDb.query("SELECT COUNT(*) FROM metadata_items")).toMatchObject({
+    expect(
+      await assetDb.query("SELECT COUNT(*) FROM metadata_items"),
+    ).toMatchObject({
       rows: [{ count: countBefore.rows[0].count }],
     });
     const rowAfter = await assetDb.query(
@@ -503,5 +546,155 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       [createdItemId],
     );
     expect(rowAfter.rows[0]).toEqual(rowBefore.rows[0]);
+  });
+
+  test("13. searches metadata items with org scoping and pagination", async () => {
+    const stableTime = "2026-07-03T00:00:00.000Z";
+    await assetDb.query(
+      `INSERT INTO metadata_items
+         (id, folder_id, title, labels, metadata_json, created_by, updated_at, deleted_at)
+       VALUES
+         ($1, $6, 'E2E: Secure Search Allowed', ARRAY['secure'], '{}'::jsonb, $9, $10, NULL),
+         ($2, $6, 'E2E: Secure Search Denied', ARRAY['secure'], '{}'::jsonb, $9, $10, NULL),
+         ($3, $6, 'E2E: Secure Search Deleted', ARRAY['secure'], '{}'::jsonb, $9, $10, now()),
+         ($4, $7, 'E2E: Secure Search Deleted Folder', ARRAY['secure'], '{}'::jsonb, $9, $10, NULL),
+         ($5, $8, 'E2E: Secure Search Cross Org', ARRAY['secure'], '{}'::jsonb, $9, $10, NULL)`,
+      [
+        SEARCH_ALLOWED_ID,
+        SEARCH_DENIED_ID,
+        SEARCH_DELETED_ID,
+        SEARCH_DELETED_FOLDER_ITEM_ID,
+        SEARCH_CROSS_ORG_ID,
+        ROOT_FOLDER_ID,
+        DELETED_FOLDER_ID,
+        OTHER_ORG_FOLDER_ID,
+        USER_ID,
+        stableTime,
+      ],
+    );
+    await assetDb.query("UPDATE folders SET deleted_at = now() WHERE id = $1", [
+      DELETED_FOLDER_ID,
+    ]);
+
+    mockCanDo.mockImplementation(async (_userId, _action, _kind, id) => ({
+      allowed: id !== SEARCH_DENIED_ID,
+      reason: id === SEARCH_DENIED_ID ? "denied" : null,
+    }));
+
+    const result = await queryGraphQL<{ searchMetadata: MetadataSummary[] }>(
+      `query($orgId: ID!, $input: MetadataSearchInput!) {
+        searchMetadata(orgId: $orgId, input: $input) { id title }
+      }`,
+      {
+        orgId: ORG_ID,
+        input: {
+          query: "E2E: Secure Search",
+          labels: ["secure"],
+          limit: 10,
+          offset: 0,
+        },
+      },
+    );
+
+    expect(result.errors).toBeUndefined();
+    expect(result.data?.searchMetadata).toEqual([
+      expect.objectContaining({
+        id: SEARCH_ALLOWED_ID,
+        title: "E2E: Secure Search Allowed",
+      }),
+    ]);
+    expect(mockCanDo).toHaveBeenCalledTimes(2);
+  });
+
+  test("14. aborts search without partial data on a policy exception", async () => {
+    mockCanDo.mockImplementation(async (_userId, _action, _kind, id) => {
+      if (id === SEARCH_ALLOWED_ID) return { allowed: true, reason: null };
+      throw new Error("policy unavailable");
+    });
+
+    const result = await queryGraphQL<{ searchMetadata: MetadataSummary[] }>(
+      `query($orgId: ID!, $input: MetadataSearchInput!) {
+        searchMetadata(orgId: $orgId, input: $input) { id title }
+      }`,
+      {
+        orgId: ORG_ID,
+        input: { query: "E2E: Secure Search", limit: 10, offset: 0 },
+      },
+    );
+
+    expect(result.data).toBeNull();
+    expect(firstErrorCode(result)).toBe("INTERNAL_SERVER_ERROR");
+    expect(mockCanDo).toHaveBeenCalledTimes(2);
+  });
+
+  test("15. deletes metadata, records audit fields, and maps repeat to 404", async () => {
+    const before = await assetDb.query(
+      "SELECT updated_at FROM metadata_items WHERE id = $1",
+      [createdItemId],
+    );
+    const result = await queryGraphQL<{ deleteMetadata: boolean }>(
+      `mutation($orgId: ID!, $id: ID!) {
+        deleteMetadata(orgId: $orgId, id: $id)
+      }`,
+      { orgId: ORG_ID, id: createdItemId },
+    );
+
+    expect(result.errors).toBeUndefined();
+    expect(result.data?.deleteMetadata).toBe(true);
+
+    const persisted = await assetDb.query(
+      `SELECT deleted_at, updated_by, updated_at FROM metadata_items WHERE id = $1`,
+      [createdItemId],
+    );
+    expect(persisted.rows[0].deleted_at).not.toBeNull();
+    expect(persisted.rows[0].updated_by).toBe(USER_ID);
+    expect(
+      new Date(persisted.rows[0].updated_at).getTime(),
+    ).toBeGreaterThanOrEqual(new Date(before.rows[0].updated_at).getTime());
+
+    const repeated = await queryGraphQL<unknown>(
+      `mutation($orgId: ID!, $id: ID!) {
+        deleteMetadata(orgId: $orgId, id: $id)
+      }`,
+      { orgId: ORG_ID, id: createdItemId },
+    );
+    expect(firstErrorCode(repeated)).toBe("NOT_FOUND");
+  });
+
+  test("16. denied delete makes no Go request and leaves the row unchanged", async () => {
+    const created = await queryGraphQL<{
+      createMetadata: { id: string };
+    }>(
+      `mutation($orgId: ID!, $input: CreateMetadataInput!) {
+        createMetadata(orgId: $orgId, input: $input) { id }
+      }`,
+      {
+        orgId: ORG_ID,
+        input: { folderId: ROOT_FOLDER_ID, title: "E2E: Denied delete" },
+      },
+    );
+    const deniedID = created.data?.createMetadata.id ?? "";
+    const before = await assetDb.query(
+      "SELECT deleted_at, updated_by, updated_at FROM metadata_items WHERE id = $1",
+      [deniedID],
+    );
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    mockCanDo.mockResolvedValue({ allowed: false, reason: "denied" });
+
+    const denied = await queryGraphQL<unknown>(
+      `mutation($orgId: ID!, $id: ID!) {
+        deleteMetadata(orgId: $orgId, id: $id)
+      }`,
+      { orgId: ORG_ID, id: deniedID },
+    );
+
+    expect(firstErrorCode(denied)).toBe("FORBIDDEN");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(
+      await assetDb.query(
+        "SELECT deleted_at, updated_by, updated_at FROM metadata_items WHERE id = $1",
+        [deniedID],
+      ),
+    ).toMatchObject({ rows: [before.rows[0]] });
   });
 });

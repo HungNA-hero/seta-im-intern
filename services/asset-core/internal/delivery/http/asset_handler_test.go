@@ -37,6 +37,7 @@ type fakeAssetUsecase struct {
 	metadataCreateErr   error
 	metadataUpdateInput domain.UpdateMetadataInput
 	metadataUpdateErr   error
+	metadataSearchInput domain.MetadataSearchFilter
 
 	moveFolderFunc   func(ctx context.Context, orgID, userID, folderID string, input domain.MoveFolderInput) (domain.Folder, error)
 	deleteFolderFunc func(ctx context.Context, orgID, userID, folderID string) error
@@ -154,6 +155,23 @@ func (f *fakeAssetUsecase) UpdateMetadataItem(_ context.Context, orgID, userID, 
 	f.orgID = orgID
 	f.metadataUpdateInput = input
 	return f.metadataItemResp, f.metadataUpdateErr
+}
+
+// SearchMetadataItems captures decoded search input and returns configured results.
+func (f *fakeAssetUsecase) SearchMetadataItems(_ context.Context, orgID string, filter domain.MetadataSearchFilter) ([]domain.MetadataItem, error) {
+	f.called = true
+	f.methodCalled = "SearchMetadataItems"
+	f.orgID = orgID
+	f.metadataSearchInput = filter
+	return f.metadataItemsResp, f.metadataItemsErr
+}
+
+// DeleteMetadataItem captures delete presence for handler assertions.
+func (f *fakeAssetUsecase) DeleteMetadataItem(_ context.Context, orgID, userID, id string) error {
+	f.called = true
+	f.methodCalled = "DeleteMetadataItem"
+	f.orgID = orgID
+	return f.metadataItemErr
 }
 
 // ────────────────────────────────────────────────────────────

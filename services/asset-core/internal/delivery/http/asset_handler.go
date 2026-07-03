@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -117,6 +118,7 @@ func NewAssetHandler(mux *http.ServeMux, usecase domain.AssetUsecase, db *gorm.D
 	mux.HandleFunc("/internal/api/v1/folders/move", RequireActor(handler.HandleMoveFolder))
 	mux.HandleFunc("/internal/api/v1/facts/folders", RequireActor(handler.HandleFolderFacts))
 	mux.HandleFunc("/internal/api/v1/metadata-items", RequireActor(handler.HandleMetadataItems))
+	mux.HandleFunc("/internal/api/v1/metadata-items/search", RequireActor(handler.HandleSearchMetadataItems))
 }
 
 func (h *AssetHandler) HandleHealth(w http.ResponseWriter, r *http.Request) {
@@ -439,6 +441,8 @@ func (h *AssetHandler) HandleMetadataItems(w http.ResponseWriter, r *http.Reques
 		h.handleCreateMetadataItem(w, r, actor)
 	case http.MethodPatch:
 		h.handleUpdateMetadataItem(w, r, actor)
+	case http.MethodDelete:
+		h.handleDeleteMetadataItem(w, r, actor)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -606,6 +610,120 @@ func (h *AssetHandler) handleUpdateMetadataItem(w http.ResponseWriter, r *http.R
 	writeJSON(w, http.StatusOK, map[string]any{
 		"status": "success",
 		"item":   item,
+	})
+}
+
+// handleDeleteMetadataItem processes DELETE requests to soft-delete a specific metadata item.
+func (h *AssetHandler) handleDeleteMetadataItem(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor) {
+	id := r.URL.Query().Get("id")
+	orgID := r.URL.Query().Get("orgId")
+	if id == "" || orgID == "" {
+		http.Error(w, "Missing id or orgId", http.StatusBadRequest)
+		return
+	}
+	if err := uuid.Validate(id); err != nil {
+		http.Error(w, "Invalid metadata id format", http.StatusBadRequest)
+		return
+	}
+	if orgID != actor.OrgID {
+		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		return
+	}
+
+	if err := h.usecase.DeleteMetadataItem(r.Context(), orgID, actor.UserID, id); err != nil {
+		h.mapDomainError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// HandleSearchMetadataItems processes metadata search queries.
+func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.Request) {
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		http.Error(w, "Missing actor context", http.StatusInternalServerError)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	orgID := r.URL.Query().Get("orgId")
+	if orgID == "" {
+		http.Error(w, "Missing orgId", http.StatusBadRequest)
+		return
+	}
+	if orgID != actor.OrgID {
+		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		return
+	}
+
+	filter := domain.MetadataSearchFilter{
+		Labels: r.URL.Query()["label"],
+	}
+
+	if r.URL.Query().Has("folderId") {
+		fID := r.URL.Query().Get("folderId")
+		if fID != "" {
+			if err := uuid.Validate(fID); err != nil {
+				http.Error(w, "Invalid folderId format", http.StatusBadRequest)
+				return
+			}
+		}
+		filter.FolderID = &fID
+	}
+	if r.URL.Query().Has("query") {
+		q := r.URL.Query().Get("query")
+		filter.Query = &q
+	}
+	if r.URL.Query().Has("category") {
+		c := r.URL.Query().Get("category")
+		filter.Category = &c
+	}
+	if r.URL.Query().Has("externalSource") {
+		es := r.URL.Query().Get("externalSource")
+		filter.ExternalSource = &es
+	}
+
+	limitStr := r.URL.Query().Get("limit")
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil {
+			filter.Limit = l
+		} else {
+			http.Error(w, "Invalid limit format", http.StatusBadRequest)
+			return
+		}
+	} else {
+		filter.Limit = 50
+	}
+
+	offsetStr := r.URL.Query().Get("offset")
+	if offsetStr != "" {
+		if o, err := strconv.Atoi(offsetStr); err == nil {
+			filter.Offset = o
+		} else {
+			http.Error(w, "Invalid offset format", http.StatusBadRequest)
+			return
+		}
+	}
+
+	items, err := h.usecase.SearchMetadataItems(r.Context(), orgID, filter)
+	if err != nil {
+		h.mapDomainError(w, err)
+		return
+	}
+
+	if items == nil {
+		items = []domain.MetadataItem{}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status": "success",
+		"count":  len(items),
+		"items":  items,
 	})
 }
 

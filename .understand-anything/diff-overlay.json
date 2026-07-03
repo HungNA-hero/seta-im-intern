@@ -1,26 +1,33 @@
 {
   "version": "1.0.0",
-  "baseBranch": "origin/main@8fbfe1f",
-  "generatedAt": "2026-07-02T14:48:00+07:00",
+  "baseBranch": "origin/main@eaf5684",
+  "generatedAt": "2026-07-03T10:52:00+07:00",
   "changedFiles": [
-    "services/access-core/src/__tests__/folderResolvers.test.ts",
-    "services/access-core/src/__tests__/folderE2E.e2e.test.ts",
+    "services/access-core/src/__tests__/assetClient.test.ts",
+    "services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
+    "services/access-core/src/__tests__/metadataResolvers.test.ts",
+    "services/access-core/src/clients/assetClient.ts",
+    "services/access-core/src/graphql/context.ts",
     "services/access-core/src/graphql/resolvers/folderResolvers.ts",
+    "services/access-core/src/graphql/resolvers/metadataResolvers.ts",
     "services/access-core/src/graphql/typeDefs.ts",
     "services/asset-core/internal/delivery/http/asset_handler.go",
+    "services/asset-core/internal/delivery/http/asset_handler_metadata_test.go",
     "services/asset-core/internal/delivery/http/asset_handler_test.go",
-    "services/asset-core/internal/delivery/http/asset_handler_move_delete_test.go",
     "services/asset-core/internal/domain/asset.go",
     "services/asset-core/internal/repository/asset_repository.go",
     "services/asset-core/internal/repository/asset_repository_folder_integration_test.go",
+    "services/asset-core/internal/repository/asset_repository_metadata_integration_test.go",
     "services/asset-core/internal/usecase/asset_usecase.go",
-    "services/asset-core/internal/usecase/asset_usecase_test.go",
-    "services/asset-core/test_postgres.ps1"
+    "services/asset-core/internal/usecase/asset_usecase_metadata_test.go",
+    "services/asset-core/internal/usecase/asset_usecase_test.go"
   ],
   "changedNodeIds": [
+    "file:services/access-core/src/graphql/context.ts",
+    "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+    "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
     "file:services/access-core/src/graphql/typeDefs.ts",
     "file:services/asset-core/internal/delivery/http/asset_handler.go",
-    "file:services/asset-core/internal/delivery/http/asset_handler_test.go",
     "class:services/asset-core/internal/delivery/http/asset_handler.go:AssetHandler",
     "file:services/asset-core/internal/domain/asset.go",
     "class:services/asset-core/internal/domain/asset.go:AssetRepository",
@@ -28,17 +35,16 @@
     "file:services/asset-core/internal/repository/asset_repository.go",
     "class:services/asset-core/internal/repository/asset_repository.go:assetRepository",
     "file:services/asset-core/internal/usecase/asset_usecase.go",
-    "file:services/asset-core/internal/usecase/asset_usecase_test.go",
     "class:services/asset-core/internal/usecase/asset_usecase.go:assetUsecase"
   ],
   "affectedNodeIds": [
-    "file:services/access-core/src/graphql/context.ts",
     "file:services/access-core/src/db/queries/canDo.ts",
+    "file:services/access-core/src/graphql/schema.ts",
     "file:services/access-core/src/graphql/resolvers/index.ts",
-    "file:services/access-core/src/server.ts",
+    "file:services/access-core/src/__tests__/metadataResolvers.test.ts",
+    "file:services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
     "file:services/asset-core/cmd/server/main.go",
     "file:services/asset-core/internal/delivery/http/middleware.go",
-    "file:services/asset-core/internal/requestcontext/context.go",
-    "file:services/asset-core/internal/repository/asset_repository_test.go"
+    "file:services/asset-core/internal/requestcontext/context.go"
   ]
 }

@@ -121,6 +121,17 @@ type CreateMetadataInput struct {
 	Notes          *string         `json:"notes"`
 }
 
+// MetadataSearchFilter holds the criteria for searching metadata items.
+type MetadataSearchFilter struct {
+	FolderID       *string
+	Query          *string
+	Labels         []string
+	Category       *string
+	ExternalSource *string
+	Limit          int
+	Offset         int
+}
+
 // UpdateMetadataInput holds the data required to update a metadata item.
 // It uses pointer fields and presence flags for differentiating between omitted and explicit null values.
 type UpdateMetadataInput struct {
@@ -172,6 +183,10 @@ type AssetRepository interface {
 	CreateMetadataItem(ctx context.Context, orgID, userID string, input CreateMetadataInput) (MetadataItem, error)
 	// UpdateMetadataItem applies sparse fields to a locked metadata row and preserves cross-field invariants.
 	UpdateMetadataItem(ctx context.Context, orgID, userID, id string, input UpdateMetadataInput) (MetadataItem, error)
+	// DeleteMetadataItem soft-deletes a metadata item in an active org-scoped folder.
+	DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error
+	// SearchMetadataItems returns active metadata items matching the filter within the organization.
+	SearchMetadataItems(ctx context.Context, orgID string, filter MetadataSearchFilter) ([]MetadataItem, error)
 }
 
 // AssetUsecase defines the contract for business logic operations related to assets.
@@ -196,4 +211,8 @@ type AssetUsecase interface {
 	CreateMetadataItem(ctx context.Context, orgID, userID string, input CreateMetadataInput) (MetadataItem, error)
 	// UpdateMetadataItem validates and applies a sparse metadata update.
 	UpdateMetadataItem(ctx context.Context, orgID, userID, id string, input UpdateMetadataInput) (MetadataItem, error)
+	// DeleteMetadataItem soft-deletes an org-scoped metadata item.
+	DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error
+	// SearchMetadataItems searches for metadata items based on the provided filter within the organization.
+	SearchMetadataItems(ctx context.Context, orgID string, filter MetadataSearchFilter) ([]MetadataItem, error)
 }
