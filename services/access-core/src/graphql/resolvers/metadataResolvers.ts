@@ -1,6 +1,6 @@
 import { GraphQLError } from "graphql";
 import { assertAuthenticated, assertCan, assertOrgMember, GraphQLContext } from "../context";
-import { canDo, filterVisible } from "../../db/queries/canDo";
+import { filterVisible } from "../../db/queries/canDo";
 import {
   assetFetch,
   assetPath,
@@ -274,21 +274,14 @@ export const metadataResolvers = {
         "Failed to search metadata items",
       );
 
-      const result: ReturnType<typeof toMetadataItem>[] = [];
-      for (const item of items) {
-        const { allowed } = await canDo(
-          ctx.userId,
-          "read",
-          "metadata_item",
-          item.id,
-          orgId,
-        );
-        if (allowed) {
-          result.push(toMetadataItem(item));
-        }
-      }
-
-      return result;
+      const visible = await filterVisible(
+        ctx.userId,
+        orgId,
+        "read",
+        "metadata_item",
+        items,
+      );
+      return visible.map(toMetadataItem);
     },
   },
 
