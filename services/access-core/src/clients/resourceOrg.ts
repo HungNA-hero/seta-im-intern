@@ -1,10 +1,16 @@
 import { GraphQLError } from "graphql";
 import { ResourceType } from "@prisma/client";
-import { assetFetch, assetPath, throwGoError } from "./assetClient";
+import {
+  assetFetch,
+  assetPath,
+  throwGoError,
+  FOLDERS_PATH,
+  METADATA_PATH,
+} from "./assetClient";
 
 const RESOURCE_PATHS: Record<ResourceType, string> = {
-  folder: "/internal/api/v1/folders",
-  metadata_item: "/internal/api/v1/metadata-items",
+  folder: FOLDERS_PATH,
+  metadata_item: METADATA_PATH,
 };
 
 export async function assertResourceInOrg(

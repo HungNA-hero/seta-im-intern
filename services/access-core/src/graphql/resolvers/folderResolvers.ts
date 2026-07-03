@@ -14,9 +14,8 @@ import {
   unwrapEnvelope,
   unwrapListEnvelope,
   unwrap204,
+  FOLDERS_PATH,
 } from "../../clients/assetClient";
-
-const FOLDERS_PATH = "/internal/api/v1/folders";
 
 interface GoFolder {
   id: string;

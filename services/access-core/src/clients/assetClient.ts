@@ -1,6 +1,9 @@
 import { GraphQLError } from "graphql";
 import { config } from "../config";
 
+export const FOLDERS_PATH = "/internal/api/v1/folders";
+export const METADATA_PATH = "/internal/api/v1/metadata-items";
+
 const GO_ERROR_CODES: Record<number, string> = {
   400: "BAD_USER_INPUT",
   401: "UNAUTHENTICATED",
