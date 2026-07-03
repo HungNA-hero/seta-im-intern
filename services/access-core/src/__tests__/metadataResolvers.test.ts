@@ -569,10 +569,7 @@ describe("Query.searchMetadata", () => {
       makeGoMetadataItem({ id: "meta-1" }),
       makeGoMetadataItem({ id: "meta-2" }),
     ]);
-    mockCanDo.mockImplementation(async (userId, action, kind, id) => {
-      if (id === "meta-1") return { allowed: true, reason: null };
-      return { allowed: false, reason: "denied" };
-    });
+    mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set(["meta-1"]));
 
     const result = await metadataResolvers.Query.searchMetadata(
       undefined,
@@ -601,18 +598,21 @@ describe("Query.searchMetadata", () => {
     );
 
     expect(mockFetch).toHaveBeenCalled();
-    const calls = mockCanDo.mock.calls.filter((c) => c[2] === "folder");
+    expect(mockCanDo).not.toHaveBeenCalled();
+    const calls = mockFilterAllowedResourceIds.mock.calls.filter(
+      (c) => c[3] === "folder",
+    );
     expect(calls).toHaveLength(0);
   });
 
-  test("aborts without partial data if a later policy check fails", async () => {
+  test("propagates the error and returns no data when the policy check fails", async () => {
     fetchListOk([
       makeGoMetadataItem({ id: "meta-1" }),
       makeGoMetadataItem({ id: "meta-2" }),
     ]);
-    mockCanDo
-      .mockResolvedValueOnce({ allowed: true, reason: null })
-      .mockRejectedValueOnce(new Error("policy exception"));
+    mockFilterAllowedResourceIds.mockRejectedValueOnce(
+      new Error("policy exception"),
+    );
 
     await expect(
       metadataResolvers.Query.searchMetadata(
@@ -621,7 +621,7 @@ describe("Query.searchMetadata", () => {
         ctx,
       ),
     ).rejects.toThrow("policy exception");
-    expect(mockCanDo).toHaveBeenCalledTimes(2);
+    expect(mockFilterAllowedResourceIds).toHaveBeenCalledTimes(1);
   });
 
   test.each([
@@ -643,7 +643,7 @@ describe("Query.searchMetadata", () => {
       expect.objectContaining({ message: expect.stringContaining(message) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
-    expect(mockCanDo).not.toHaveBeenCalled();
+    expect(mockFilterAllowedResourceIds).not.toHaveBeenCalled();
   });
 
   test("normalizes filters and de-duplicates labels before Go", async () => {
