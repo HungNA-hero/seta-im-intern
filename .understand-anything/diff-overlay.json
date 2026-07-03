@@ -1,37 +1,20 @@
 {
   "version": "1.0.0",
-  "baseBranch": "repair/KAN-37@a3b4fd2",
-  "generatedAt": "2026-07-03T15:08:00+07:00",
+  "baseBranch": "origin/main@ed97d47",
+  "generatedAt": "2026-07-03T16:55:00+07:00",
   "changedFiles": [
-    "scripts/test_import_cli.ps1",
-    "services/access-core/src/__tests__/importE2E.e2e.test.ts",
-    "services/asset-core/go.mod",
-    "services/asset-core/go.sum",
-    "services/asset-core/cmd/import-sample/main.go",
-    "services/asset-core/internal/delivery/http/asset_handler_create_update_test.go",
-    "services/asset-core/internal/domain/asset.go",
-    "services/asset-core/internal/domain/import.go",
-    "services/asset-core/internal/repository/asset_repository_import.go",
-    "services/asset-core/internal/repository/asset_repository_import_integration_test.go",
-    "services/asset-core/internal/usecase/asset_usecase.go",
-    "services/asset-core/internal/usecase/asset_usecase_import.go",
-    "services/asset-core/internal/usecase/asset_usecase_import_test.go",
-    "services/asset-core/internal/usecase/asset_usecase_metadata_test.go"
+    "services/access-core/POLICY_INTEGRATION_MATRIX.md",
+    "services/access-core/src/__tests__/policyMatrixE2E.e2e.test.ts"
   ],
-  "changedNodeIds": [
-    "file:services/asset-core/internal/domain/asset.go",
-    "class:services/asset-core/internal/domain/asset.go:AssetRepository",
-    "class:services/asset-core/internal/domain/asset.go:AssetUsecase",
-    "file:services/asset-core/internal/usecase/asset_usecase.go",
-    "class:services/asset-core/internal/usecase/asset_usecase.go:assetUsecase"
-  ],
+  "changedNodeIds": [],
   "affectedNodeIds": [
     "file:services/access-core/src/db/queries/canDo.ts",
-    "file:services/access-core/src/graphql/resolvers/metadataResolvers.ts",
-    "file:services/access-core/src/__tests__/metadataE2E.e2e.test.ts",
-    "file:services/asset-core/cmd/server/main.go",
-    "file:services/asset-core/internal/repository/asset_repository.go",
-    "class:services/asset-core/internal/repository/asset_repository.go:assetRepository",
-    "file:services/asset-core/internal/delivery/http/asset_handler.go"
+    "function:services/access-core/src/db/queries/canDo.ts:canDo",
+    "file:services/access-core/src/graphql/context.ts",
+    "file:services/access-core/src/graphql/directives.ts",
+    "file:services/access-core/src/graphql/resolvers/folderResolvers.ts",
+    "file:services/access-core/src/graphql/resolvers/permissionResolvers.ts",
+    "file:services/access-core/src/__tests__/folderE2E.e2e.test.ts",
+    "file:services/access-core/src/__tests__/metadataE2E.e2e.test.ts"
   ]
 }
