@@ -21,15 +21,20 @@ async function getPermActionId(
 /**
  * Evaluates whether a user can perform a specific action on a given resource.
  * This is the core authorization function that supports two modes depending on the Organization's settings:
- * 1. OLP (Object Level Permission) Disabled: Relies entirely on Role-Based Access Control (RBAC).
- *    The user must have a role in the organization that grants this permission globally (ceiling).
- * 2. OLP Enabled: Relies on explicit Object Grants.
- *    The user must have been granted direct access to this specific object (either via their User ID or Role ID).
+ * Combined rule (after trainer_admin / org_admin bypasses):
+ *   allowed = grantExists && (org.olpEnabled || ceilingExists)
+ *
+ * 1. RBAC mode (olpEnabled = false):
+ *    Requires BOTH a ceiling (role permits this action on this resource type)
+ *    AND an object-level grant (the specific resource was shared with them).
+ *
+ * 2. OLP mode (olpEnabled = true):
+ *    Only the object-level grant matters — ceiling is ignored.
  *
  * Hierarchy of checks:
  * - System Admin (`trainer_admin`) -> Always Allowed
  * - Org Admin (`org_admin` in current Org) -> Always Allowed
- * - Regular Member -> Fallback to OLP or RBAC checks.
+ * - Regular Member -> ceiling checked first ("no RBAC ceiling"), then grant ("no object permission").
  *
  * @param userId - The ID of the user requesting access.
  * @param action - The permission action code (e.g., READ_FOLDER, WRITE_METADATA).
@@ -81,24 +86,29 @@ export async function canDo(
 
   if (!permActionId) return { allowed: false, reason: "unknown action" };
 
-  if (!org?.olpEnabled) {
-    const rbacCeiling = await prisma.rolePermission.findFirst({
+  const [ceiling, grant] = await Promise.all([
+    prisma.rolePermission.findFirst({
       where: { roleId: { in: roleIds }, actionId: permActionId, resourceType },
-    });
-    return rbacCeiling
-      ? { allowed: true, reason: null }
-      : { allowed: false, reason: "no RBAC ceiling" };
+    }),
+    prisma.objectPermission.findFirst({
+      where: {
+        orgId,
+        resourceType,
+        resourceId,
+        actionId: permActionId,
+        OR: [{ granteeUserId: userId }, { granteeRoleId: { in: roleIds } }],
+      },
+    }),
+  ]);
+
+  if (org?.olpEnabled && grant) {
+    return { allowed: true, reason: null };
   }
 
-  const grant = await prisma.objectPermission.findFirst({
-    where: {
-      orgId,
-      resourceType,
-      resourceId,
-      actionId: permActionId,
-      OR: [{ granteeUserId: userId }, { granteeRoleId: { in: roleIds } }],
-    },
-  });
+  if (!ceiling) {
+    return { allowed: false, reason: "no RBAC ceiling" };
+  }
+
   return grant
     ? { allowed: true, reason: null }
     : { allowed: false, reason: "no object permission" };
