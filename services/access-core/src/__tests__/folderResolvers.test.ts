@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { GraphQLError } from "graphql";
+import { createCanDoMock } from "./helpers/canDoMock";
 
 const { mockCanDo } = vi.hoisted(() => ({
   mockCanDo: vi.fn(),
@@ -9,26 +10,9 @@ const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({
   mockFilterAllowedResourceIds: vi.fn(),
 }));
 
-vi.mock("../db/queries/canDo", () => ({
-  canDo: mockCanDo,
-  filterAllowedResourceIds: mockFilterAllowedResourceIds,
-  filterVisible: async (
-    userId: string,
-    orgId: string,
-    action: string,
-    resourceType: string,
-    items: { id: string }[],
-  ) => {
-    const allowed = await mockFilterAllowedResourceIds(
-      userId,
-      orgId,
-      action,
-      resourceType,
-      items.map((i) => i.id),
-    );
-    return items.filter((i) => allowed.has(i.id));
-  },
-}));
+vi.mock("../db/queries/canDo", () =>
+  createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
+);
 vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));
 vi.mock("../db/prisma", () => ({ prisma: { user: { findUnique: vi.fn() } } }));
 
