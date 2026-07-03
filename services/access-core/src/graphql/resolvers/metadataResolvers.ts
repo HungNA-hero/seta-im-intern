@@ -8,9 +8,8 @@ import {
   unwrapEnvelope,
   unwrapListEnvelope,
   unwrap204,
+  METADATA_PATH,
 } from "../../clients/assetClient";
-
-const METADATA_PATH = "/internal/api/v1/metadata-items";
 
 /** Represents one metadata item returned by the internal Go API. */
 interface GoMetadataItem {
