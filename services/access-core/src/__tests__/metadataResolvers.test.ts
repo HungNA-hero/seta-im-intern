@@ -5,7 +5,30 @@ const { mockCanDo } = vi.hoisted(() => ({
   mockCanDo: vi.fn(),
 }));
 
-vi.mock("../db/queries/canDo", () => ({ canDo: mockCanDo }));
+const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({
+  mockFilterAllowedResourceIds: vi.fn(),
+}));
+
+vi.mock("../db/queries/canDo", () => ({
+  canDo: mockCanDo,
+  filterAllowedResourceIds: mockFilterAllowedResourceIds,
+  filterVisible: async (
+    userId: string,
+    orgId: string,
+    action: string,
+    resourceType: string,
+    items: { id: string }[],
+  ) => {
+    const allowed = await mockFilterAllowedResourceIds(
+      userId,
+      orgId,
+      action,
+      resourceType,
+      items.map((i) => i.id),
+    );
+    return items.filter((i) => allowed.has(i.id));
+  },
+}));
 vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));
 vi.mock("../db/prisma", () => ({ prisma: { user: { findUnique: vi.fn() } } }));
 
@@ -80,6 +103,9 @@ function fetchError(status: number, statusText = "Error") {
 beforeEach(() => {
   vi.resetAllMocks();
   mockCanDo.mockResolvedValue({ allowed: true, reason: null });
+  mockFilterAllowedResourceIds.mockImplementation(
+    async (_u: string, _o: string, _a: string, _r: string, ids: string[]) => new Set(ids),
+  );
 });
 
 // ── Query.metadataItems ───────────────────────────────────────────────────────
@@ -102,7 +128,34 @@ describe("Query.metadataItems", () => {
     expect(result[0]).toMatchObject({ id: "meta-id", title: "Test Metadata" });
   });
 
-  test("calls canDo with read folder permission", async () => {
+  test("filters items through filterAllowedResourceIds", async () => {
+    fetchListOk([makeGoMetadataItem({ id: "m1" }), makeGoMetadataItem({ id: "m2" })]);
+    mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set(["m1"]));
+
+    const result = await metadataResolvers.Query.metadataItems(
+      undefined,
+      { orgId: org, folderId: folder },
+      ctx,
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("m1");
+  });
+
+  test("org member with zero grants gets empty list, not FORBIDDEN", async () => {
+    fetchListOk([makeGoMetadataItem({ id: "m1" })]);
+    mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set());
+
+    const result = await metadataResolvers.Query.metadataItems(
+      undefined,
+      { orgId: org, folderId: folder },
+      ctx,
+    );
+
+    expect(result).toHaveLength(0);
+  });
+
+  test("does not call canDo for metadataItems", async () => {
     fetchListOk([]);
     await metadataResolvers.Query.metadataItems(
       undefined,
@@ -110,28 +163,7 @@ describe("Query.metadataItems", () => {
       ctx,
     );
 
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "read",
-      "folder",
-      folder,
-      org,
-    );
-  });
-
-  test("throws FORBIDDEN when canDo denies", async () => {
-    mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "denied" });
-
-    await expect(
-      metadataResolvers.Query.metadataItems(
-        undefined,
-        { orgId: org, folderId: folder },
-        ctx,
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
-    );
-    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockCanDo).not.toHaveBeenCalled();
   });
 });
 
@@ -439,8 +471,9 @@ describe("metadata transport and failure gates", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  test("policy exception fails closed before Go", async () => {
-    mockCanDo.mockRejectedValueOnce(new Error("policy unavailable"));
+  test("policy exception fails closed before returning items", async () => {
+    fetchListOk([makeGoMetadataItem()]);
+    mockFilterAllowedResourceIds.mockRejectedValueOnce(new Error("policy unavailable"));
 
     await expect(
       metadataResolvers.Query.metadataItems(
@@ -449,7 +482,6 @@ describe("metadata transport and failure gates", () => {
         ctx,
       ),
     ).rejects.toThrow("policy unavailable");
-    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test("missing authentication fails before policy and Go", async () => {

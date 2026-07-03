@@ -3,8 +3,10 @@ import {
   assertAuthenticated,
   assertCan,
   assertOrgContext,
+  assertOrgMember,
   GraphQLContext,
 } from "../context";
+import { filterVisible } from "../../db/queries/canDo";
 import {
   assetFetch,
   assetPath,
@@ -93,8 +95,7 @@ export const folderResolvers = {
       { orgId, rootPath }: { orgId: string; rootPath?: string },
       ctx: GraphQLContext,
     ) => {
-      assertAuthenticated(ctx);
-      await assertCan(ctx.userId, "read", "folder", orgId, orgId);
+      assertOrgMember(ctx);
 
       const path = assetPath(
         FOLDERS_PATH,
@@ -102,14 +103,15 @@ export const folderResolvers = {
       );
 
       const folders = await fetchFolderList(path, ctx.userId, orgId);
+      const visible = await filterVisible(ctx.userId, orgId, "read", "folder", folders);
 
-      const cached = folders as (FolderNode & {
+      const cached = visible as (FolderNode & {
         subtreeNodes: FolderNode[];
       })[];
       cached.forEach((folder) => {
         folder.subtreeNodes = cached;
       });
-      return folders;
+      return visible;
     },
 
     folderChildren: async (
@@ -117,15 +119,15 @@ export const folderResolvers = {
       { orgId, parentPath }: { orgId: string; parentPath: string },
       ctx: GraphQLContext,
     ) => {
-      assertAuthenticated(ctx);
-      await assertCan(ctx.userId, "read", "folder", orgId, orgId);
+      assertOrgMember(ctx);
 
       const path = assetPath(FOLDERS_PATH, {
         orgId,
         rootPath: parentPath,
         children: true,
       });
-      return fetchFolderList(path, ctx.userId, orgId);
+      const folders = await fetchFolderList(path, ctx.userId, orgId);
+      return filterVisible(ctx.userId, orgId, "read", "folder", folders);
     },
   },
 
@@ -154,7 +156,8 @@ export const folderResolvers = {
         rootPath: parent.path,
         children: true,
       });
-      return fetchFolderList(path, ctx.userId, parent.orgId);
+      const folders = await fetchFolderList(path, ctx.userId, parent.orgId);
+      return filterVisible(ctx.userId, parent.orgId, "read", "folder", folders);
     },
   },
 

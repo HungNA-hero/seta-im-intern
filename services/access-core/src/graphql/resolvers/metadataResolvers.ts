@@ -1,6 +1,6 @@
 import { GraphQLError } from "graphql";
-import { assertAuthenticated, assertCan, GraphQLContext } from "../context";
-import { canDo } from "../../db/queries/canDo";
+import { assertAuthenticated, assertCan, assertOrgMember, GraphQLContext } from "../context";
+import { canDo, filterVisible } from "../../db/queries/canDo";
 import {
   assetFetch,
   assetPath,
@@ -200,20 +200,20 @@ export const metadataResolvers = {
       { orgId, folderId }: { orgId: string; folderId: string },
       ctx: GraphQLContext,
     ) => {
-      assertAuthenticated(ctx);
-      await assertCan(ctx.userId, "read", "folder", folderId, orgId);
+      assertOrgMember(ctx);
 
       const resp = await assetFetch(
         assetPath(METADATA_PATH, { orgId, folderId }),
         { userId: ctx.userId, orgId },
       );
 
-      return unwrapListEnvelope(
+      const items = await unwrapListEnvelope(
         resp,
         "items",
         toMetadataItem,
         "Failed to fetch metadata items",
       );
+      return filterVisible(ctx.userId, orgId, "read", "metadata_item", items);
     },
 
     metadataItem: async (
