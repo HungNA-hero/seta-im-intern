@@ -187,6 +187,11 @@ type AssetRepository interface {
 	DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error
 	// SearchMetadataItems returns active metadata items matching the filter within the organization.
 	SearchMetadataItems(ctx context.Context, orgID string, filter MetadataSearchFilter) ([]MetadataItem, error)
+
+	// ImportSampleTransaction executes the all-or-nothing database transaction for sample imports.
+	// It handles shadow refs, topological folder upsert, and metadata identity upsert.
+	// If dryRun is true, it always rolls back and returns the generated summary.
+	ImportSampleTransaction(ctx context.Context, orgID, userID string, dataset ImportDataset, dryRun bool) (ImportSummary, error)
 }
 
 // AssetUsecase defines the contract for business logic operations related to assets.
@@ -215,4 +220,9 @@ type AssetUsecase interface {
 	DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error
 	// SearchMetadataItems searches for metadata items based on the provided filter within the organization.
 	SearchMetadataItems(ctx context.Context, orgID string, filter MetadataSearchFilter) ([]MetadataItem, error)
+
+	// ImportSample reads, validates, and imports a dataset of folders and metadata items.
+	// It parses the JSON payload, checks schema constraints (version, count, sizes, cycles),
+	// and invokes the repository transaction.
+	ImportSample(ctx context.Context, orgID, userID string, payload []byte, dryRun bool) (ImportSummary, error)
 }

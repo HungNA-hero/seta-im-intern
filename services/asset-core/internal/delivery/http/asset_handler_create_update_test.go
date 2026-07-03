@@ -2,6 +2,7 @@ package http_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -261,4 +262,7 @@ func TestHandleCreateFolder_MapsDomainErrors(t *testing.T) {
 
 func stringPointer(value string) *string {
 	return &value
+}
+func (f *fakeAssetUsecase) ImportSample(ctx context.Context, orgID, userID string, payload []byte, dryRun bool) (domain.ImportSummary, error) {
+	return domain.ImportSummary{}, nil
 }

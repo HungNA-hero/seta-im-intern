@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/lib/pq"
@@ -41,6 +42,11 @@ func TestAssetUsecase_CreateMetadata_Validation(t *testing.T) {
 		{
 			name:    "blank external identity",
 			input:   domain.CreateMetadataInput{FolderID: "folder-1", Title: "Title", ExternalSource: stringPointer("  "), ExternalID: stringPointer("id")},
+			wantErr: domain.ErrInvalidInput,
+		},
+		{
+			name:    "description exceeds canonical text limit",
+			input:   domain.CreateMetadataInput{FolderID: "folder-1", Title: "Title", Description: stringPointer(strings.Repeat("d", 5001))},
 			wantErr: domain.ErrInvalidInput,
 		},
 	}
@@ -101,6 +107,7 @@ func TestAssetUsecase_UpdateMetadata_Validation(t *testing.T) {
 		{name: "JSON array", input: domain.UpdateMetadataInput{MetadataJSON: rawMessagePointer(`[]`), MetadataJSONSet: true}, wantErr: domain.ErrInvalidInput},
 		{name: "JSON null value", input: domain.UpdateMetadataInput{MetadataJSON: rawMessagePointer(`null`), MetadataJSONSet: true}, wantErr: domain.ErrInvalidInput},
 		{name: "blank external source", input: domain.UpdateMetadataInput{ExternalSource: stringPointer(" "), ExternalSourceSet: true}, wantErr: domain.ErrInvalidInput},
+		{name: "source URL exceeds canonical text limit", input: domain.UpdateMetadataInput{SourceURL: stringPointer(strings.Repeat("u", 2049)), SourceURLSet: true}, wantErr: domain.ErrInvalidInput},
 	}
 
 	for _, testCase := range tests {
@@ -147,6 +154,7 @@ func rawMessagePointer(value string) *json.RawMessage {
 	return &message
 }
 
+// TestAssetUsecase_SearchMetadata_Validation covers filter and pagination validation.
 func TestAssetUsecase_SearchMetadata_Validation(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -171,6 +179,7 @@ func TestAssetUsecase_SearchMetadata_Validation(t *testing.T) {
 	}
 }
 
+// TestAssetUsecase_DeleteMetadataItem verifies delete delegation to the repository boundary.
 func TestAssetUsecase_DeleteMetadataItem(t *testing.T) {
 	repo := &fakeAssetRepo{}
 	uc := usecase.NewAssetUsecase(repo)
@@ -178,4 +187,9 @@ func TestAssetUsecase_DeleteMetadataItem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected err: %v", err)
 	}
+}
+
+// ImportSampleTransaction satisfies the repository contract for metadata-only usecase tests.
+func (f *fakeAssetRepo) ImportSampleTransaction(ctx context.Context, orgID, userID string, dataset domain.ImportDataset, dryRun bool) (domain.ImportSummary, error) {
+	return domain.ImportSummary{}, nil
 }
