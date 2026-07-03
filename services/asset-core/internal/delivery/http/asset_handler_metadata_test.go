@@ -176,3 +176,75 @@ func TestHandleMetadata_RejectsOrganizationMismatch(t *testing.T) {
 		t.Fatal("expected org mismatch to stop before the use case")
 	}
 }
+
+// TestHandleMetadata_Search verifies search routing and query parameters.
+func TestHandleMetadata_Search(t *testing.T) {
+	mux := http.NewServeMux()
+	fakeUsecase := &fakeAssetUsecase{}
+	assetHTTP.NewAssetHandler(mux, fakeUsecase, nil)
+
+	orgID := uuid.NewString()
+	folderID := uuid.NewString()
+	target := "/internal/api/v1/metadata-items/search?orgId=" + orgID + "&folderId=" + folderID + "&limit=10&offset=5&query=test&label=alpha&label=beta&category=photo&externalSource=dam"
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, metadataRequest(http.MethodGet, target, orgID, ""))
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK, got %d", response.Code)
+	}
+	if !fakeUsecase.called || fakeUsecase.methodCalled != "SearchMetadataItems" {
+		t.Fatalf("expected search use case delegation")
+	}
+	filter := fakeUsecase.metadataSearchInput
+	if filter.FolderID == nil || *filter.FolderID != folderID || filter.Query == nil || *filter.Query != "test" {
+		t.Fatalf("unexpected search selectors: %#v", filter)
+	}
+	if len(filter.Labels) != 2 || filter.Labels[0] != "alpha" || filter.Labels[1] != "beta" {
+		t.Fatalf("expected repeated labels in input order, got %#v", filter.Labels)
+	}
+	if filter.Category == nil || *filter.Category != "photo" || filter.ExternalSource == nil || *filter.ExternalSource != "dam" {
+		t.Fatalf("unexpected exact filters: %#v", filter)
+	}
+	if filter.Limit != 10 || filter.Offset != 5 {
+		t.Fatalf("unexpected pagination: %#v", filter)
+	}
+}
+
+// TestHandleMetadata_SearchRejectsMalformedPagination verifies parsing fails before the use case.
+func TestHandleMetadata_SearchRejectsMalformedPagination(t *testing.T) {
+	mux := http.NewServeMux()
+	fakeUsecase := &fakeAssetUsecase{}
+	assetHTTP.NewAssetHandler(mux, fakeUsecase, nil)
+
+	orgID := uuid.NewString()
+	target := "/internal/api/v1/metadata-items/search?orgId=" + orgID + "&query=test&limit=invalid"
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, metadataRequest(http.MethodGet, target, orgID, ""))
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 Bad Request, got %d", response.Code)
+	}
+	if fakeUsecase.called {
+		t.Fatal("expected malformed pagination to stop before the use case")
+	}
+}
+
+// TestHandleMetadata_Delete verifies DELETE routing.
+func TestHandleMetadata_Delete(t *testing.T) {
+	mux := http.NewServeMux()
+	fakeUsecase := &fakeAssetUsecase{}
+	assetHTTP.NewAssetHandler(mux, fakeUsecase, nil)
+
+	orgID := uuid.NewString()
+	itemID := uuid.NewString()
+	target := "/internal/api/v1/metadata-items?orgId=" + orgID + "&id=" + itemID
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, metadataRequest(http.MethodDelete, target, orgID, ""))
+
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("expected 204 No Content, got %d", response.Code)
+	}
+	if !fakeUsecase.called || fakeUsecase.methodCalled != "DeleteMetadataItem" {
+		t.Fatalf("expected delete use case delegation")
+	}
+}

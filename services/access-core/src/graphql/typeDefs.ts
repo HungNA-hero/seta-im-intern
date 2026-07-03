@@ -115,6 +115,7 @@ export const typeDefs = /* GraphQL */ `
       id: ID!
       input: UpdateMetadataInput!
     ): MetadataItem! @orgMember @sameOrg
+    deleteMetadata(orgId: ID!, id: ID!): Boolean! @orgMember @sameOrg
   }
 
   type Folder {
@@ -182,6 +183,16 @@ export const typeDefs = /* GraphQL */ `
     notes: String
   }
 
+  input MetadataSearchInput {
+    folderId: ID
+    query: String
+    labels: [String!]
+    category: String
+    externalSource: String
+    limit: Int = 50
+    offset: Int = 0
+  }
+
   type Query {
     users: [User!]! @auth
     user(id: ID!): User @auth
@@ -208,5 +219,8 @@ export const typeDefs = /* GraphQL */ `
       @orgMember
       @sameOrg
     metadataItem(orgId: ID!, id: ID!): MetadataItem @orgMember @sameOrg
+    searchMetadata(orgId: ID!, input: MetadataSearchInput!): [MetadataItem!]!
+      @orgMember
+      @sameOrg
   }
 `;

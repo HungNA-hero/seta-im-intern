@@ -116,13 +116,13 @@ func TestFolderRepository_PostgresIntegration(t *testing.T) {
 		t.Fatalf("seed NewParent folder: %v", err)
 	}
 
-	// Force a descendant-row failure during the set-based subtree UPDATE. PostgreSQL must
+	// Force a unique constraint violation (mid-update failure) during the set-based subtree UPDATE. PostgreSQL must
 	// roll back the complete statement and GORM must restore the enclosing transaction.
 	if err := tx.Exec(`
 		CREATE FUNCTION kan36_fail_descendant_path_update() RETURNS trigger AS $$
 		BEGIN
 			IF OLD.id::text = current_setting('kan36.fail_folder_id', true) THEN
-				RAISE EXCEPTION 'forced descendant path update failure';
+				RAISE EXCEPTION 'forced unique constraint violation' USING ERRCODE = '23505';
 			END IF;
 			RETURN NEW;
 		END;
@@ -144,8 +144,8 @@ func TestFolderRepository_PostgresIntegration(t *testing.T) {
 	_, err = repo.MoveFolder(ctx, orgID, userID, childAID, domain.MoveFolderInput{
 		DestinationParentID: &newParentID,
 	})
-	if err == nil {
-		t.Fatal("expected forced descendant update failure")
+	if err != domain.ErrFolderConflict {
+		t.Fatalf("expected ErrFolderConflict due to mid-update unique violation, got %v", err)
 	}
 
 	var unchangedAPath, unchangedBPath string

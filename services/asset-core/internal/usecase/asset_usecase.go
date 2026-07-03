@@ -139,9 +139,28 @@ func normalizeExternalIdentity(value *string) (*string, error) {
 	return &normalized, nil
 }
 
-// exceedsRuneLimit reports whether a present string exceeds its database-backed character limit.
+// exceedsRuneLimit reports whether a present string exceeds the supplied rune limit.
 func exceedsRuneLimit(value *string, limit int) bool {
 	return value != nil && utf8.RuneCountInString(*value) > limit
+}
+
+// validateMetadataItemTextLimits enforces the canonical text limits shared by metadata writes and imports.
+func validateMetadataItemTextLimits(description, category, sourceURL, thumbnailURL, license, author, notes *string) error {
+	if exceedsRuneLimit(description, 5000) || exceedsRuneLimit(category, 100) ||
+		exceedsRuneLimit(sourceURL, 2048) || exceedsRuneLimit(thumbnailURL, 2048) ||
+		exceedsRuneLimit(license, 255) || exceedsRuneLimit(author, 255) ||
+		exceedsRuneLimit(notes, 5000) {
+		return domain.ErrInvalidInput
+	}
+	return nil
+}
+
+// valueWhenSet excludes omitted sparse-update fields from canonical validation.
+func valueWhenSet(isSet bool, value *string) *string {
+	if !isSet {
+		return nil
+	}
+	return value
 }
 
 // CreateMetadataItem normalizes and validates create input before crossing the repository transaction boundary.
@@ -154,14 +173,22 @@ func (u *assetUsecase) CreateMetadataItem(ctx context.Context, orgID, userID str
 	if input.Title == "" || utf8.RuneCountInString(input.Title) > 255 {
 		return domain.MetadataItem{}, domain.ErrInvalidInput
 	}
-	if exceedsRuneLimit(input.Category, 100) {
-		return domain.MetadataItem{}, domain.ErrInvalidInput
-	}
 	if exceedsRuneLimit(input.ExternalSource, 100) {
 		return domain.MetadataItem{}, domain.ErrInvalidInput
 	}
-	if exceedsRuneLimit(input.ExternalID, 255) || exceedsRuneLimit(input.License, 255) || exceedsRuneLimit(input.Author, 255) {
+	if exceedsRuneLimit(input.ExternalID, 255) {
 		return domain.MetadataItem{}, domain.ErrInvalidInput
+	}
+	if err := validateMetadataItemTextLimits(
+		input.Description,
+		input.Category,
+		input.SourceURL,
+		input.ThumbnailURL,
+		input.License,
+		input.Author,
+		input.Notes,
+	); err != nil {
+		return domain.MetadataItem{}, err
 	}
 
 	var err error
@@ -211,16 +238,21 @@ func (u *assetUsecase) UpdateMetadataItem(ctx context.Context, orgID, userID, id
 		input.Title = &trimmed
 	}
 
-	if input.CategorySet && exceedsRuneLimit(input.Category, 100) {
-		return domain.MetadataItem{}, domain.ErrInvalidInput
-	}
 	if input.ExternalSourceSet && exceedsRuneLimit(input.ExternalSource, 100) {
 		return domain.MetadataItem{}, domain.ErrInvalidInput
 	}
 	if input.ExternalIDSet && exceedsRuneLimit(input.ExternalID, 255) {
 		return domain.MetadataItem{}, domain.ErrInvalidInput
 	}
-	if (input.LicenseSet && exceedsRuneLimit(input.License, 255)) || (input.AuthorSet && exceedsRuneLimit(input.Author, 255)) {
+	if err := validateMetadataItemTextLimits(
+		valueWhenSet(input.DescriptionSet, input.Description),
+		valueWhenSet(input.CategorySet, input.Category),
+		valueWhenSet(input.SourceURLSet, input.SourceURL),
+		valueWhenSet(input.ThumbnailURLSet, input.ThumbnailURL),
+		valueWhenSet(input.LicenseSet, input.License),
+		valueWhenSet(input.AuthorSet, input.Author),
+		valueWhenSet(input.NotesSet, input.Notes),
+	); err != nil {
 		return domain.MetadataItem{}, domain.ErrInvalidInput
 	}
 
@@ -266,4 +298,79 @@ func (u *assetUsecase) UpdateMetadataItem(ctx context.Context, orgID, userID, id
 	}
 
 	return u.repo.UpdateMetadataItem(ctx, orgID, userID, id, input)
+}
+
+// DeleteMetadataItem soft-deletes an org-scoped metadata item.
+func (u *assetUsecase) DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error {
+	return u.repo.DeleteMetadataItem(ctx, orgID, userID, id)
+}
+
+// SearchMetadataItems searches for metadata items based on the provided filter within the organization.
+func (u *assetUsecase) SearchMetadataItems(ctx context.Context, orgID string, filter domain.MetadataSearchFilter) ([]domain.MetadataItem, error) {
+	if filter.Limit <= 0 || filter.Limit > 100 {
+		return nil, domain.ErrInvalidInput
+	}
+	if filter.Offset < 0 {
+		return nil, domain.ErrInvalidInput
+	}
+
+	hasSubstantiveFilter := false
+
+	if filter.FolderID != nil {
+		trimmed := strings.TrimSpace(*filter.FolderID)
+		if trimmed != "" {
+			hasSubstantiveFilter = true
+			filter.FolderID = &trimmed
+		} else {
+			filter.FolderID = nil
+		}
+	}
+
+	if filter.Query != nil {
+		trimmed := strings.TrimSpace(*filter.Query)
+		if utf8.RuneCountInString(trimmed) < 2 || utf8.RuneCountInString(trimmed) > 200 {
+			return nil, domain.ErrInvalidInput
+		}
+		hasSubstantiveFilter = true
+		filter.Query = &trimmed
+	}
+
+	if len(filter.Labels) > 0 {
+		normalized, err := normalizeLabels(filter.Labels)
+		if err != nil {
+			return nil, err
+		}
+		if len(normalized) > 0 {
+			hasSubstantiveFilter = true
+			filter.Labels = normalized
+		} else {
+			filter.Labels = nil
+		}
+	}
+
+	if filter.Category != nil {
+		trimmed := strings.TrimSpace(*filter.Category)
+		if trimmed != "" {
+			hasSubstantiveFilter = true
+			filter.Category = &trimmed
+		} else {
+			filter.Category = nil
+		}
+	}
+
+	if filter.ExternalSource != nil {
+		trimmed := strings.TrimSpace(*filter.ExternalSource)
+		if trimmed != "" {
+			hasSubstantiveFilter = true
+			filter.ExternalSource = &trimmed
+		} else {
+			filter.ExternalSource = nil
+		}
+	}
+
+	if !hasSubstantiveFilter {
+		return nil, domain.ErrInvalidInput
+	}
+
+	return u.repo.SearchMetadataItems(ctx, orgID, filter)
 }

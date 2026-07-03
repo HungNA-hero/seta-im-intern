@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"seta-im-intern/go-asset-core/internal/domain"
@@ -593,4 +594,86 @@ func (r *assetRepository) UpdateMetadataItem(ctx context.Context, orgID, userID,
 	})
 
 	return item, err
+}
+
+// DeleteMetadataItem soft-deletes a metadata item in an active org-scoped folder.
+func (r *assetRepository) DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("INSERT INTO organization_ref (org_id) VALUES (?) ON CONFLICT (org_id) DO NOTHING", orgID).Error; err != nil {
+			return err
+		}
+
+		var item domain.MetadataItem
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Table("metadata_items").
+			Select("metadata_items.*").
+			Joins("JOIN folders ON folders.id = metadata_items.folder_id").
+			Where("metadata_items.id = ? AND folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", id, orgID).
+			First(&item).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return domain.ErrMetadataNotFound
+			}
+			return err
+		}
+
+		if err := tx.Model(&item).Updates(map[string]interface{}{
+			"deleted_at": gorm.Expr("now()"),
+			"updated_by": userID,
+		}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+// escapeLike replaces `%`, `_`, and `\` with escaped versions for ILIKE queries.
+func escapeLike(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `%`, `\%`)
+	s = strings.ReplaceAll(s, `_`, `\_`)
+	return s
+}
+
+// SearchMetadataItems returns active metadata items matching the filter within the organization.
+func (r *assetRepository) SearchMetadataItems(ctx context.Context, orgID string, filter domain.MetadataSearchFilter) ([]domain.MetadataItem, error) {
+	var items []domain.MetadataItem
+
+	query := r.db.WithContext(ctx).
+		Table("metadata_items").
+		Select("metadata_items.*").
+		Joins("JOIN folders ON folders.id = metadata_items.folder_id").
+		Where("folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", orgID)
+
+	if filter.FolderID != nil {
+		query = query.Where("metadata_items.folder_id = ?", *filter.FolderID)
+	}
+
+	if filter.Query != nil && *filter.Query != "" {
+		searchTerm := "%" + escapeLike(*filter.Query) + "%"
+		query = query.Where("(metadata_items.title ILIKE ? OR metadata_items.description ILIKE ? OR metadata_items.notes ILIKE ?)", searchTerm, searchTerm, searchTerm)
+	}
+
+	if len(filter.Labels) > 0 {
+		query = query.Where("metadata_items.labels @> ?", pq.StringArray(filter.Labels))
+	}
+
+	if filter.Category != nil {
+		query = query.Where("metadata_items.category = ?", *filter.Category)
+	}
+
+	if filter.ExternalSource != nil {
+		query = query.Where("metadata_items.external_source = ?", *filter.ExternalSource)
+	}
+
+	err := query.
+		Order("metadata_items.updated_at DESC, metadata_items.id ASC").
+		Limit(filter.Limit).
+		Offset(filter.Offset).
+		Find(&items).Error
+
+	return items, err
 }

@@ -11,6 +11,7 @@ import {
   throwGoError,
   unwrapEnvelope,
   unwrapListEnvelope,
+  unwrap204,
 } from "../../clients/assetClient";
 
 const FOLDERS_PATH = "/internal/api/v1/folders";
@@ -248,22 +249,25 @@ export const folderResolvers = {
         });
       }
 
-      await assertFolderPermission(ctx.userId, orgId, id, "write");
+      await assertCan(ctx.userId, "write", "folder", id, orgId);
       const destId = destinationParentId ?? orgId;
-      await assertFolderPermission(ctx.userId, orgId, destId, "write");
+      await assertCan(ctx.userId, "write", "folder", destId, orgId);
 
       const body = {
         destination_parent_id: destinationParentId ?? null,
       };
 
-      return writeFolder(
-        "PATCH",
-        `${config.goAssetUrl}/internal/api/v1/folders/move?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
-        ctx.userId,
-        orgId,
-        body,
-        "Failed to move folder",
+      const res = await assetFetch(
+        assetPath(`${FOLDERS_PATH}/move`, { orgId, id }),
+        {
+          userId: ctx.userId,
+          orgId,
+          method: "PATCH",
+          body,
+        },
       );
+
+      return unwrapEnvelope(res, "folder", toFolder, "Failed to move folder");
     },
 
     deleteFolder: async (
@@ -285,21 +289,15 @@ export const folderResolvers = {
         });
       }
 
-      await assertFolderPermission(ctx.userId, orgId, id, "delete");
+      await assertCan(ctx.userId, "delete", "folder", id, orgId);
 
-      const res = await fetch(
-        `${config.goAssetUrl}/internal/api/v1/folders?orgId=${encodeURIComponent(orgId)}&id=${encodeURIComponent(id)}`,
-        {
-          method: "DELETE",
-          headers: goHeaders(ctx.userId, orgId),
-        },
-      );
+      const res = await assetFetch(assetPath(FOLDERS_PATH, { orgId, id }), {
+        userId: ctx.userId,
+        orgId,
+        method: "DELETE",
+      });
 
-      if (res.status === 204) {
-        return true;
-      }
-
-      throwGoError(res, "Failed to delete folder");
+      return unwrap204(res, "Failed to delete folder");
     },
   },
 };
