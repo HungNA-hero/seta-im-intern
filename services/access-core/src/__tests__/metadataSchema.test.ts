@@ -2,8 +2,28 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { createYoga } from "graphql-yoga";
 
 const { mockCanDo } = vi.hoisted(() => ({ mockCanDo: vi.fn() }));
+const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({ mockFilterAllowedResourceIds: vi.fn() }));
 
-vi.mock("../db/queries/canDo", () => ({ canDo: mockCanDo }));
+vi.mock("../db/queries/canDo", () => ({
+  canDo: mockCanDo,
+  filterAllowedResourceIds: mockFilterAllowedResourceIds,
+  filterVisible: async (
+    userId: string,
+    orgId: string,
+    action: string,
+    resourceType: string,
+    items: { id: string }[],
+  ) => {
+    const allowed = await mockFilterAllowedResourceIds(
+      userId,
+      orgId,
+      action,
+      resourceType,
+      items.map((i) => i.id),
+    );
+    return items.filter((i) => allowed.has(i.id));
+  },
+}));
 vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));
 vi.mock("../db/prisma", () => ({ prisma: {} }));
 
@@ -57,6 +77,7 @@ async function executeMetadataOperation(
 beforeEach(() => {
   vi.resetAllMocks();
   mockCanDo.mockResolvedValue({ allowed: true, reason: null });
+  mockFilterAllowedResourceIds.mockImplementation(async (_u: string, _o: string, _a: string, _r: string, ids: string[]) => new Set(ids));
 });
 
 describe("metadata schema directives", () => {
@@ -96,7 +117,6 @@ describe("metadata schema directives", () => {
 
     expect(result.errors).toBeUndefined();
     expect(result.data?.metadataItems).toEqual([]);
-    expect(mockCanDo).toHaveBeenCalledTimes(1);
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
