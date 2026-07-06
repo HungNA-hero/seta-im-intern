@@ -14,7 +14,23 @@ vi.mock("../db/queries/canDo", () =>
   createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
 );
 vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));
-vi.mock("../db/prisma", () => ({ prisma: { user: { findUnique: vi.fn() } } }));
+const { mockObjectPermissionDeleteMany } = vi.hoisted(() => ({
+  mockObjectPermissionDeleteMany: vi.fn(),
+}));
+vi.mock("../db/prisma", () => ({
+  prisma: {
+    user: { findUnique: vi.fn() },
+    objectPermission: { deleteMany: mockObjectPermissionDeleteMany },
+  },
+}));
+
+const { mockGetFolderMeta } = vi.hoisted(() => ({
+  mockGetFolderMeta: vi.fn(),
+}));
+vi.mock("../clients/assetClient", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../clients/assetClient")>();
+  return { ...actual, getFolderMeta: mockGetFolderMeta };
+});
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -90,6 +106,7 @@ beforeEach(() => {
   mockFilterAllowedResourceIds.mockImplementation(
     async (_u: string, _o: string, _a: string, _r: string, ids: string[]) => new Set(ids),
   );
+  mockGetFolderMeta.mockResolvedValue(null);
 });
 
 // ── Query.metadataItems ───────────────────────────────────────────────────────
@@ -148,6 +165,24 @@ describe("Query.metadataItems", () => {
     );
 
     expect(mockCanDo).not.toHaveBeenCalled();
+  });
+
+  test("fetches each distinct folder's ancestry once, not once per item", async () => {
+    fetchListOk([
+      makeGoMetadataItem({ id: "m1", folder_id: "folder-a" }),
+      makeGoMetadataItem({ id: "m2", folder_id: "folder-a" }),
+      makeGoMetadataItem({ id: "m3", folder_id: "folder-b" }),
+    ]);
+
+    await metadataResolvers.Query.metadataItems(
+      undefined,
+      { orgId: org, folderId: folder },
+      ctx,
+    );
+
+    expect(mockGetFolderMeta).toHaveBeenCalledTimes(2);
+    expect(mockGetFolderMeta).toHaveBeenCalledWith(org, ctx.userId, "folder-a");
+    expect(mockGetFolderMeta).toHaveBeenCalledWith(org, ctx.userId, "folder-b");
   });
 });
 

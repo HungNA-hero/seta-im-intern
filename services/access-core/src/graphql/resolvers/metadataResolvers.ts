@@ -4,12 +4,15 @@ import { filterVisible } from "../../db/queries/canDo";
 import {
   assetFetch,
   assetPath,
+  getFolderMeta,
   snakeCaseKeys,
   unwrapEnvelope,
   unwrapListEnvelope,
   unwrap204,
   METADATA_PATH,
 } from "../../clients/assetClient";
+import { ancestorIdsFromPath } from "../../util/ltreePath";
+import { prisma } from "../../db/prisma";
 
 /** Represents one metadata item returned by the internal Go API. */
 interface GoMetadataItem {
@@ -31,6 +34,42 @@ interface GoMetadataItem {
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Resolves each distinct folder_id in `items` to its ancestor chain, fetching
+ * every distinct folder at most once per request (not once per item), so
+ * batch metadata visibility checks get the same folder-ancestor inheritance
+ * as single-item checks without an HTTP call per item.
+ */
+async function buildFolderAncestorMap(
+  orgId: string,
+  userId: string,
+  items: GoMetadataItem[],
+): Promise<Map<string, string[]>> {
+  const folderIds = [...new Set(items.map((m) => m.folder_id))];
+  const entries = await Promise.all(
+    folderIds.map(async (folderId) => {
+      const folderMeta = await getFolderMeta(orgId, userId, folderId);
+      return [
+        folderId,
+        folderMeta ? ancestorIdsFromPath(folderMeta.path) : [],
+      ] as const;
+    }),
+  );
+  return new Map(entries);
+}
+
+function metadataHierarchy(
+  folderAncestorsByFolderId: Map<string, string[]>,
+): (m: GoMetadataItem) => { ownerId: string; ancestorIds: string[] } {
+  return (m) => ({
+    ownerId: m.created_by,
+    ancestorIds: [
+      m.folder_id,
+      ...(folderAncestorsByFolderId.get(m.folder_id) ?? []),
+    ],
+  });
 }
 
 interface CreateMetadataInput {
@@ -209,10 +248,23 @@ export const metadataResolvers = {
       const items = await unwrapListEnvelope(
         resp,
         "items",
-        toMetadataItem,
+        (m: GoMetadataItem) => m,
         "Failed to fetch metadata items",
       );
-      return filterVisible(ctx.userId, orgId, "read", "metadata_item", items);
+      const folderAncestorsByFolderId = await buildFolderAncestorMap(
+        orgId,
+        ctx.userId,
+        items,
+      );
+      const visible = await filterVisible(
+        ctx.userId,
+        orgId,
+        "read",
+        "metadata_item",
+        items,
+        metadataHierarchy(folderAncestorsByFolderId),
+      );
+      return visible.map(toMetadataItem);
     },
 
     metadataItem: async (
@@ -274,12 +326,18 @@ export const metadataResolvers = {
         "Failed to search metadata items",
       );
 
+      const folderAncestorsByFolderId = await buildFolderAncestorMap(
+        orgId,
+        ctx.userId,
+        items,
+      );
       const visible = await filterVisible(
         ctx.userId,
         orgId,
         "read",
         "metadata_item",
         items,
+        metadataHierarchy(folderAncestorsByFolderId),
       );
       return visible.map(toMetadataItem);
     },
@@ -364,7 +422,11 @@ export const metadataResolvers = {
         method: "DELETE",
       });
 
-      return unwrap204(res, "Failed to delete metadata item");
+      const deleted = await unwrap204(res, "Failed to delete metadata item");
+      await prisma.objectPermission.deleteMany({
+        where: { orgId, resourceType: "metadata_item", resourceId: id },
+      });
+      return deleted;
     },
   },
 };

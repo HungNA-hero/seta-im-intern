@@ -13,6 +13,7 @@ export function createCanDoMock(
       action: string,
       resourceType: string,
       items: { id: string }[],
+      _getHierarchy?: (item: { id: string }) => unknown,
     ) => {
       const allowed = await mockFilterAllowedResourceIds(
         userId,

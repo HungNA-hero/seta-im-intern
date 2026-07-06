@@ -10,7 +10,16 @@ const { mockPrisma } = vi.hoisted(() => ({
   },
 }));
 
+const { mockGetFolderMeta, mockGetMetadataMeta } = vi.hoisted(() => ({
+  mockGetFolderMeta: vi.fn(),
+  mockGetMetadataMeta: vi.fn(),
+}));
+
 vi.mock("../db/prisma", () => ({ prisma: mockPrisma }));
+vi.mock("../clients/assetClient", () => ({
+  getFolderMeta: mockGetFolderMeta,
+  getMetadataMeta: mockGetMetadataMeta,
+}));
 
 import { canDo, filterAllowedResourceIds } from "../db/queries/canDo";
 
@@ -41,6 +50,10 @@ beforeEach(() => {
   mockPrisma.user.findUnique.mockResolvedValue(activeUser());
   mockPrisma.rolePermission.findFirst.mockResolvedValue(null);
   mockPrisma.objectPermission.findMany.mockResolvedValue([]);
+  // No owner/hierarchy data by default — existing RBAC/OLP assertions assume
+  // plain single-resource checks with no owner-bypass or inheritance.
+  mockGetFolderMeta.mockResolvedValue(null);
+  mockGetMetadataMeta.mockResolvedValue(null);
 });
 
 // ── permActionCache ───────────────────────────────────────────────────────────
@@ -221,6 +234,135 @@ describe("OLP path (olpEnabled = true)", () => {
     await canDo("user-1", "read", "folder", "f1", "org-1");
     expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
     expect(mockPrisma.objectPermission.findMany).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ── owner bypass ──────────────────────────────────────────────────────────────
+
+describe("owner bypass", () => {
+  test("allows the folder creator without RBAC ceiling or grant", async () => {
+    mockGetFolderMeta.mockResolvedValue({ createdBy: "user-1", path: "abc" });
+    const result = await canDo("user-1", "read", "folder", "f1", "org-1");
+    expect(result).toEqual({ allowed: true, reason: "owner" });
+    expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.objectPermission.findMany).not.toHaveBeenCalled();
+  });
+
+  test("allows the metadata item creator without RBAC ceiling or grant", async () => {
+    mockGetMetadataMeta.mockResolvedValue({
+      createdBy: "user-1",
+      folderId: "folder-1",
+    });
+    const result = await canDo("user-1", "read", "metadata_item", "m1", "org-1");
+    expect(result).toEqual({ allowed: true, reason: "owner" });
+    expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
+    expect(mockPrisma.objectPermission.findMany).not.toHaveBeenCalled();
+  });
+
+  test("does not bypass when the requesting user is not the creator", async () => {
+    mockGetFolderMeta.mockResolvedValue({ createdBy: "someone-else", path: "abc" });
+    mockPrisma.rolePermission.findFirst.mockResolvedValue(null);
+    const result = await canDo("user-1", "read", "folder", "f1", "org-1");
+    expect(result).toEqual({ allowed: false, reason: "no RBAC ceiling" });
+  });
+});
+
+// ── folder ancestor inheritance ───────────────────────────────────────────────
+
+describe("folder ancestor inheritance", () => {
+  test("a grant on an ancestor folder satisfies canDo for a descendant", async () => {
+    const rootId = "11111111-1111-1111-1111-111111111111";
+    const childId = "22222222-2222-2222-2222-222222222222";
+    mockGetFolderMeta.mockResolvedValue({
+      createdBy: "someone-else",
+      path: `${rootId.replace(/-/g, "")}.${childId.replace(/-/g, "")}`,
+    });
+    mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
+    mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: rootId }]);
+
+    const result = await canDo("user-1", "read", "folder", childId, "org-1");
+    expect(result).toEqual({ allowed: true, reason: null });
+    expect(mockPrisma.objectPermission.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          resourceId: { in: [childId, rootId] },
+        }),
+      }),
+    );
+  });
+
+  test("denies when neither the folder nor any ancestor has a grant", async () => {
+    const rootId = "11111111-1111-1111-1111-111111111111";
+    const childId = "22222222-2222-2222-2222-222222222222";
+    mockGetFolderMeta.mockResolvedValue({
+      createdBy: "someone-else",
+      path: `${rootId.replace(/-/g, "")}.${childId.replace(/-/g, "")}`,
+    });
+    mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
+    mockPrisma.objectPermission.findMany.mockResolvedValue([]);
+
+    const result = await canDo("user-1", "read", "folder", childId, "org-1");
+    expect(result).toEqual({ allowed: false, reason: "no object permission" });
+  });
+});
+
+// ── metadata inherits from folder ─────────────────────────────────────────────
+
+describe("metadata inherits from folder", () => {
+  test("a grant on the containing folder satisfies canDo for a metadata item", async () => {
+    const folderId = "11111111-1111-1111-1111-111111111111";
+    mockGetMetadataMeta.mockResolvedValue({ createdBy: "someone-else", folderId });
+    mockGetFolderMeta.mockResolvedValue({
+      createdBy: "someone-else",
+      path: folderId.replace(/-/g, ""),
+    });
+    mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
+    mockPrisma.objectPermission.findMany
+      .mockResolvedValueOnce([]) // direct metadata_item grant check
+      .mockResolvedValueOnce([{ resourceId: folderId }]); // folder grant check
+
+    const result = await canDo("user-1", "read", "metadata_item", "m1", "org-1");
+    expect(result).toEqual({ allowed: true, reason: null });
+    expect(mockGetFolderMeta).toHaveBeenCalledWith("org-1", "user-1", folderId);
+  });
+
+  test("a grant on an ancestor of the containing folder satisfies canDo for a metadata item", async () => {
+    const rootId = "11111111-1111-1111-1111-111111111111";
+    const folderId = "22222222-2222-2222-2222-222222222222";
+    mockGetMetadataMeta.mockResolvedValue({ createdBy: "someone-else", folderId });
+    mockGetFolderMeta.mockResolvedValue({
+      createdBy: "someone-else",
+      path: `${rootId.replace(/-/g, "")}.${folderId.replace(/-/g, "")}`,
+    });
+    mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
+    mockPrisma.objectPermission.findMany
+      .mockResolvedValueOnce([]) // direct metadata_item grant check
+      .mockResolvedValueOnce([{ resourceId: rootId }]); // folder grant check (on the ancestor)
+
+    const result = await canDo("user-1", "read", "metadata_item", "m1", "org-1");
+    expect(result).toEqual({ allowed: true, reason: null });
+    expect(mockPrisma.objectPermission.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          resourceType: "folder",
+          resourceId: { in: [folderId, rootId] },
+        }),
+      }),
+    );
+  });
+
+  test("denies when neither the item nor its folder has a grant", async () => {
+    const folderId = "11111111-1111-1111-1111-111111111111";
+    mockGetMetadataMeta.mockResolvedValue({ createdBy: "someone-else", folderId });
+    mockGetFolderMeta.mockResolvedValue({
+      createdBy: "someone-else",
+      path: folderId.replace(/-/g, ""),
+    });
+    mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
+    mockPrisma.objectPermission.findMany.mockResolvedValue([]);
+
+    const result = await canDo("user-1", "read", "metadata_item", "m1", "org-1");
+    expect(result).toEqual({ allowed: false, reason: "no object permission" });
   });
 });
 

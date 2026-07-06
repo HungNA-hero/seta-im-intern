@@ -14,7 +14,15 @@ vi.mock("../db/queries/canDo", () =>
   createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
 );
 vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));
-vi.mock("../db/prisma", () => ({ prisma: { user: { findUnique: vi.fn() } } }));
+const { mockObjectPermissionDeleteMany } = vi.hoisted(() => ({
+  mockObjectPermissionDeleteMany: vi.fn(),
+}));
+vi.mock("../db/prisma", () => ({
+  prisma: {
+    user: { findUnique: vi.fn() },
+    objectPermission: { deleteMany: mockObjectPermissionDeleteMany },
+  },
+}));
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);

@@ -16,6 +16,8 @@ import {
   unwrap204,
   FOLDERS_PATH,
 } from "../../clients/assetClient";
+import { ancestorIdsFromPath } from "../../util/ltreePath";
+import { prisma } from "../../db/prisma";
 
 interface GoFolder {
   id: string;
@@ -44,6 +46,10 @@ function toFolder(f: GoFolder) {
 }
 
 type FolderNode = ReturnType<typeof toFolder>;
+
+function folderHierarchy(f: FolderNode) {
+  return { ownerId: f.createdBy, ancestorIds: ancestorIdsFromPath(f.path) };
+}
 
 function assertNotRootFolder(id: string, orgId: string, action: string): void {
   if (id === orgId) {
@@ -102,7 +108,14 @@ export const folderResolvers = {
       );
 
       const folders = await fetchFolderList(path, ctx.userId, orgId);
-      const visible = await filterVisible(ctx.userId, orgId, "read", "folder", folders);
+      const visible = await filterVisible(
+        ctx.userId,
+        orgId,
+        "read",
+        "folder",
+        folders,
+        folderHierarchy,
+      );
 
       const cached = visible as (FolderNode & {
         subtreeNodes: FolderNode[];
@@ -126,7 +139,7 @@ export const folderResolvers = {
         children: true,
       });
       const folders = await fetchFolderList(path, ctx.userId, orgId);
-      return filterVisible(ctx.userId, orgId, "read", "folder", folders);
+      return filterVisible(ctx.userId, orgId, "read", "folder", folders, folderHierarchy);
     },
   },
 
@@ -156,7 +169,14 @@ export const folderResolvers = {
         children: true,
       });
       const folders = await fetchFolderList(path, ctx.userId, parent.orgId);
-      return filterVisible(ctx.userId, parent.orgId, "read", "folder", folders);
+      return filterVisible(
+        ctx.userId,
+        parent.orgId,
+        "read",
+        "folder",
+        folders,
+        folderHierarchy,
+      );
     },
   },
 
@@ -292,7 +312,11 @@ export const folderResolvers = {
         method: "DELETE",
       });
 
-      return unwrap204(res, "Failed to delete folder");
+      const deleted = await unwrap204(res, "Failed to delete folder");
+      await prisma.objectPermission.deleteMany({
+        where: { orgId, resourceType: "folder", resourceId: id },
+      });
+      return deleted;
     },
   },
 };
