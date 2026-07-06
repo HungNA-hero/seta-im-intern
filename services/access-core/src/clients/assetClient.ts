@@ -165,19 +165,17 @@ export async function unwrap204(
 }
 
 export interface FolderMeta {
-  createdBy: string;
   path: string;
 }
 
 export interface MetadataItemMeta {
-  createdBy: string;
   folderId: string;
 }
 
 /**
- * Looks up a folder's owner and ltree path, for use by canDo's owner-bypass
- * and ancestor-inheritance checks. Returns null if the folder doesn't exist
- * (canDo treats that as deny, same as any other not-found resource).
+ * Looks up a folder's ltree path, for use by canDo's ancestor-inheritance
+ * checks. Returns null if the folder doesn't exist (canDo treats that as
+ * deny, same as any other not-found resource).
  */
 export async function getFolderMeta(
   orgId: string,
@@ -189,16 +187,16 @@ export async function getFolderMeta(
     orgId,
   });
   if (!res.ok) return null;
-  const data = (await res.json()) as { folder?: { created_by: string; path: string } };
+  const data = (await res.json()) as { folder?: { path: string } };
   if (!data.folder) return null;
-  return { createdBy: data.folder.created_by, path: data.folder.path };
+  return { path: data.folder.path };
 }
 
 /**
- * Looks up a metadata item's owner and containing folder id, for canDo's
- * owner-bypass and folder-inheritance checks. The folder's own ancestry is
- * resolved separately via `getFolderMeta(orgId, userId, folderId)`. Returns
- * null if the item doesn't exist.
+ * Looks up a metadata item's containing folder id, for canDo's
+ * folder-inheritance checks. The folder's own ancestry is resolved
+ * separately via `getFolderMeta(orgId, userId, folderId)`. Returns null if
+ * the item doesn't exist.
  */
 export async function getMetadataMeta(
   orgId: string,
@@ -211,11 +209,10 @@ export async function getMetadataMeta(
   });
   if (!res.ok) return null;
   const data = (await res.json()) as {
-    item?: { created_by: string; folder_id: string };
+    item?: { folder_id: string };
   };
   if (!data.item) return null;
   return {
-    createdBy: data.item.created_by,
     folderId: data.item.folder_id,
   };
 }

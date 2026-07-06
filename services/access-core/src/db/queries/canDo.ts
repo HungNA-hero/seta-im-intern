@@ -144,13 +144,19 @@ async function resolveGrant(
 
 /**
  * Evaluates whether a user can perform a specific action on a given resource.
- * Combined rule (after trainer_admin / org_admin / owner bypasses):
+ * Combined rule (after trainer_admin / org_admin bypasses):
  *   allowed = grantExists && (org.olpEnabled || ceilingExists)
  *
- * The creator of a resource (`created_by`) is always allowed to act on it,
- * regardless of RBAC ceiling or OLP grants. A grant on a folder also covers
- * its descendant folders (ltree ancestor chain) and any metadata item filed
+ * Creator status (`created_by`) confers no automatic permission — access to
+ * a resource the user created is subject to the same RBAC ceiling and OLP
+ * grant rules as any other resource. A grant on a folder also covers its
+ * descendant folders (ltree ancestor chain) and any metadata item filed
  * under that folder or one of its descendants.
+ *
+ * A folder `resourceId` equal to `orgId` denotes the org root (used to
+ * authorize top-level folder creation, which has no real folder object to
+ * grant against) — this is decided by RBAC ceiling alone, in both RBAC and
+ * OLP mode, since no object-level grant can ever target it.
  *
  * 1. RBAC mode (olpEnabled = false):
  *    Requires BOTH a ceiling (role permits this action on this resource type)
@@ -182,9 +188,22 @@ export async function canDo(
   }
 
   if (resourceType === "folder") {
-    const meta = await getFolderMeta(orgId, userId, resourceId);
-    if (meta?.createdBy === userId) return { allowed: true, reason: "owner" };
+    if (resourceId === orgId) {
+      const rbacAllows = await prisma.rolePermission
+        .findFirst({
+          where: {
+            roleId: { in: resolution.roleIds },
+            actionId: resolution.permActionId,
+            resourceType: "folder",
+          },
+        })
+        .then(Boolean);
+      return rbacAllows
+        ? { allowed: true, reason: null }
+        : { allowed: false, reason: "no RBAC ceiling" };
+    }
 
+    const meta = await getFolderMeta(orgId, userId, resourceId);
     const ancestorIds = meta ? ancestorIdsFromPath(meta.path) : [];
     const { rbacAllows, grantedIds } = await resolveGrant(
       userId,
@@ -199,8 +218,6 @@ export async function canDo(
 
   if (resourceType === "metadata_item") {
     const meta = await getMetadataMeta(orgId, userId, resourceId);
-    if (meta?.createdBy === userId) return { allowed: true, reason: "owner" };
-
     const { rbacAllows, grantedIds: directGrantedIds } = await resolveGrant(
       userId,
       orgId,
@@ -240,7 +257,6 @@ export async function canDo(
 }
 
 interface ResourceHierarchy {
-  ownerId?: string;
   ancestorIds?: string[];
 }
 
@@ -261,31 +277,16 @@ export async function filterAllowedResourceIds<T extends { id: string }>(
   }
 
   const allowed = new Set<string>();
-  let remainingIds = resourceIds;
-
-  if (items && getHierarchy) {
-    const byId = new Map(items.map((item) => [item.id, item]));
-    remainingIds = [];
-    for (const id of resourceIds) {
-      const item = byId.get(id);
-      const hierarchy = item ? getHierarchy(item) : undefined;
-      if (hierarchy?.ownerId === userId) {
-        allowed.add(id);
-      } else {
-        remainingIds.push(id);
-      }
-    }
-  }
 
   const { rbacAllows, grantedIds } = await resolveGrant(
     userId,
     orgId,
     resourceType,
-    remainingIds,
+    resourceIds,
     resolution,
   );
 
-  for (const id of remainingIds) {
+  for (const id of resourceIds) {
     if (grantedIds.has(id)) allowed.add(id);
   }
 
@@ -293,7 +294,7 @@ export async function filterAllowedResourceIds<T extends { id: string }>(
     const byId = new Map(items.map((item) => [item.id, item]));
     const ancestorIdsByItem = new Map<string, string[]>();
     const allAncestorIds = new Set<string>();
-    for (const id of remainingIds) {
+    for (const id of resourceIds) {
       if (allowed.has(id)) continue;
       const item = byId.get(id);
       const ancestorIds = item ? (getHierarchy(item).ancestorIds ?? []) : [];
@@ -324,9 +325,9 @@ export async function filterAllowedResourceIds<T extends { id: string }>(
  * Filters a list of resource-bearing items down to those the user is
  * allowed to `action` on, in a single batched permission check.
  *
- * `getHierarchy` lets callers who already fetched owner/folder-ancestry
- * data (folder `path`, metadata item `folder_id`/`folder_path`) pass it in
- * so batch checks get owner-bypass and inheritance without extra fetches.
+ * `getHierarchy` lets callers who already fetched folder-ancestry data
+ * (folder `path`, metadata item `folder_id`/`folder_path`) pass it in so
+ * batch checks get inheritance without extra fetches.
  */
 export async function filterVisible<T extends { id: string }>(
   userId: string,

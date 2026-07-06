@@ -48,7 +48,7 @@ function toFolder(f: GoFolder) {
 type FolderNode = ReturnType<typeof toFolder>;
 
 function folderHierarchy(f: FolderNode) {
-  return { ownerId: f.createdBy, ancestorIds: ancestorIdsFromPath(f.path) };
+  return { ancestorIds: ancestorIdsFromPath(f.path) };
 }
 
 function assertNotRootFolder(id: string, orgId: string, action: string): void {

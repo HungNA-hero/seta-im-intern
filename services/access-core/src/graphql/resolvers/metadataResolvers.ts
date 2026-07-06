@@ -62,9 +62,8 @@ async function buildFolderAncestorMap(
 
 function metadataHierarchy(
   folderAncestorsByFolderId: Map<string, string[]>,
-): (m: GoMetadataItem) => { ownerId: string; ancestorIds: string[] } {
+): (m: GoMetadataItem) => { ancestorIds: string[] } {
   return (m) => ({
-    ownerId: m.created_by,
     ancestorIds: [
       m.folder_id,
       ...(folderAncestorsByFolderId.get(m.folder_id) ?? []),
