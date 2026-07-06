@@ -1,10 +1,22 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
+import { GraphQLError } from "graphql";
 
-const { mockCanDo, mockGrant, mockGetById, mockRevoke } = vi.hoisted(() => ({
+const {
+  mockCanDo,
+  mockGrant,
+  mockGetById,
+  mockRevoke,
+  mockIsActiveOrgMember,
+  mockRoleBelongsToOrg,
+  mockAssertResourceInOrg,
+} = vi.hoisted(() => ({
   mockCanDo: vi.fn(),
   mockGrant: vi.fn(),
   mockGetById: vi.fn(),
   mockRevoke: vi.fn(),
+  mockIsActiveOrgMember: vi.fn(),
+  mockRoleBelongsToOrg: vi.fn(),
+  mockAssertResourceInOrg: vi.fn(),
 }));
 
 vi.mock("../db/queries/canDo", () => ({ canDo: mockCanDo }));
@@ -15,6 +27,13 @@ vi.mock("../db/queries/objectPermissions", () => ({
   getObjectPermissionById: mockGetById,
 }));
 vi.mock("../db/queries/rolePermissions", () => ({ listRolePermissions: vi.fn() }));
+vi.mock("../db/queries/organizations", () => ({
+  isActiveOrgMember: mockIsActiveOrgMember,
+  roleBelongsToOrg: mockRoleBelongsToOrg,
+}));
+vi.mock("../clients/resourceOrg", () => ({
+  assertResourceInOrg: mockAssertResourceInOrg,
+}));
 
 import { permissionResolvers } from "../graphql/resolvers/permissionResolvers";
 import type { GraphQLContext } from "../graphql/context";
@@ -51,6 +70,9 @@ beforeEach(() => {
   mockGrant.mockResolvedValue(makeGrantRow());
   mockGetById.mockResolvedValue(makeGrantRow());
   mockRevoke.mockResolvedValue(undefined);
+  mockIsActiveOrgMember.mockResolvedValue(true);
+  mockRoleBelongsToOrg.mockResolvedValue(true);
+  mockAssertResourceInOrg.mockResolvedValue(undefined);
 });
 
 describe("Mutation.grantObjectPermission", () => {
@@ -157,6 +179,104 @@ describe("Mutation.grantObjectPermission", () => {
     );
 
     expect(mockGrant).not.toHaveBeenCalled();
+  });
+
+  test("verifies the grantee is a member and the resource is in the org before granting", async () => {
+    await permissionResolvers.Mutation.grantObjectPermission(
+      undefined,
+      { ...base, granteeUserId: "grantee-1" },
+      makeCtx(),
+    );
+
+    expect(mockIsActiveOrgMember).toHaveBeenCalledWith("org-1", "grantee-1");
+    expect(mockAssertResourceInOrg).toHaveBeenCalledWith(
+      "folder",
+      "folder-1",
+      "org-1",
+      "user-1",
+    );
+  });
+
+  test("throws BAD_USER_INPUT and does not grant when grantee is not an active org member", async () => {
+    mockIsActiveOrgMember.mockResolvedValueOnce(false);
+
+    await expect(
+      permissionResolvers.Mutation.grantObjectPermission(
+        undefined,
+        { ...base, granteeUserId: "outsider" },
+        makeCtx(),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+    );
+
+    expect(mockAssertResourceInOrg).toHaveBeenCalled();
+    expect(mockGrant).not.toHaveBeenCalled();
+  });
+
+  test("throws BAD_USER_INPUT and does not grant when grantee role is from another org", async () => {
+    mockRoleBelongsToOrg.mockResolvedValueOnce(false);
+
+    await expect(
+      permissionResolvers.Mutation.grantObjectPermission(
+        undefined,
+        { ...base, granteeRoleId: "role-other-org" },
+        makeCtx(),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+    );
+
+    expect(mockAssertResourceInOrg).toHaveBeenCalled();
+    expect(mockGrant).not.toHaveBeenCalled();
+  });
+
+  test("runs the grantee check and resource-in-org check concurrently", async () => {
+    await permissionResolvers.Mutation.grantObjectPermission(
+      undefined,
+      { ...base, granteeUserId: "grantee-1" },
+      makeCtx(),
+    );
+
+    expect(mockIsActiveOrgMember).toHaveBeenCalledTimes(1);
+    expect(mockAssertResourceInOrg).toHaveBeenCalledTimes(1);
+  });
+
+  test("propagates NOT_FOUND and does not grant when the resource is not in the org", async () => {
+    mockAssertResourceInOrg.mockRejectedValueOnce(
+      new GraphQLError("Resource not found in this organization", {
+        extensions: { code: "NOT_FOUND" },
+      }),
+    );
+
+    await expect(
+      permissionResolvers.Mutation.grantObjectPermission(
+        undefined,
+        { ...base, granteeUserId: "grantee-1" },
+        makeCtx(),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "NOT_FOUND" } }),
+    );
+
+    expect(mockGrant).not.toHaveBeenCalled();
+  });
+
+  test("guards run only after canDo authorizes the caller", async () => {
+    mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "denied" });
+
+    await expect(
+      permissionResolvers.Mutation.grantObjectPermission(
+        undefined,
+        { ...base, granteeUserId: "grantee-1" },
+        makeCtx(),
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+    );
+
+    expect(mockIsActiveOrgMember).not.toHaveBeenCalled();
+    expect(mockAssertResourceInOrg).not.toHaveBeenCalled();
   });
 
   test("maps a duplicate grant to CONFLICT", async () => {

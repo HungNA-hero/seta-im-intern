@@ -1,6 +1,9 @@
 import { GraphQLError } from "graphql";
 import { config } from "../config";
 
+export const FOLDERS_PATH = "/internal/api/v1/folders";
+export const METADATA_PATH = "/internal/api/v1/metadata-items";
+
 const GO_ERROR_CODES: Record<number, string> = {
   400: "BAD_USER_INPUT",
   401: "UNAUTHENTICATED",
@@ -159,4 +162,63 @@ export async function unwrap204(
     return true;
   }
   throwGoError(res, message);
+}
+
+export interface FolderMeta {
+  path: string;
+}
+
+export interface MetadataItemMeta {
+  folderId: string;
+}
+
+/**
+ * Looks up a folder's ltree path, for use by canDo's ancestor-inheritance
+ * checks. Returns null only if the folder doesn't exist (404) — canDo
+ * treats that as deny, same as any other not-found resource. Any other
+ * non-2xx response (401/403/500/...) is a dependency failure and must
+ * propagate rather than silently resolve to "no ancestors", which could
+ * otherwise mask an outage as a plain permission denial.
+ */
+export async function getFolderMeta(
+  orgId: string,
+  userId: string,
+  id: string,
+): Promise<FolderMeta | null> {
+  const res = await assetFetch(assetPath(FOLDERS_PATH, { orgId, id }), {
+    userId,
+    orgId,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throwGoError(res, "Failed to fetch folder metadata");
+  const data = (await res.json()) as { folder?: { path: string } };
+  if (!data.folder) return null;
+  return { path: data.folder.path };
+}
+
+/**
+ * Looks up a metadata item's containing folder id, for canDo's
+ * folder-inheritance checks. The folder's own ancestry is resolved
+ * separately via `getFolderMeta(orgId, userId, folderId)`. Returns null only
+ * if the item doesn't exist (404); any other non-2xx response propagates as
+ * a dependency failure (see `getFolderMeta`).
+ */
+export async function getMetadataMeta(
+  orgId: string,
+  userId: string,
+  id: string,
+): Promise<MetadataItemMeta | null> {
+  const res = await assetFetch(assetPath(METADATA_PATH, { orgId, id }), {
+    userId,
+    orgId,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throwGoError(res, "Failed to fetch metadata item metadata");
+  const data = (await res.json()) as {
+    item?: { folder_id: string };
+  };
+  if (!data.item) return null;
+  return {
+    folderId: data.item.folder_id,
+  };
 }

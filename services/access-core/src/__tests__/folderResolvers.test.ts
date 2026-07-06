@@ -1,13 +1,28 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { GraphQLError } from "graphql";
+import { createCanDoMock } from "./helpers/canDoMock";
 
 const { mockCanDo } = vi.hoisted(() => ({
   mockCanDo: vi.fn(),
 }));
 
-vi.mock("../db/queries/canDo", () => ({ canDo: mockCanDo }));
+const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({
+  mockFilterAllowedResourceIds: vi.fn(),
+}));
+
+vi.mock("../db/queries/canDo", () =>
+  createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
+);
 vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));
-vi.mock("../db/prisma", () => ({ prisma: { user: { findUnique: vi.fn() } } }));
+const { mockObjectPermissionDeleteMany } = vi.hoisted(() => ({
+  mockObjectPermissionDeleteMany: vi.fn(),
+}));
+vi.mock("../db/prisma", () => ({
+  prisma: {
+    user: { findUnique: vi.fn() },
+    objectPermission: { deleteMany: mockObjectPermissionDeleteMany },
+  },
+}));
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -57,6 +72,9 @@ function fetchError(status: number, statusText = "Error") {
 beforeEach(() => {
   vi.resetAllMocks();
   mockCanDo.mockResolvedValue({ allowed: true, reason: null });
+  mockFilterAllowedResourceIds.mockImplementation(
+    async (_u: string, _o: string, _a: string, _r: string, ids: string[]) => new Set(ids),
+  );
 });
 
 // ── Mutation.createFolder ─────────────────────────────────────────────────────
@@ -472,16 +490,57 @@ describe("Query.folderTree", () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
-  test("uses org-scoped permission check (resourceId === orgId)", async () => {
+  test("filters folders through filterAllowedResourceIds", async () => {
+    const raw = [
+      makeGoFolder({ id: "f1", name: "Root" }),
+      makeGoFolder({ id: "f2", name: "Child" }),
+    ];
+    fetchListOk(raw);
+    mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set(["f1"]));
+    const result = await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx);
+    expect(result).toHaveLength(1);
+    expect((result as any[])[0].id).toBe("f1");
+  });
+
+  test("org member with zero grants gets empty list, not FORBIDDEN", async () => {
+    fetchListOk([makeGoFolder({ id: "f1" })]);
+    mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set());
+    const result = await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx);
+    expect(result).toHaveLength(0);
+  });
+
+  test("a visible folder can appear without its hidden ancestors (documented orphan behavior)", async () => {
+    // Root -> Animals -> Dogs. Only "Dogs" has a grant; "Root" and "Animals"
+    // have none, so filterVisible excludes them from the flat result even
+    // though "Dogs" is nested three levels deep per its `path`.
+    fetchListOk([
+      makeGoFolder({ id: "root", path: "root", name: "Root" }),
+      makeGoFolder({ id: "animals", path: "root.animals", name: "Animals" }),
+      makeGoFolder({ id: "dogs", path: "root.animals.dogs", name: "Dogs" }),
+    ]);
+    mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set(["dogs"]));
+
+    const result = (await folderResolvers.Query.folderTree(
+      undefined,
+      { orgId: org },
+      ctx,
+    )) as any[];
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: "dogs",
+      name: "Dogs",
+      path: "root.animals.dogs",
+    });
+    expect(result.some((f) => f.id === "root" || f.id === "animals")).toBe(
+      false,
+    );
+  });
+
+  test("does not call canDo for folderTree", async () => {
     fetchListOk([]);
     await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx);
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "read",
-      "folder",
-      org,
-      org,
-    );
+    expect(mockCanDo).not.toHaveBeenCalled();
   });
 
   test("appends rootPath to URL when provided", async () => {
@@ -554,20 +613,36 @@ describe("Query.folderChildren", () => {
     expect(url).toContain("rootPath=root");
   });
 
-  test("uses org-scoped permission check", async () => {
-    fetchListOk([]);
-    await folderResolvers.Query.folderChildren(
+  test("filters children through filterAllowedResourceIds", async () => {
+    fetchListOk([
+      makeGoFolder({ id: "c1", path: "root.child1" }),
+      makeGoFolder({ id: "c2", path: "root.child2" }),
+    ]);
+    mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set(["c2"]));
+    const result = await folderResolvers.Query.folderChildren(
       undefined,
       { orgId: org, parentPath: "root" },
       ctx,
     );
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "read",
-      "folder",
-      org,
-      org,
+    expect(result).toHaveLength(1);
+    expect((result as any[])[0].id).toBe("c2");
+  });
+
+  test("org member with zero grants gets empty list, not FORBIDDEN", async () => {
+    fetchListOk([makeGoFolder({ id: "c1" })]);
+    mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set());
+    const result = await folderResolvers.Query.folderChildren(
+      undefined,
+      { orgId: org, parentPath: "root" },
+      ctx,
     );
+    expect(result).toHaveLength(0);
+  });
+
+  test("does not call canDo for folderChildren", async () => {
+    fetchListOk([]);
+    await folderResolvers.Query.folderChildren(undefined, { orgId: org, parentPath: "root" }, ctx);
+    expect(mockCanDo).not.toHaveBeenCalled();
   });
 
   test("maps Go error codes (403 → FORBIDDEN)", async () => {
@@ -677,6 +752,7 @@ describe("Folder.children", () => {
 
   test("falls back to HTTP when parent has no subtreeNodes", async () => {
     fetchListOk([makeGoFolder({ id: "c1", path: "root.child1" })]);
+    mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set(["c1"]));
     const parent = node("root", "root");
 
     const result = await folderResolvers.Folder.children(
@@ -1028,6 +1104,18 @@ describe("Mutation.deleteFolder", () => {
     );
 
     expect(result).toBe(true);
+  });
+
+  test("preserves object permission grants on the deleted folder", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
+
+    await folderResolvers.Mutation.deleteFolder(
+      undefined,
+      { orgId: org, id },
+      ctx,
+    );
+
+    expect(mockObjectPermissionDeleteMany).not.toHaveBeenCalled();
   });
 
   test("checks delete permission", async () => {

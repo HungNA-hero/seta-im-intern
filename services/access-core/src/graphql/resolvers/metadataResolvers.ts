@@ -1,16 +1,17 @@
 import { GraphQLError } from "graphql";
 import { assertAuthenticated, assertCan, GraphQLContext } from "../context";
-import { canDo } from "../../db/queries/canDo";
+import { filterVisible } from "../../db/queries/canDo";
 import {
   assetFetch,
   assetPath,
+  getFolderMeta,
   snakeCaseKeys,
   unwrapEnvelope,
   unwrapListEnvelope,
   unwrap204,
+  METADATA_PATH,
 } from "../../clients/assetClient";
-
-const METADATA_PATH = "/internal/api/v1/metadata-items";
+import { ancestorIdsFromPath } from "../../util/ltreePath";
 
 /** Represents one metadata item returned by the internal Go API. */
 interface GoMetadataItem {
@@ -32,6 +33,41 @@ interface GoMetadataItem {
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Resolves each distinct folder_id in `items` to its ancestor chain, fetching
+ * every distinct folder at most once per request (not once per item), so
+ * batch metadata visibility checks get the same folder-ancestor inheritance
+ * as single-item checks without an HTTP call per item.
+ */
+async function buildFolderAncestorMap(
+  orgId: string,
+  userId: string,
+  items: GoMetadataItem[],
+): Promise<Map<string, string[]>> {
+  const folderIds = [...new Set(items.map((m) => m.folder_id))];
+  const entries = await Promise.all(
+    folderIds.map(async (folderId) => {
+      const folderMeta = await getFolderMeta(orgId, userId, folderId);
+      return [
+        folderId,
+        folderMeta ? ancestorIdsFromPath(folderMeta.path) : [],
+      ] as const;
+    }),
+  );
+  return new Map(entries);
+}
+
+function metadataHierarchy(
+  folderAncestorsByFolderId: Map<string, string[]>,
+): (m: GoMetadataItem) => { ancestorIds: string[] } {
+  return (m) => ({
+    ancestorIds: [
+      m.folder_id,
+      ...(folderAncestorsByFolderId.get(m.folder_id) ?? []),
+    ],
+  });
 }
 
 interface CreateMetadataInput {
@@ -208,12 +244,26 @@ export const metadataResolvers = {
         { userId: ctx.userId, orgId },
       );
 
-      return unwrapListEnvelope(
+      const items = await unwrapListEnvelope(
         resp,
         "items",
-        toMetadataItem,
+        (m: GoMetadataItem) => m,
         "Failed to fetch metadata items",
       );
+      const folderAncestorsByFolderId = await buildFolderAncestorMap(
+        orgId,
+        ctx.userId,
+        items,
+      );
+      const visible = await filterVisible(
+        ctx.userId,
+        orgId,
+        "read",
+        "metadata_item",
+        items,
+        metadataHierarchy(folderAncestorsByFolderId),
+      );
+      return visible.map(toMetadataItem);
     },
 
     metadataItem: async (
@@ -275,21 +325,20 @@ export const metadataResolvers = {
         "Failed to search metadata items",
       );
 
-      const result: ReturnType<typeof toMetadataItem>[] = [];
-      for (const item of items) {
-        const { allowed } = await canDo(
-          ctx.userId,
-          "read",
-          "metadata_item",
-          item.id,
-          orgId,
-        );
-        if (allowed) {
-          result.push(toMetadataItem(item));
-        }
-      }
-
-      return result;
+      const folderAncestorsByFolderId = await buildFolderAncestorMap(
+        orgId,
+        ctx.userId,
+        items,
+      );
+      const visible = await filterVisible(
+        ctx.userId,
+        orgId,
+        "read",
+        "metadata_item",
+        items,
+        metadataHierarchy(folderAncestorsByFolderId),
+      );
+      return visible.map(toMetadataItem);
     },
   },
 
@@ -303,7 +352,6 @@ export const metadataResolvers = {
       await assertCan(ctx.userId, "write", "folder", input.folderId, orgId);
 
       const body = snakeCaseKeys(input);
-      // Create always sends an object so Go never needs to infer JSON null versus omission.
       body.metadata_json = validateAndParseJsonString(input.metadataJson) ?? {};
 
       const res = await assetFetch(assetPath(METADATA_PATH, { orgId }), {

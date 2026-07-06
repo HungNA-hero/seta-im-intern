@@ -301,7 +301,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
 
     const result = await updateFolder(USER_VIEWER, "Viewer Edit");
     expectForbidden(result, "no object permission");
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(await readFolderName()).toBe(BASE_FOLDER_NAME);
   });
 
@@ -324,7 +324,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
 
     const result = await updateFolder(USER_VIEWER, "Viewer Edit");
     expect(result.errors).toBeUndefined();
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect(await readFolderName()).toBe("Viewer Edit");
   });
 
@@ -337,7 +337,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
 
     const denied = await updateFolder(USER_VIEWER, "Pre-grant Edit");
     expectForbidden(denied, "no object permission");
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(await readFolderName()).toBe(BASE_FOLDER_NAME);
 
     const permissionId = await grantViewerWrite();
@@ -358,7 +358,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     fetchSpy.mockClear();
     const allowed = await updateFolder(USER_VIEWER, "Post-grant Edit");
     expect(allowed.errors).toBeUndefined();
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect(await readFolderName()).toBe("Post-grant Edit");
   });
 
@@ -372,7 +372,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
 
     const allowed = await updateFolder(USER_VIEWER, "Pre-revoke Edit");
     expect(allowed.errors).toBeUndefined();
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect(await readFolderName()).toBe("Pre-revoke Edit");
 
     await revokePermission(permissionId);
@@ -383,7 +383,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     fetchSpy.mockClear();
     const denied = await updateFolder(USER_VIEWER, "Post-revoke Edit");
     expectForbidden(denied, "no object permission");
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(await readFolderName()).toBe("Pre-revoke Edit");
   });
 
@@ -416,7 +416,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
 
     const result = await updateFolder(USER_VIEWER, "Viewer Edit");
     expectForbidden(result, "no object permission");
-    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(await readFolderName()).toBe(BASE_FOLDER_NAME);
   });
 });

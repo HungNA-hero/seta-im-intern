@@ -1,9 +1,13 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { createYoga } from "graphql-yoga";
+import { createCanDoMock } from "./helpers/canDoMock";
 
 const { mockCanDo } = vi.hoisted(() => ({ mockCanDo: vi.fn() }));
+const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({ mockFilterAllowedResourceIds: vi.fn() }));
 
-vi.mock("../db/queries/canDo", () => ({ canDo: mockCanDo }));
+vi.mock("../db/queries/canDo", () =>
+  createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
+);
 vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));
 vi.mock("../db/prisma", () => ({ prisma: {} }));
 
@@ -50,6 +54,7 @@ async function run(query: string, gqlCtx: GraphQLContext) {
 beforeEach(() => {
   vi.resetAllMocks();
   mockCanDo.mockResolvedValue({ allowed: true, reason: null });
+  mockFilterAllowedResourceIds.mockImplementation(async (_u: string, _o: string, _a: string, _r: string, ids: string[]) => new Set(ids));
 });
 
 describe("@sameOrg directive", () => {
@@ -76,10 +81,9 @@ describe("@sameOrg directive", () => {
     );
 
     expect(result.errors).toBeUndefined();
-    expect(mockCanDo).toHaveBeenCalledTimes(1);
   });
 
-  test("resolves Root to Animals to Dogs with one Go request and one policy call", async () => {
+  test("resolves Root to Animals to Dogs with one Go request", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -135,7 +139,6 @@ describe("@sameOrg directive", () => {
     expect(root?.children[0].id).toBe("animals");
     expect(root?.children[0].children[0].id).toBe("dogs");
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockCanDo).toHaveBeenCalledTimes(1);
     expect(mockFetch.mock.calls[0][0]).toContain("tree=true");
   });
 

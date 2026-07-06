@@ -9,15 +9,19 @@ import {
   test,
   vi,
 } from "vitest";
+import { createCanDoMock } from "./helpers/canDoMock";
 import { prisma } from "../db/prisma";
 import { buildServer } from "../server";
 
-const { mockCanDo } = vi.hoisted(() => ({
+const { mockCanDo, mockFilterAllowedResourceIds } = vi.hoisted(() => ({
   mockCanDo: vi.fn(),
+  mockFilterAllowedResourceIds: vi.fn(),
 }));
 
 // Policy is the only injected boundary; authentication and org membership use Access DB.
-vi.mock("../db/queries/canDo", () => ({ canDo: mockCanDo }));
+vi.mock("../db/queries/canDo", () =>
+  createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
+);
 
 const ORG_ID = "00000000-0000-0000-0000-000000000010";
 const OTHER_ORG_ID = "00000000-0000-0000-0000-000000000099";
@@ -119,6 +123,11 @@ beforeEach(() => {
   vi.restoreAllMocks();
   mockCanDo.mockReset();
   mockCanDo.mockResolvedValue({ allowed: true, reason: null });
+  mockFilterAllowedResourceIds.mockReset();
+  mockFilterAllowedResourceIds.mockImplementation(
+    async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) =>
+      new Set(ids),
+  );
 });
 
 describe("Folder tree regression", () => {
@@ -152,7 +161,7 @@ describe("Folder tree regression", () => {
     expect(root?.children[0].name).toBe("Animals");
     expect(root?.children[0].children[0].name).toBe("Dogs");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
-    expect(mockCanDo).toHaveBeenCalledTimes(1);
+    expect(mockFilterAllowedResourceIds).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -493,10 +502,10 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
 
     mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "deny read" });
     const deniedRead = await queryGraphQL<unknown>(
-      `query($orgId: ID!, $folderId: ID!) {
-        metadataItems(orgId: $orgId, folderId: $folderId) { id }
+      `query($orgId: ID!, $id: ID!) {
+        metadataItem(orgId: $orgId, id: $id) { id }
       }`,
-      { orgId: ORG_ID, folderId: ROOT_FOLDER_ID },
+      { orgId: ORG_ID, id: createdItemId },
     );
     expect(firstErrorCode(deniedRead)).toBe("FORBIDDEN");
 
@@ -527,10 +536,10 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
 
     mockCanDo.mockRejectedValueOnce(new Error("sensitive policy failure"));
     const policyFailure = await queryGraphQL<unknown>(
-      `query($orgId: ID!, $folderId: ID!) {
-        metadataItems(orgId: $orgId, folderId: $folderId) { id }
+      `query($orgId: ID!, $id: ID!) {
+        metadataItem(orgId: $orgId, id: $id) { id }
       }`,
-      { orgId: ORG_ID, folderId: ROOT_FOLDER_ID },
+      { orgId: ORG_ID, id: createdItemId },
     );
     expect(firstErrorCode(policyFailure)).toBe("INTERNAL_SERVER_ERROR");
     expect(policyFailure.errors?.[0]?.message).toBe("Unexpected error.");
@@ -576,10 +585,15 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       DELETED_FOLDER_ID,
     ]);
 
-    mockCanDo.mockImplementation(async (_userId, _action, _kind, id) => ({
-      allowed: id !== SEARCH_DENIED_ID,
-      reason: id === SEARCH_DENIED_ID ? "denied" : null,
-    }));
+    mockFilterAllowedResourceIds.mockImplementation(
+      async (
+        _userId: string,
+        _orgId: string,
+        _action: string,
+        _type: string,
+        ids: string[],
+      ) => new Set(ids.filter((id) => id !== SEARCH_DENIED_ID)),
+    );
 
     const result = await queryGraphQL<{ searchMetadata: MetadataSummary[] }>(
       `query($orgId: ID!, $input: MetadataSearchInput!) {
@@ -603,14 +617,13 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
         title: "E2E: Secure Search Allowed",
       }),
     ]);
-    expect(mockCanDo).toHaveBeenCalledTimes(2);
+    expect(mockFilterAllowedResourceIds).toHaveBeenCalledTimes(1);
   });
 
   test("14. aborts search without partial data on a policy exception", async () => {
-    mockCanDo.mockImplementation(async (_userId, _action, _kind, id) => {
-      if (id === SEARCH_ALLOWED_ID) return { allowed: true, reason: null };
-      throw new Error("policy unavailable");
-    });
+    mockFilterAllowedResourceIds.mockRejectedValueOnce(
+      new Error("policy unavailable"),
+    );
 
     const result = await queryGraphQL<{ searchMetadata: MetadataSummary[] }>(
       `query($orgId: ID!, $input: MetadataSearchInput!) {
@@ -624,7 +637,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
 
     expect(result.data).toBeNull();
     expect(firstErrorCode(result)).toBe("INTERNAL_SERVER_ERROR");
-    expect(mockCanDo).toHaveBeenCalledTimes(2);
+    expect(mockFilterAllowedResourceIds).toHaveBeenCalledTimes(1);
   });
 
   test("15. deletes metadata, records audit fields, and maps repeat to 404", async () => {
