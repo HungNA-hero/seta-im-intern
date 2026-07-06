@@ -174,8 +174,11 @@ export interface MetadataItemMeta {
 
 /**
  * Looks up a folder's ltree path, for use by canDo's ancestor-inheritance
- * checks. Returns null if the folder doesn't exist (canDo treats that as
- * deny, same as any other not-found resource).
+ * checks. Returns null only if the folder doesn't exist (404) — canDo
+ * treats that as deny, same as any other not-found resource. Any other
+ * non-2xx response (401/403/500/...) is a dependency failure and must
+ * propagate rather than silently resolve to "no ancestors", which could
+ * otherwise mask an outage as a plain permission denial.
  */
 export async function getFolderMeta(
   orgId: string,
@@ -186,7 +189,8 @@ export async function getFolderMeta(
     userId,
     orgId,
   });
-  if (!res.ok) return null;
+  if (res.status === 404) return null;
+  if (!res.ok) throwGoError(res, "Failed to fetch folder metadata");
   const data = (await res.json()) as { folder?: { path: string } };
   if (!data.folder) return null;
   return { path: data.folder.path };
@@ -195,8 +199,9 @@ export async function getFolderMeta(
 /**
  * Looks up a metadata item's containing folder id, for canDo's
  * folder-inheritance checks. The folder's own ancestry is resolved
- * separately via `getFolderMeta(orgId, userId, folderId)`. Returns null if
- * the item doesn't exist.
+ * separately via `getFolderMeta(orgId, userId, folderId)`. Returns null only
+ * if the item doesn't exist (404); any other non-2xx response propagates as
+ * a dependency failure (see `getFolderMeta`).
  */
 export async function getMetadataMeta(
   orgId: string,
@@ -207,7 +212,8 @@ export async function getMetadataMeta(
     userId,
     orgId,
   });
-  if (!res.ok) return null;
+  if (res.status === 404) return null;
+  if (!res.ok) throwGoError(res, "Failed to fetch metadata item metadata");
   const data = (await res.json()) as {
     item?: { folder_id: string };
   };

@@ -212,6 +212,7 @@ describe("CLI Import Visibility Policy E2E", () => {
   });
 
   test("imported items are visible through metadata list with folder read policy", async () => {
+    mockCanDo.mockResolvedValue({ allowed: true, reason: null });
     mockFilterAllowedResourceIds.mockImplementation(
       async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) =>
         new Set(ids),
@@ -286,6 +287,7 @@ describe("CLI Import Visibility Policy E2E", () => {
   });
 
   test("denied requester gets an empty list for the imported item", async () => {
+    mockCanDo.mockResolvedValue({ allowed: true, reason: null });
     mockFilterAllowedResourceIds.mockResolvedValue(new Set());
 
     const res = await queryGraphQL(

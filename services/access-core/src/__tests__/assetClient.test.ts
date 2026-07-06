@@ -8,6 +8,8 @@ import {
   unwrap204,
   snakeCaseKeys,
   throwGoError,
+  getFolderMeta,
+  getMetadataMeta,
 } from "../clients/assetClient";
 import { config } from "../config";
 
@@ -167,6 +169,69 @@ describe("assetClient", () => {
       mockFetch.mockResolvedValue(new Response(null, { status: 400 }));
       const res = await mockFetch();
       await expect(unwrap204(res, "Err")).rejects.toThrow();
+    });
+  });
+
+  describe("getFolderMeta", () => {
+    it("returns null on 404 (folder does not exist)", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 404 }));
+      const result = await getFolderMeta("org-1", "user-1", "f1");
+      expect(result).toBeNull();
+    });
+
+    it("returns the folder path on success", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ folder: { path: "abc.def" } }), {
+          status: 200,
+        }),
+      );
+      const result = await getFolderMeta("org-1", "user-1", "f1");
+      expect(result).toEqual({ path: "abc.def" });
+    });
+
+    it("propagates a 500 as INTERNAL_SERVER_ERROR instead of resolving to null", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(null, { status: 500, statusText: "Internal Error" }),
+      );
+      await expect(getFolderMeta("org-1", "user-1", "f1")).rejects.toMatchObject(
+        { extensions: { code: "INTERNAL_SERVER_ERROR" } },
+      );
+    });
+
+    it("propagates a 403 as FORBIDDEN instead of resolving to null", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(null, { status: 403, statusText: "Forbidden" }),
+      );
+      await expect(getFolderMeta("org-1", "user-1", "f1")).rejects.toMatchObject(
+        { extensions: { code: "FORBIDDEN" } },
+      );
+    });
+  });
+
+  describe("getMetadataMeta", () => {
+    it("returns null on 404 (item does not exist)", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 404 }));
+      const result = await getMetadataMeta("org-1", "user-1", "m1");
+      expect(result).toBeNull();
+    });
+
+    it("returns the containing folder id on success", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ item: { folder_id: "f1" } }), {
+          status: 200,
+        }),
+      );
+      const result = await getMetadataMeta("org-1", "user-1", "m1");
+      expect(result).toEqual({ folderId: "f1" });
+    });
+
+    it("propagates a 500 as INTERNAL_SERVER_ERROR instead of resolving to null", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(null, { status: 500, statusText: "Internal Error" }),
+      );
+      await expect(
+        getMetadataMeta("org-1", "user-1", "m1"),
+      ).rejects.toMatchObject({ extensions: { code: "INTERNAL_SERVER_ERROR" } });
     });
   });
 });
