@@ -1,5 +1,5 @@
 import { GraphQLError } from "graphql";
-import { assertAuthenticated, assertCan, assertOrgMember, GraphQLContext } from "../context";
+import { assertAuthenticated, assertCan, GraphQLContext } from "../context";
 import { filterVisible } from "../../db/queries/canDo";
 import {
   assetFetch,
@@ -12,7 +12,6 @@ import {
   METADATA_PATH,
 } from "../../clients/assetClient";
 import { ancestorIdsFromPath } from "../../util/ltreePath";
-import { prisma } from "../../db/prisma";
 
 /** Represents one metadata item returned by the internal Go API. */
 interface GoMetadataItem {
@@ -237,7 +236,8 @@ export const metadataResolvers = {
       { orgId, folderId }: { orgId: string; folderId: string },
       ctx: GraphQLContext,
     ) => {
-      assertOrgMember(ctx);
+      assertAuthenticated(ctx);
+      await assertCan(ctx.userId, "read", "folder", folderId, orgId);
 
       const resp = await assetFetch(
         assetPath(METADATA_PATH, { orgId, folderId }),
@@ -352,7 +352,6 @@ export const metadataResolvers = {
       await assertCan(ctx.userId, "write", "folder", input.folderId, orgId);
 
       const body = snakeCaseKeys(input);
-      // Create always sends an object so Go never needs to infer JSON null versus omission.
       body.metadata_json = validateAndParseJsonString(input.metadataJson) ?? {};
 
       const res = await assetFetch(assetPath(METADATA_PATH, { orgId }), {
@@ -421,11 +420,7 @@ export const metadataResolvers = {
         method: "DELETE",
       });
 
-      const deleted = await unwrap204(res, "Failed to delete metadata item");
-      await prisma.objectPermission.deleteMany({
-        where: { orgId, resourceType: "metadata_item", resourceId: id },
-      });
-      return deleted;
+      return unwrap204(res, "Failed to delete metadata item");
     },
   },
 };

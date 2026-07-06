@@ -156,7 +156,7 @@ describe("Query.metadataItems", () => {
     expect(result).toHaveLength(0);
   });
 
-  test("does not call canDo for metadataItems", async () => {
+  test("checks folder read policy once before fetching from Go", async () => {
     fetchListOk([]);
     await metadataResolvers.Query.metadataItems(
       undefined,
@@ -164,7 +164,22 @@ describe("Query.metadataItems", () => {
       ctx,
     );
 
-    expect(mockCanDo).not.toHaveBeenCalled();
+    expect(mockCanDo).toHaveBeenCalledTimes(1);
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "read", "folder", folder, org);
+  });
+
+  test("denies before any Go request when folder read policy denies", async () => {
+    mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "no RBAC ceiling" });
+
+    await expect(
+      metadataResolvers.Query.metadataItems(
+        undefined,
+        { orgId: org, folderId: folder },
+        ctx,
+      ),
+    ).rejects.toMatchObject({ extensions: { code: "FORBIDDEN" } });
+
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test("fetches each distinct folder's ancestry once, not once per item", async () => {
@@ -739,6 +754,18 @@ describe("Mutation.deleteMetadata", () => {
       "http://go-mock/internal/api/v1/metadata-items?orgId=org-1&id=meta-1",
       expect.objectContaining({ method: "DELETE" }),
     );
+  });
+
+  test("preserves object permission grants on the deleted item", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
+
+    await metadataResolvers.Mutation.deleteMetadata(
+      undefined,
+      { orgId: org, id },
+      ctx,
+    );
+
+    expect(mockObjectPermissionDeleteMany).not.toHaveBeenCalled();
   });
 
   test("calls canDo with delete metadata_item permission", async () => {
