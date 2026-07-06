@@ -17,7 +17,6 @@ import {
   FOLDERS_PATH,
 } from "../../clients/assetClient";
 import { ancestorIdsFromPath } from "../../util/ltreePath";
-import { prisma } from "../../db/prisma";
 
 interface GoFolder {
   id: string;
@@ -95,6 +94,22 @@ export const folderResolvers = {
       return data.folder ? toFolder(data.folder as GoFolder) : null;
     },
 
+    /**
+     * Returns every folder the caller can read in this scope as a FLAT list
+     * — not grouped or nested into a tree. `Folder.children` reconstructs
+     * parent/child relationships lazily by matching `path` prefixes within
+     * this same list.
+     *
+     * A folder appearing here does NOT guarantee its parent is also present:
+     * an object-level grant can make a folder visible while every ancestor
+     * in its `path` remains hidden (no ceiling, no grant, no inheritance —
+     * grants only flow down to descendants, never up to ancestors). Such a
+     * folder has no path back to any root in the returned data; its `path`
+     * field still reflects the real ltree location, but the intermediate
+     * folder objects for that path are simply absent. Callers must not
+     * assume path continuity and should treat any folder whose parent isn't
+     * in the result as a display root.
+     */
     folderTree: async (
       _: unknown,
       { orgId, rootPath }: { orgId: string; rootPath?: string },
@@ -312,11 +327,13 @@ export const folderResolvers = {
         method: "DELETE",
       });
 
-      const deleted = await unwrap204(res, "Failed to delete folder");
-      await prisma.objectPermission.deleteMany({
-        where: { orgId, resourceType: "folder", resourceId: id },
-      });
-      return deleted;
+      // Grants on the deleted folder are left in place, not cleaned up: the
+      // folder is inaccessible via every read path once soft-deleted, so the
+      // grants are inert, and preserving them matches the resolved policy for
+      // child-folder grants under a soft-deleted parent (kept for potential
+      // restore). This also avoids a cross-system atomicity gap — Go's
+      // soft-delete is the only state change this mutation makes.
+      return unwrap204(res, "Failed to delete folder");
     },
   },
 };

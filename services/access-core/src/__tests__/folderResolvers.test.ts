@@ -509,6 +509,34 @@ describe("Query.folderTree", () => {
     expect(result).toHaveLength(0);
   });
 
+  test("a visible folder can appear without its hidden ancestors (documented orphan behavior)", async () => {
+    // Root -> Animals -> Dogs. Only "Dogs" has a grant; "Root" and "Animals"
+    // have none, so filterVisible excludes them from the flat result even
+    // though "Dogs" is nested three levels deep per its `path`.
+    fetchListOk([
+      makeGoFolder({ id: "root", path: "root", name: "Root" }),
+      makeGoFolder({ id: "animals", path: "root.animals", name: "Animals" }),
+      makeGoFolder({ id: "dogs", path: "root.animals.dogs", name: "Dogs" }),
+    ]);
+    mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set(["dogs"]));
+
+    const result = (await folderResolvers.Query.folderTree(
+      undefined,
+      { orgId: org },
+      ctx,
+    )) as any[];
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: "dogs",
+      name: "Dogs",
+      path: "root.animals.dogs",
+    });
+    expect(result.some((f) => f.id === "root" || f.id === "animals")).toBe(
+      false,
+    );
+  });
+
   test("does not call canDo for folderTree", async () => {
     fetchListOk([]);
     await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx);
@@ -1076,6 +1104,18 @@ describe("Mutation.deleteFolder", () => {
     );
 
     expect(result).toBe(true);
+  });
+
+  test("preserves object permission grants on the deleted folder", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
+
+    await folderResolvers.Mutation.deleteFolder(
+      undefined,
+      { orgId: org, id },
+      ctx,
+    );
+
+    expect(mockObjectPermissionDeleteMany).not.toHaveBeenCalled();
   });
 
   test("checks delete permission", async () => {
