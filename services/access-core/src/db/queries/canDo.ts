@@ -105,10 +105,9 @@ function decideAccess(
       ? { allowed: true, reason: null }
       : { allowed: false, reason: "no object permission" };
   }
-  if (!rbacAllows) return { allowed: false, reason: "no RBAC ceiling" };
-  return olpAllows
+  return rbacAllows
     ? { allowed: true, reason: null }
-    : { allowed: false, reason: "no object permission" };
+    : { allowed: false, reason: "no RBAC ceiling" };
 }
 
 async function resolveGrant(
@@ -128,7 +127,7 @@ async function resolveGrant(
         },
       })
       .then(Boolean);
-    if (!rbacAllows) return { rbacAllows: false, grantedIds: new Set() };
+    return { rbacAllows, grantedIds: new Set() };
   }
 
   const grantedIds = await queryGrantedIds(
@@ -144,14 +143,17 @@ async function resolveGrant(
 
 /**
  * Evaluates whether a user can perform a specific action on a given resource.
- * Combined rule (after trainer_admin / org_admin bypasses):
- *   allowed = grantExists && (org.olpEnabled || ceilingExists)
  *
  * Creator status (`created_by`) confers no automatic permission — access to
  * a resource the user created is subject to the same RBAC ceiling and OLP
  * grant rules as any other resource. A grant on a folder also covers its
  * descendant folders (ltree ancestor chain) and any metadata item filed
- * under that folder or one of its descendants.
+ * under that folder or one of its descendants — except `manage_permissions`,
+ * which never inherits: it lets the grantee create further grants, so
+ * letting it cascade down a tree would silently hand out permission-
+ * management authority over content the grantor never explicitly covered
+ * (including content added after the grant was made). A `manage_permissions`
+ * grant only ever applies to the exact resource it was granted on.
  *
  * A folder `resourceId` equal to `orgId` denotes the org root (used to
  * authorize top-level folder creation, which has no real folder object to
@@ -159,12 +161,14 @@ async function resolveGrant(
  * OLP mode, since no object-level grant can ever target it.
  *
  * 1. RBAC mode (olpEnabled = false):
- *    Requires BOTH a ceiling (role permits this action on this resource type)
- *    AND an object-level grant (the specific resource, or an ancestor folder
- *    it inherits from, was shared with them).
+ *    Decided by the RBAC ceiling alone (role permits this action on this
+ *    resource type). Object-level grants are irrelevant and never queried,
+ *    and ancestor-folder metadata is never fetched from Asset Core.
  *
  * 2. OLP mode (olpEnabled = true):
- *    Only the object-level grant matters — ceiling is ignored and never queried.
+ *    Decided by the object-level grant alone (the specific resource, or an
+ *    ancestor folder it inherits from, was shared with them) — ceiling is
+ *    ignored and never queried.
  *
  * @param userId - The ID of the user requesting access.
  * @param action - The permission action code (e.g., READ_FOLDER, WRITE_METADATA).
@@ -203,9 +207,23 @@ export async function canDo(
         : { allowed: false, reason: "no RBAC ceiling" };
     }
 
-    const meta = await getFolderMeta(orgId, userId, resourceId);
+    if (!resolution.olpEnabled) {
+      const { rbacAllows } = await resolveGrant(
+        userId,
+        orgId,
+        "folder",
+        [resourceId],
+        resolution,
+      );
+      return decideAccess(resolution, rbacAllows, false);
+    }
+
+    const meta =
+      action === "manage_permissions"
+        ? null
+        : await getFolderMeta(orgId, userId, resourceId);
     const ancestorIds = meta ? ancestorIdsFromPath(meta.path) : [];
-    const { rbacAllows, grantedIds } = await resolveGrant(
+    const { grantedIds } = await resolveGrant(
       userId,
       orgId,
       "folder",
@@ -213,12 +231,22 @@ export async function canDo(
       resolution,
     );
     const olpAllows = grantedIds.size > 0;
-    return decideAccess(resolution, rbacAllows, olpAllows);
+    return decideAccess(resolution, true, olpAllows);
   }
 
   if (resourceType === "metadata_item") {
-    const meta = await getMetadataMeta(orgId, userId, resourceId);
-    const { rbacAllows, grantedIds: directGrantedIds } = await resolveGrant(
+    if (!resolution.olpEnabled) {
+      const { rbacAllows } = await resolveGrant(
+        userId,
+        orgId,
+        "metadata_item",
+        [resourceId],
+        resolution,
+      );
+      return decideAccess(resolution, rbacAllows, false);
+    }
+
+    const { grantedIds: directGrantedIds } = await resolveGrant(
       userId,
       orgId,
       "metadata_item",
@@ -227,25 +255,39 @@ export async function canDo(
     );
 
     let folderGrantedIds = new Set<string>();
-    if (meta && (resolution.olpEnabled || rbacAllows)) {
-      const folderMeta = await getFolderMeta(orgId, userId, meta.folderId);
-      const folderAncestorIds = folderMeta
-        ? ancestorIdsFromPath(folderMeta.path)
-        : [];
-      folderGrantedIds = await queryGrantedIds(
-        userId,
-        orgId,
-        "folder",
-        [meta.folderId, ...folderAncestorIds],
-        resolution.permActionId,
-        resolution.roleIds,
-      );
+    if (action !== "manage_permissions") {
+      const meta = await getMetadataMeta(orgId, userId, resourceId);
+      if (meta) {
+        const folderMeta = await getFolderMeta(orgId, userId, meta.folderId);
+        const folderAncestorIds = folderMeta
+          ? ancestorIdsFromPath(folderMeta.path)
+          : [];
+        folderGrantedIds = await queryGrantedIds(
+          userId,
+          orgId,
+          "folder",
+          [meta.folderId, ...folderAncestorIds],
+          resolution.permActionId,
+          resolution.roleIds,
+        );
+      }
     }
     const olpAllows = directGrantedIds.size > 0 || folderGrantedIds.size > 0;
-    return decideAccess(resolution, rbacAllows, olpAllows);
+    return decideAccess(resolution, true, olpAllows);
   }
 
-  const { rbacAllows, grantedIds } = await resolveGrant(
+  if (!resolution.olpEnabled) {
+    const { rbacAllows } = await resolveGrant(
+      userId,
+      orgId,
+      resourceType,
+      [resourceId],
+      resolution,
+    );
+    return decideAccess(resolution, rbacAllows, false);
+  }
+
+  const { grantedIds } = await resolveGrant(
     userId,
     orgId,
     resourceType,
@@ -253,7 +295,7 @@ export async function canDo(
     resolution,
   );
   const olpAllows = grantedIds.has(resourceId);
-  return decideAccess(resolution, rbacAllows, olpAllows);
+  return decideAccess(resolution, true, olpAllows);
 }
 
 interface ResourceHierarchy {
@@ -276,9 +318,20 @@ export async function filterAllowedResourceIds<T extends { id: string }>(
     return resolution.allowed ? new Set(resourceIds) : new Set();
   }
 
+  if (!resolution.olpEnabled) {
+    const { rbacAllows } = await resolveGrant(
+      userId,
+      orgId,
+      resourceType,
+      resourceIds,
+      resolution,
+    );
+    return rbacAllows ? new Set(resourceIds) : new Set();
+  }
+
   const allowed = new Set<string>();
 
-  const { rbacAllows, grantedIds } = await resolveGrant(
+  const { grantedIds } = await resolveGrant(
     userId,
     orgId,
     resourceType,
@@ -290,7 +343,7 @@ export async function filterAllowedResourceIds<T extends { id: string }>(
     if (grantedIds.has(id)) allowed.add(id);
   }
 
-  if (items && getHierarchy && (resolution.olpEnabled || rbacAllows)) {
+  if (items && getHierarchy && action !== "manage_permissions") {
     const byId = new Map(items.map((item) => [item.id, item]));
     const ancestorIdsByItem = new Map<string, string[]>();
     const allAncestorIds = new Set<string>();

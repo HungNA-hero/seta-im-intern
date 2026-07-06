@@ -18,7 +18,6 @@ const OTHER_ORG_ID = "00000000-0000-0000-0000-000000000099";
 const USER_ADMIN = "00000000-0000-0000-0000-000000000001";
 const USER_VIEWER = "00000000-0000-0000-0000-000000000002";
 const MISSING_MEMBERSHIP_USER = "00000000-0000-0000-0000-000000000003";
-const READ_ACTION_ID = "30000000-0000-0000-0000-000000000001";
 const WRITE_ACTION_ID = "30000000-0000-0000-0000-000000000002";
 const FOLDER_ID = "90000000-0000-0000-0000-000000000001";
 const WRONG_FOLDER_ID = "90000000-0000-0000-0000-000000000002";
@@ -256,17 +255,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     expect(await readFolderName()).toBe("Admin Edit 2");
   });
 
-  test("PM-03 allows viewer read through RBAC ceiling plus an explicit grant", async () => {
-    await prisma.objectPermission.create({
-      data: {
-        orgId: ORG_ID,
-        resourceType: "folder",
-        resourceId: FOLDER_ID,
-        actionId: READ_ACTION_ID,
-        granteeUserId: USER_VIEWER,
-        grantedBy: USER_ADMIN,
-      },
-    });
+  test("PM-03 allows viewer read through the RBAC ceiling", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const result = await queryGraphQL<FolderResult>(
       `query($orgId: ID!, $id: ID!) {
@@ -281,7 +270,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
       id: FOLDER_ID,
       name: BASE_FOLDER_NAME,
     });
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
   test("PM-04 ignores a direct grant and denies viewer write while OLP is disabled", async () => {
@@ -299,7 +288,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
 
     const result = await updateFolder(USER_VIEWER, "Viewer Edit");
     expectForbidden(result, "no RBAC ceiling");
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).not.toHaveBeenCalled();
     expect(await readFolderName()).toBe(BASE_FOLDER_NAME);
   });
 
