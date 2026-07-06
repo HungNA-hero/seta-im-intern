@@ -12,14 +12,18 @@ import {
   test,
   vi,
 } from "vitest";
+import { createCanDoMock } from "./helpers/canDoMock";
 import { prisma } from "../db/prisma";
 import { buildServer } from "../server";
 
-const { mockCanDo } = vi.hoisted(() => ({
+const { mockCanDo, mockFilterAllowedResourceIds } = vi.hoisted(() => ({
   mockCanDo: vi.fn(),
+  mockFilterAllowedResourceIds: vi.fn(),
 }));
 
-vi.mock("../db/queries/canDo", () => ({ canDo: mockCanDo }));
+vi.mock("../db/queries/canDo", () =>
+  createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
+);
 
 const ORG_ID = "00000000-0000-0000-0000-000000000010"; // Test Org
 const ORG_ID_OTHER = "00000000-0000-0000-0000-000000000011"; // Other Org
@@ -174,7 +178,10 @@ describe("CLI Import Visibility Policy E2E", () => {
   };
 
   test("imported items are visible through SearchMetadataItems with read policy", async () => {
-    mockCanDo.mockResolvedValue({ allowed: true, reason: null }); // authorized
+    mockFilterAllowedResourceIds.mockImplementation(
+      async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) =>
+        new Set(ids),
+    ); // authorized
 
     const query = `
       query {
@@ -195,17 +202,20 @@ describe("CLI Import Visibility Policy E2E", () => {
       body.data.searchMetadata.some((i: any) => i.title === "Imported Item"),
     ).toBe(true);
 
-    expect(mockCanDo).toHaveBeenCalledWith(
+    expect(mockFilterAllowedResourceIds).toHaveBeenCalledWith(
       USER_ID,
+      ORG_ID,
       "read",
       "metadata_item",
-      expect.anything(),
-      ORG_ID,
+      expect.arrayContaining([importedItemId]),
     );
   });
 
   test("imported items are visible through metadata list with folder read policy", async () => {
-    mockCanDo.mockResolvedValue({ allowed: true, reason: null });
+    mockFilterAllowedResourceIds.mockImplementation(
+      async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) =>
+        new Set(ids),
+    );
 
     const res = await queryGraphQL(
       `query($orgId: ID!, $folderId: ID!) {
@@ -221,12 +231,12 @@ describe("CLI Import Visibility Policy E2E", () => {
     expect(body.data.metadataItems).toEqual([
       expect.objectContaining({ id: importedItemId, title: "Imported Item" }),
     ]);
-    expect(mockCanDo).toHaveBeenCalledWith(
+    expect(mockFilterAllowedResourceIds).toHaveBeenCalledWith(
       USER_ID,
-      "read",
-      "folder",
-      importedFolderId,
       ORG_ID,
+      "read",
+      "metadata_item",
+      expect.arrayContaining([importedItemId]),
     );
   });
 
@@ -259,35 +269,41 @@ describe("CLI Import Visibility Policy E2E", () => {
     );
   });
 
-  test.each([
-    {
-      name: "list",
-      query: `query($orgId: ID!, $folderId: ID!) {
-        metadataItems(orgId: $orgId, folderId: $folderId) { id }
-      }`,
-      variables: () => ({ orgId: ORG_ID, folderId: importedFolderId }),
-    },
-    {
-      name: "detail",
-      query: `query($orgId: ID!, $id: ID!) {
+  test("denied requester cannot read imported item through detail", async () => {
+    mockCanDo.mockResolvedValue({ allowed: false, reason: "denied" });
+
+    const res = await queryGraphQL(
+      `query($orgId: ID!, $id: ID!) {
         metadataItem(orgId: $orgId, id: $id) { id }
       }`,
-      variables: () => ({ orgId: ORG_ID, id: importedItemId }),
-    },
-  ])(
-    "denied requester cannot read imported item through $name",
-    async ({ query, variables }) => {
-      mockCanDo.mockResolvedValue({ allowed: false, reason: "denied" });
+      { orgId: ORG_ID, id: importedItemId },
+      USER_ID,
+      ORG_ID,
+    );
+    const body = res.json() as { errors?: GraphQLErrorResult[] };
 
-      const res = await queryGraphQL(query, variables(), USER_ID, ORG_ID);
-      const body = res.json() as { errors?: GraphQLErrorResult[] };
+    expect(body.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+  });
 
-      expect(body.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
-    },
-  );
+  test("denied requester gets an empty list for the imported item", async () => {
+    mockFilterAllowedResourceIds.mockResolvedValue(new Set());
+
+    const res = await queryGraphQL(
+      `query($orgId: ID!, $folderId: ID!) {
+        metadataItems(orgId: $orgId, folderId: $folderId) { id }
+      }`,
+      { orgId: ORG_ID, folderId: importedFolderId },
+      USER_ID,
+      ORG_ID,
+    );
+    const body = res.json();
+
+    expect(body.errors).toBeUndefined();
+    expect(body.data.metadataItems).toEqual([]);
+  });
 
   test("imported items are omitted from search if policy returns false", async () => {
-    mockCanDo.mockResolvedValue({ allowed: false, reason: "denied" }); // denied
+    mockFilterAllowedResourceIds.mockResolvedValue(new Set()); // denied
 
     const query = `
       query {
@@ -307,7 +323,10 @@ describe("CLI Import Visibility Policy E2E", () => {
   });
 
   test("imported items are not visible in cross-org search", async () => {
-    mockCanDo.mockResolvedValue({ allowed: true, reason: null });
+    mockFilterAllowedResourceIds.mockImplementation(
+      async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) =>
+        new Set(ids),
+    );
 
     const query = `
       query {
@@ -324,6 +343,5 @@ describe("CLI Import Visibility Policy E2E", () => {
     expect(res.statusCode).toBe(200);
     expect(body.errors).toBeUndefined();
     expect(body.data.searchMetadata).toHaveLength(0); // Zero results due to tenant isolation
-    expect(mockCanDo).not.toHaveBeenCalled();
   });
 });
