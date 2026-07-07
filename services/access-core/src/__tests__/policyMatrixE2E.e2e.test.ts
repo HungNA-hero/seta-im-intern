@@ -19,9 +19,13 @@ const USER_ADMIN = "00000000-0000-0000-0000-000000000001";
 const USER_VIEWER = "00000000-0000-0000-0000-000000000002";
 const MISSING_MEMBERSHIP_USER = "00000000-0000-0000-0000-000000000003";
 const WRITE_ACTION_ID = "30000000-0000-0000-0000-000000000002";
+const MANAGE_ACTION_ID = "30000000-0000-0000-0000-000000000004";
+const ANCESTOR_FOLDER_ID = "90000000-0000-0000-0000-000000000010";
 const FOLDER_ID = "90000000-0000-0000-0000-000000000001";
 const WRONG_FOLDER_ID = "90000000-0000-0000-0000-000000000002";
+const METADATA_ID = "91000000-0000-0000-0000-000000000001";
 const BASE_FOLDER_NAME = "Target Folder";
+const BASE_METADATA_TITLE = "Target Metadata";
 
 interface GraphQLErrorResult {
   message?: string;
@@ -34,7 +38,7 @@ interface GraphQLResult<T> {
 }
 
 interface FolderResult {
-  folder: { id: string; name: string };
+  folder: { id: string; name: string } | null;
 }
 
 interface UpdateFolderResult {
@@ -47,6 +51,19 @@ interface GrantResult {
 
 interface RevokeResult {
   revokeObjectPermission: boolean;
+}
+
+interface BooleanMutationResult {
+  deleteFolder?: boolean;
+  deleteMetadata?: boolean;
+}
+
+interface MetadataResult {
+  metadataItem: { id: string; title: string } | null;
+}
+
+interface UpdateMetadataResult {
+  updateMetadata: { id: string; title: string };
 }
 
 let app: FastifyInstance;
@@ -110,6 +127,42 @@ async function updateFolder(
   );
 }
 
+/** Calls the protected metadata mutation used by the creator no-bypass case. */
+async function updateMetadata(
+  userId: string,
+  title: string,
+): Promise<GraphQLResult<UpdateMetadataResult>> {
+  return queryGraphQL<UpdateMetadataResult>(
+    `mutation($orgId: ID!, $id: ID!, $input: UpdateMetadataInput!) {
+       updateMetadata(orgId: $orgId, id: $id, input: $input) { id title }
+     }`,
+    { orgId: ORG_ID, id: METADATA_ID, input: { title } },
+    userId,
+  );
+}
+
+/** Calls a public grant mutation for an arbitrary folder target. */
+async function grantFolderPermission(
+  userId: string,
+  resourceId: string,
+  action: "read" | "write" | "delete" | "manage_permissions",
+  granteeUserId: string,
+): Promise<GraphQLResult<GrantResult>> {
+  return queryGraphQL<GrantResult>(
+    `mutation($orgId: ID!, $resourceId: ID!, $action: PermissionAction!, $granteeUserId: ID!) {
+       grantObjectPermission(
+         orgId: $orgId
+         resourceType: folder
+         resourceId: $resourceId
+         action: $action
+         granteeUserId: $granteeUserId
+       ) { id }
+     }`,
+    { orgId: ORG_ID, resourceId, action, granteeUserId },
+    userId,
+  );
+}
+
 /** Grants viewer write access through the public permission mutation. */
 async function grantViewerWrite(): Promise<string> {
   const result = await queryGraphQL<GrantResult>(
@@ -150,7 +203,11 @@ async function revokePermission(id: string): Promise<void> {
 /** Removes direct-grant fixtures and restores the organization policy mode. */
 async function resetAccessFixtures(): Promise<void> {
   await prisma.objectPermission.deleteMany({
-    where: { resourceId: { in: [FOLDER_ID, WRONG_FOLDER_ID] } },
+    where: {
+      resourceId: {
+        in: [ANCESTOR_FOLDER_ID, FOLDER_ID, WRONG_FOLDER_ID, METADATA_ID],
+      },
+    },
   });
   await prisma.organization.update({
     where: { id: ORG_ID },
@@ -160,17 +217,35 @@ async function resetAccessFixtures(): Promise<void> {
 
 /** Recreates the Asset DB target with deterministic state for each test. */
 async function resetTargetFolder(): Promise<void> {
-  await assetDb.query("DELETE FROM folders WHERE id = $1", [FOLDER_ID]);
+  await assetDb.query("DELETE FROM metadata_items WHERE id = $1", [
+    METADATA_ID,
+  ]);
+  await assetDb.query("DELETE FROM folders WHERE id = ANY($1::uuid[])", [
+    [FOLDER_ID, ANCESTOR_FOLDER_ID],
+  ]);
   await assetDb.query(
     `INSERT INTO folders (id, org_id, path, name, created_by, updated_by)
-     VALUES ($1::uuid, $2::uuid, $3::ltree, $4, $5::uuid, $5::uuid)`,
+     VALUES
+       ($1::uuid, $3::uuid, $4::ltree, 'Policy Ancestor', $6::uuid, $6::uuid),
+       ($2::uuid, $3::uuid, $5::ltree, $7, $6::uuid, $6::uuid)`,
     [
+      ANCESTOR_FOLDER_ID,
       FOLDER_ID,
       ORG_ID,
-      FOLDER_ID.replace(/-/g, ""),
-      BASE_FOLDER_NAME,
+      ANCESTOR_FOLDER_ID.replace(/-/g, ""),
+      `${ANCESTOR_FOLDER_ID.replace(/-/g, "")}.${FOLDER_ID.replace(/-/g, "")}`,
       USER_ADMIN,
+      BASE_FOLDER_NAME,
     ],
+  );
+}
+
+/** Creates the deterministic metadata target only for cases that need it. */
+async function createTargetMetadata(): Promise<void> {
+  await assetDb.query(
+    `INSERT INTO metadata_items (id, folder_id, title, created_by, updated_by)
+     VALUES ($1::uuid, $2::uuid, $3, $4::uuid, $4::uuid)`,
+    [METADATA_ID, FOLDER_ID, BASE_METADATA_TITLE, USER_ADMIN],
   );
 }
 
@@ -218,7 +293,12 @@ afterEach(async () => {
 afterAll(async () => {
   if (app) await app.close();
   await resetAccessFixtures();
-  await assetDb.query("DELETE FROM folders WHERE id = $1", [FOLDER_ID]);
+  await assetDb.query("DELETE FROM metadata_items WHERE id = $1", [
+    METADATA_ID,
+  ]);
+  await assetDb.query("DELETE FROM folders WHERE id = ANY($1::uuid[])", [
+    [FOLDER_ID, ANCESTOR_FOLDER_ID],
+  ]);
   await assetDb.end();
   await prisma.user.deleteMany({ where: { id: MISSING_MEMBERSHIP_USER } });
   await prisma.organization.deleteMany({ where: { id: OTHER_ORG_ID } });
@@ -418,5 +498,193 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     expectForbidden(result, "no object permission");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(await readFolderName()).toBe(BASE_FOLDER_NAME);
+  });
+
+  test("PM-10 creator status does not bypass RBAC or OLP policy", async () => {
+    await createTargetMetadata();
+    await assetDb.query("UPDATE folders SET created_by = $1 WHERE id = $2", [
+      USER_VIEWER,
+      FOLDER_ID,
+    ]);
+    await assetDb.query(
+      "UPDATE metadata_items SET created_by = $1 WHERE id = $2",
+      [USER_VIEWER, METADATA_ID],
+    );
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const rbacFolder = await updateFolder(USER_VIEWER, "Creator Folder Edit");
+    expectForbidden(rbacFolder, "no RBAC ceiling");
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    const rbacMetadata = await updateMetadata(
+      USER_VIEWER,
+      "Creator Metadata Edit",
+    );
+    expectForbidden(rbacMetadata, "no RBAC ceiling");
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    await prisma.organization.update({
+      where: { id: ORG_ID },
+      data: { olpEnabled: true },
+    });
+    fetchSpy.mockClear();
+
+    const olpFolder = await updateFolder(USER_VIEWER, "Creator Folder Edit");
+    expectForbidden(olpFolder, "no object permission");
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(await readFolderName()).toBe(BASE_FOLDER_NAME);
+
+    fetchSpy.mockClear();
+    const olpMetadata = await updateMetadata(
+      USER_VIEWER,
+      "Creator Metadata Edit",
+    );
+    expectForbidden(olpMetadata, "no object permission");
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    const persisted = await assetDb.query<{ title: string }>(
+      "SELECT title FROM metadata_items WHERE id = $1",
+      [METADATA_ID],
+    );
+    expect(persisted.rows[0].title).toBe(BASE_METADATA_TITLE);
+  });
+
+  test("PM-11 allows a descendant folder write through an ancestor grant", async () => {
+    await prisma.organization.update({
+      where: { id: ORG_ID },
+      data: { olpEnabled: true },
+    });
+    await prisma.objectPermission.create({
+      data: {
+        orgId: ORG_ID,
+        resourceType: "folder",
+        resourceId: ANCESTOR_FOLDER_ID,
+        actionId: WRITE_ACTION_ID,
+        granteeUserId: USER_VIEWER,
+        grantedBy: USER_ADMIN,
+      },
+    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const result = await updateFolder(USER_VIEWER, "Inherited Edit");
+
+    expect(result.errors).toBeUndefined();
+    expect(result.data?.updateFolder.name).toBe("Inherited Edit");
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(await readFolderName()).toBe("Inherited Edit");
+  });
+
+  test("PM-12 soft delete preserves grants and hides deleted resources", async () => {
+    await createTargetMetadata();
+    await prisma.objectPermission.createMany({
+      data: [
+        {
+          orgId: ORG_ID,
+          resourceType: "folder",
+          resourceId: FOLDER_ID,
+          actionId: WRITE_ACTION_ID,
+          granteeUserId: USER_VIEWER,
+          grantedBy: USER_ADMIN,
+        },
+        {
+          orgId: ORG_ID,
+          resourceType: "metadata_item",
+          resourceId: METADATA_ID,
+          actionId: WRITE_ACTION_ID,
+          granteeUserId: USER_VIEWER,
+          grantedBy: USER_ADMIN,
+        },
+      ],
+    });
+    const permissionCountBefore = await prisma.objectPermission.count({
+      where: { resourceId: { in: [FOLDER_ID, METADATA_ID] } },
+    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const deleteMetadataResult = await queryGraphQL<BooleanMutationResult>(
+      `mutation($orgId: ID!, $id: ID!) {
+         deleteMetadata(orgId: $orgId, id: $id)
+       }`,
+      { orgId: ORG_ID, id: METADATA_ID },
+      USER_ADMIN,
+    );
+    expect(deleteMetadataResult.errors).toBeUndefined();
+    expect(deleteMetadataResult.data?.deleteMetadata).toBe(true);
+
+    const deleteFolderResult = await queryGraphQL<BooleanMutationResult>(
+      `mutation($orgId: ID!, $id: ID!) {
+         deleteFolder(orgId: $orgId, id: $id)
+       }`,
+      { orgId: ORG_ID, id: FOLDER_ID },
+      USER_ADMIN,
+    );
+    expect(deleteFolderResult.errors).toBeUndefined();
+    expect(deleteFolderResult.data?.deleteFolder).toBe(true);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+    const deletedFolder = await assetDb.query<{ deleted_at: Date | null }>(
+      "SELECT deleted_at FROM folders WHERE id = $1",
+      [FOLDER_ID],
+    );
+    const deletedMetadata = await assetDb.query<{ deleted_at: Date | null }>(
+      "SELECT deleted_at FROM metadata_items WHERE id = $1",
+      [METADATA_ID],
+    );
+    expect(deletedFolder.rows[0].deleted_at).not.toBeNull();
+    expect(deletedMetadata.rows[0].deleted_at).not.toBeNull();
+    expect(
+      await prisma.objectPermission.count({
+        where: { resourceId: { in: [FOLDER_ID, METADATA_ID] } },
+      }),
+    ).toBe(permissionCountBefore);
+
+    const folderRead = await queryGraphQL<FolderResult>(
+      `query($orgId: ID!, $id: ID!) {
+         folder(orgId: $orgId, id: $id) { id name }
+       }`,
+      { orgId: ORG_ID, id: FOLDER_ID },
+      USER_ADMIN,
+    );
+    expect(folderRead.errors).toBeUndefined();
+    expect(folderRead.data?.folder).toBeNull();
+
+    const metadataRead = await queryGraphQL<MetadataResult>(
+      `query($orgId: ID!, $id: ID!) {
+         metadataItem(orgId: $orgId, id: $id) { id title }
+       }`,
+      { orgId: ORG_ID, id: METADATA_ID },
+      USER_ADMIN,
+    );
+    expect(metadataRead.errors).toBeUndefined();
+    expect(metadataRead.data?.metadataItem).toBeNull();
+  });
+
+  test("PM-13 manage_permissions never inherits from an ancestor", async () => {
+    await prisma.organization.update({
+      where: { id: ORG_ID },
+      data: { olpEnabled: true },
+    });
+    await prisma.objectPermission.create({
+      data: {
+        orgId: ORG_ID,
+        resourceType: "folder",
+        resourceId: ANCESTOR_FOLDER_ID,
+        actionId: MANAGE_ACTION_ID,
+        granteeUserId: USER_VIEWER,
+        grantedBy: USER_ADMIN,
+      },
+    });
+    const permissionCountBefore = await prisma.objectPermission.count();
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const result = await grantFolderPermission(
+      USER_VIEWER,
+      FOLDER_ID,
+      "read",
+      USER_ADMIN,
+    );
+
+    expectForbidden(result, "no object permission");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(await prisma.objectPermission.count()).toBe(permissionCountBefore);
   });
 });
