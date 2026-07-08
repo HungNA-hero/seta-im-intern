@@ -67,12 +67,10 @@ func (t *Transformer) Transform(artifacts []DownloadResult) (Manifest, error) {
 	sort.Strings(uniqueIDs)
 	manifest.ValidUniqueIDs = len(uniqueIDs)
 
-	if t.MaxItems < 1 || t.MaxItems > 25 {
-		return manifest, fmt.Errorf("MaxItems must be between 1 and 25")
-	}
-
 	limit := t.MaxItems
-	if len(uniqueIDs) < limit {
+	if limit <= 0 {
+		limit = len(uniqueIDs) // 0 or negative means all
+	} else if limit > len(uniqueIDs) {
 		limit = len(uniqueIDs)
 	}
 	targetIDs := uniqueIDs[:limit]
