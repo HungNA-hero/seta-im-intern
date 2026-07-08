@@ -38,6 +38,7 @@ export async function addOrgMember(orgId: string, userId: string): Promise<void>
   await prisma.organizationMember.create({ data: { orgId, userId } });
 }
 
+/** Returns whether the user is active and belongs to the requested organization. */
 export async function isActiveOrgMember(orgId: string, userId: string): Promise<boolean> {
   const u = await prisma.user.findFirst({
     where: { id: userId, isActive: true, orgMembers: { some: { orgId } } },
@@ -46,6 +47,7 @@ export async function isActiveOrgMember(orgId: string, userId: string): Promise<
   return u !== null;
 }
 
+/** Returns whether the role is owned by the requested organization. */
 export async function roleBelongsToOrg(orgId: string, roleId: string): Promise<boolean> {
   const r = await prisma.role.findFirst({
     where: { id: roleId, orgId },

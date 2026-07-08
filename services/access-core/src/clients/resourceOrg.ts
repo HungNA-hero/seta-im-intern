@@ -13,6 +13,11 @@ const RESOURCE_PATHS: Record<ResourceType, string> = {
   metadata_item: METADATA_PATH,
 };
 
+/**
+ * Verifies through Asset Core that a logical permission target exists in the
+ * requested organization. Only a real 404 is exposed as NOT_FOUND; dependency
+ * failures are propagated so grant mutations remain fail-closed.
+ */
 export async function assertResourceInOrg(
   resourceType: ResourceType,
   resourceId: string,

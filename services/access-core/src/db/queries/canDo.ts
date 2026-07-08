@@ -302,6 +302,13 @@ interface ResourceHierarchy {
   ancestorIds?: string[];
 }
 
+/**
+ * Resolves an allowed resource-id set with one role resolution, one direct
+ * grant query, and at most one ancestor-grant query. RBAC mode returns the
+ * complete input set only when the role ceiling allows the action; OLP mode
+ * combines exact grants with inheritable ancestor grants. manage_permissions
+ * deliberately skips the ancestor phase.
+ */
 export async function filterAllowedResourceIds<T extends { id: string }>(
   userId: string,
   orgId: string,
