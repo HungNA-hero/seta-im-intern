@@ -69,10 +69,15 @@ if ($VerifyOnly) {
 
     if ($ManifestContent.tool_version -ne "v1.0.0") { throw "Invalid manifest version" }
     if ($ManifestContent.artifacts.Count -ne 3) { throw "Expected exactly 3 artifacts" }
-    if ($ManifestContent.output_ids_count -ne 25 -or $ManifestContent.output_ids.Count -ne 25) { throw "Expected exactly 25 output IDs" }
+    $ExpectedCount = $MaxItems
+    if ($MaxItems -le 0) {
+        $ExpectedCount = $ManifestContent.output_ids_count
+    }
+
+    if ($ManifestContent.output_ids_count -ne $ExpectedCount -or $ManifestContent.output_ids.Count -ne $ExpectedCount) { throw "Expected exactly $ExpectedCount output IDs" }
     $UniqueIds = @($ManifestContent.output_ids | Sort-Object -Unique)
     $SortedIds = @($ManifestContent.output_ids | Sort-Object)
-    if ($UniqueIds.Count -ne 25 -or (Compare-Object $SortedIds @($ManifestContent.output_ids))) {
+    if ($UniqueIds.Count -ne $ExpectedCount -or (Compare-Object $SortedIds @($ManifestContent.output_ids))) {
         throw "Output IDs must be unique and sorted"
     }
 
@@ -117,7 +122,7 @@ if ($VerifyOnly) {
 
     $Dataset = Get-Content -Raw -LiteralPath $OutputPath | ConvertFrom-Json
     if ($Dataset.version -ne 1 -or $Dataset.external_source -ne "open_images_v7") { throw "Invalid validation sample contract" }
-    if ($Dataset.metadata.Count -ne 25) { throw "Validation sample must contain exactly 25 metadata records" }
+    if ($Dataset.metadata.Count -ne $ExpectedCount) { throw "Validation sample must contain exactly $ExpectedCount metadata records" }
     $DatasetIds = @($Dataset.metadata.external_id | Sort-Object)
     if (Compare-Object $SortedIds $DatasetIds) { throw "Validation sample IDs do not match the manifest" }
 

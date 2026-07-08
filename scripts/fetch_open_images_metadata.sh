@@ -63,13 +63,18 @@ if [[ "$VERIFY_ONLY" -eq 1 ]]; then
 
     output_ids_count=$(jq -r '.output_ids_count' "$MANIFEST_PATH")
     output_ids_len=$(jq '.output_ids | length' "$MANIFEST_PATH")
-    if [[ "$output_ids_count" -ne 25 || "$output_ids_len" -ne 25 ]]; then
-        echo "Expected exactly 25 output IDs" >&2
+    expected_count="$MAX_ITEMS"
+    if [[ "$MAX_ITEMS" -le 0 ]]; then
+        expected_count="$output_ids_count"
+    fi
+
+    if [[ "$output_ids_count" -ne "$expected_count" || "$output_ids_len" -ne "$expected_count" ]]; then
+        echo "Expected exactly $expected_count output IDs" >&2
         exit 1
     fi
 
     unique_sorted_count=$(jq '.output_ids | unique | length' "$MANIFEST_PATH")
-    if [[ "$unique_sorted_count" -ne 25 ]]; then
+    if [[ "$unique_sorted_count" -ne "$expected_count" ]]; then
         echo "Output IDs must be unique" >&2
         exit 1
     fi
@@ -156,8 +161,8 @@ if [[ "$VERIFY_ONLY" -eq 1 ]]; then
         exit 1
     fi
     metadata_count=$(jq '.metadata | length' "$OUTPUT_PATH")
-    if [[ "$metadata_count" -ne 25 ]]; then
-        echo "Validation sample must contain exactly 25 metadata records" >&2
+    if [[ "$metadata_count" -ne "$expected_count" ]]; then
+        echo "Validation sample must contain exactly $expected_count metadata records" >&2
         exit 1
     fi
 
