@@ -3,8 +3,10 @@ package repository
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/google/uuid"
@@ -131,7 +133,7 @@ func (r *assetRepository) ImportSampleTransaction(ctx context.Context, orgID, us
 					unchanged = false
 				} else if !sliceEqual(existing.Labels, m.Labels) {
 					unchanged = false
-				} else if !bytes.Equal(existing.MetadataJSON, m.MetadataJSON) {
+				} else if !jsonObjectsEqual(existing.MetadataJSON, m.MetadataJSON) {
 					unchanged = false
 				}
 
@@ -205,6 +207,31 @@ func (r *assetRepository) ImportSampleTransaction(ctx context.Context, orgID, us
 	}
 
 	return summary, nil
+}
+
+// jsonObjectsEqual compares JSON objects without converting numbers to float64.
+func jsonObjectsEqual(a, b []byte) bool {
+	decode := func(data []byte) (map[string]json.RawMessage, error) {
+		var value map[string]json.RawMessage
+		decoder := json.NewDecoder(bytes.NewReader(data))
+		if err := decoder.Decode(&value); err != nil {
+			return nil, err
+		}
+		var trailing json.RawMessage
+		if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+			return nil, errors.New("metadata_json must contain exactly one JSON object")
+		}
+		return value, nil
+	}
+
+	left, leftErr := decode(a)
+	right, rightErr := decode(b)
+	if leftErr != nil || rightErr != nil {
+		return bytes.Equal(a, b)
+	}
+	leftCanonical, leftErr := json.Marshal(left)
+	rightCanonical, rightErr := json.Marshal(right)
+	return leftErr == nil && rightErr == nil && bytes.Equal(leftCanonical, rightCanonical)
 }
 
 // ptrStringEqual compares nullable import fields without collapsing nil into an empty string.
