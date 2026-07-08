@@ -44,7 +44,7 @@ function Write-Log {
 function Show-Scenario {
     param([string]$Id, [string]$Title, [string]$Desc)
     Write-Host ""
-    Write-Host "=== $Id: $Title ===" -ForegroundColor Cyan
+    Write-Host "=== ${Id}: $Title ===" -ForegroundColor Cyan
     Write-Host $Desc
     Write-Host ""
     Read-Host "Press Enter to continue"
@@ -279,7 +279,7 @@ function Invoke-Metadata {
     $foundCount = 0
     if ($searchRes.data -and $searchRes.data.searchMetadata) {
         $foundItems = @($searchRes.data.searchMetadata) | Where-Object { $_.id -eq $metaId }
-        $foundCount = $foundItems.Count
+        $foundCount = @($foundItems).Count
     }
     Assert-Check "1" $foundCount "Search returned the updated metadata item"
 }
@@ -406,8 +406,8 @@ function Invoke-OpenImages {
     $datasetPath = Join-Path $OpenImagesDirectory "validation-sample.json"
     $databaseUrl = "postgresql://asset_user:asset_password@127.0.0.1:5433/asset_db?sslmode=disable"
     
-    Write-Host "Running fetch_open_images_metadata.sh --verify-only..."
-    bash "$ScriptDir/fetch_open_images_metadata.sh" --verify-only --output-dir "$OpenImagesDirectory"
+    Write-Host "Running fetch_open_images_metadata.ps1 -VerifyOnly..."
+    & "$ScriptDir\fetch_open_images_metadata.ps1" -VerifyOnly -OutputDir "$OpenImagesDirectory"
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to verify open images fixture"
         return

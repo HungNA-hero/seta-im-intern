@@ -55,8 +55,10 @@ foreach ($Name in $EnvironmentNames) { $OriginalEnvironment[$Name] = [Environmen
 
 # Runs an external command and converts a non-zero native exit code into a terminating error.
 function Invoke-Checked([scriptblock]$Command, [string]$Description) {
+    Write-Host "  - Executing: $Description..." -ForegroundColor DarkGray
     & $Command
     if ($LASTEXITCODE -ne 0) { throw "$Description failed with exit code $LASTEXITCODE" }
+    Write-Host "  - PASS: $Description" -ForegroundColor Gray
 }
 
 # Writes a deterministic scenario marker and adds the only interactive-mode pause.
@@ -68,6 +70,9 @@ function Write-Scenario([string]$Id, [string]$Title) {
 # Compares scalar evidence and reports both expected and actual values on failure.
 function Assert-Equal($Expected, $Actual, [string]$Message) {
     if ($Expected -ne $Actual) { throw "$Message. Expected: $Expected; actual: $Actual" }
+    if ($Message -notmatch "returned the wrong GraphQL code") {
+        Write-Host "  - PASS: $Message ($Expected)" -ForegroundColor Gray
+    }
 }
 
 # Fails before mutation when a required service port is already owned by another process.
@@ -111,6 +116,7 @@ function Invoke-GraphQL([string]$Query, [hashtable]$Variables = @{}, [string]$Us
         $Code = $Response.errors[0].extensions.code
         throw "Unexpected GraphQL error [$Code]: $($Response.errors[0].message)"
     }
+    Write-Host "  - PASS: GraphQL operation succeeded" -ForegroundColor DarkGray
     return $Response.data
 }
 
@@ -119,6 +125,7 @@ function Assert-GraphQLError([string]$ScenarioId, [string]$ExpectedCode, [string
     $Response = Invoke-GraphQLRaw $Query $Variables $UserId $RequestOrgId
     if (-not $Response.errors) { throw "$ScenarioId expected GraphQL error $ExpectedCode but request succeeded" }
     Assert-Equal $ExpectedCode $Response.errors[0].extensions.code "$ScenarioId returned the wrong GraphQL code"
+    Write-Host "  - PASS: $ScenarioId correctly rejected with $ExpectedCode" -ForegroundColor Gray
 }
 
 # Executes a read/setup SQL statement in a named demo container and checks the native exit code.
@@ -131,6 +138,7 @@ function Invoke-Psql([string]$Container, [string]$User, [string]$Database, [stri
 # Toggles the organization policy mode as deterministic demo setup, not as a business operation.
 function Set-Olp([bool]$Enabled) {
     $Value = if ($Enabled) { "true" } else { "false" }
+    Write-Host "  - Executing: Set OLP enabled = $Value" -ForegroundColor DarkGray
     Invoke-Psql "seta-access-db" "access_user" "access_db" "UPDATE access.organizations SET olp_enabled=$Value WHERE id='$OrgID'; SELECT olp_enabled FROM access.organizations WHERE id='$OrgID';" | Out-Null
 }
 
@@ -149,6 +157,7 @@ function Get-MetadataHash {
 
 # Grants an object permission exclusively through the public GraphQL mutation.
 function Grant-Permission([string]$ResourceType, [string]$ResourceId, [string]$Action, [string]$GranteeUser, [string]$Actor = $AdminUser) {
+    Write-Host "  - Executing: Grant $Action on $ResourceType $ResourceId to $GranteeUser" -ForegroundColor DarkGray
     $Mutation = 'mutation($orgId: ID!, $resourceType: ResourceType!, $resourceId: ID!, $action: PermissionAction!, $granteeUserId: ID!) { grantObjectPermission(orgId: $orgId, resourceType: $resourceType, resourceId: $resourceId, action: $action, granteeUserId: $granteeUserId) { id } }'
     $Data = Invoke-GraphQL $Mutation @{ orgId = $OrgID; resourceType = $ResourceType; resourceId = $ResourceId; action = $Action; granteeUserId = $GranteeUser } $Actor $OrgID
     return $Data.grantObjectPermission.id
@@ -156,6 +165,7 @@ function Grant-Permission([string]$ResourceType, [string]$ResourceId, [string]$A
 
 # Revokes an object permission exclusively through the public GraphQL mutation.
 function Revoke-Permission([string]$PermissionId, [string]$Actor = $AdminUser) {
+    Write-Host "  - Executing: Revoke permission $PermissionId" -ForegroundColor DarkGray
     $Mutation = 'mutation($id: ID!) { revokeObjectPermission(id: $id) }'
     $Data = Invoke-GraphQL $Mutation @{ id = $PermissionId } $Actor $OrgID
     Assert-Equal $true $Data.revokeObjectPermission "Permission revoke failed"
