@@ -106,14 +106,26 @@ function Invoke-GraphQLRaw {
     if ($OrgId) { $headers["x-org-id"] = $OrgId }
     $body = @{ query = $Query; variables = $Variables } | ConvertTo-Json -Depth 10 -Compress
     
+    Write-Host ""
+    Write-Host ">>> [GraphQL Request]" -ForegroundColor DarkGray
+    Write-Host "    UserId: $UserId  |  OrgId: $OrgId" -ForegroundColor DarkGray
+    Write-Host "    Query: $Query" -ForegroundColor DarkGray
+    if ($Variables -and $Variables.Keys.Count -gt 0) {
+        Write-Host "    Variables: $($Variables | ConvertTo-Json -Depth 5 -Compress)" -ForegroundColor DarkGray
+    }
+
     try {
         $res = Invoke-RestMethod -Uri "http://127.0.0.1:$script:NODE_PORT/graphql" -Method Post -Headers $headers -Body $body
+        Write-Host "<<< [GraphQL Response]" -ForegroundColor DarkGray
+        Write-Host "    $($res | ConvertTo-Json -Depth 10 -Compress)" -ForegroundColor DarkGray
         return $res
     } catch {
         if ($_.Exception.Response) {
             $stream = $_.Exception.Response.GetResponseStream()
             $reader = New-Object System.IO.StreamReader($stream)
             $errBody = $reader.ReadToEnd()
+            Write-Host "<<< [GraphQL Error Response]" -ForegroundColor DarkRed
+            Write-Host "    $errBody" -ForegroundColor DarkRed
             try {
                 return $errBody | ConvertFrom-Json
             } catch {
@@ -399,17 +411,17 @@ function Invoke-SoftDelete {
 function Invoke-OpenImages {
     Show-Scenario "open-images" "Open Images import" "Imports a verified set of Open Images dataset and demonstrates idempotency."
     if ([string]::IsNullOrEmpty($OpenImagesDirectory)) {
-        Write-Host "No -OpenImagesDirectory flag provided. Skipping Open Images import."
-        return
+        $OpenImagesDirectory = Join-Path $TempDir "open-images-v7"
+        Write-Host "No -OpenImagesDirectory flag provided. Defaulting to $OpenImagesDirectory and fetching data..." -ForegroundColor Cyan
     }
     
     $datasetPath = Join-Path $OpenImagesDirectory "validation-sample.json"
     $databaseUrl = "postgresql://asset_user:asset_password@127.0.0.1:5433/asset_db?sslmode=disable"
     
-    Write-Host "Running fetch_open_images_metadata.ps1 -VerifyOnly..."
-    & "$ScriptDir\fetch_open_images_metadata.ps1" -VerifyOnly -OutputDir "$OpenImagesDirectory"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to verify open images fixture"
+    Write-Host "Running fetch_open_images_metadata.ps1..."
+    & "$ScriptDir\fetch_open_images_metadata.ps1" -OutputDirectory "$OpenImagesDirectory"
+    if ($LASTEXITCODE -ne 0 -and $?) {
+        Write-Error "Failed to fetch/verify open images fixture"
         return
     }
     
@@ -520,21 +532,28 @@ function Invoke-BootServices {
             if (-not $waitOk) { throw "Node Access Core failed to start" }
         }
         
-        if (-not [string]::IsNullOrEmpty($OpenImagesDirectory)) {
-            if (-not (Test-Path $ImportBinary)) {
-                Write-Host "Building import CLI..."
-                Push-Location $AssetCore
-                try {
-                    & go build -o $ImportBinary ./cmd/import-sample/main.go
-                    if ($LASTEXITCODE -ne 0) { throw "import-sample build failed" }
-                } finally {
-                    Pop-Location
-                }
+        if (-not (Test-Path $ImportBinary)) {
+            Write-Host "Building import CLI..."
+            Push-Location $AssetCore
+            try {
+                & go build -o $ImportBinary ./cmd/import-sample/main.go
+                if ($LASTEXITCODE -ne 0) { throw "import-sample build failed" }
+            } finally {
+                Pop-Location
             }
         }
     } finally {
         Pop-Location
     }
+    
+    Write-Host ""
+    Write-Host "=== Services are listening on the following ports ===" -ForegroundColor Cyan
+    Write-Host "- Node Access Core (GraphQL): http://localhost:$($script:NODE_PORT)/graphql"
+    Write-Host "- Go Asset Core (Health): http://localhost:$($script:GO_PORT)/healthz"
+    Write-Host "- Asset DB (PostgreSQL): postgresql://asset_user:asset_password@localhost:5433/asset_db"
+    Write-Host "- Access DB (PostgreSQL): postgresql://access_user:access_password@localhost:5434/access_db"
+    Write-Host "=====================================================" -ForegroundColor Cyan
+    Write-Host ""
 }
 
 try {
@@ -577,6 +596,14 @@ try {
     Write-Host "`nGraphiQL URL: http://localhost:4000/graphql"
     Write-Host "You can keep poking at the endpoints."
 } finally {
+    Write-Host "`nShutting down Node and Go services..." -ForegroundColor Cyan
+    if ($script:GoProcess) { Stop-Process -Id $script:GoProcess.Id -Force -ErrorAction SilentlyContinue }
+    if ($script:NodeProcess) { Stop-Process -Id $script:NodeProcess.Id -Force -ErrorAction SilentlyContinue }
+    Push-Location $RepoRoot
+    Write-Host "Shutting down Docker services..." -ForegroundColor Cyan
+    & npm.cmd run docker:down | Out-Null
+    Pop-Location
+
     if (Test-Path $TempDir) {
         # Suppress errors because the running .exe files can't be deleted on Windows easily while running
         Remove-Item -Recurse -Force $TempDir -ErrorAction SilentlyContinue
