@@ -162,4 +162,40 @@ describe("@sameOrg directive", () => {
     expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
     expect(mockCanDo).not.toHaveBeenCalled();
   });
+
+  test("rejects createRole targeting an org the caller isn't a member of", async () => {
+    const result = await run(
+      `mutation { createRole(orgId: "org-2", code: "viewer2", name: "Viewer2") { id } }`,
+      ctx({ currentOrgId: "org-1" }),
+    );
+
+    expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+  });
+
+  test("rejects addOrgMember targeting an org the caller isn't a member of", async () => {
+    const result = await run(
+      `mutation { addOrgMember(orgId: "org-2", userId: "user-2") }`,
+      ctx({ currentOrgId: "org-1" }),
+    );
+
+    expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+  });
+
+  test("rejects assignRole targeting an org the caller isn't a member of", async () => {
+    const result = await run(
+      `mutation { assignRole(orgId: "org-2", userId: "user-2", roleId: "role-1") }`,
+      ctx({ currentOrgId: "org-1" }),
+    );
+
+    expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+  });
+
+  test("rejects revokeRole targeting an org the caller isn't a member of", async () => {
+    const result = await run(
+      `mutation { revokeRole(orgId: "org-2", userId: "user-2", roleId: "role-1") }`,
+      ctx({ currentOrgId: "org-1" }),
+    );
+
+    expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+  });
 });

@@ -77,11 +77,11 @@ export const typeDefs = /* GraphQL */ `
       code: String!
       name: String!
       description: String
-    ): Role! @orgMember
+    ): Role! @orgMember @sameOrg
     updateRole(id: ID!, name: String, description: String): Role! @orgMember
-    addOrgMember(orgId: ID!, userId: ID!): Boolean! @orgMember
-    assignRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean! @orgMember
-    revokeRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean! @orgMember
+    addOrgMember(orgId: ID!, userId: ID!): Boolean! @orgMember @sameOrg
+    assignRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean! @orgMember @sameOrg
+    revokeRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean! @orgMember @sameOrg
     grantObjectPermission(
       orgId: ID!
       resourceType: ResourceType!

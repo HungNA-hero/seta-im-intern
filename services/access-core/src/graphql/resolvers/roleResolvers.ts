@@ -3,6 +3,8 @@ import { serializeDates, rethrowPrismaError } from "./utils";
 import { GraphQLContext } from "../context";
 import { GraphQLError } from "graphql";
 
+const RESERVED_ROLE_CODES = new Set(["trainer_admin", "org_admin"]);
+
 export const roleResolvers = {
   Query: {
     roles: async (_: unknown, { orgId }: { orgId: string }) =>
@@ -19,6 +21,11 @@ export const roleResolvers = {
       _: unknown,
       { orgId, code, name, description }: { orgId: string; code: string; name: string; description?: string },
     ) => {
+      if (RESERVED_ROLE_CODES.has(code)) {
+        throw new GraphQLError("Role code is reserved and cannot be created", {
+          extensions: { code: "RESERVED_ROLE_CODE" },
+        });
+      }
       try {
         return serializeDates(await createRole(orgId, code, name, description));
       } catch (err) {
@@ -28,7 +35,11 @@ export const roleResolvers = {
     updateRole: async (
       _: unknown,
       { id, name, description }: { id: string; name?: string; description?: string },
+      ctx: GraphQLContext,
     ) => {
+      const existing = await getRoleById(id);
+      if (!existing || existing.orgId !== ctx.currentOrgId)
+        throw new GraphQLError("Role not found", { extensions: { code: "NOT_FOUND" } });
       try {
         return serializeDates(await updateRole(id, name, description));
       } catch (err) {
