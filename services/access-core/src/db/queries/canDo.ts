@@ -50,10 +50,10 @@ async function resolveRoles(
   if (!user || !user.isActive)
     return { allowed: false, reason: "user not found" };
 
-  const hasTrainerAdminRole = user.userRoles.some(
-    (ur) => ur.role.code === "trainer_admin",
-  );
-  if (hasTrainerAdminRole) {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    user.userRoles.some((ur) => ur.role.code === "trainer_admin")
+  ) {
     const state = getTrainerAdminGateState();
     auditTrainerAdminDecision(userId, state.enabled, state.reason);
     if (state.enabled) {

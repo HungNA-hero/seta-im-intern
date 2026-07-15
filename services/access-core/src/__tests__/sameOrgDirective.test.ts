@@ -225,6 +225,23 @@ describe("@sameOrg directive", () => {
     expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
   });
 
+  test("rejects global user lifecycle mutations in production even with an active temporary gate", async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    process.env.TRAINER_ADMIN_ENABLED = "true";
+    process.env.TRAINER_ADMIN_EXPIRES_AT = "2099-01-01T00:00:00.000Z";
+    mockTrainerFindFirst.mockResolvedValueOnce({ id: "user-1" });
+    try {
+      const result = await run(
+        `mutation { createUser(email: "new@example.com", displayName: "New User") { id } }`,
+        ctx(),
+      );
+      expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
   test("does not expose a caller-supplied subject in canDo", async () => {
     const result = await run(
       `query { canDo(userId: "another-user", action: read, resourceType: folder, resourceId: "folder-1") { allowed } }`,

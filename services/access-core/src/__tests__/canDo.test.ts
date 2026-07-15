@@ -99,13 +99,34 @@ describe("early exits (before DB permission checks)", () => {
   });
 
   test("allows trainer_admin without org or permission queries", async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "test";
     process.env.TRAINER_ADMIN_ENABLED = "true";
     process.env.TRAINER_ADMIN_EXPIRES_AT = "2099-01-01T00:00:00.000Z";
-    mockPrisma.user.findUnique.mockResolvedValueOnce(activeUser("trainer_admin"));
-    const result = await canDo("user-1", "read", "folder", "f1", "org-1");
-    expect(result).toEqual({ allowed: true, reason: "trainer_admin" });
-    expect(mockPrisma.organization.findUnique).not.toHaveBeenCalled();
-    expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
+    try {
+      mockPrisma.user.findUnique.mockResolvedValueOnce(activeUser("trainer_admin"));
+      const result = await canDo("user-1", "read", "folder", "f1", "org-1");
+      expect(result).toEqual({ allowed: true, reason: "trainer_admin" });
+      expect(mockPrisma.organization.findUnique).not.toHaveBeenCalled();
+      expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
+  test("never allows trainer_admin in production, even with an active temporary gate", async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    process.env.TRAINER_ADMIN_ENABLED = "true";
+    process.env.TRAINER_ADMIN_EXPIRES_AT = "2099-01-01T00:00:00.000Z";
+    try {
+      mockPrisma.user.findUnique.mockResolvedValueOnce(activeUser("trainer_admin"));
+      mockPrisma.rolePermission.findFirst.mockResolvedValueOnce(null);
+      const result = await canDo("user-1", "read", "folder", "f1", "org-1");
+      expect(result).toEqual({ allowed: false, reason: "no RBAC ceiling" });
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
   });
 
   test("denies expired trainer_admin access and falls through to ordinary evaluation", async () => {
@@ -516,12 +537,18 @@ describe("filterAllowedResourceIds", () => {
   });
 
   test("trainer_admin gets all IDs without querying ceiling or grants", async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "test";
     process.env.TRAINER_ADMIN_ENABLED = "true";
     process.env.TRAINER_ADMIN_EXPIRES_AT = "2099-01-01T00:00:00.000Z";
-    mockPrisma.user.findUnique.mockResolvedValueOnce(activeUser("trainer_admin"));
-    const result = await filterAllowedResourceIds("user-1", "org-1", "read", "folder", ["f1", "f2"]);
-    expect(result).toEqual(new Set(["f1", "f2"]));
-    expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
+    try {
+      mockPrisma.user.findUnique.mockResolvedValueOnce(activeUser("trainer_admin"));
+      const result = await filterAllowedResourceIds("user-1", "org-1", "read", "folder", ["f1", "f2"]);
+      expect(result).toEqual(new Set(["f1", "f2"]));
+      expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
     expect(mockPrisma.objectPermission.findMany).not.toHaveBeenCalled();
   });
 
