@@ -1,8 +1,12 @@
-import Fastify, { FastifyInstance } from "fastify";
+import Fastify, { FastifyInstance, FastifyRequest } from "fastify";
 import { createYoga } from "graphql-yoga";
 import { GraphQLError } from "graphql";
 import { schema } from "./graphql/schema";
-import { loadRequestContext } from "./graphql/context";
+import { GraphQLContext, loadRequestContext } from "./graphql/context";
+
+interface YogaServerContext {
+  fastifyRequest: FastifyRequest;
+}
 
 const PUBLIC_ERROR_CODES = new Set([
   "BAD_USER_INPUT",
@@ -54,14 +58,14 @@ function maskGraphQLError(error: unknown, fallbackMessage: string): Error {
 export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({ logger: true });
 
-  const yoga = createYoga({
+  const yoga = createYoga<YogaServerContext, GraphQLContext>({
     schema,
     graphqlEndpoint: "/graphql",
     logging: false,
     maskedErrors: { maskError: maskGraphQLError },
-    context: (ctx: any) => {
+    context: (ctx) => {
       const h = (k: string) =>
-        (ctx.fastifyRequest?.headers[k] as string | undefined) ?? null;
+        (ctx.fastifyRequest.headers[k] as string | undefined) ?? null;
       return loadRequestContext(h("x-user-id"), h("x-org-id"));
     },
   });

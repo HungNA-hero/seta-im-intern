@@ -46,7 +46,10 @@ async function resolveRoles(
   if (!user || !user.isActive)
     return { allowed: false, reason: "user not found" };
 
-  if (user.userRoles.some((ur) => ur.role.code === "trainer_admin")) {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    user.userRoles.some((ur) => ur.role.code === "trainer_admin")
+  ) {
     return { allowed: true, reason: "trainer_admin" };
   }
 

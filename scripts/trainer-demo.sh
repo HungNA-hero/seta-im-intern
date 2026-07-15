@@ -7,6 +7,7 @@
 set -uo pipefail
 
 OPEN_IMAGES_DIR=""
+DEFAULT_OPEN_IMAGES_DIR="${TMPDIR:-/tmp}/seta-open-images-v7"
 READINESS_TIMEOUT_SECONDS=60
 SECTIONS_TO_RUN=()
 
@@ -18,6 +19,11 @@ while [[ $# -gt 0 ]]; do
         *) SECTIONS_TO_RUN+=("$1"); shift ;;
     esac
 done
+
+if [[ -z "$OPEN_IMAGES_DIR" && -d "$DEFAULT_OPEN_IMAGES_DIR" ]]; then
+    OPEN_IMAGES_DIR="$DEFAULT_OPEN_IMAGES_DIR"
+    echo "Using Open Images directory: $OPEN_IMAGES_DIR"
+fi
 
 if [[ -n "$OPEN_IMAGES_DIR" && ! -d "$OPEN_IMAGES_DIR" ]]; then
     echo "Directory $OPEN_IMAGES_DIR does not exist." >&2
@@ -111,9 +117,34 @@ graphql_raw() {
     local args=(-s -X POST "http://127.0.0.1:$NODE_PORT/graphql" -H "Content-Type: application/json")
     [[ -n "$user_id" ]] && args+=(-H "x-user-id: $user_id")
     [[ -n "$org_id" ]] && args+=(-H "x-org-id: $org_id")
-    local body
+    local body response curl_status
     body=$(jq -nc --arg q "$query" --argjson v "$variables" '{query:$q, variables:$v}')
-    curl "${args[@]}" -d "$body"
+
+    {
+        printf '\n--- GraphQL Request ---\n'
+        printf 'POST http://127.0.0.1:%s/graphql\n' "$NODE_PORT"
+        printf 'x-user-id: %s\n' "${user_id:-(not set)}"
+        printf 'x-org-id: %s\n' "${org_id:-(not set)}"
+        jq . <<< "$body"
+    } >&2
+
+    response=$(curl "${args[@]}" -d "$body")
+    curl_status=$?
+
+    {
+        printf '%s\n' '--- GraphQL Response ---'
+        if jq -e . >/dev/null 2>&1 <<< "$response"; then
+            jq . <<< "$response"
+        elif [[ -n "$response" ]]; then
+            printf '%s\n' "$response"
+        else
+            printf '(empty response; curl exit code %s)\n' "$curl_status"
+        fi
+        printf '%s\n' '------------------------'
+    } >&2
+
+    printf '%s' "$response"
+    return "$curl_status"
 }
 
 get_graphql_error_code() {

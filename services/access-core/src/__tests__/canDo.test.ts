@@ -104,6 +104,19 @@ describe("early exits (before DB permission checks)", () => {
     expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
   });
 
+  test("never allows trainer_admin in production, falls through to ordinary evaluation", async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    try {
+      mockPrisma.user.findUnique.mockResolvedValueOnce(activeUser("trainer_admin"));
+      mockPrisma.rolePermission.findFirst.mockResolvedValueOnce(null);
+      const result = await canDo("user-1", "read", "folder", "f1", "org-1");
+      expect(result).toEqual({ allowed: false, reason: "no RBAC ceiling" });
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
   test("denies when action code is not in the permissionAction table", async () => {
     const result = await canDo("user-1", "read" as any, "folder", "f1", "org-1");
     // "read" IS in the cache from the permActionCache test above — use a bogus code
