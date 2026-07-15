@@ -32,7 +32,7 @@ beforeEach(() => {
 });
 
 describe("createRole", () => {
-  test.each(["trainer_admin", "org_admin"])(
+  test.each(["trainer_admin", "org_admin", " TRAINER_ADMIN ", "Org_Admin"])(
     "rejects reserved role code %s",
     async (code) => {
       await expect(
@@ -66,6 +66,23 @@ describe("createRole", () => {
 });
 
 describe("updateRole", () => {
+  test("rejects modifying a reserved role", async () => {
+    mockGetRoleById.mockResolvedValueOnce({
+      id: "role-1",
+      orgId: "org-1",
+      code: "org_admin",
+      name: "Org Admin",
+      description: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await expect(
+      roleResolvers.Mutation.updateRole({}, { id: "role-1", name: "New name" }, ctx()),
+    ).rejects.toMatchObject({ extensions: { code: "RESERVED_ROLE_CODE" } });
+    expect(mockUpdateRole).not.toHaveBeenCalled();
+  });
+
   test("rejects updating a role belonging to a different org", async () => {
     mockGetRoleById.mockResolvedValueOnce({
       id: "role-1",

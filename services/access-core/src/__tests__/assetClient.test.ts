@@ -95,6 +95,7 @@ describe("assetClient", () => {
         headers: {
           "X-User-Id": "u1",
           "X-Org-Id": "o1",
+          Authorization: `Bearer ${config.assetInternalApiToken}`,
           "Content-Type": "application/json",
         },
         body: '{"foo":"bar"}',
@@ -114,6 +115,7 @@ describe("assetClient", () => {
         headers: {
           "X-User-Id": "u1",
           "X-Org-Id": "o1",
+          Authorization: `Bearer ${config.assetInternalApiToken}`,
         },
       });
     });

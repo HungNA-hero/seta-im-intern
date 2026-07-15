@@ -15,6 +15,7 @@ if (!process.env.DATABASE_URL) {
 
 export const config = {
   goAssetUrl: process.env.GO_ASSET_URL || "http://localhost:8080",
+  assetInternalApiToken: process.env.ASSET_INTERNAL_API_TOKEN ?? "",
   port: parseInt(process.env.PORT ?? "4000", 10),
   host: process.env.HOST ?? "0.0.0.0",
   db: {
@@ -25,3 +26,9 @@ export const config = {
     password: dbPassword,
   },
 } as const;
+
+export function assertRuntimeConfig(): void {
+  if (!config.assetInternalApiToken.trim()) {
+    throw new Error("ASSET_INTERNAL_API_TOKEN must be configured before Access Core starts");
+  }
+}

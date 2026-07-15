@@ -1,9 +1,10 @@
 import './config';
 import { buildServer } from './server';
-import { config }      from './config';
+import { assertRuntimeConfig, config } from './config';
 import { prisma }      from './db/prisma';
 
 async function main() {
+  assertRuntimeConfig();
   try {
     await prisma.$queryRaw`SELECT 1`;
     console.log('Connected to access_db successfully');

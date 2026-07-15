@@ -2,6 +2,7 @@ import { GraphQLError } from "graphql";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { prisma } from "../db/prisma";
 import { canDo } from "../db/queries/canDo";
+import { assertTemporaryTrainerAdmin } from "../security/trainerAdmin";
 
 export interface GraphQLContext {
   userId: string | null;
@@ -27,6 +28,28 @@ export function assertOrgMember(
   assertAuthenticated(ctx);
   if (!ctx.isMember) {
     throw new GraphQLError("Forbidden: not a member of this organization", {
+      extensions: { code: "FORBIDDEN" },
+    });
+  }
+}
+
+export function assertOrgAdmin(
+  ctx: GraphQLContext,
+): asserts ctx is GraphQLContext & { userId: string; currentOrgId: string } {
+  assertOrgMember(ctx);
+  if (!ctx.roles.includes("org_admin")) {
+    throw new GraphQLError("Forbidden: organization administrator role required", {
+      extensions: { code: "FORBIDDEN" },
+    });
+  }
+}
+
+export async function assertTrainerAdmin(ctx: GraphQLContext): Promise<void> {
+  assertAuthenticated(ctx);
+  try {
+    await assertTemporaryTrainerAdmin(ctx.userId);
+  } catch {
+    throw new GraphQLError("Forbidden: temporary trainer administrator access required", {
       extensions: { code: "FORBIDDEN" },
     });
   }

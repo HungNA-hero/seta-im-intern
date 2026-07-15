@@ -3,6 +3,23 @@ import { assignRole, revokeRole } from "../../db/queries/userRoles";
 import { serializeDates, rethrowPrismaError } from "./utils";
 import { GraphQLContext } from "../context";
 import { GraphQLError } from "graphql";
+import { getRoleById } from "../../db/queries/roles";
+
+const RESERVED_ROLE_CODES = new Set(["trainer_admin", "org_admin"]);
+
+function assertAssignableRole(
+  role: { orgId: string; code: string } | null,
+  orgId: string,
+): void {
+  if (!role || role.orgId !== orgId) {
+    throw new GraphQLError("Role not found", { extensions: { code: "NOT_FOUND" } });
+  }
+  if (RESERVED_ROLE_CODES.has(role.code.trim().toLowerCase())) {
+    throw new GraphQLError("Reserved role cannot be assigned or revoked", {
+      extensions: { code: "RESERVED_ROLE_CODE" },
+    });
+  }
+}
 
 function toOrganization(o: Organization) {
   return serializeDates(o);
@@ -37,6 +54,7 @@ export const organizationResolvers = {
     },
     assignRole: async (_: unknown, { orgId, userId, roleId }: { orgId: string; userId: string; roleId: string }) => {
       try {
+        assertAssignableRole(await getRoleById(roleId), orgId);
         await assignRole(orgId, userId, roleId);
         return true;
       } catch (err) {
@@ -45,6 +63,7 @@ export const organizationResolvers = {
     },
     revokeRole: async (_: unknown, { orgId, userId, roleId }: { orgId: string; userId: string; roleId: string }) => {
       try {
+        assertAssignableRole(await getRoleById(roleId), orgId);
         await revokeRole(orgId, userId, roleId);
         return true;
       } catch (err) {

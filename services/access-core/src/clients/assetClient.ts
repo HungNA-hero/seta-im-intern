@@ -87,6 +87,7 @@ export function assetFetch(path: string, req: AssetRequest): Promise<Response> {
   const headers: Record<string, string> = {
     "X-User-Id": req.userId,
     "X-Org-Id": req.orgId,
+    Authorization: `Bearer ${config.assetInternalApiToken}`,
   };
   const init: RequestInit = { method: req.method, headers };
   if (req.body !== undefined) {

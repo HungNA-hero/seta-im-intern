@@ -1,11 +1,33 @@
 package http
 
 import (
+	"crypto/subtle"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"seta-im-intern/go-asset-core/internal/requestcontext"
 )
+
+// RequireInternalAPI authenticates calls to the internal API with a shared
+// service credential. Health remains public so orchestration can probe it.
+func RequireInternalAPI(expectedToken string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/internal/api/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		authorization := r.Header.Get("Authorization")
+		token, ok := strings.CutPrefix(authorization, "Bearer ")
+		if !ok || token == "" || subtle.ConstantTimeCompare([]byte(token), []byte(expectedToken)) != 1 {
+			http.Error(w, "invalid internal service credential", http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
 
 // RequireActor ensures that X-User-Id and X-Org-Id are present and valid UUIDs.
 func RequireActor(next http.HandlerFunc) http.HandlerFunc {

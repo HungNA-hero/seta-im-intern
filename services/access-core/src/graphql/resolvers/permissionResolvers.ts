@@ -14,11 +14,21 @@ import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { GraphQLError } from "graphql";
 import { assertAuthenticated, assertCan, GraphQLContext } from "../context";
 import { serializePermission, rethrowPrismaError } from "./utils";
+import { getRoleById } from "../../db/queries/roles";
 
 export const permissionResolvers = {
   Query: {
-    rolePermissions: async (_: unknown, { roleId }: { roleId: string }) =>
-      listRolePermissions(roleId),
+    rolePermissions: async (
+      _: unknown,
+      { roleId }: { roleId: string },
+      ctx: GraphQLContext,
+    ) => {
+      const role = await getRoleById(roleId);
+      if (!role || role.orgId !== ctx.currentOrgId) {
+        throw new GraphQLError("Role not found", { extensions: { code: "NOT_FOUND" } });
+      }
+      return listRolePermissions(roleId);
+    },
     objectPermissions: async (
       _: unknown,
       {

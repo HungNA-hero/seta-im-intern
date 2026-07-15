@@ -509,6 +509,7 @@ function Invoke-BootServices {
             $env:ASSET_DB_NAME = "asset_db"
             $env:ASSET_DB_USER = "asset_user"
             $env:ASSET_DB_PASSWORD = "asset_password"
+            $env:ASSET_INTERNAL_API_TOKEN = "kan55-trainer-demo-internal-token"
             $env:PORT = $script:GO_PORT.ToString()
             
             $script:GoProcess = Start-Process -FilePath $GoBinary -RedirectStandardOutput $GoStdout -RedirectStandardError $GoStderr -PassThru -WindowStyle Hidden

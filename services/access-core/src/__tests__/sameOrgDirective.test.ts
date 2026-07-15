@@ -4,12 +4,17 @@ import { createCanDoMock } from "./helpers/canDoMock";
 
 const { mockCanDo } = vi.hoisted(() => ({ mockCanDo: vi.fn() }));
 const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({ mockFilterAllowedResourceIds: vi.fn() }));
+const { mockTrainerFindFirst } = vi.hoisted(() => ({ mockTrainerFindFirst: vi.fn() }));
 
 vi.mock("../db/queries/canDo", () =>
   createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
 );
-vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));
-vi.mock("../db/prisma", () => ({ prisma: {} }));
+vi.mock("../config", () => ({
+  config: { goAssetUrl: "http://go-mock", assetInternalApiToken: "test-internal-token" },
+}));
+vi.mock("../db/prisma", () => ({
+  prisma: { user: { findFirst: mockTrainerFindFirst } },
+}));
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -52,7 +57,10 @@ async function run(query: string, gqlCtx: GraphQLContext) {
 }
 
 beforeEach(() => {
+  delete process.env.TRAINER_ADMIN_ENABLED;
+  delete process.env.TRAINER_ADMIN_EXPIRES_AT;
   vi.resetAllMocks();
+  mockTrainerFindFirst.mockResolvedValue(null);
   mockCanDo.mockResolvedValue({ allowed: true, reason: null });
   mockFilterAllowedResourceIds.mockImplementation(async (_u: string, _o: string, _a: string, _r: string, ids: string[]) => new Set(ids));
 });
@@ -197,5 +205,43 @@ describe("@sameOrg directive", () => {
     );
 
     expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+  });
+
+  test.each([
+    `mutation { createRole(orgId: "org-1", code: "viewer2", name: "Viewer2") { id } }`,
+    `mutation { addOrgMember(orgId: "org-1", userId: "user-2") }`,
+    `mutation { assignRole(orgId: "org-1", userId: "user-2", roleId: "role-1") }`,
+    `mutation { revokeRole(orgId: "org-1", userId: "user-2", roleId: "role-1") }`,
+  ])("rejects administrative mutation for an ordinary organization member", async (query) => {
+    const result = await run(query, ctx({ roles: ["viewer"] }));
+    expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+  });
+
+  test("rejects global user lifecycle mutations unless the temporary trainer gate is active", async () => {
+    const result = await run(
+      `mutation { createUser(email: "new@example.com", displayName: "New User") { id } }`,
+      ctx({ roles: ["viewer"] }),
+    );
+    expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
+  });
+
+  test("does not expose a caller-supplied subject in canDo", async () => {
+    const result = await run(
+      `query { canDo(userId: "another-user", action: read, resourceType: folder, resourceId: "folder-1") { allowed } }`,
+      ctx(),
+    );
+    expect(result.errors?.[0]).toBeDefined();
+    expect(mockCanDo).not.toHaveBeenCalled();
+  });
+
+  test("evaluates canDo for the authenticated request actor", async () => {
+    const result = await run(
+      `query { canDo(action: read, resourceType: folder, resourceId: "folder-1") { allowed } }`,
+      ctx({ userId: "current-user" }),
+    );
+    expect(result.errors).toBeUndefined();
+    expect(mockCanDo).toHaveBeenCalledWith(
+      "current-user", "read", "folder", "folder-1", "org-1",
+    );
   });
 });

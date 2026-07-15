@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -18,6 +19,10 @@ import (
 func main() {
 	for _, p := range []string{"../../.env", ".env"} {
 		_ = godotenv.Load(p)
+	}
+	internalAPIToken := strings.TrimSpace(os.Getenv("ASSET_INTERNAL_API_TOKEN"))
+	if internalAPIToken == "" {
+		log.Fatal("ASSET_INTERNAL_API_TOKEN must be configured before Asset Core starts")
 	}
 
 	// 1. Setup Database Connection
@@ -44,7 +49,7 @@ func main() {
 	}
 
 	log.Printf("Go Asset Core Internal API listening on port %s", port)
-	if err := http.ListenAndServe(":"+port, muxPtr); err != nil {
+	if err := http.ListenAndServe(":"+port, httpDelivery.RequireInternalAPI(internalAPIToken, muxPtr)); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }

@@ -27,7 +27,7 @@ $GoProcess = $null
 $NodePort = 4000
 $GoPort = 8080
 $OriginalEnvironment = @{}
-$EnvironmentNames = @("PORT", "GO_ASSET_URL", "ASSET_DB_HOST", "ASSET_DB_PORT", "ASSET_DB_NAME", "ASSET_DB_USER", "ASSET_DB_PASSWORD", "ACCESS_DB_HOST", "ACCESS_DB_PORT", "ACCESS_DB_NAME", "ACCESS_DB_USER", "ACCESS_DB_PASSWORD", "DATABASE_URL")
+$EnvironmentNames = @("PORT", "GO_ASSET_URL", "ASSET_DB_HOST", "ASSET_DB_PORT", "ASSET_DB_NAME", "ASSET_DB_USER", "ASSET_DB_PASSWORD", "ASSET_INTERNAL_API_TOKEN", "ACCESS_DB_HOST", "ACCESS_DB_PORT", "ACCESS_DB_NAME", "ACCESS_DB_USER", "ACCESS_DB_PASSWORD", "DATABASE_URL")
 
 function Invoke-Checked([scriptblock]$Command, [string]$Description) {
     & $Command
@@ -104,6 +104,7 @@ try {
     $env:ASSET_DB_NAME = "asset_db"
     $env:ASSET_DB_USER = "asset_user"
     $env:ASSET_DB_PASSWORD = "asset_password"
+    $env:ASSET_INTERNAL_API_TOKEN = "kan55-clean-setup-internal-token"
     $env:PORT = "$GoPort"
     $GoProcess = Start-Process -FilePath $GoBinary -WorkingDirectory $AssetCore -PassThru -WindowStyle Hidden -RedirectStandardOutput $GoStdout -RedirectStandardError $GoStderr
     Wait-Health "Go Asset Core" "http://127.0.0.1:$GoPort/healthz" $GoProcess @($GoStdout, $GoStderr)
