@@ -2,6 +2,10 @@ import { prisma } from "../prisma";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { getFolderMeta, getMetadataMeta } from "../../clients/assetClient";
 import { ancestorIdsFromPath } from "../../util/ltreePath";
+import {
+  auditTrainerAdminDecision,
+  getTrainerAdminGateState,
+} from "../../security/trainerAdmin";
 
 let permActionCachePromise: Promise<Map<string, string>> | null = null;
 
@@ -50,7 +54,11 @@ async function resolveRoles(
     process.env.NODE_ENV !== "production" &&
     user.userRoles.some((ur) => ur.role.code === "trainer_admin")
   ) {
-    return { allowed: true, reason: "trainer_admin" };
+    const state = getTrainerAdminGateState();
+    auditTrainerAdminDecision(userId, state.enabled, state.reason);
+    if (state.enabled) {
+      return { allowed: true, reason: "trainer_admin" };
+    }
   }
 
   const orgRoles = user.userRoles.filter((ur) => ur.orgId === orgId);

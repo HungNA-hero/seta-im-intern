@@ -104,3 +104,37 @@ func TestRequireActor(t *testing.T) {
 		})
 	}
 }
+
+func TestRequireInternalAPI(t *testing.T) {
+	const token = "test-internal-token"
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+	handler := assetHttp.RequireInternalAPI(token, next)
+
+	tests := []struct {
+		name           string
+		path           string
+		authorization  string
+		expectedStatus int
+	}{
+		{"public health remains available", "/healthz", "", http.StatusNoContent},
+		{"missing credential is denied", "/internal/api/v1/folders", "", http.StatusUnauthorized},
+		{"wrong credential is denied", "/internal/api/v1/folders", "Bearer wrong", http.StatusUnauthorized},
+		{"valid credential is accepted", "/internal/api/v1/folders", "Bearer " + token, http.StatusNoContent},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			if tt.authorization != "" {
+				req.Header.Set("Authorization", tt.authorization)
+			}
+			rr := httptest.NewRecorder()
+			handler.ServeHTTP(rr, req)
+			if rr.Code != tt.expectedStatus {
+				t.Fatalf("expected status %d, got %d", tt.expectedStatus, rr.Code)
+			}
+		})
+	}
+}

@@ -2,6 +2,8 @@ export const typeDefs = /* GraphQL */ `
   directive @auth on FIELD_DEFINITION
   directive @orgMember on FIELD_DEFINITION
   directive @sameOrg on FIELD_DEFINITION
+  directive @orgAdmin on FIELD_DEFINITION
+  directive @trainerAdmin on FIELD_DEFINITION
 
   enum ResourceType {
     folder
@@ -68,20 +70,20 @@ export const typeDefs = /* GraphQL */ `
   }
 
   type Mutation {
-    createUser(email: String!, displayName: String!): User! @auth
-    updateUser(id: ID!, displayName: String!): User! @auth
-    deactivateUser(id: ID!): User! @auth
-    createOrganization(code: String!, name: String!): Organization! @auth
+    createUser(email: String!, displayName: String!): User! @trainerAdmin
+    updateUser(id: ID!, displayName: String!): User! @trainerAdmin
+    deactivateUser(id: ID!): User! @trainerAdmin
+    createOrganization(code: String!, name: String!): Organization! @trainerAdmin
     createRole(
       orgId: ID!
       code: String!
       name: String!
       description: String
-    ): Role! @orgMember @sameOrg
-    updateRole(id: ID!, name: String, description: String): Role! @orgMember
-    addOrgMember(orgId: ID!, userId: ID!): Boolean! @orgMember @sameOrg
-    assignRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean! @orgMember @sameOrg
-    revokeRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean! @orgMember @sameOrg
+    ): Role! @orgAdmin @sameOrg
+    updateRole(id: ID!, name: String, description: String): Role! @orgAdmin
+    addOrgMember(orgId: ID!, userId: ID!): Boolean! @orgAdmin @sameOrg
+    assignRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean! @orgAdmin @sameOrg
+    revokeRole(orgId: ID!, userId: ID!, roleId: ID!): Boolean! @orgAdmin @sameOrg
     grantObjectPermission(
       orgId: ID!
       resourceType: ResourceType!
@@ -198,20 +200,19 @@ export const typeDefs = /* GraphQL */ `
     user(id: ID!): User @auth
     organizations: [Organization!]! @auth
     organization(id: ID!): Organization @auth
-    roles(orgId: ID!): [Role!]! @orgMember
-    role(id: ID!): Role @orgMember
-    rolePermissions(roleId: ID!): [RolePermission!]! @orgMember
+    roles(orgId: ID!): [Role!]! @orgAdmin @sameOrg
+    role(id: ID!): Role @orgAdmin
+    rolePermissions(roleId: ID!): [RolePermission!]! @orgAdmin
     objectPermissions(
       orgId: ID!
       resourceType: ResourceType!
       resourceId: ID!
     ): [ObjectPermission!]! @orgMember
     canDo(
-      userId: ID!
       action: PermissionAction!
       resourceType: ResourceType!
       resourceId: ID!
-    ): PermissionResult!
+    ): PermissionResult! @orgMember
     folder(orgId: ID!, id: ID!): Folder @auth @sameOrg
     folderTree(orgId: ID!, rootPath: String): [Folder!]! @auth @sameOrg
     folderChildren(orgId: ID!, parentPath: String!): [Folder!]! @auth @sameOrg

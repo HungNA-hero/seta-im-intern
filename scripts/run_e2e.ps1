@@ -92,6 +92,7 @@ try {
     $env:ASSET_DB_NAME = "asset_db"
     $env:ASSET_DB_USER = "asset_user"
     $env:ASSET_DB_PASSWORD = "asset_password"
+    $env:ASSET_INTERNAL_API_TOKEN = "kan55-e2e-internal-token"
     $env:PORT = "$GoPort"
     Push-Location $AssetCore
     try {

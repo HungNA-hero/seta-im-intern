@@ -5,6 +5,10 @@ import { GraphQLError } from "graphql";
 
 const RESERVED_ROLE_CODES = new Set(["trainer_admin", "org_admin"]);
 
+function isReservedRoleCode(code: string): boolean {
+  return RESERVED_ROLE_CODES.has(code.trim().toLowerCase());
+}
+
 export const roleResolvers = {
   Query: {
     roles: async (_: unknown, { orgId }: { orgId: string }) =>
@@ -21,7 +25,7 @@ export const roleResolvers = {
       _: unknown,
       { orgId, code, name, description }: { orgId: string; code: string; name: string; description?: string },
     ) => {
-      if (RESERVED_ROLE_CODES.has(code)) {
+      if (isReservedRoleCode(code)) {
         throw new GraphQLError("Role code is reserved and cannot be created", {
           extensions: { code: "RESERVED_ROLE_CODE" },
         });
@@ -40,6 +44,11 @@ export const roleResolvers = {
       const existing = await getRoleById(id);
       if (!existing || existing.orgId !== ctx.currentOrgId)
         throw new GraphQLError("Role not found", { extensions: { code: "NOT_FOUND" } });
+      if (isReservedRoleCode(existing.code)) {
+        throw new GraphQLError("Reserved role cannot be modified", {
+          extensions: { code: "RESERVED_ROLE_CODE" },
+        });
+      }
       try {
         return serializeDates(await updateRole(id, name, description));
       } catch (err) {

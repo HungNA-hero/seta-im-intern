@@ -13,7 +13,12 @@ const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({
 vi.mock("../db/queries/canDo", () =>
   createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
 );
-vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));
+vi.mock("../config", () => ({
+  config: {
+    goAssetUrl: "http://go-mock",
+    assetInternalApiToken: "test-internal-token",
+  },
+}));
 const { mockObjectPermissionDeleteMany } = vi.hoisted(() => ({
   mockObjectPermissionDeleteMany: vi.fn(),
 }));
@@ -423,7 +428,14 @@ describe("metadata transport and failure gates", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       "http://go-mock/internal/api/v1/metadata-items?orgId=org-1&folderId=folder%2Fwith%20space",
-      { headers: { "X-User-Id": "user-1", "X-Org-Id": "org-1" } },
+      {
+        method: undefined,
+        headers: {
+          "X-User-Id": "user-1",
+          "X-Org-Id": "org-1",
+          Authorization: "Bearer test-internal-token",
+        },
+      },
     );
   });
 
@@ -444,6 +456,7 @@ describe("metadata transport and failure gates", () => {
     expect(request.headers).toEqual({
       "X-User-Id": "user-1",
       "X-Org-Id": "org-1",
+      Authorization: "Bearer test-internal-token",
       "Content-Type": "application/json",
     });
     expect(JSON.parse(request.body as string)).toEqual({
@@ -470,6 +483,7 @@ describe("metadata transport and failure gates", () => {
     expect(request.headers).toEqual({
       "X-User-Id": "user-1",
       "X-Org-Id": "org-1",
+      Authorization: "Bearer test-internal-token",
       "Content-Type": "application/json",
     });
     expect(JSON.parse(request.body as string)).toEqual({ description: null });

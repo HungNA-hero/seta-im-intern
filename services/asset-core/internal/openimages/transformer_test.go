@@ -164,7 +164,7 @@ func TestTransformerDeterministicCapTitleFallbackAndQuotedUTF8(t *testing.T) {
 	}
 }
 
-func TestTransformer_MaxItemsValidation(t *testing.T) {
+func TestTransformer_MaxItemsZeroAndOversizeAreClamped(t *testing.T) {
 	tempDir := t.TempDir()
 
 	os.WriteFile(filepath.Join(tempDir, "oidv7-class-descriptions.csv"), []byte("m/01,Dog"), 0644)
@@ -172,15 +172,21 @@ func TestTransformer_MaxItemsValidation(t *testing.T) {
 	os.WriteFile(filepath.Join(tempDir, "validation-images-with-rotation.csv"), []byte("ImageID,Subset,OriginalURL,OriginalLandingURL,License,AuthorProfileURL,Author,Title,OriginalSize,OriginalMD5,Thumbnail300KURL,Rotation\nimg1,v,u,l,l,a,a,t,s,m,t,0"), 0644)
 
 	tr := &Transformer{Dir: tempDir, MaxItems: 0}
-	_, err := tr.Transform(nil)
-	if err == nil || err.Error() != "MaxItems must be between 1 and 25" {
-		t.Errorf("Expected MaxItems error for 0, got %v", err)
+	manifest, err := tr.Transform(nil)
+	if err != nil {
+		t.Fatalf("MaxItems=0 should include all available items, got %v", err)
+	}
+	if manifest.OutputIDsCount != 1 {
+		t.Fatalf("expected one output item for MaxItems=0, got %d", manifest.OutputIDsCount)
 	}
 
 	tr.MaxItems = 26
-	_, err = tr.Transform(nil)
-	if err == nil || err.Error() != "MaxItems must be between 1 and 25" {
-		t.Errorf("Expected MaxItems error for 26, got %v", err)
+	manifest, err = tr.Transform(nil)
+	if err != nil {
+		t.Fatalf("oversize MaxItems should clamp to available items, got %v", err)
+	}
+	if manifest.OutputIDsCount != 1 {
+		t.Fatalf("expected one output item after clamping, got %d", manifest.OutputIDsCount)
 	}
 }
 

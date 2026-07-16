@@ -314,14 +314,14 @@ run() {
     (cd "$ASSET_CORE" && go build -o "$IMPORT_BINARY" ./cmd/import-sample/main.go) || { die "Import CLI build failed"; return 1; }
 
     ASSET_DB_HOST=127.0.0.1 ASSET_DB_PORT=5433 ASSET_DB_NAME=asset_db ASSET_DB_USER=asset_user \
-        ASSET_DB_PASSWORD=asset_password PORT="$GO_PORT" \
+        ASSET_DB_PASSWORD=asset_password ASSET_INTERNAL_API_TOKEN="kan55-demo-internal-token" PORT="$GO_PORT" \
         "$GO_BINARY" >"$GO_STDOUT" 2>"$GO_STDERR" &
     GO_PID=$!
     wait_service "Go Asset Core" "http://127.0.0.1:$GO_PORT/healthz" "$GO_PID" "$GO_STDOUT" "$GO_STDERR" || return 1
 
-    ACCESS_DB_HOST=127.0.0.1 ACCESS_DB_PORT=5434 ACCESS_DB_NAME=access_db ACCESS_DB_USER=access_user \
+        ACCESS_DB_HOST=127.0.0.1 ACCESS_DB_PORT=5434 ACCESS_DB_NAME=access_db ACCESS_DB_USER=access_user \
         ACCESS_DB_PASSWORD=access_password DATABASE_URL="postgresql://access_user:access_password@127.0.0.1:5434/access_db" \
-        GO_ASSET_URL="http://127.0.0.1:$GO_PORT" PORT="$NODE_PORT" \
+        GO_ASSET_URL="http://127.0.0.1:$GO_PORT" ASSET_INTERNAL_API_TOKEN="kan55-demo-internal-token" PORT="$NODE_PORT" \
         node "$ACCESS_CORE/dist/index.js" >"$NODE_STDOUT" 2>"$NODE_STDERR" &
     NODE_PID=$!
     wait_service "Node Access Core" "http://127.0.0.1:$NODE_PORT/health" "$NODE_PID" "$NODE_STDOUT" "$NODE_STDERR" || return 1
