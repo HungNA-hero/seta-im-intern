@@ -11,14 +11,15 @@ INSERT INTO access.organizations (id, code, name, olp_enabled) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed roles for Seta org (org_admin = global override; viewer = read-only ceiling;
--- trainer_admin = local/test-only global bypass, inert whenever NODE_ENV=production)
+-- trainer_admin = non-production-only global bypass, default-off unless explicitly
+-- enabled with a future expiry, and always inert whenever NODE_ENV=production)
 INSERT INTO access.roles (id, org_id, code, name, description) VALUES
     ('40000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000010',
      'org_admin', 'Org Admin', 'Full access to all resources and permissions within the org'),
     ('40000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000010',
      'viewer',    'Viewer',    'Read-only access to all resources within the org'),
     ('40000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000010',
-     'trainer_admin', 'Trainer Admin', 'Local/test-only global bypass — inert outside development')
+     'trainer_admin', 'Trainer Admin', 'Non-production-only global bypass; default-off and expiry-bound')
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed demo users

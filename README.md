@@ -84,17 +84,22 @@ docker compose -f infra/docker-compose.yml --profile migration run --rm flyway-a
 #### Demo/seed data (optional)
 
 Migrations only seed the `permission_actions` reference rows the application needs to
-function — no demo organization, users, or content. The demo `seta` org, `admin@seta.com`/
-`dungpd@seta.com` users, and `Root / Animals / Dogs` folder tree used by
-`scripts/trainer-demo.sh` and `scripts/sprint4-demo.sh` live in standalone seed scripts,
-applied manually after migrating:
+function — no demo organization, users, or content. The demo `seta` org,
+`admin@seta.com`/`dungpd@seta.com` users, and `Root / Animals / Dogs` folder tree
+used by the trainer, Sprint 4, clean-setup, and E2E scripts live in standalone
+seed scripts, applied explicitly after migrating:
 
 ```bash
 docker exec -i seta-access-db psql -U access_user -d access_db < infra/db/access/seed/demo_fixtures.sql
 docker exec -i seta-asset-db psql -U asset_user -d asset_db < infra/db/asset/seed/demo_fixtures.sql
 ```
 
-Both demo scripts apply these automatically as part of their own database bootstrap step.
+The trainer, Sprint 4, clean-setup, and E2E scripts apply these automatically as
+part of their own database bootstrap step.
+
+This pre-production baseline change rewrites the old demo migrations. If existing
+local volumes have already applied those migrations, reset them once with
+`npm run clean:all` before running `npm run docker:up` and `npm run docker:migrate`.
 
 #### Inspect databases
 
@@ -239,9 +244,10 @@ grants matter.
 
 ### Bypasses (checked before mode logic)
 
-1. **`trainer_admin`** — global override, allowed on anything in any org, no queries.
-   Developer/test convenience only: the bypass is automatically inert whenever the service
-   runs with `NODE_ENV=production`.
+1. **`trainer_admin`** — non-production global override, allowed on anything in any
+   org without policy queries only when `TRAINER_ADMIN_ENABLED=true` and
+   `TRAINER_ADMIN_EXPIRES_AT` is a future timestamp. It is always inert when the
+   service runs with `NODE_ENV=production`.
 2. **`org_admin`** — per-org bypass, full access to everything in that org, no OLP check.
 3. **Root sentinel** (`resourceId === orgId`, used to authorize creating a top-level
    folder) — always decided by RBAC ceiling in both modes, since there's no real folder
@@ -283,8 +289,9 @@ Not seeded by migrations — apply `infra/db/access/seed/demo_fixtures.sql` and
 
 - `org_admin`: RBAC ceiling = all 4 actions on both `folder` and `metadata_item`.
 - `viewer`: RBAC ceiling = `read` only on both resource types.
-- `trainer_admin`: global bypass, seeded on `dungpd@seta.com` for local testing only — inert
-  whenever the service runs with `NODE_ENV=production`.
+- `trainer_admin`: non-production global bypass, seeded on `dungpd@seta.com` for local
+  testing; default-off unless explicitly enabled with a future expiry, and always inert
+  when the service runs with `NODE_ENV=production`.
 
 **Demo asset tree** (`asset_db`, org `seta`): `Root` → `Animals` → `Dogs`, plus a sample
 metadata item, so folder-tree and metadata queries have something to return out of the
