@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma";
+import { getRequestCorrelation } from "../observability/requestContext";
 
 export type TrainerAdminGateState =
   | { enabled: true; reason: "enabled" }
@@ -34,14 +35,19 @@ export function auditTrainerAdminDecision(
   allowed: boolean,
   reason: TrainerAdminDecisionReason,
 ): void {
-  console.info(
-    JSON.stringify({
+  const correlation = getRequestCorrelation();
+  process.stdout.write(
+    `${JSON.stringify({
+      level: "info",
+      service: "access-core",
       event: "trainer_admin_bypass_evaluated",
+      traceId: correlation?.traceId,
+      requestId: correlation?.requestId,
       userId,
       allowed,
       reason,
       timestamp: new Date().toISOString(),
-    }),
+    })}\n`,
   );
 }
 

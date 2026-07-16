@@ -191,7 +191,7 @@ describe("KAN-36 folder GraphQL to PostgreSQL E2E", () => {
     const beforeChild = await readFolder(child.id);
 
     const result = await moveFolder(parent.id, child.id);
-    expect(firstErrorCode(result)).toBe("CONFLICT");
+    expect(firstErrorCode(result)).toBe("FOLDER_CYCLE_DETECTED");
     expect(await readFolder(parent.id)).toEqual(beforeParent);
     expect(await readFolder(child.id)).toEqual(beforeChild);
   });
@@ -204,7 +204,7 @@ describe("KAN-36 folder GraphQL to PostgreSQL E2E", () => {
     const beforeSource = await readFolder(source.id);
 
     const result = await moveFolder(source.id, destination.id);
-    expect(firstErrorCode(result)).toBe("CONFLICT");
+    expect(firstErrorCode(result)).toBe("FOLDER_NAME_CONFLICT");
     expect(await readFolder(source.id)).toEqual(beforeSource);
   });
 
@@ -214,7 +214,7 @@ describe("KAN-36 folder GraphQL to PostgreSQL E2E", () => {
     const beforeParent = await readFolder(parent.id);
 
     const result = await deleteFolder(parent.id);
-    expect(firstErrorCode(result)).toBe("CONFLICT");
+    expect(firstErrorCode(result)).toBe("FOLDER_NOT_EMPTY");
     expect(await readFolder(parent.id)).toEqual(beforeParent);
   });
 

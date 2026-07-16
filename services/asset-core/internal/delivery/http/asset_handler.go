@@ -123,7 +123,7 @@ func NewAssetHandler(mux *http.ServeMux, usecase domain.AssetUsecase, db *gorm.D
 
 func (h *AssetHandler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -133,7 +133,7 @@ func (h *AssetHandler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 		status = "degraded"
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	writeJSON(w, r, http.StatusOK, map[string]any{
 		"status":       status,
 		"db_connected": dbConnected,
 	})
@@ -148,7 +148,7 @@ func (h *AssetHandler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 func (h *AssetHandler) HandleFolders(w http.ResponseWriter, r *http.Request) {
 	actor, err := requestcontext.GetActor(r.Context())
 	if err != nil {
-		http.Error(w, "Missing actor context", http.StatusInternalServerError)
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
 		return
 	}
 
@@ -162,7 +162,7 @@ func (h *AssetHandler) HandleFolders(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		h.handleDeleteFolder(w, r, actor)
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
@@ -173,28 +173,28 @@ func (h *AssetHandler) handleGetFolders(w http.ResponseWriter, r *http.Request, 
 
 	// If orgId is provided, it MUST match the actor's org.
 	if orgID != "" && orgID != actor.OrgID {
-		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
 	// 1. Detail request (by ID)
 	if folderID != "" {
 		if err := uuid.Validate(folderID); err != nil {
-			http.Error(w, "Invalid folder id format", http.StatusBadRequest)
+			writeLegacyError(w, r, "Invalid folder id format", http.StatusBadRequest)
 			return
 		}
 
 		folder, err := h.usecase.GetFolderByID(r.Context(), actor.OrgID, folderID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				http.Error(w, "Folder not found", http.StatusNotFound)
+				writeLegacyError(w, r, "Folder not found", http.StatusNotFound)
 				return
 			}
-			http.Error(w, "Database error", http.StatusInternalServerError)
+			writeLegacyError(w, r, "Database error", http.StatusInternalServerError)
 			return
 		}
 
-		writeJSON(w, http.StatusOK, map[string]any{
+		writeJSON(w, r, http.StatusOK, map[string]any{
 			"status": "success",
 			"folder": folder,
 		})
@@ -203,7 +203,7 @@ func (h *AssetHandler) handleGetFolders(w http.ResponseWriter, r *http.Request, 
 
 	// 2. List request
 	if orgID == "" {
-		http.Error(w, "Missing orgId", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing orgId", http.StatusBadRequest)
 		return
 	}
 
@@ -216,7 +216,7 @@ func (h *AssetHandler) handleGetFolders(w http.ResponseWriter, r *http.Request, 
 
 	if childrenOnly {
 		if rootPath == "" {
-			http.Error(w, "rootPath is required when children=true", http.StatusBadRequest)
+			writeLegacyError(w, r, "rootPath is required when children=true", http.StatusBadRequest)
 			return
 		}
 		folders, err = h.usecase.GetFolderChildren(r.Context(), orgID, rootPath)
@@ -227,11 +227,11 @@ func (h *AssetHandler) handleGetFolders(w http.ResponseWriter, r *http.Request, 
 	}
 
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		writeLegacyError(w, r, "Database error", http.StatusInternalServerError)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	writeJSON(w, r, http.StatusOK, map[string]any{
 		"status":  "success",
 		"count":   len(folders),
 		"folders": folders,
@@ -241,27 +241,27 @@ func (h *AssetHandler) handleGetFolders(w http.ResponseWriter, r *http.Request, 
 func (h *AssetHandler) handleCreateFolder(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor) {
 	orgID := r.URL.Query().Get("orgId")
 	if orgID == "" {
-		http.Error(w, "Missing orgId", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing orgId", http.StatusBadRequest)
 		return
 	}
 	if orgID != actor.OrgID {
-		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
 	var input domain.CreateFolderInput
 	if err := decodeJSONBody(r, &input); err != nil {
-		http.Error(w, "Invalid body", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid body", http.StatusBadRequest)
 		return
 	}
 
 	folder, err := h.usecase.CreateFolder(r.Context(), orgID, actor.UserID, input)
 	if err != nil {
-		h.mapDomainError(w, err)
+		h.mapDomainError(w, r, err)
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]any{
+	writeJSON(w, r, http.StatusCreated, map[string]any{
 		"status": "success",
 		"folder": folder,
 	})
@@ -271,21 +271,21 @@ func (h *AssetHandler) handleUpdateFolder(w http.ResponseWriter, r *http.Request
 	folderID := r.URL.Query().Get("id")
 	orgID := r.URL.Query().Get("orgId")
 	if folderID == "" || orgID == "" {
-		http.Error(w, "Missing id or orgId", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing id or orgId", http.StatusBadRequest)
 		return
 	}
 	if err := uuid.Validate(folderID); err != nil {
-		http.Error(w, "Invalid folder id format", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid folder id format", http.StatusBadRequest)
 		return
 	}
 	if orgID != actor.OrgID {
-		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
 	var request updateFolderRequest
 	if err := decodeJSONBody(r, &request); err != nil {
-		http.Error(w, "Invalid body", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid body", http.StatusBadRequest)
 		return
 	}
 
@@ -298,11 +298,11 @@ func (h *AssetHandler) handleUpdateFolder(w http.ResponseWriter, r *http.Request
 
 	folder, err := h.usecase.UpdateFolder(r.Context(), orgID, actor.UserID, folderID, input)
 	if err != nil {
-		h.mapDomainError(w, err)
+		h.mapDomainError(w, r, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	writeJSON(w, r, http.StatusOK, map[string]any{
 		"status": "success",
 		"folder": folder,
 	})
@@ -313,20 +313,20 @@ func (h *AssetHandler) handleDeleteFolder(w http.ResponseWriter, r *http.Request
 	folderID := r.URL.Query().Get("id")
 	orgID := r.URL.Query().Get("orgId")
 	if folderID == "" || orgID == "" {
-		http.Error(w, "Missing id or orgId", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing id or orgId", http.StatusBadRequest)
 		return
 	}
 	if err := uuid.Validate(folderID); err != nil {
-		http.Error(w, "Invalid folder id format", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid folder id format", http.StatusBadRequest)
 		return
 	}
 	if orgID != actor.OrgID {
-		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
 	if err := h.usecase.DeleteFolder(r.Context(), orgID, actor.UserID, folderID); err != nil {
-		h.mapDomainError(w, err)
+		h.mapDomainError(w, r, err)
 		return
 	}
 
@@ -337,75 +337,78 @@ func (h *AssetHandler) handleDeleteFolder(w http.ResponseWriter, r *http.Request
 func (h *AssetHandler) HandleMoveFolder(w http.ResponseWriter, r *http.Request) {
 	actor, err := requestcontext.GetActor(r.Context())
 	if err != nil {
-		http.Error(w, "Missing actor context", http.StatusInternalServerError)
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
 		return
 	}
 
 	if r.Method != http.MethodPatch {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	folderID := r.URL.Query().Get("id")
 	orgID := r.URL.Query().Get("orgId")
 	if folderID == "" || orgID == "" {
-		http.Error(w, "Missing id or orgId", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing id or orgId", http.StatusBadRequest)
 		return
 	}
 	if err := uuid.Validate(folderID); err != nil {
-		http.Error(w, "Invalid folder id format", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid folder id format", http.StatusBadRequest)
 		return
 	}
 	if orgID != actor.OrgID {
-		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
 	var input domain.MoveFolderInput
 	if err := decodeJSONBody(r, &input); err != nil {
-		http.Error(w, "Invalid body", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid body", http.StatusBadRequest)
 		return
 	}
 
 	if input.DestinationParentID != nil {
 		if *input.DestinationParentID == "" {
-			http.Error(w, "Invalid destination parent id format", http.StatusBadRequest)
+			writeLegacyError(w, r, "Invalid destination parent id format", http.StatusBadRequest)
 			return
 		}
 		if err := uuid.Validate(*input.DestinationParentID); err != nil {
-			http.Error(w, "Invalid destination parent id format", http.StatusBadRequest)
+			writeLegacyError(w, r, "Invalid destination parent id format", http.StatusBadRequest)
 			return
 		}
 	}
 
 	folder, err := h.usecase.MoveFolder(r.Context(), orgID, actor.UserID, folderID, input)
 	if err != nil {
-		h.mapDomainError(w, err)
+		h.mapDomainError(w, r, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	writeJSON(w, r, http.StatusOK, map[string]any{
 		"status": "success",
 		"folder": folder,
 	})
 }
 
 // mapDomainError converts typed domain failures into stable internal REST status codes.
-func (h *AssetHandler) mapDomainError(w http.ResponseWriter, err error) {
-	if errors.Is(err, domain.ErrFolderNotFound) || errors.Is(err, domain.ErrMetadataNotFound) {
-		http.Error(w, "Not found", http.StatusNotFound)
-	} else if errors.Is(err, domain.ErrFolderConflict) {
-		http.Error(w, "Conflict: sibling name or path already exists", http.StatusConflict)
-	} else if errors.Is(err, domain.ErrFolderNotEmpty) {
-		http.Error(w, "Conflict: folder is not empty", http.StatusConflict)
-	} else if errors.Is(err, domain.ErrCycleDetected) {
-		http.Error(w, "Conflict: cycle detected", http.StatusConflict)
-	} else if errors.Is(err, domain.ErrMetadataConflict) {
-		http.Error(w, "Conflict: external metadata identity already exists", http.StatusConflict)
-	} else if errors.Is(err, domain.ErrInvalidInput) {
-		http.Error(w, "Invalid input", http.StatusBadRequest)
-	} else {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+func (h *AssetHandler) mapDomainError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case errors.Is(err, domain.ErrFolderNotFound):
+		writeError(w, r, http.StatusNotFound, "FOLDER_NOT_FOUND")
+	case errors.Is(err, domain.ErrMetadataNotFound):
+		writeError(w, r, http.StatusNotFound, "METADATA_NOT_FOUND")
+	case errors.Is(err, domain.ErrFolderConflict):
+		writeError(w, r, http.StatusConflict, "FOLDER_NAME_CONFLICT")
+	case errors.Is(err, domain.ErrFolderNotEmpty):
+		writeError(w, r, http.StatusConflict, "FOLDER_NOT_EMPTY")
+	case errors.Is(err, domain.ErrCycleDetected):
+		writeError(w, r, http.StatusConflict, "FOLDER_CYCLE_DETECTED")
+	case errors.Is(err, domain.ErrMetadataConflict):
+		writeError(w, r, http.StatusConflict, "METADATA_IDENTITY_CONFLICT")
+	case errors.Is(err, domain.ErrInvalidInput):
+		writeError(w, r, http.StatusBadRequest, "METADATA_VALIDATION_ERROR")
+	default:
+		writeError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR")
 	}
 }
 
@@ -430,7 +433,7 @@ func decodeJSONBody(r *http.Request, destination any) error {
 func (h *AssetHandler) HandleMetadataItems(w http.ResponseWriter, r *http.Request) {
 	actor, err := requestcontext.GetActor(r.Context())
 	if err != nil {
-		http.Error(w, "Missing actor context", http.StatusInternalServerError)
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
 		return
 	}
 
@@ -444,7 +447,7 @@ func (h *AssetHandler) HandleMetadataItems(w http.ResponseWriter, r *http.Reques
 	case http.MethodDelete:
 		h.handleDeleteMetadataItem(w, r, actor)
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
@@ -452,31 +455,31 @@ func (h *AssetHandler) HandleMetadataItems(w http.ResponseWriter, r *http.Reques
 func (h *AssetHandler) handleGetMetadataItems(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor) {
 	orgID := r.URL.Query().Get("orgId")
 	if orgID == "" {
-		http.Error(w, "Missing orgId", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing orgId", http.StatusBadRequest)
 		return
 	}
 	if orgID != actor.OrgID {
-		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
 	id := r.URL.Query().Get("id")
 	folderID := r.URL.Query().Get("folderId")
 	if id != "" && folderID != "" {
-		http.Error(w, "Provide either id or folderId, not both", http.StatusBadRequest)
+		writeLegacyError(w, r, "Provide either id or folderId, not both", http.StatusBadRequest)
 		return
 	}
 	if id != "" {
 		if err := uuid.Validate(id); err != nil {
-			http.Error(w, "Invalid id format", http.StatusBadRequest)
+			writeLegacyError(w, r, "Invalid id format", http.StatusBadRequest)
 			return
 		}
 		item, err := h.usecase.GetMetadataItemByID(r.Context(), orgID, id)
 		if err != nil {
-			h.mapDomainError(w, err)
+			h.mapDomainError(w, r, err)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{
+		writeJSON(w, r, http.StatusOK, map[string]any{
 			"status": "success",
 			"item":   item,
 		})
@@ -485,18 +488,18 @@ func (h *AssetHandler) handleGetMetadataItems(w http.ResponseWriter, r *http.Req
 
 	if folderID != "" {
 		if err := uuid.Validate(folderID); err != nil {
-			http.Error(w, "Invalid folderId format", http.StatusBadRequest)
+			writeLegacyError(w, r, "Invalid folderId format", http.StatusBadRequest)
 			return
 		}
 		items, err := h.usecase.GetMetadataItemsByFolder(r.Context(), orgID, folderID)
 		if err != nil {
-			h.mapDomainError(w, err)
+			h.mapDomainError(w, r, err)
 			return
 		}
 		if items == nil {
 			items = []domain.MetadataItem{}
 		}
-		writeJSON(w, http.StatusOK, map[string]any{
+		writeJSON(w, r, http.StatusOK, map[string]any{
 			"status": "success",
 			"count":  len(items),
 			"items":  items,
@@ -504,38 +507,38 @@ func (h *AssetHandler) handleGetMetadataItems(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	http.Error(w, "Missing id or folderId", http.StatusBadRequest)
+	writeLegacyError(w, r, "Missing id or folderId", http.StatusBadRequest)
 }
 
 // handleCreateMetadataItem validates transport context before delegating transactional creation to the use case.
 func (h *AssetHandler) handleCreateMetadataItem(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor) {
 	orgID := r.URL.Query().Get("orgId")
 	if orgID == "" {
-		http.Error(w, "Missing orgId", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing orgId", http.StatusBadRequest)
 		return
 	}
 	if orgID != actor.OrgID {
-		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
 	var input domain.CreateMetadataInput
 	if err := decodeJSONBody(r, &input); err != nil {
-		http.Error(w, "Invalid body", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid body", http.StatusBadRequest)
 		return
 	}
 	if err := uuid.Validate(input.FolderID); err != nil {
-		http.Error(w, "Invalid folder_id format", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid folder_id format", http.StatusBadRequest)
 		return
 	}
 
 	item, err := h.usecase.CreateMetadataItem(r.Context(), orgID, actor.UserID, input)
 	if err != nil {
-		h.mapDomainError(w, err)
+		h.mapDomainError(w, r, err)
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]any{
+	writeJSON(w, r, http.StatusCreated, map[string]any{
 		"status": "success",
 		"item":   item,
 	})
@@ -546,21 +549,21 @@ func (h *AssetHandler) handleUpdateMetadataItem(w http.ResponseWriter, r *http.R
 	id := r.URL.Query().Get("id")
 	orgID := r.URL.Query().Get("orgId")
 	if id == "" || orgID == "" {
-		http.Error(w, "Missing id or orgId", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing id or orgId", http.StatusBadRequest)
 		return
 	}
 	if err := uuid.Validate(id); err != nil {
-		http.Error(w, "Invalid metadata id format", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid metadata id format", http.StatusBadRequest)
 		return
 	}
 	if orgID != actor.OrgID {
-		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
 	var request updateMetadataRequest
 	if err := decodeJSONBody(r, &request); err != nil {
-		http.Error(w, "Invalid body", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid body", http.StatusBadRequest)
 		return
 	}
 
@@ -603,11 +606,11 @@ func (h *AssetHandler) handleUpdateMetadataItem(w http.ResponseWriter, r *http.R
 
 	item, err := h.usecase.UpdateMetadataItem(r.Context(), orgID, actor.UserID, id, input)
 	if err != nil {
-		h.mapDomainError(w, err)
+		h.mapDomainError(w, r, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	writeJSON(w, r, http.StatusOK, map[string]any{
 		"status": "success",
 		"item":   item,
 	})
@@ -618,20 +621,20 @@ func (h *AssetHandler) handleDeleteMetadataItem(w http.ResponseWriter, r *http.R
 	id := r.URL.Query().Get("id")
 	orgID := r.URL.Query().Get("orgId")
 	if id == "" || orgID == "" {
-		http.Error(w, "Missing id or orgId", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing id or orgId", http.StatusBadRequest)
 		return
 	}
 	if err := uuid.Validate(id); err != nil {
-		http.Error(w, "Invalid metadata id format", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid metadata id format", http.StatusBadRequest)
 		return
 	}
 	if orgID != actor.OrgID {
-		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
 	if err := h.usecase.DeleteMetadataItem(r.Context(), orgID, actor.UserID, id); err != nil {
-		h.mapDomainError(w, err)
+		h.mapDomainError(w, r, err)
 		return
 	}
 
@@ -642,22 +645,22 @@ func (h *AssetHandler) handleDeleteMetadataItem(w http.ResponseWriter, r *http.R
 func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.Request) {
 	actor, err := requestcontext.GetActor(r.Context())
 	if err != nil {
-		http.Error(w, "Missing actor context", http.StatusInternalServerError)
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
 		return
 	}
 
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	orgID := r.URL.Query().Get("orgId")
 	if orgID == "" {
-		http.Error(w, "Missing orgId", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing orgId", http.StatusBadRequest)
 		return
 	}
 	if orgID != actor.OrgID {
-		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
@@ -669,7 +672,7 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 		fID := r.URL.Query().Get("folderId")
 		if fID != "" {
 			if err := uuid.Validate(fID); err != nil {
-				http.Error(w, "Invalid folderId format", http.StatusBadRequest)
+				writeLegacyError(w, r, "Invalid folderId format", http.StatusBadRequest)
 				return
 			}
 		}
@@ -693,7 +696,7 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 		if l, err := strconv.Atoi(limitStr); err == nil {
 			filter.Limit = l
 		} else {
-			http.Error(w, "Invalid limit format", http.StatusBadRequest)
+			writeLegacyError(w, r, "Invalid limit format", http.StatusBadRequest)
 			return
 		}
 	} else {
@@ -705,14 +708,14 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 		if o, err := strconv.Atoi(offsetStr); err == nil {
 			filter.Offset = o
 		} else {
-			http.Error(w, "Invalid offset format", http.StatusBadRequest)
+			writeLegacyError(w, r, "Invalid offset format", http.StatusBadRequest)
 			return
 		}
 	}
 
 	items, err := h.usecase.SearchMetadataItems(r.Context(), orgID, filter)
 	if err != nil {
-		h.mapDomainError(w, err)
+		h.mapDomainError(w, r, err)
 		return
 	}
 
@@ -720,7 +723,7 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 		items = []domain.MetadataItem{}
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	writeJSON(w, r, http.StatusOK, map[string]any{
 		"status": "success",
 		"count":  len(items),
 		"items":  items,
@@ -734,42 +737,42 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 func (h *AssetHandler) HandleFolderFacts(w http.ResponseWriter, r *http.Request) {
 	actor, err := requestcontext.GetActor(r.Context())
 	if err != nil {
-		http.Error(w, "Missing actor context", http.StatusInternalServerError)
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
 		return
 	}
 
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	orgID := r.URL.Query().Get("orgId")
 	if orgID == "" {
-		http.Error(w, "Missing orgId", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing orgId", http.StatusBadRequest)
 		return
 	}
 	if orgID != actor.OrgID {
-		http.Error(w, "Organization context mismatch", http.StatusForbidden)
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
 		return
 	}
 
 	folderID := r.URL.Query().Get("id")
 	if folderID == "" {
-		http.Error(w, "Missing id", http.StatusBadRequest)
+		writeLegacyError(w, r, "Missing id", http.StatusBadRequest)
 		return
 	}
 	if err := uuid.Validate(folderID); err != nil {
-		http.Error(w, "Invalid folder id format", http.StatusBadRequest)
+		writeLegacyError(w, r, "Invalid folder id format", http.StatusBadRequest)
 		return
 	}
 
 	folder, err := h.usecase.GetFolderByID(r.Context(), actor.OrgID, folderID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) || errors.Is(err, domain.ErrFolderNotFound) {
-			http.Error(w, "Folder not found", http.StatusNotFound)
+			writeLegacyError(w, r, "Folder not found", http.StatusNotFound)
 			return
 		}
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		writeLegacyError(w, r, "Database error", http.StatusInternalServerError)
 		return
 	}
 
@@ -782,10 +785,10 @@ func (h *AssetHandler) HandleFolderFacts(w http.ResponseWriter, r *http.Request)
 	})
 }
 
-func writeJSON(w http.ResponseWriter, statusCode int, payload any) {
+func writeJSON(w http.ResponseWriter, r *http.Request, statusCode int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		requestcontext.RecordError(r.Context(), "INTERNAL_ERROR", 1000)
 	}
 }

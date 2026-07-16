@@ -12,6 +12,10 @@ import {
   getMetadataMeta,
 } from "../clients/assetClient";
 import { config } from "../config";
+import {
+  createRequestCorrelation,
+  runWithRequestCorrelation,
+} from "../observability/requestContext";
 
 describe("assetClient", () => {
   const mockFetch = vi.fn();
@@ -57,26 +61,37 @@ describe("assetClient", () => {
   });
 
   describe("throwGoError", () => {
-    it("should map Go error codes to GraphQL codes", () => {
-      try {
-        throwGoError({ status: 404, statusText: "Not Found" }, "Test");
-        expect.fail("Should throw");
-      } catch (e) {
-        expect(e).toBeInstanceOf(GraphQLError);
-        expect((e as GraphQLError).message).toBe("Test: Not Found");
-        expect((e as GraphQLError).extensions.code).toBe("NOT_FOUND");
-      }
+    it("preserves the trusted Asset Core error contract", async () => {
+      const response = new Response(
+        JSON.stringify({
+          error: {
+            code: "METADATA_NOT_FOUND",
+            number: 4001,
+            message: "untrusted response text",
+            traceId: "a".repeat(32),
+            service: "asset-core",
+          },
+        }),
+        { status: 404 },
+      );
+
+      await expect(throwGoError(response)).rejects.toMatchObject({
+        message: "Metadata item not found",
+        extensions: {
+          code: "METADATA_NOT_FOUND",
+          number: 4001,
+          traceId: "a".repeat(32),
+          service: "asset-core",
+        },
+      });
     });
 
-    it("should default to INTERNAL_SERVER_ERROR for unknown codes", () => {
-      try {
-        throwGoError({ status: 502, statusText: "Bad Gateway" }, "Test");
-        expect.fail("Should throw");
-      } catch (e) {
-        expect((e as GraphQLError).extensions.code).toBe(
-          "INTERNAL_SERVER_ERROR",
-        );
-      }
+    it("fails closed when the dependency response is malformed", async () => {
+      await expect(
+        throwGoError(new Response("gateway diagnostic", { status: 502 })),
+      ).rejects.toMatchObject({
+        extensions: { code: "INTERNAL_ERROR", number: 1000 },
+      });
     });
   });
 
@@ -116,6 +131,49 @@ describe("assetClient", () => {
           "X-User-Id": "u1",
           "X-Org-Id": "o1",
           Authorization: `Bearer ${config.assetInternalApiToken}`,
+        },
+      });
+    });
+
+    it("fails closed when the dependency trace id is not canonical", async () => {
+      await expect(
+        throwGoError(
+          new Response(
+            JSON.stringify({
+              error: {
+                code: "FOLDER_NOT_FOUND",
+                number: 3001,
+                traceId: "not-a-trace-id",
+                service: "asset-core",
+              },
+            }),
+            { status: 404 },
+          ),
+        ),
+      ).rejects.toMatchObject({
+        extensions: { code: "INTERNAL_ERROR", service: "access-core" },
+      });
+    });
+
+    it("forwards traceparent and request id only inside a request context", async () => {
+      mockFetch.mockResolvedValue(new Response());
+      const correlation = createRequestCorrelation({
+        traceparent: `00-${"b".repeat(32)}-${"c".repeat(16)}-01`,
+        "x-request-id": "request-57",
+      });
+
+      await runWithRequestCorrelation(correlation, () =>
+        assetFetch("/test", { userId: "u1", orgId: "o1" }),
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(`${config.goAssetUrl}/test`, {
+        method: undefined,
+        headers: {
+          "X-User-Id": "u1",
+          "X-Org-Id": "o1",
+          Authorization: `Bearer ${config.assetInternalApiToken}`,
+          traceparent: correlation.traceparent,
+          "x-request-id": "request-57",
         },
       });
     });
@@ -191,21 +249,21 @@ describe("assetClient", () => {
       expect(result).toEqual({ path: "abc.def" });
     });
 
-    it("propagates a 500 as INTERNAL_SERVER_ERROR instead of resolving to null", async () => {
+    it("fails closed for a malformed 500 response instead of resolving to null", async () => {
       mockFetch.mockResolvedValue(
         new Response(null, { status: 500, statusText: "Internal Error" }),
       );
       await expect(getFolderMeta("org-1", "user-1", "f1")).rejects.toMatchObject(
-        { extensions: { code: "INTERNAL_SERVER_ERROR" } },
+        { extensions: { code: "INTERNAL_ERROR", number: 1000 } },
       );
     });
 
-    it("propagates a 403 as FORBIDDEN instead of resolving to null", async () => {
+    it("fails closed for a malformed 403 response instead of resolving to null", async () => {
       mockFetch.mockResolvedValue(
         new Response(null, { status: 403, statusText: "Forbidden" }),
       );
       await expect(getFolderMeta("org-1", "user-1", "f1")).rejects.toMatchObject(
-        { extensions: { code: "FORBIDDEN" } },
+        { extensions: { code: "INTERNAL_ERROR", number: 1000 } },
       );
     });
   });
@@ -227,13 +285,15 @@ describe("assetClient", () => {
       expect(result).toEqual({ folderId: "f1" });
     });
 
-    it("propagates a 500 as INTERNAL_SERVER_ERROR instead of resolving to null", async () => {
+    it("fails closed for a malformed 500 response instead of resolving to null", async () => {
       mockFetch.mockResolvedValue(
         new Response(null, { status: 500, statusText: "Internal Error" }),
       );
       await expect(
         getMetadataMeta("org-1", "user-1", "m1"),
-      ).rejects.toMatchObject({ extensions: { code: "INTERNAL_SERVER_ERROR" } });
+      ).rejects.toMatchObject({
+        extensions: { code: "INTERNAL_ERROR", number: 1000 },
+      });
     });
   });
 });

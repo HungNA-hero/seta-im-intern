@@ -35,5 +35,5 @@ export async function assertResourceInOrg(
       extensions: { code: "NOT_FOUND" },
     });
   }
-  throwGoError(resp, "Failed to verify resource organization");
+  await throwGoError(resp);
 }

@@ -1,31 +1,64 @@
 import { GraphQLError } from "graphql";
 import { config } from "../config";
+import { getErrorDefinition, isKnownErrorCode } from "../errorCodes";
+import {
+  getRequestCorrelation,
+  isTraceId,
+} from "../observability/requestContext";
 
 export const FOLDERS_PATH = "/internal/api/v1/folders";
 export const METADATA_PATH = "/internal/api/v1/metadata-items";
 
-const GO_ERROR_CODES: Record<number, string> = {
-  400: "BAD_USER_INPUT",
-  401: "UNAUTHENTICATED",
-  403: "FORBIDDEN",
-  404: "NOT_FOUND",
-  409: "CONFLICT",
-};
+interface SafeAssetErrorEnvelope {
+  error?: {
+    code?: unknown;
+    number?: unknown;
+    message?: unknown;
+    traceId?: unknown;
+    service?: unknown;
+  };
+}
 
 /**
- * Throws a GraphQLError mapped from a Go backend HTTP response status.
- * Uses a predefined mapping of HTTP status codes to GraphQL error codes.
- * @param res The fetch response object containing status and statusText.
- * @param message A context-specific error message to prepend.
- * @throws {GraphQLError} Always throws a GraphQLError with the mapped code.
+ * Parses the trusted Asset Core safe envelope and preserves its origin service.
+ * Malformed or legacy dependency failures fail closed to the local internal error.
  */
-export function throwGoError(
-  res: { status: number; statusText: string },
-  message: string,
-): never {
-  const code = GO_ERROR_CODES[res.status] ?? "INTERNAL_SERVER_ERROR";
-  throw new GraphQLError(`${message}: ${res.statusText}`, {
-    extensions: { code },
+export async function throwGoError(res: Response): Promise<never> {
+  const fallback = getErrorDefinition("INTERNAL_ERROR");
+  const fallbackTraceId = getRequestCorrelation()?.traceId;
+  try {
+    const body = (await res.json()) as SafeAssetErrorEnvelope;
+    const error = body.error;
+    if (
+      error &&
+      isKnownErrorCode(error.code) &&
+      typeof error.number === "number" &&
+      isTraceId(error.traceId) &&
+      error.service === "asset-core"
+    ) {
+      const definition = getErrorDefinition(error.code);
+      if (definition.number === error.number) {
+        throw new GraphQLError(definition.message, {
+          extensions: {
+            code: definition.code,
+            number: definition.number,
+            traceId: error.traceId,
+            service: "asset-core",
+          },
+        });
+      }
+    }
+  } catch (error) {
+    if (error instanceof GraphQLError) throw error;
+  }
+
+  throw new GraphQLError(fallback.message, {
+    extensions: {
+      code: fallback.code,
+      number: fallback.number,
+      traceId: fallbackTraceId,
+      service: "access-core",
+    },
   });
 }
 
@@ -90,6 +123,11 @@ export function assetFetch(path: string, req: AssetRequest): Promise<Response> {
     Authorization: `Bearer ${config.assetInternalApiToken}`,
   };
   const init: RequestInit = { method: req.method, headers };
+  const correlation = getRequestCorrelation();
+  if (correlation) {
+    headers.traceparent = correlation.traceparent;
+    headers["x-request-id"] = correlation.requestId;
+  }
   if (req.body !== undefined) {
     headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(req.body);
@@ -112,11 +150,11 @@ export async function unwrapEnvelope<T>(
   mapper: (raw: any) => T,
   message: string,
 ): Promise<T> {
-  if (!res.ok) throwGoError(res, message);
+  if (!res.ok) await throwGoError(res);
   const data = (await res.json()) as Record<string, unknown>;
   if (!data[key]) {
     throw new GraphQLError(`${message}: unexpected response format`, {
-      extensions: { code: "INTERNAL_SERVER_ERROR" },
+      extensions: { code: "INTERNAL_ERROR" },
     });
   }
   return mapper(data[key]);
@@ -137,12 +175,12 @@ export async function unwrapListEnvelope<T>(
   mapper: (raw: any) => T,
   message: string,
 ): Promise<T[]> {
-  if (!res.ok) throwGoError(res, message);
+  if (!res.ok) await throwGoError(res);
   const data = (await res.json()) as Record<string, unknown>;
   const list = data[key];
   if (!Array.isArray(list)) {
     throw new GraphQLError(`${message}: unexpected response format`, {
-      extensions: { code: "INTERNAL_SERVER_ERROR" },
+      extensions: { code: "INTERNAL_ERROR" },
     });
   }
   return list.map(mapper);
@@ -162,7 +200,7 @@ export async function unwrap204(
   if (res.status === 204) {
     return true;
   }
-  throwGoError(res, message);
+  return await throwGoError(res);
 }
 
 export interface FolderMeta {
@@ -191,7 +229,7 @@ export async function getFolderMeta(
     orgId,
   });
   if (res.status === 404) return null;
-  if (!res.ok) throwGoError(res, "Failed to fetch folder metadata");
+  if (!res.ok) await throwGoError(res);
   const data = (await res.json()) as { folder?: { path: string } };
   if (!data.folder) return null;
   return { path: data.folder.path };
@@ -214,7 +252,7 @@ export async function getMetadataMeta(
     orgId,
   });
   if (res.status === 404) return null;
-  if (!res.ok) throwGoError(res, "Failed to fetch metadata item metadata");
+  if (!res.ok) await throwGoError(res);
   const data = (await res.json()) as {
     item?: { folder_id: string };
   };

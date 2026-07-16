@@ -37,7 +37,12 @@ const OTHER_ORG_FOLDER_ID = "30000000-0000-0000-0000-000000000002";
 
 interface GraphQLErrorResult {
   message?: string;
-  extensions?: { code?: string };
+  extensions?: {
+    code?: string;
+    number?: number;
+    traceId?: string;
+    service?: string;
+  };
 }
 
 interface GraphQLResult<T> {
@@ -61,6 +66,7 @@ async function queryGraphQL<T>(
   variables: Record<string, unknown>,
   userId: string | null = USER_ID,
   orgId: string | null = ORG_ID,
+  extraHeaders: Record<string, string> = {},
 ): Promise<GraphQLResult<T>> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -71,7 +77,7 @@ async function queryGraphQL<T>(
   const response = await app.inject({
     method: "POST",
     url: "/graphql",
-    headers,
+    headers: { ...headers, ...extraHeaders },
     payload: { query, variables },
   });
   return response.json() as GraphQLResult<T>;
@@ -382,6 +388,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
   });
 
   test("8. rejects missing, wrong-org, and soft-deleted resources", async () => {
+    const traceId = "1234567890abcdef1234567890abcdef";
     const missingFolder = await queryGraphQL<unknown>(
       `query($orgId: ID!, $folderId: ID!) {
         metadataItems(orgId: $orgId, folderId: $folderId) { id }
@@ -390,8 +397,22 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
         orgId: ORG_ID,
         folderId: "10000000-0000-0000-0000-000000000099",
       },
+      USER_ID,
+      ORG_ID,
+      {
+        traceparent: `00-${traceId}-0123456789abcdef-01`,
+        "x-request-id": "kan-57-e2e-contract",
+      },
     );
-    expect(firstErrorCode(missingFolder)).toBe("NOT_FOUND");
+    expect(missingFolder.errors?.[0]).toMatchObject({
+      message: "Folder not found",
+      extensions: {
+        code: "FOLDER_NOT_FOUND",
+        number: 3001,
+        traceId,
+        service: "asset-core",
+      },
+    });
 
     const wrongOrg = await queryGraphQL<unknown>(
       `query($orgId: ID!, $id: ID!) { metadataItem(orgId: $orgId, id: $id) { id } }`,
@@ -445,9 +466,9 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       },
     });
 
-    expect(firstErrorCode(invalidTitle)).toBe("BAD_USER_INPUT");
-    expect(firstErrorCode(invalidPair)).toBe("BAD_USER_INPUT");
-    expect(firstErrorCode(invalidJson)).toBe("BAD_USER_INPUT");
+    expect(firstErrorCode(invalidTitle)).toBe("METADATA_VALIDATION_ERROR");
+    expect(firstErrorCode(invalidPair)).toBe("METADATA_VALIDATION_ERROR");
+    expect(firstErrorCode(invalidJson)).toBe("BAD_REQUEST");
   });
 
   test("10. rejects duplicate external identity", async () => {
@@ -466,7 +487,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       },
     );
 
-    expect(firstErrorCode(result)).toBe("CONFLICT");
+    expect(firstErrorCode(result)).toBe("METADATA_IDENTITY_CONFLICT");
   });
 
   test("11. distinguishes missing requester from missing current org", async () => {
@@ -541,8 +562,10 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       }`,
       { orgId: ORG_ID, id: createdItemId },
     );
-    expect(firstErrorCode(policyFailure)).toBe("INTERNAL_SERVER_ERROR");
-    expect(policyFailure.errors?.[0]?.message).toBe("Unexpected error.");
+    expect(firstErrorCode(policyFailure)).toBe("INTERNAL_ERROR");
+    expect(policyFailure.errors?.[0]?.message).toBe(
+      "Internal server error, please try again",
+    );
 
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(
@@ -636,7 +659,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     );
 
     expect(result.data).toBeNull();
-    expect(firstErrorCode(result)).toBe("INTERNAL_SERVER_ERROR");
+    expect(firstErrorCode(result)).toBe("INTERNAL_ERROR");
     expect(mockFilterAllowedResourceIds).toHaveBeenCalledTimes(1);
   });
 
@@ -671,7 +694,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       }`,
       { orgId: ORG_ID, id: createdItemId },
     );
-    expect(firstErrorCode(repeated)).toBe("NOT_FOUND");
+    expect(firstErrorCode(repeated)).toBe("METADATA_NOT_FOUND");
   });
 
   test("16. denied delete makes no Go request and leaves the row unchanged", async () => {

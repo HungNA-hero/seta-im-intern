@@ -43,7 +43,7 @@ vi.stubGlobal("fetch", mockFetch);
 import { metadataResolvers } from "../graphql/resolvers/metadataResolvers";
 import type { GraphQLContext } from "../graphql/context";
 
-// ── fixtures ─────────────────────────────────────────────────────────────────
+// â”€â”€ fixtures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Builds the authenticated org context used by direct resolver tests. */
 function makeCtx(overrides: Partial<GraphQLContext> = {}): GraphQLContext {
@@ -100,9 +100,30 @@ function fetchListOk(items: ReturnType<typeof makeGoMetadataItem>[]) {
   });
 }
 
-/** Configures one failed Go response for status-to-GraphQL error mapping tests. */
-function fetchError(status: number, statusText = "Error") {
-  mockFetch.mockResolvedValueOnce({ ok: false, status, statusText });
+/** Configures one trusted Asset Core error envelope. */
+function fetchError(status: number) {
+  const errorByStatus: Record<number, [string, number]> = {
+    400: ["BAD_REQUEST", 1001],
+    401: ["UNAUTHENTICATED", 2001],
+    403: ["FORBIDDEN", 2003],
+    404: ["METADATA_NOT_FOUND", 4001],
+    409: ["METADATA_IDENTITY_CONFLICT", 4002],
+    500: ["INTERNAL_ERROR", 1000],
+  };
+  const [code, number] = errorByStatus[status] ?? errorByStatus[500];
+  mockFetch.mockResolvedValueOnce({
+    ok: false,
+    status,
+    json: async () => ({
+      error: {
+        code,
+        number,
+        message: "ignored test fixture text",
+        traceId: "a".repeat(32),
+        service: "asset-core",
+      },
+    }),
+  });
 }
 
 beforeEach(() => {
@@ -114,7 +135,7 @@ beforeEach(() => {
   mockGetFolderMeta.mockResolvedValue(null);
 });
 
-// ── Query.metadataItems ───────────────────────────────────────────────────────
+// â”€â”€ Query.metadataItems â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe("Query.metadataItems", () => {
   const org = "org-1";
@@ -182,7 +203,7 @@ describe("Query.metadataItems", () => {
         { orgId: org, folderId: folder },
         ctx,
       ),
-    ).rejects.toMatchObject({ extensions: { code: "FORBIDDEN" } });
+    ).rejects.toMatchObject({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) });
 
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -206,7 +227,7 @@ describe("Query.metadataItems", () => {
   });
 });
 
-// ── Query.metadataItem ────────────────────────────────────────────────────────
+// â”€â”€ Query.metadataItem â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe("Query.metadataItem", () => {
   const org = "org-1";
@@ -255,7 +276,7 @@ describe("Query.metadataItem", () => {
   });
 });
 
-// ── Mutation.createMetadata ───────────────────────────────────────────────────
+// â”€â”€ Mutation.createMetadata â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe("Mutation.createMetadata", () => {
   const org = "org-1";
@@ -316,7 +337,7 @@ describe("Mutation.createMetadata", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }) }),
     );
   });
 
@@ -331,12 +352,12 @@ describe("Mutation.createMetadata", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }) }),
     );
   });
 });
 
-// ── Mutation.updateMetadata ───────────────────────────────────────────────────
+// â”€â”€ Mutation.updateMetadata â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe("Mutation.updateMetadata", () => {
   const org = "org-1";
@@ -363,7 +384,7 @@ describe("Mutation.updateMetadata", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }) }),
     );
   });
 
@@ -499,7 +520,7 @@ describe("metadata transport and failure gates", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -514,7 +535,7 @@ describe("metadata transport and failure gates", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -540,20 +561,20 @@ describe("metadata transport and failure gates", () => {
         makeCtx({ userId: null }),
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "UNAUTHENTICATED" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }),
     );
     expect(mockCanDo).not.toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test.each([
-    [400, "BAD_USER_INPUT"],
+    [400, "BAD_REQUEST"],
     [401, "UNAUTHENTICATED"],
     [403, "FORBIDDEN"],
-    [404, "NOT_FOUND"],
-    [409, "CONFLICT"],
-    [500, "INTERNAL_SERVER_ERROR"],
-  ])("maps Go status %i to %s", async (status, code) => {
+    [404, "METADATA_NOT_FOUND"],
+    [409, "METADATA_IDENTITY_CONFLICT"],
+    [500, "INTERNAL_ERROR"],
+  ])("maps trusted Asset Core status %i envelope to %s", async (status, code) => {
     fetchError(status);
 
     await expect(
@@ -562,7 +583,7 @@ describe("metadata transport and failure gates", () => {
         { orgId, folderId },
         ctx,
       ),
-    ).rejects.toThrow(expect.objectContaining({ extensions: { code } }));
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code }) }));
   });
 
   test("rejects a malformed successful list envelope", async () => {
@@ -580,7 +601,7 @@ describe("metadata transport and failure gates", () => {
       ),
     ).rejects.toThrow(
       expect.objectContaining({
-        extensions: { code: "INTERNAL_SERVER_ERROR" },
+        extensions: expect.objectContaining({ code: "INTERNAL_ERROR" }),
       }),
     );
   });
@@ -600,13 +621,13 @@ describe("metadata transport and failure gates", () => {
       ),
     ).rejects.toThrow(
       expect.objectContaining({
-        extensions: { code: "INTERNAL_SERVER_ERROR" },
+        extensions: expect.objectContaining({ code: "INTERNAL_ERROR" }),
       }),
     );
   });
 });
 
-// ── Query.searchMetadata ──────────────────────────────────────────────────────
+// â”€â”€ Query.searchMetadata â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe("Query.searchMetadata", () => {
   const org = "org-1";
@@ -747,7 +768,7 @@ describe("Query.searchMetadata", () => {
   });
 });
 
-// ── Mutation.deleteMetadata ───────────────────────────────────────────────────
+// â”€â”€ Mutation.deleteMetadata â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe("Mutation.deleteMetadata", () => {
   const org = "org-1";
@@ -809,7 +830,7 @@ describe("Mutation.deleteMetadata", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });

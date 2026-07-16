@@ -3,13 +3,23 @@ import { buildServer } from './server';
 import { assertRuntimeConfig, config } from './config';
 import { prisma }      from './db/prisma';
 
+function logStartup(level: "info" | "warn" | "error", message: string, error?: unknown) {
+  process.stdout.write(`${JSON.stringify({
+    level,
+    service: "access-core",
+    message,
+    error: error instanceof Error ? error.message : undefined,
+    timestamp: new Date().toISOString(),
+  })}\n`);
+}
+
 async function main() {
   assertRuntimeConfig();
   try {
     await prisma.$queryRaw`SELECT 1`;
-    console.log('Connected to access_db successfully');
+    logStartup("info", "connected to access_db successfully");
   } catch (err) {
-    console.warn('Could not connect to access_db at startup:', err);
+    logStartup("warn", "could not connect to access_db at startup", err);
   }
 
   const server = await buildServer();
@@ -17,6 +27,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Fatal startup error:', err);
+  logStartup("error", "fatal startup error", err);
   process.exit(1);
 });

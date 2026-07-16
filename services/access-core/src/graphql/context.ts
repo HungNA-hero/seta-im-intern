@@ -3,6 +3,7 @@ import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { prisma } from "../db/prisma";
 import { canDo } from "../db/queries/canDo";
 import { assertTemporaryTrainerAdmin } from "../security/trainerAdmin";
+import { RequestCorrelation } from "../observability/requestContext";
 
 export interface GraphQLContext {
   userId: string | null;
@@ -10,6 +11,7 @@ export interface GraphQLContext {
   isMember: boolean;
   roles: string[];
   olpEnabled: boolean;
+  correlation?: RequestCorrelation;
 }
 
 export function assertAuthenticated(
@@ -108,18 +110,20 @@ function emptyContext(): GraphQLContext {
 export async function loadRequestContext(
   userId: string | null,
   orgId: string | null,
+  correlation?: RequestCorrelation,
 ): Promise<GraphQLContext> {
-  if (!userId) return emptyContext();
+  if (!userId) return { ...emptyContext(), correlation };
 
   if (!orgId) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.isActive) return emptyContext();
+    if (!user || !user.isActive) return { ...emptyContext(), correlation };
     return {
       userId,
       currentOrgId: null,
       isMember: false,
       roles: [],
       olpEnabled: false,
+      correlation,
     };
   }
 
@@ -140,7 +144,7 @@ export async function loadRequestContext(
     }),
   ]);
 
-  if (!user || !user.isActive) return emptyContext();
+  if (!user || !user.isActive) return { ...emptyContext(), correlation };
 
   return {
     userId,
@@ -148,5 +152,6 @@ export async function loadRequestContext(
     isMember: user.orgMembers.length > 0,
     roles: user.userRoles.map((ur) => ur.role.code),
     olpEnabled: org?.olpEnabled ?? false,
+    correlation,
   };
 }
