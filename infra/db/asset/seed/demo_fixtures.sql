@@ -1,3 +1,11 @@
+-- Demo fixture data for local development and the trainer/sprint demo scripts.
+-- Not a Flyway migration: apply manually after `flyway migrate`, and after
+-- infra/db/access/seed/demo_fixtures.sql (this file's org/user rows mirror IDs
+-- seeded there).
+--
+-- Apply with:
+--   docker exec -i seta-asset-db psql -U asset_user -d asset_db < infra/db/asset/seed/demo_fixtures.sql
+
 INSERT INTO organization_ref (org_id)
 VALUES ('00000000-0000-0000-0000-000000000010')
 ON CONFLICT (org_id) DO NOTHING;

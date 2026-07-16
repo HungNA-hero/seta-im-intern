@@ -489,7 +489,9 @@ boot_services() {
         echo "Services not running. Booting environment..."
         npm run docker:up || exit 1
         npm run docker:migrate || exit 1
-        
+        docker exec -i seta-access-db psql -U access_user -d access_db < "$REPO_ROOT/infra/db/access/seed/demo_fixtures.sql" || exit 1
+        docker exec -i seta-asset-db psql -U asset_user -d asset_db < "$REPO_ROOT/infra/db/asset/seed/demo_fixtures.sql" || exit 1
+
         npm --prefix services/access-core run build || exit 1
         (cd "$ASSET_CORE" && go build -o "$GO_BINARY" ./cmd/server/main.go) || exit 1
 

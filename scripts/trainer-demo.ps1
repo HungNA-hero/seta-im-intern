@@ -492,7 +492,12 @@ function Invoke-BootServices {
             if ($LASTEXITCODE -ne 0) { throw "docker:up failed" }
             & npm.cmd run docker:migrate
             if ($LASTEXITCODE -ne 0) { throw "docker:migrate failed" }
-            
+
+            Get-Content (Join-Path $RepoRoot "infra\db\access\seed\demo_fixtures.sql") | docker exec -i seta-access-db psql -U access_user -d access_db
+            if ($LASTEXITCODE -ne 0) { throw "Access demo seed failed" }
+            Get-Content (Join-Path $RepoRoot "infra\db\asset\seed\demo_fixtures.sql") | docker exec -i seta-asset-db psql -U asset_user -d asset_db
+            if ($LASTEXITCODE -ne 0) { throw "Asset demo seed failed" }
+
             & npm.cmd --prefix services/access-core run build
             if ($LASTEXITCODE -ne 0) { throw "access-core build failed" }
             

@@ -72,15 +72,29 @@ docker compose -f infra/docker-compose.yml --profile migration run --rm flyway-a
 - `folders`
 - `metadata_items`
 - internal Asset DB foreign keys, ltree indexes, and sibling folder name uniqueness
-- demo `Root / Animals / Dogs` seed data
 
 `flyway-access` creates the Access DB baseline:
 - `users`
 - `organizations` with the `olp_enabled` feature flag
 - `organization_members`
 - organization-scoped `roles` and `user_roles`
-- `permission_actions` and `role_permissions`
+- `permission_actions` (the only reference data the application depends on) and `role_permissions`
 - unified `object_permissions` for folder and metadata grants
+
+#### Demo/seed data (optional)
+
+Migrations only seed the `permission_actions` reference rows the application needs to
+function — no demo organization, users, or content. The demo `seta` org, `admin@seta.com`/
+`dungpd@seta.com` users, and `Root / Animals / Dogs` folder tree used by
+`scripts/trainer-demo.sh` and `scripts/sprint4-demo.sh` live in standalone seed scripts,
+applied manually after migrating:
+
+```bash
+docker exec -i seta-access-db psql -U access_user -d access_db < infra/db/access/seed/demo_fixtures.sql
+docker exec -i seta-asset-db psql -U asset_user -d asset_db < infra/db/asset/seed/demo_fixtures.sql
+```
+
+Both demo scripts apply these automatically as part of their own database bootstrap step.
 
 #### Inspect databases
 
@@ -193,9 +207,11 @@ Two PostgreSQL 16 databases, strictly partitioned by owning service:
 - `object_permissions` — single unified table for both folder and metadata-item grants
 
 Migrations live in `infra/db/{asset,access}/migrations/V{n}__{description}.sql`. Schema
-DDL and seed data are always in separate files (`V1__` = schema, `V2__` = seed); seed
-rows use fixed, deterministic UUIDs with `ON CONFLICT DO NOTHING` for idempotent re-runs.
-`access_db` migrations prefix every table reference with `access.`.
+DDL and seed data are always in separate files when both exist (`access_db`'s `V2__` seeds
+only the `permission_actions` reference rows the application depends on); seed rows use
+fixed, deterministic UUIDs with `ON CONFLICT DO NOTHING` for idempotent re-runs. Demo
+fixture data (org/users/roles/folder tree) is not part of any migration — see "Demo/seed
+data (optional)" above. `access_db` migrations prefix every table reference with `access.`.
 
 ## Permission model
 
@@ -224,6 +240,8 @@ grants matter.
 ### Bypasses (checked before mode logic)
 
 1. **`trainer_admin`** — global override, allowed on anything in any org, no queries.
+   Developer/test convenience only: the bypass is automatically inert whenever the service
+   runs with `NODE_ENV=production`.
 2. **`org_admin`** — per-org bypass, full access to everything in that org, no OLP check.
 3. **Root sentinel** (`resourceId === orgId`, used to authorize creating a top-level
    folder) — always decided by RBAC ceiling in both modes, since there's no real folder
@@ -250,8 +268,8 @@ the resource is restored, prior access comes back without re-granting.
 
 ## Demo users & seed data
 
-Seeded by `infra/db/access/migrations/V2__seed_access_schema.sql` and
-`infra/db/asset/migrations/V2__asset_seed_demo_tree.sql`.
+Not seeded by migrations — apply `infra/db/access/seed/demo_fixtures.sql` and
+`infra/db/asset/seed/demo_fixtures.sql` manually (see "Demo/seed data (optional)" above).
 
 **Organization**: `seta` (`00000000-0000-0000-0000-000000000010`), `olp_enabled = false`
 (RBAC mode) by default.
@@ -261,12 +279,12 @@ Seeded by `infra/db/access/migrations/V2__seed_access_schema.sql` and
 | Email | Display name | Role | ID |
 |---|---|---|---|
 | `admin@seta.com` | Seta Admin | `org_admin` | `...0001` |
-| `dungpd@seta.com` | Dung Pham Duc | `viewer` | `...0002` |
+| `dungpd@seta.com` | Dung Pham Duc | `viewer`, `trainer_admin` | `...0002` |
 
 - `org_admin`: RBAC ceiling = all 4 actions on both `folder` and `metadata_item`.
 - `viewer`: RBAC ceiling = `read` only on both resource types.
-- There is no seeded `trainer_admin` user — that role is referenced in code as a global
-  override but has no seed row; create one manually if you need to exercise it.
+- `trainer_admin`: global bypass, seeded on `dungpd@seta.com` for local testing only — inert
+  whenever the service runs with `NODE_ENV=production`.
 
 **Demo asset tree** (`asset_db`, org `seta`): `Root` → `Animals` → `Dogs`, plus a sample
 metadata item, so folder-tree and metadata queries have something to return out of the
