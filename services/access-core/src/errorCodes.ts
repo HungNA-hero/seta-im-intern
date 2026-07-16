@@ -4,7 +4,7 @@ export interface ErrorDefinition {
   message: string;
 }
 
-const definitions: ErrorDefinition[] = [
+export const errorDefinitions: ErrorDefinition[] = [
   { code: "INTERNAL_ERROR", number: 1000, message: "Internal server error, please try again" },
   { code: "BAD_REQUEST", number: 1001, message: "Malformed request body or parameters" },
   { code: "METHOD_NOT_ALLOWED", number: 1002, message: "HTTP method not allowed on this endpoint" },
@@ -32,13 +32,11 @@ const definitions: ErrorDefinition[] = [
   { code: "GRANT_INVALID_TARGET", number: 5002, message: "Grant must target exactly one of user or role" },
 ];
 
-const byCode = new Map(definitions.map((definition) => [definition.code, definition]));
+const byCode = new Map(errorDefinitions.map((definition) => [definition.code, definition]));
 
 const legacyAliases: Record<string, string> = {
   BAD_USER_INPUT: "BAD_REQUEST",
-  CONFLICT: "FOLDER_NAME_CONFLICT",
   INTERNAL_SERVER_ERROR: "INTERNAL_ERROR",
-  NOT_FOUND: "FOLDER_NOT_FOUND",
 };
 
 export function getErrorDefinition(code: unknown): ErrorDefinition {

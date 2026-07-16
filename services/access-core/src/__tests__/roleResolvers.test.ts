@@ -100,7 +100,7 @@ describe("updateRole", () => {
         { id: "role-1", name: "New name" },
         ctx({ currentOrgId: "org-1" }),
       ),
-    ).rejects.toMatchObject({ extensions: { code: "NOT_FOUND" } });
+    ).rejects.toMatchObject({ extensions: { code: "BAD_USER_INPUT" } });
     expect(mockUpdateRole).not.toHaveBeenCalled();
   });
 
@@ -113,7 +113,7 @@ describe("updateRole", () => {
         { id: "role-1", name: "New name" },
         ctx(),
       ),
-    ).rejects.toMatchObject({ extensions: { code: "NOT_FOUND" } });
+    ).rejects.toMatchObject({ extensions: { code: "BAD_USER_INPUT" } });
     expect(mockUpdateRole).not.toHaveBeenCalled();
   });
 

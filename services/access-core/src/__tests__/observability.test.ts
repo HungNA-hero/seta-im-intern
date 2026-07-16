@@ -37,6 +37,20 @@ describe("request correlation", () => {
     );
   });
 
+  it("accepts future traceparent versions with non-empty extension fields", () => {
+    const traceId = "c".repeat(32);
+
+    expect(
+      parseTraceparent(`01-${traceId}-${"d".repeat(16)}-01-future-field`),
+    ).toBe(traceId);
+    expect(
+      parseTraceparent(`00-${traceId}-${"d".repeat(16)}-01-future-field`),
+    ).toBeNull();
+    expect(
+      parseTraceparent(`01-${traceId}-${"d".repeat(16)}-01-`),
+    ).toBeNull();
+  });
+
   it("masks known errors with the stable registry and active trace", () => {
     const correlation = createRequestCorrelation({});
     const masked = runWithRequestCorrelation(correlation, () =>

@@ -15,8 +15,8 @@ const RESOURCE_PATHS: Record<ResourceType, string> = {
 
 /**
  * Verifies through Asset Core that a logical permission target exists in the
- * requested organization. Only a real 404 is exposed as NOT_FOUND; dependency
- * failures are propagated so grant mutations remain fail-closed.
+ * requested organization. A real 404 retains the target's resource-specific
+ * code; dependency failures are propagated so grant mutations remain fail-closed.
  */
 export async function assertResourceInOrg(
   resourceType: ResourceType,
@@ -32,7 +32,9 @@ export async function assertResourceInOrg(
   if (resp.ok) return;
   if (resp.status === 404) {
     throw new GraphQLError("Resource not found in this organization", {
-      extensions: { code: "NOT_FOUND" },
+      extensions: {
+        code: resourceType === "metadata_item" ? "METADATA_NOT_FOUND" : "FOLDER_NOT_FOUND",
+      },
     });
   }
   await throwGoError(resp);

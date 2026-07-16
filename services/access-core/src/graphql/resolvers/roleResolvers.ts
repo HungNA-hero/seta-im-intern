@@ -16,7 +16,7 @@ export const roleResolvers = {
     role: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
       const r = await getRoleById(id);
       if (!r || r.orgId !== ctx.currentOrgId)
-        throw new GraphQLError("Role not found", { extensions: { code: "NOT_FOUND" } });
+        throw new GraphQLError("Role not found", { extensions: { code: "BAD_USER_INPUT" } });
       return serializeDates(r);
     },
   },
@@ -33,7 +33,9 @@ export const roleResolvers = {
       try {
         return serializeDates(await createRole(orgId, code, name, description));
       } catch (err) {
-        rethrowPrismaError(err, { P2002: "Role code already exists in this org" });
+        rethrowPrismaError(err, {
+          P2002: { message: "Role code already exists in this org", errorCode: "BAD_USER_INPUT" },
+        });
       }
     },
     updateRole: async (
@@ -43,7 +45,7 @@ export const roleResolvers = {
     ) => {
       const existing = await getRoleById(id);
       if (!existing || existing.orgId !== ctx.currentOrgId)
-        throw new GraphQLError("Role not found", { extensions: { code: "NOT_FOUND" } });
+        throw new GraphQLError("Role not found", { extensions: { code: "BAD_USER_INPUT" } });
       if (isReservedRoleCode(existing.code)) {
         throw new GraphQLError("Reserved role cannot be modified", {
           extensions: { code: "RESERVED_ROLE_CODE" },
@@ -52,7 +54,9 @@ export const roleResolvers = {
       try {
         return serializeDates(await updateRole(id, name, description));
       } catch (err) {
-        rethrowPrismaError(err, { P2025: "Role not found" });
+        rethrowPrismaError(err, {
+          P2025: { message: "Role not found", errorCode: "BAD_USER_INPUT" },
+        });
       }
     },
   },

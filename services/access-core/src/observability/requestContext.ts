@@ -11,7 +11,9 @@ export interface RequestCorrelation {
 }
 
 const storage = new AsyncLocalStorage<RequestCorrelation>();
-const traceparentPattern = /^([\da-f]{2})-([\da-f]{32})-([\da-f]{16})-([\da-f]{2})$/i;
+const hexBytePattern = /^[\da-f]{2}$/i;
+const traceIdPattern = /^[\da-f]{32}$/i;
+const spanIdPattern = /^[\da-f]{16}$/i;
 const requestIdPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 
 function nonZeroHex(value: string): boolean {
@@ -24,13 +26,19 @@ function randomHex(bytes: number): string {
 
 export function parseTraceparent(value: string | undefined): string | null {
   if (!value) return null;
-  const match = traceparentPattern.exec(value.trim());
-  if (!match) return null;
-  const [, version, traceId, spanId] = match;
+  const parts = value.trim().split("-");
+  if (parts.length < 4) return null;
+  const [version, traceId, spanId, flags, ...extensions] = parts;
   if (
+    !hexBytePattern.test(version) ||
+    !traceIdPattern.test(traceId) ||
+    !spanIdPattern.test(spanId) ||
+    !hexBytePattern.test(flags) ||
     version.toLowerCase() === "ff" ||
-    !isTraceId(traceId) ||
-    !nonZeroHex(spanId)
+    (version === "00" && parts.length !== 4) ||
+    !nonZeroHex(traceId) ||
+    !nonZeroHex(spanId) ||
+    extensions.some((extension) => extension.length === 0)
   ) {
     return null;
   }

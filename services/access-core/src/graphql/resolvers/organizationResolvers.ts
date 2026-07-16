@@ -12,7 +12,7 @@ function assertAssignableRole(
   orgId: string,
 ): void {
   if (!role || role.orgId !== orgId) {
-    throw new GraphQLError("Role not found", { extensions: { code: "NOT_FOUND" } });
+    throw new GraphQLError("Role not found", { extensions: { code: "BAD_USER_INPUT" } });
   }
   if (RESERVED_ROLE_CODES.has(role.code.trim().toLowerCase())) {
     throw new GraphQLError("Reserved role cannot be assigned or revoked", {
@@ -30,7 +30,7 @@ export const organizationResolvers = {
     organizations: async () => (await listOrganizations()).map(toOrganization),
     organization: async (_: unknown, { id }: { id: string }) => {
       const o = await getOrganizationById(id);
-      if (!o) throw new GraphQLError("Organization not found", { extensions: { code: "NOT_FOUND" } });
+      if (!o) throw new GraphQLError("Organization not found", { extensions: { code: "BAD_USER_INPUT" } });
       return toOrganization(o);
     },
   },
@@ -41,7 +41,9 @@ export const organizationResolvers = {
         await addOrgMember(org.id, ctx.userId as string);
         return toOrganization(org);
       } catch (err) {
-        rethrowPrismaError(err, { P2002: "Organization code already in use" });
+        rethrowPrismaError(err, {
+          P2002: { message: "Organization code already in use", errorCode: "BAD_USER_INPUT" },
+        });
       }
     },
     addOrgMember: async (_: unknown, { orgId, userId }: { orgId: string; userId: string }) => {
@@ -49,7 +51,9 @@ export const organizationResolvers = {
         await addOrgMember(orgId, userId);
         return true;
       } catch (err) {
-        rethrowPrismaError(err, { P2002: "User is already a member of this organization" });
+        rethrowPrismaError(err, {
+          P2002: { message: "User is already a member of this organization", errorCode: "BAD_USER_INPUT" },
+        });
       }
     },
     assignRole: async (_: unknown, { orgId, userId, roleId }: { orgId: string; userId: string; roleId: string }) => {
@@ -58,7 +62,9 @@ export const organizationResolvers = {
         await assignRole(orgId, userId, roleId);
         return true;
       } catch (err) {
-        rethrowPrismaError(err, { P2002: "Role already assigned to this user" });
+        rethrowPrismaError(err, {
+          P2002: { message: "Role already assigned to this user", errorCode: "BAD_USER_INPUT" },
+        });
       }
     },
     revokeRole: async (_: unknown, { orgId, userId, roleId }: { orgId: string; userId: string; roleId: string }) => {
@@ -67,7 +73,9 @@ export const organizationResolvers = {
         await revokeRole(orgId, userId, roleId);
         return true;
       } catch (err) {
-        rethrowPrismaError(err, { P2025: "Role assignment not found" });
+        rethrowPrismaError(err, {
+          P2025: { message: "Role assignment not found", errorCode: "BAD_USER_INPUT" },
+        });
       }
     },
   },

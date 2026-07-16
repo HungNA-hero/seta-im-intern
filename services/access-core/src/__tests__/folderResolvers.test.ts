@@ -30,7 +30,7 @@ vi.stubGlobal("fetch", mockFetch);
 import { folderResolvers } from "../graphql/resolvers/folderResolvers";
 import type { GraphQLContext } from "../graphql/context";
 
-// â”€â”€ fixtures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- fixtures -----------------------------------------------------------------
 
 function makeCtx(overrides: Partial<GraphQLContext> = {}): GraphQLContext {
   return {
@@ -98,7 +98,7 @@ beforeEach(() => {
   );
 });
 
-// â”€â”€ Mutation.createFolder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Mutation.createFolder -----------------------------------------------------
 
 describe("Mutation.createFolder", () => {
   const org = "org-1";
@@ -277,7 +277,7 @@ describe("Mutation.createFolder", () => {
   });
 });
 
-// â”€â”€ Mutation.updateFolder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Mutation.updateFolder -----------------------------------------------------
 
 describe("Mutation.updateFolder", () => {
   const org = "org-1";
@@ -356,7 +356,7 @@ describe("Mutation.updateFolder", () => {
     expect(body.description).toBe("New desc");
   });
 
-  test("throws BAD_USER_INPUT when neither name nor description is provided â€” before auth check", async () => {
+  test("throws BAD_USER_INPUT when neither name nor description is provided - before auth check", async () => {
     await expect(
       folderResolvers.Mutation.updateFolder(
         undefined,
@@ -369,7 +369,7 @@ describe("Mutation.updateFolder", () => {
     expect(mockCanDo).not.toHaveBeenCalled();
   });
 
-  test("throws BAD_USER_INPUT when name is null â€” before auth check", async () => {
+  test("throws BAD_USER_INPUT when name is null - before auth check", async () => {
     await expect(
       folderResolvers.Mutation.updateFolder(
         undefined,
@@ -441,7 +441,7 @@ describe("Mutation.updateFolder", () => {
   });
 });
 
-// â”€â”€ Query.folderTree â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Query.folderTree ---------------------------------------------------------
 
 function fetchListOk(goFolders: ReturnType<typeof makeGoFolder>[]) {
   mockFetch.mockResolvedValueOnce({
@@ -575,7 +575,7 @@ describe("Query.folderTree", () => {
     expect(url).toContain("rootPath=docs");
   });
 
-  test("maps Go error codes (403 â†’ FORBIDDEN, not INTERNAL_SERVER_ERROR)", async () => {
+  test("maps Go error codes (403 -> FORBIDDEN, not INTERNAL_SERVER_ERROR)", async () => {
     fetchError(403);
     await expect(
       folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx),
@@ -598,7 +598,7 @@ describe("Query.folderTree", () => {
   });
 });
 
-// â”€â”€ Query.folderChildren â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Query.folderChildren ------------------------------------------------------
 
 describe("Query.folderChildren", () => {
   const org = "org-1";
@@ -662,7 +662,7 @@ describe("Query.folderChildren", () => {
     expect(mockCanDo).not.toHaveBeenCalled();
   });
 
-  test("maps Go error codes (403 â†’ FORBIDDEN)", async () => {
+  test("maps Go error codes (403 -> FORBIDDEN)", async () => {
     fetchError(403);
     await expect(
       folderResolvers.Query.folderChildren(
@@ -676,7 +676,7 @@ describe("Query.folderChildren", () => {
   });
 });
 
-// â”€â”€ Folder.children â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Folder.children -----------------------------------------------------------
 
 describe("Folder.children", () => {
   const ctx = makeCtx();
@@ -787,7 +787,7 @@ describe("Folder.children", () => {
   });
 });
 
-// â”€â”€ Query.folder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Query.folder --------------------------------------------------------------
 
 describe("Query.folder", () => {
   const org = "org-1";
@@ -879,7 +879,7 @@ describe("Query.folder", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  test("maps non-404 Go errors via GO_ERROR_CODES (403 â†’ FORBIDDEN)", async () => {
+  test("maps non-404 Go errors via GO_ERROR_CODES (403 -> FORBIDDEN)", async () => {
     fetchError(403);
     await expect(
       folderResolvers.Query.folder(
@@ -893,7 +893,7 @@ describe("Query.folder", () => {
   });
 });
 
-// â”€â”€ Mutation.moveFolder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Mutation.moveFolder -------------------------------------------------------
 
 describe("Mutation.moveFolder", () => {
   const org = "org-1";
@@ -1090,7 +1090,7 @@ describe("Mutation.moveFolder", () => {
   });
 });
 
-// â”€â”€ Mutation.deleteFolder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Mutation.deleteFolder -----------------------------------------------------
 
 describe("Mutation.deleteFolder", () => {
   const org = "org-1";

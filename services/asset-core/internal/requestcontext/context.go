@@ -68,14 +68,21 @@ func RecordError(ctx context.Context, code string, number int) {
 
 func ParseTraceparent(value string) (string, bool) {
 	parts := strings.Split(strings.TrimSpace(value), "-")
-	if len(parts) != 4 || len(parts[0]) != 2 || len(parts[1]) != 32 || len(parts[2]) != 16 || len(parts[3]) != 2 {
+	if len(parts) < 4 || len(parts[0]) != 2 || len(parts[1]) != 32 || len(parts[2]) != 16 || len(parts[3]) != 2 {
 		return "", false
 	}
-	if strings.EqualFold(parts[0], "ff") || allZero(parts[1]) || allZero(parts[2]) {
+	if strings.EqualFold(parts[0], "ff") ||
+		(strings.EqualFold(parts[0], "00") && len(parts) != 4) ||
+		allZero(parts[1]) || allZero(parts[2]) {
 		return "", false
 	}
-	for _, part := range parts {
+	for _, part := range parts[:4] {
 		if _, err := hex.DecodeString(part); err != nil {
+			return "", false
+		}
+	}
+	for _, part := range parts[4:] {
+		if part == "" {
 			return "", false
 		}
 	}

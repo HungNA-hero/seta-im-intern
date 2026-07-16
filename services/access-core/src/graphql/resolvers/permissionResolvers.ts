@@ -25,7 +25,7 @@ export const permissionResolvers = {
     ) => {
       const role = await getRoleById(roleId);
       if (!role || role.orgId !== ctx.currentOrgId) {
-        throw new GraphQLError("Role not found", { extensions: { code: "NOT_FOUND" } });
+        throw new GraphQLError("Role not found", { extensions: { code: "BAD_USER_INPUT" } });
       }
       return listRolePermissions(roleId);
     },
@@ -66,7 +66,7 @@ export const permissionResolvers = {
         throw new GraphQLError(
           "Exactly one of granteeUserId or granteeRoleId must be set",
           {
-            extensions: { code: "BAD_USER_INPUT" },
+            extensions: { code: "GRANT_INVALID_TARGET" },
           },
         );
       }
@@ -113,8 +113,8 @@ export const permissionResolvers = {
         );
       } catch (err) {
         rethrowPrismaError(err, {
-          P2002: "Object permission already exists",
-          P2025: "Permission action not found",
+          P2002: { message: "Object permission already exists", errorCode: "BAD_USER_INPUT" },
+          P2025: { message: "Permission action not found", errorCode: "UNKNOWN_ACTION" },
         });
       }
     },
@@ -127,7 +127,7 @@ export const permissionResolvers = {
       const existing = await getObjectPermissionById(id);
       if (!existing) {
         throw new GraphQLError("Object permission not found", {
-          extensions: { code: "NOT_FOUND" },
+          extensions: { code: "GRANT_NOT_FOUND" },
         });
       }
       if (ctx.currentOrgId !== existing.orgId) {

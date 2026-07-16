@@ -64,6 +64,9 @@ func writeError(w http.ResponseWriter, r *http.Request, status int, code string)
 	})
 }
 
+// writeLegacyError is a temporary classifier for handlers that still return
+// legacy literals. It always delegates to writeError, the single safe-envelope
+// emitter, until those handlers are migrated to explicit error codes.
 func writeLegacyError(w http.ResponseWriter, r *http.Request, message string, status int) {
 	code := "INTERNAL_ERROR"
 	switch message {

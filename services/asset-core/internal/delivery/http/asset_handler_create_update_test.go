@@ -228,11 +228,12 @@ func TestHandleCreateFolder_MapsDomainErrors(t *testing.T) {
 		name       string
 		err        error
 		wantStatus int
+		wantCode   string
 	}{
-		{name: "not found", err: domain.ErrFolderNotFound, wantStatus: http.StatusNotFound},
-		{name: "conflict", err: domain.ErrFolderConflict, wantStatus: http.StatusConflict},
-		{name: "invalid input", err: domain.ErrInvalidInput, wantStatus: http.StatusBadRequest},
-		{name: "internal error", err: errors.New("database unavailable"), wantStatus: http.StatusInternalServerError},
+		{name: "not found", err: domain.ErrFolderNotFound, wantStatus: http.StatusNotFound, wantCode: "FOLDER_NOT_FOUND"},
+		{name: "conflict", err: domain.ErrFolderConflict, wantStatus: http.StatusConflict, wantCode: "FOLDER_NAME_CONFLICT"},
+		{name: "invalid input", err: domain.ErrInvalidInput, wantStatus: http.StatusBadRequest, wantCode: "BAD_REQUEST"},
+		{name: "internal error", err: errors.New("database unavailable"), wantStatus: http.StatusInternalServerError, wantCode: "INTERNAL_ERROR"},
 	}
 
 	for _, testCase := range tests {
@@ -255,6 +256,17 @@ func TestHandleCreateFolder_MapsDomainErrors(t *testing.T) {
 
 			if response.Code != testCase.wantStatus {
 				t.Fatalf("expected status %d, got %d", testCase.wantStatus, response.Code)
+			}
+			var payload struct {
+				Error struct {
+					Code string `json:"code"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+				t.Fatalf("decode error response: %v", err)
+			}
+			if payload.Error.Code != testCase.wantCode {
+				t.Fatalf("expected error code %q, got %q", testCase.wantCode, payload.Error.Code)
 			}
 		})
 	}

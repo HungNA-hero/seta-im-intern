@@ -257,7 +257,7 @@ func (h *AssetHandler) handleCreateFolder(w http.ResponseWriter, r *http.Request
 
 	folder, err := h.usecase.CreateFolder(r.Context(), orgID, actor.UserID, input)
 	if err != nil {
-		h.mapDomainError(w, r, err)
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
 		return
 	}
 
@@ -298,7 +298,7 @@ func (h *AssetHandler) handleUpdateFolder(w http.ResponseWriter, r *http.Request
 
 	folder, err := h.usecase.UpdateFolder(r.Context(), orgID, actor.UserID, folderID, input)
 	if err != nil {
-		h.mapDomainError(w, r, err)
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
 		return
 	}
 
@@ -326,7 +326,7 @@ func (h *AssetHandler) handleDeleteFolder(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := h.usecase.DeleteFolder(r.Context(), orgID, actor.UserID, folderID); err != nil {
-		h.mapDomainError(w, r, err)
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
 		return
 	}
 
@@ -380,7 +380,7 @@ func (h *AssetHandler) HandleMoveFolder(w http.ResponseWriter, r *http.Request) 
 
 	folder, err := h.usecase.MoveFolder(r.Context(), orgID, actor.UserID, folderID, input)
 	if err != nil {
-		h.mapDomainError(w, r, err)
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
 		return
 	}
 
@@ -391,7 +391,9 @@ func (h *AssetHandler) HandleMoveFolder(w http.ResponseWriter, r *http.Request) 
 }
 
 // mapDomainError converts typed domain failures into stable internal REST status codes.
-func (h *AssetHandler) mapDomainError(w http.ResponseWriter, r *http.Request, err error) {
+// The caller supplies the resource-specific invalid-input code because the shared domain
+// sentinel is intentionally used by both folder and metadata validation paths.
+func (h *AssetHandler) mapDomainError(w http.ResponseWriter, r *http.Request, err error, invalidInputCode string) {
 	switch {
 	case errors.Is(err, domain.ErrFolderNotFound):
 		writeError(w, r, http.StatusNotFound, "FOLDER_NOT_FOUND")
@@ -406,7 +408,7 @@ func (h *AssetHandler) mapDomainError(w http.ResponseWriter, r *http.Request, er
 	case errors.Is(err, domain.ErrMetadataConflict):
 		writeError(w, r, http.StatusConflict, "METADATA_IDENTITY_CONFLICT")
 	case errors.Is(err, domain.ErrInvalidInput):
-		writeError(w, r, http.StatusBadRequest, "METADATA_VALIDATION_ERROR")
+		writeError(w, r, http.StatusBadRequest, invalidInputCode)
 	default:
 		writeError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR")
 	}
@@ -476,7 +478,7 @@ func (h *AssetHandler) handleGetMetadataItems(w http.ResponseWriter, r *http.Req
 		}
 		item, err := h.usecase.GetMetadataItemByID(r.Context(), orgID, id)
 		if err != nil {
-			h.mapDomainError(w, r, err)
+			h.mapDomainError(w, r, err, "METADATA_VALIDATION_ERROR")
 			return
 		}
 		writeJSON(w, r, http.StatusOK, map[string]any{
@@ -493,7 +495,7 @@ func (h *AssetHandler) handleGetMetadataItems(w http.ResponseWriter, r *http.Req
 		}
 		items, err := h.usecase.GetMetadataItemsByFolder(r.Context(), orgID, folderID)
 		if err != nil {
-			h.mapDomainError(w, r, err)
+			h.mapDomainError(w, r, err, "METADATA_VALIDATION_ERROR")
 			return
 		}
 		if items == nil {
@@ -534,7 +536,7 @@ func (h *AssetHandler) handleCreateMetadataItem(w http.ResponseWriter, r *http.R
 
 	item, err := h.usecase.CreateMetadataItem(r.Context(), orgID, actor.UserID, input)
 	if err != nil {
-		h.mapDomainError(w, r, err)
+		h.mapDomainError(w, r, err, "METADATA_VALIDATION_ERROR")
 		return
 	}
 
@@ -606,7 +608,7 @@ func (h *AssetHandler) handleUpdateMetadataItem(w http.ResponseWriter, r *http.R
 
 	item, err := h.usecase.UpdateMetadataItem(r.Context(), orgID, actor.UserID, id, input)
 	if err != nil {
-		h.mapDomainError(w, r, err)
+		h.mapDomainError(w, r, err, "METADATA_VALIDATION_ERROR")
 		return
 	}
 
@@ -634,7 +636,7 @@ func (h *AssetHandler) handleDeleteMetadataItem(w http.ResponseWriter, r *http.R
 	}
 
 	if err := h.usecase.DeleteMetadataItem(r.Context(), orgID, actor.UserID, id); err != nil {
-		h.mapDomainError(w, r, err)
+		h.mapDomainError(w, r, err, "METADATA_VALIDATION_ERROR")
 		return
 	}
 
@@ -715,7 +717,7 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 
 	items, err := h.usecase.SearchMetadataItems(r.Context(), orgID, filter)
 	if err != nil {
-		h.mapDomainError(w, r, err)
+		h.mapDomainError(w, r, err, "METADATA_VALIDATION_ERROR")
 		return
 	}
 
@@ -789,6 +791,7 @@ func writeJSON(w http.ResponseWriter, r *http.Request, statusCode int, payload a
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
+		// The response is already committed, so only record the serialization failure.
 		requestcontext.RecordError(r.Context(), "INTERNAL_ERROR", 1000)
 	}
 }

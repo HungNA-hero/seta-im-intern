@@ -132,11 +132,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     context: (ctx) => {
       const h = (k: string) =>
         (ctx.fastifyRequest.headers[k] as string | undefined) ?? null;
-      return loadRequestContext(
-        h("x-user-id"),
-        h("x-org-id"),
-        ctx.fastifyRequest.correlation,
-      );
+      return loadRequestContext(h("x-user-id"), h("x-org-id"));
     },
   });
 
