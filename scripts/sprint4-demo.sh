@@ -302,8 +302,10 @@ run() {
     npm run clean:all || { die "Initial volume reset failed"; return 1; }
     npm run docker:up || { die "Database startup failed"; return 1; }
     npm run docker:migrate || { die "Flyway migration failed"; return 1; }
-    assert_equal "2" "$(invoke_psql "seta-asset-db" "asset_user" "asset_db" "SELECT MAX(version) FROM flyway_schema_history;")" "Asset Flyway version" || return 1
+    assert_equal "1" "$(invoke_psql "seta-asset-db" "asset_user" "asset_db" "SELECT MAX(version) FROM flyway_schema_history;")" "Asset Flyway version" || return 1
     assert_equal "2" "$(invoke_psql "seta-access-db" "access_user" "access_db" "SELECT MAX(version) FROM flyway_schema_history;")" "Access Flyway version" || return 1
+    docker exec -i seta-access-db psql -U access_user -d access_db < "$REPO_ROOT/infra/db/access/seed/demo_fixtures.sql" || { die "Access demo seed failed"; return 1; }
+    docker exec -i seta-asset-db psql -U asset_user -d asset_db < "$REPO_ROOT/infra/db/asset/seed/demo_fixtures.sql" || { die "Asset demo seed failed"; return 1; }
     read -r base_folders base_metadata base_permissions < <(get_namespace_counts)
     assert_equal "0" "$base_folders" "FD-01 folder namespace must start empty" || return 1
     assert_equal "0" "$base_metadata" "FD-01 metadata namespace must start empty" || return 1

@@ -15,6 +15,8 @@ $ErrorActionPreference = "Stop"
 $WorkspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $AssetCore = Join-Path $WorkspaceRoot "services\asset-core"
 $AccessCore = Join-Path $WorkspaceRoot "services\access-core"
+$AssetSeed = Join-Path $WorkspaceRoot "infra\db\asset\seed\demo_fixtures.sql"
+$AccessSeed = Join-Path $WorkspaceRoot "infra\db\access\seed\demo_fixtures.sql"
 $RunId = "kan44-$PID"
 $NodeStdout = Join-Path $env:TEMP "$RunId-node.stdout.log"
 $NodeStderr = Join-Path $env:TEMP "$RunId-node.stderr.log"
@@ -83,6 +85,8 @@ try {
     }
     Invoke-Checked { npm run docker:up } "Docker database startup"
     Invoke-Checked { npm run docker:migrate } "Flyway migration"
+    Invoke-Checked { Get-Content $AccessSeed | docker exec -i seta-access-db psql -U access_user -d access_db } "Access demo seed"
+    Invoke-Checked { Get-Content $AssetSeed | docker exec -i seta-asset-db psql -U asset_user -d asset_db } "Asset demo seed"
 
     Write-Host "2. Running disposable full E2E regression"
     & powershell -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\run_e2e.ps1"

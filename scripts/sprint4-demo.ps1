@@ -186,8 +186,10 @@ try {
         Invoke-Checked { npm run clean:all } "Initial volume reset"
         Invoke-Checked { npm run docker:up } "Database startup"
         Invoke-Checked { npm run docker:migrate } "Flyway migration"
-        Assert-Equal "2" (Invoke-Psql "seta-asset-db" "asset_user" "asset_db" "SELECT MAX(version) FROM flyway_schema_history;") "Asset Flyway version"
+        Assert-Equal "1" (Invoke-Psql "seta-asset-db" "asset_user" "asset_db" "SELECT MAX(version) FROM flyway_schema_history;") "Asset Flyway version"
         Assert-Equal "2" (Invoke-Psql "seta-access-db" "access_user" "access_db" "SELECT MAX(version) FROM flyway_schema_history;") "Access Flyway version"
+        Invoke-Checked { Get-Content (Join-Path $RepoRoot "infra\db\access\seed\demo_fixtures.sql") | docker exec -i seta-access-db psql -U access_user -d access_db } "Access demo seed"
+        Invoke-Checked { Get-Content (Join-Path $RepoRoot "infra\db\asset\seed\demo_fixtures.sql") | docker exec -i seta-asset-db psql -U asset_user -d asset_db } "Asset demo seed"
         $Baseline = Get-NamespaceCounts
         Assert-Equal 0 $Baseline.Folders "FD-01 folder namespace must start empty"
         Assert-Equal 0 $Baseline.Metadata "FD-01 metadata namespace must start empty"

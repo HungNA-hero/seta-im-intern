@@ -3,6 +3,8 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $AssetMigrations = Join-Path $RepoRoot "infra/db/asset/migrations"
 $AccessMigrations = Join-Path $RepoRoot "infra/db/access/migrations"
+$AssetSeed = Join-Path $RepoRoot "infra/db/asset/seed/demo_fixtures.sql"
+$AccessSeed = Join-Path $RepoRoot "infra/db/access/seed/demo_fixtures.sql"
 $AssetCore = Join-Path $RepoRoot "services/asset-core"
 $AccessCore = Join-Path $RepoRoot "services/access-core"
 $RunId = "metadata-e2e-$PID"
@@ -85,6 +87,12 @@ try {
         -user=access_user -password=access_password `
         -locations=filesystem:/flyway/sql -connectRetries=60 migrate
     if ($LASTEXITCODE -ne 0) { throw "Access Flyway migration failed" }
+
+    Write-Host "Applying explicit E2E fixtures..."
+    Get-Content $AccessSeed | docker exec -i $AccessContainer psql -U access_user -d access_db
+    if ($LASTEXITCODE -ne 0) { throw "Access E2E seed failed" }
+    Get-Content $AssetSeed | docker exec -i $AssetContainer psql -U asset_user -d asset_db
+    if ($LASTEXITCODE -ne 0) { throw "Asset E2E seed failed" }
 
     Write-Host "Starting Go Asset Core..."
     $env:ASSET_DB_HOST = "127.0.0.1"
