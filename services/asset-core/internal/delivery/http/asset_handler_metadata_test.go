@@ -256,6 +256,110 @@ func TestHandleMetadata_SearchRejectsMalformedPagination(t *testing.T) {
 	}
 }
 
+// TestHandleMetadata_CursorSearch verifies the internal keyset contract keeps
+// one raw look-ahead row out of the candidate response and exposes hasMore.
+func TestHandleMetadata_CursorSearch(t *testing.T) {
+	mux := http.NewServeMux()
+	orgID := uuid.NewString()
+	folderID := uuid.NewString()
+	usecase := &fakeAssetUsecase{metadataItemsResp: []domain.MetadataItem{
+		{ID: uuid.NewString()},
+		{ID: uuid.NewString()},
+		{ID: uuid.NewString()},
+	}}
+	assetHTTP.NewAssetHandler(mux, usecase, nil)
+
+	target := "/internal/api/v1/metadata-items/search?orgId=" + orgID + "&folderId=" + folderID + "&cursor=true&limit=2"
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, metadataRequest(http.MethodGet, target, orgID, ""))
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK, got %d", response.Code)
+	}
+	if !usecase.metadataSearchInput.Keyset || usecase.metadataSearchInput.Limit != 3 || usecase.metadataSearchInput.Offset != 0 {
+		t.Fatalf("unexpected keyset input: %#v", usecase.metadataSearchInput)
+	}
+	var payload struct {
+		Count   int                   `json:"count"`
+		Items   []domain.MetadataItem `json:"items"`
+		HasMore bool                  `json:"hasMore"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if payload.Count != 2 || len(payload.Items) != 2 || !payload.HasMore {
+		t.Fatalf("expected two candidates and hasMore, got %#v", payload)
+	}
+}
+
+// TestHandleMetadata_CursorSearchRejectsMalformedAfter verifies malformed
+// internal continuation tuples fail closed with the public cursor contract.
+func TestHandleMetadata_CursorSearchRejectsMalformedAfter(t *testing.T) {
+	mux := http.NewServeMux()
+	fakeUsecase := &fakeAssetUsecase{}
+	assetHTTP.NewAssetHandler(mux, fakeUsecase, nil)
+
+	orgID := uuid.NewString()
+	target := "/internal/api/v1/metadata-items/search?orgId=" + orgID + "&folderId=" + uuid.NewString() + "&cursor=true&limit=2&afterUpdatedAt=not-a-time&afterId=not-a-uuid"
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, metadataRequest(http.MethodGet, target, orgID, ""))
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 Bad Request, got %d", response.Code)
+	}
+	var payload struct {
+		Error struct {
+			Code   string `json:"code"`
+			Number int    `json:"number"`
+		} `json:"error"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode error response: %v", err)
+	}
+	if payload.Error.Code != "CURSOR_INVALID" || payload.Error.Number != 1003 {
+		t.Fatalf("expected CURSOR_INVALID/1003, got %#v", payload.Error)
+	}
+	if fakeUsecase.called {
+		t.Fatal("expected malformed cursor to stop before the use case")
+	}
+}
+
+// TestHandleMetadata_CursorSearchRejectsInvalidLimit keeps the internal
+// candidate-batch bound aligned with Access Core's public first range.
+func TestHandleMetadata_CursorSearchRejectsInvalidLimit(t *testing.T) {
+	for _, limit := range []string{"0", "102"} {
+		t.Run("limit="+limit, func(t *testing.T) {
+			mux := http.NewServeMux()
+			fakeUsecase := &fakeAssetUsecase{}
+			assetHTTP.NewAssetHandler(mux, fakeUsecase, nil)
+
+			orgID := uuid.NewString()
+			target := "/internal/api/v1/metadata-items/search?orgId=" + orgID + "&folderId=" + uuid.NewString() + "&cursor=true&limit=" + limit
+			response := httptest.NewRecorder()
+			mux.ServeHTTP(response, metadataRequest(http.MethodGet, target, orgID, ""))
+
+			if response.Code != http.StatusBadRequest {
+				t.Fatalf("expected 400 Bad Request, got %d", response.Code)
+			}
+			var payload struct {
+				Error struct {
+					Code   string `json:"code"`
+					Number int    `json:"number"`
+				} `json:"error"`
+			}
+			if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
+				t.Fatalf("decode error response: %v", err)
+			}
+			if payload.Error.Code != "CURSOR_INVALID" || payload.Error.Number != 1003 {
+				t.Fatalf("expected CURSOR_INVALID/1003, got %#v", payload.Error)
+			}
+			if fakeUsecase.called {
+				t.Fatal("expected invalid cursor limit to stop before the use case")
+			}
+		})
+	}
+}
+
 // TestHandleMetadata_Delete verifies DELETE routing.
 func TestHandleMetadata_Delete(t *testing.T) {
 	mux := http.NewServeMux()

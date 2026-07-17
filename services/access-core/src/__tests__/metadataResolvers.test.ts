@@ -100,10 +100,23 @@ function fetchListOk(items: ReturnType<typeof makeGoMetadataItem>[]) {
   });
 }
 
+/** Configures one successful internal keyset candidate page. */
+function fetchCursorPageOk(
+  items: ReturnType<typeof makeGoMetadataItem>[],
+  hasMore: boolean,
+) {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    status: 200,
+    json: async () => ({ status: "success", count: items.length, items, hasMore }),
+  });
+}
+
 /** Configures one trusted Asset Core error envelope. */
 function fetchError(status: number) {
   const errorByStatus: Record<number, [string, number]> = {
     400: ["BAD_REQUEST", 1001],
+    1003: ["CURSOR_INVALID", 1003],
     401: ["UNAUTHENTICATED", 2001],
     403: ["FORBIDDEN", 2003],
     404: ["METADATA_NOT_FOUND", 4001],
@@ -700,6 +713,7 @@ describe("Query.searchMetadata", () => {
     [{ limit: 0, query: "valid" }, "limit"],
     [{ limit: 101, query: "valid" }, "limit"],
     [{ offset: -1, query: "valid" }, "offset"],
+    [{ offset: 10001, query: "valid" }, "offset"],
     [{}, "filter"],
   ])("rejects invalid search input before Go: %s", async (input, message) => {
     await expect(
@@ -765,6 +779,119 @@ describe("Query.searchMetadata", () => {
     expect(url).toContain("externalSource=ext1");
     expect(url).toContain("limit=20");
     expect(url).toContain("offset=5");
+  });
+});
+
+// -- Query.searchMetadataConnection ------------------------------------------
+
+describe("Query.searchMetadataConnection", () => {
+  const org = "org-1";
+  const ctx = makeCtx();
+  const idA = "00000000-0000-4000-8000-000000000001";
+  const idB = "00000000-0000-4000-8000-000000000002";
+  const idC = "00000000-0000-4000-8000-000000000003";
+
+  test("fills a visible page across candidate batches without exposing denied cursor state", async () => {
+    const timestamp = "2026-07-17T10:00:00.000000000Z";
+    fetchCursorPageOk(
+      [
+        makeGoMetadataItem({ id: idA, updated_at: timestamp }),
+        makeGoMetadataItem({ id: idB, updated_at: timestamp }),
+      ],
+      true,
+    );
+    fetchCursorPageOk([makeGoMetadataItem({ id: idC, updated_at: timestamp })], false);
+    mockFilterAllowedResourceIds
+      .mockResolvedValueOnce(new Set([idA]))
+      .mockResolvedValueOnce(new Set([idC]));
+
+    const result = await metadataResolvers.Query.searchMetadataConnection(
+      undefined,
+      { orgId: org, input: { folderId: "folder-1", first: 1 } },
+      ctx,
+    );
+
+    expect(result.nodes).toEqual([expect.objectContaining({ id: idA })]);
+    expect(result.pageInfo.hasNextPage).toBe(true);
+    expect(result.pageInfo.endCursor).not.toBeNull();
+    const cursorPayload = JSON.parse(
+      Buffer.from(result.pageInfo.endCursor!, "base64url").toString("utf8"),
+    );
+    expect(cursorPayload.id).toBe(idA);
+    expect(mockFetch.mock.calls[1][0]).toContain(`afterId=${idB}`);
+    expect(mockFetch.mock.calls[1][0]).toContain("cursor=true");
+  });
+
+  test("returns CURSOR_INVALID before Asset Core for a malformed public cursor", async () => {
+    await expect(
+      metadataResolvers.Query.searchMetadataConnection(
+        undefined,
+        { orgId: org, input: { folderId: "folder-1", first: 1, after: "bad" } },
+        ctx,
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({
+        extensions: expect.objectContaining({ code: "CURSOR_INVALID", number: 1003 }),
+      }),
+    );
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test.each([0, 101])("rejects first=%i outside the public connection limit", async (first) => {
+    await expect(
+      metadataResolvers.Query.searchMetadataConnection(
+        undefined,
+        { orgId: org, input: { folderId: "folder-1", first } },
+        ctx,
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }) }),
+    );
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("preserves Asset Core stale cursor contract and trace boundary", async () => {
+    const cursor = Buffer.from(
+      JSON.stringify({ v: 1, updatedAt: "2026-07-17T10:00:00Z", id: idA }),
+    ).toString("base64url");
+    fetchError(1003);
+
+    await expect(
+      metadataResolvers.Query.searchMetadataConnection(
+        undefined,
+        { orgId: org, input: { folderId: "folder-1", after: cursor } },
+        ctx,
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({
+        extensions: expect.objectContaining({ code: "CURSOR_INVALID", number: 1003 }),
+      }),
+    );
+  });
+
+  test("fails closed after ten sparse authorization candidate batches", async () => {
+    for (let batch = 0; batch < 10; batch += 1) {
+      fetchCursorPageOk(
+        [
+          makeGoMetadataItem({
+            id: `00000000-0000-4000-8000-${String(batch + 10).padStart(12, "0")}`,
+          }),
+        ],
+        true,
+      );
+    }
+    mockFilterAllowedResourceIds.mockResolvedValue(new Set());
+
+    await expect(
+      metadataResolvers.Query.searchMetadataConnection(
+        undefined,
+        { orgId: org, input: { folderId: "folder-1", first: 1 } },
+        ctx,
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "INTERNAL_ERROR" }) }),
+    );
+    expect(mockFetch).toHaveBeenCalledTimes(10);
   });
 });
 

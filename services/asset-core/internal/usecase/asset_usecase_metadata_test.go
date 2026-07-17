@@ -179,6 +179,41 @@ func TestAssetUsecase_SearchMetadata_Validation(t *testing.T) {
 	}
 }
 
+func TestAssetUsecase_SearchMetadata_KeysetValidation(t *testing.T) {
+	repo := &fakeAssetRepo{}
+	uc := usecase.NewAssetUsecase(repo)
+	folderID := "folder-1"
+	afterID := "item-1"
+
+	_, err := uc.SearchMetadataItems(context.Background(), "org-1", domain.MetadataSearchFilter{
+		Keyset:   true,
+		FolderID: &folderID,
+		Limit:    101,
+	})
+	if err != nil {
+		t.Fatalf("expected first keyset page to be valid, got %v", err)
+	}
+
+	_, err = uc.SearchMetadataItems(context.Background(), "org-1", domain.MetadataSearchFilter{
+		Keyset:  true,
+		Limit:   101,
+		AfterID: &afterID,
+	})
+	if !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("expected missing folder to be rejected, got %v", err)
+	}
+
+	_, err = uc.SearchMetadataItems(context.Background(), "org-1", domain.MetadataSearchFilter{
+		Keyset:   true,
+		FolderID: &folderID,
+		Limit:    101,
+		AfterID:  &afterID,
+	})
+	if !errors.Is(err, domain.ErrCursorInvalid) {
+		t.Fatalf("expected incomplete continuation tuple to be rejected, got %v", err)
+	}
+}
+
 // TestAssetUsecase_DeleteMetadataItem verifies delete delegation to the repository boundary.
 func TestAssetUsecase_DeleteMetadataItem(t *testing.T) {
 	repo := &fakeAssetRepo{}

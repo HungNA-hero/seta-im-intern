@@ -307,11 +307,25 @@ func (u *assetUsecase) DeleteMetadataItem(ctx context.Context, orgID, userID, id
 
 // SearchMetadataItems searches for metadata items based on the provided filter within the organization.
 func (u *assetUsecase) SearchMetadataItems(ctx context.Context, orgID string, filter domain.MetadataSearchFilter) ([]domain.MetadataItem, error) {
-	if filter.Limit <= 0 || filter.Limit > 100 {
+	maxLimit := 100
+	if filter.Keyset {
+		// The cursor handler requests one additional raw row to determine whether
+		// another candidate batch exists; GraphQL still caps public first at 100.
+		maxLimit = 102
+	}
+	if filter.Limit <= 0 || filter.Limit > maxLimit {
 		return nil, domain.ErrInvalidInput
 	}
 	if filter.Offset < 0 {
 		return nil, domain.ErrInvalidInput
+	}
+	if filter.Keyset {
+		if filter.FolderID == nil || strings.TrimSpace(*filter.FolderID) == "" || filter.Offset != 0 {
+			return nil, domain.ErrInvalidInput
+		}
+		if (filter.AfterUpdatedAt == nil) != (filter.AfterID == nil) {
+			return nil, domain.ErrCursorInvalid
+		}
 	}
 
 	hasSubstantiveFilter := false

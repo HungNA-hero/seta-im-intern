@@ -29,6 +29,10 @@ const ROOT_FOLDER_ID = "10000000-0000-0000-0000-000000000000";
 const USER_ID = "00000000-0000-0000-0000-000000000001";
 const SEARCH_ALLOWED_ID = "20000000-0000-0000-0000-000000000101";
 const SEARCH_DENIED_ID = "20000000-0000-0000-0000-000000000102";
+const CURSOR_ALLOWED_FIRST_ID = "20000000-0000-0000-0000-000000000108";
+const CURSOR_DENIED_ID = "20000000-0000-0000-0000-000000000109";
+const CURSOR_ALLOWED_SECOND_ID = "20000000-0000-0000-0000-000000000110";
+const CURSOR_ALLOWED_THIRD_ID = "20000000-0000-0000-0000-000000000111";
 const SEARCH_DELETED_ID = "20000000-0000-0000-0000-000000000103";
 const SEARCH_DELETED_FOLDER_ITEM_ID = "20000000-0000-0000-0000-000000000104";
 const SEARCH_CROSS_ORG_ID = "20000000-0000-0000-0000-000000000105";
@@ -54,6 +58,11 @@ interface MetadataSummary {
   id: string;
   title: string;
   labels: string[];
+}
+
+interface MetadataConnectionResult {
+  nodes: Array<Pick<MetadataSummary, "id" | "title">>;
+  pageInfo: { endCursor: string | null; hasNextPage: boolean };
 }
 
 let app: FastifyInstance;
@@ -643,7 +652,97 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     expect(mockFilterAllowedResourceIds).toHaveBeenCalledTimes(1);
   });
 
-  test("14. aborts search without partial data on a policy exception", async () => {
+  test("14. traverses authorized cursor pages without gaps, duplicates, or denied tuples", async () => {
+    const stableTime = "2026-07-04T00:00:00.000Z";
+    await assetDb.query(
+      `INSERT INTO metadata_items
+         (id, folder_id, title, labels, metadata_json, created_by, updated_at, deleted_at)
+       VALUES
+         ($1, $5, 'E2E: Cursor Allowed First', ARRAY['cursor'], '{}'::jsonb, $6, $7, NULL),
+         ($2, $5, 'E2E: Cursor Denied', ARRAY['cursor'], '{}'::jsonb, $6, $7, NULL),
+         ($3, $5, 'E2E: Cursor Allowed Second', ARRAY['cursor'], '{}'::jsonb, $6, $7, NULL),
+         ($4, $5, 'E2E: Cursor Allowed Third', ARRAY['cursor'], '{}'::jsonb, $6, $7, NULL)`,
+      [
+        CURSOR_ALLOWED_FIRST_ID,
+        CURSOR_DENIED_ID,
+        CURSOR_ALLOWED_SECOND_ID,
+        CURSOR_ALLOWED_THIRD_ID,
+        ROOT_FOLDER_ID,
+        USER_ID,
+        stableTime,
+      ],
+    );
+
+    mockFilterAllowedResourceIds.mockImplementation(
+      async (
+        _userId: string,
+        _orgId: string,
+        _action: string,
+        _type: string,
+        ids: string[],
+      ) => new Set(ids.filter((id) => id !== CURSOR_DENIED_ID)),
+    );
+
+    const searchConnection = (after?: string, extraHeaders: Record<string, string> = {}) =>
+      queryGraphQL<{ searchMetadataConnection: MetadataConnectionResult }>(
+        `query($orgId: ID!, $input: MetadataConnectionSearchInput!) {
+          searchMetadataConnection(orgId: $orgId, input: $input) {
+            nodes { id title }
+            pageInfo { endCursor hasNextPage }
+          }
+        }`,
+        {
+          orgId: ORG_ID,
+          input: { folderId: ROOT_FOLDER_ID, query: "E2E: Cursor", labels: ["cursor"], first: 1, after },
+        },
+        USER_ID,
+        ORG_ID,
+        extraHeaders,
+      );
+
+    const first = await searchConnection();
+    const firstCursor = first.data?.searchMetadataConnection.pageInfo.endCursor;
+    expect(first.errors).toBeUndefined();
+    expect(first.data?.searchMetadataConnection).toMatchObject({
+      nodes: [{ id: CURSOR_ALLOWED_FIRST_ID }],
+      pageInfo: { hasNextPage: true },
+    });
+    expect(firstCursor).toEqual(expect.any(String));
+
+    const second = await searchConnection(firstCursor!);
+    const secondCursor = second.data?.searchMetadataConnection.pageInfo.endCursor;
+    expect(second.errors).toBeUndefined();
+    expect(second.data?.searchMetadataConnection).toMatchObject({
+      nodes: [{ id: CURSOR_ALLOWED_SECOND_ID }],
+      pageInfo: { hasNextPage: true },
+    });
+    expect(secondCursor).toEqual(expect.any(String));
+
+    const third = await searchConnection(secondCursor!);
+    expect(third.errors).toBeUndefined();
+    expect(third.data?.searchMetadataConnection).toMatchObject({
+      nodes: [{ id: CURSOR_ALLOWED_THIRD_ID }],
+      pageInfo: { hasNextPage: false, endCursor: expect.any(String) },
+    });
+    expect([
+      first.data?.searchMetadataConnection.nodes[0].id,
+      second.data?.searchMetadataConnection.nodes[0].id,
+      third.data?.searchMetadataConnection.nodes[0].id,
+    ]).toEqual([CURSOR_ALLOWED_FIRST_ID, CURSOR_ALLOWED_SECOND_ID, CURSOR_ALLOWED_THIRD_ID]);
+
+    await assetDb.query("UPDATE metadata_items SET deleted_at = now() WHERE id = $1", [CURSOR_ALLOWED_FIRST_ID]);
+    const traceId = "1234567890abcdef1234567890abcdef";
+    const stale = await searchConnection(firstCursor!, {
+      traceparent: `00-${traceId}-0123456789abcdef-01`,
+    });
+    expect(stale.data).toBeNull();
+    expect(stale.errors?.[0]).toMatchObject({
+      message: "Pagination cursor is malformed or stale",
+      extensions: { code: "CURSOR_INVALID", number: 1003, traceId, service: "asset-core" },
+    });
+  });
+
+  test("15. aborts search without partial data on a policy exception", async () => {
     mockFilterAllowedResourceIds.mockRejectedValueOnce(
       new Error("policy unavailable"),
     );
