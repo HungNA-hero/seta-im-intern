@@ -6,12 +6,19 @@ import {
   assetPath,
   getFolderMeta,
   snakeCaseKeys,
+  throwGoError,
   unwrapEnvelope,
   unwrapListEnvelope,
   unwrap204,
   METADATA_PATH,
 } from "../../clients/assetClient";
+import { getErrorDefinition } from "../../errorCodes";
 import { ancestorIdsFromPath } from "../../util/ltreePath";
+import {
+  decodeMetadataCursor,
+  encodeMetadataCursor,
+  MetadataCursorPosition,
+} from "./metadataCursor";
 
 /** Represents one metadata item returned by the internal Go API. */
 interface GoMetadataItem {
@@ -109,6 +116,23 @@ interface NormalizedMetadataSearchInput {
   offset: number;
 }
 
+interface MetadataConnectionSearchInput {
+  folderId: string;
+  query?: string | null;
+  labels?: string[] | null;
+  category?: string | null;
+  externalSource?: string | null;
+  first?: number | null;
+  after?: string | null;
+}
+
+interface NormalizedMetadataConnectionSearchInput
+  extends Omit<NormalizedMetadataSearchInput, "limit" | "offset"> {
+  folderId: string;
+  first: number;
+  after?: MetadataCursorPosition;
+}
+
 /** Creates a consistently coded GraphQL validation error. */
 function badUserInput(message: string): GraphQLError {
   return new GraphQLError(message, {
@@ -131,8 +155,8 @@ function normalizeMetadataSearchInput(
   if (normalized.limit < 1 || normalized.limit > 100) {
     throw badUserInput("limit must be between 1 and 100");
   }
-  if (normalized.offset < 0) {
-    throw badUserInput("offset must be non-negative");
+  if (normalized.offset < 0 || normalized.offset > 10000) {
+    throw badUserInput("offset must be between 0 and 10000");
   }
 
   if (input.folderId !== undefined && input.folderId !== null) {
@@ -178,6 +202,61 @@ function normalizeMetadataSearchInput(
   }
 
   return normalized;
+}
+
+/** Normalizes the new keyset connection without changing legacy search behavior. */
+function normalizeMetadataConnectionSearchInput(
+  input: MetadataConnectionSearchInput,
+): NormalizedMetadataConnectionSearchInput {
+  const normalized = normalizeMetadataSearchInput({
+    folderId: input.folderId,
+    query: input.query,
+    labels: input.labels,
+    category: input.category,
+    externalSource: input.externalSource,
+    limit: input.first ?? 50,
+    offset: 0,
+  });
+  if (!normalized.folderId) {
+    throw badUserInput("folderId is required for cursor pagination");
+  }
+
+  return {
+    folderId: normalized.folderId,
+    query: normalized.query,
+    labels: normalized.labels,
+    category: normalized.category,
+    externalSource: normalized.externalSource,
+    first: normalized.limit,
+    after:
+      input.after === undefined || input.after === null
+        ? undefined
+        : decodeMetadataCursor(input.after),
+  };
+}
+
+function safeError(code: "CURSOR_INVALID" | "INTERNAL_ERROR"): GraphQLError {
+  const definition = getErrorDefinition(code);
+  return new GraphQLError(definition.message, {
+    extensions: { code: definition.code, number: definition.number },
+  });
+}
+
+interface GoCursorSearchEnvelope {
+  items: GoMetadataItem[];
+  hasMore: boolean;
+}
+
+/** Validates the internal keyset envelope before Access Core uses a continuation tuple. */
+async function unwrapCursorSearchEnvelope(
+  response: Response,
+): Promise<GoCursorSearchEnvelope> {
+  if (!response.ok) await throwGoError(response);
+  const data = (await response.json()) as Record<string, unknown>;
+  if (!Array.isArray(data.items) || typeof data.hasMore !== "boolean") {
+    throw safeError("INTERNAL_ERROR");
+  }
+  return { items: data.items as GoMetadataItem[], hasMore: data.hasMore };
 }
 
 function toMetadataItem(m: GoMetadataItem) {
@@ -339,6 +418,108 @@ export const metadataResolvers = {
         metadataHierarchy(folderAncestorsByFolderId),
       );
       return visible.map(toMetadataItem);
+    },
+
+    searchMetadataConnection: async (
+      _: unknown,
+      {
+        orgId,
+        input,
+      }: {
+        orgId: string;
+        input: MetadataConnectionSearchInput;
+      },
+      ctx: GraphQLContext,
+    ) => {
+      assertAuthenticated(ctx);
+
+      const filters = normalizeMetadataConnectionSearchInput(input);
+      const candidateLimit = filters.first + 1;
+      const visible: GoMetadataItem[] = [];
+      let scanAfter = filters.after;
+
+      for (let batch = 0; batch < 10; batch += 1) {
+        const queryParams: Record<string, string | string[]> = {
+          orgId,
+          folderId: filters.folderId,
+          cursor: "true",
+          limit: candidateLimit.toString(),
+        };
+        if (filters.query) queryParams.query = filters.query;
+        if (filters.labels) queryParams.label = filters.labels;
+        if (filters.category) queryParams.category = filters.category;
+        if (filters.externalSource)
+          queryParams.externalSource = filters.externalSource;
+        if (scanAfter) {
+          queryParams.afterUpdatedAt = scanAfter.updatedAt;
+          queryParams.afterId = scanAfter.id;
+        }
+
+        const response = await assetFetch(
+          assetPath(`${METADATA_PATH}/search`, queryParams),
+          { userId: ctx.userId, orgId },
+        );
+        const candidatePage = await unwrapCursorSearchEnvelope(response);
+        if (candidatePage.items.length === 0 && candidatePage.hasMore) {
+          throw safeError("INTERNAL_ERROR");
+        }
+
+        const folderAncestorsByFolderId = await buildFolderAncestorMap(
+          orgId,
+          ctx.userId,
+          candidatePage.items,
+        );
+        const authorized = await filterVisible(
+          ctx.userId,
+          orgId,
+          "read",
+          "metadata_item",
+          candidatePage.items,
+          metadataHierarchy(folderAncestorsByFolderId),
+        );
+        visible.push(...authorized);
+
+        if (visible.length >= filters.first + 1) {
+          const nodes = visible.slice(0, filters.first);
+          return {
+            nodes: nodes.map(toMetadataItem),
+            pageInfo: {
+              endCursor: encodeMetadataCursor({
+                updatedAt: nodes[nodes.length - 1].updated_at,
+                id: nodes[nodes.length - 1].id,
+              }),
+              hasNextPage: true,
+            },
+          };
+        }
+
+        if (!candidatePage.hasMore) {
+          const nodes = visible.slice(0, filters.first);
+          return {
+            nodes: nodes.map(toMetadataItem),
+            pageInfo: {
+              endCursor:
+                nodes.length > 0
+                  ? encodeMetadataCursor({
+                      updatedAt: nodes[nodes.length - 1].updated_at,
+                      id: nodes[nodes.length - 1].id,
+                    })
+                  : null,
+              hasNextPage: false,
+            },
+          };
+        }
+
+        const lastCandidate = candidatePage.items[candidatePage.items.length - 1];
+        scanAfter = {
+          updatedAt: lastCandidate.updated_at,
+          id: lastCandidate.id,
+        };
+      }
+
+      // Do not return a partially filled page when authorization makes the
+      // candidate set sparse: the fixed bound protects Access and Asset Core.
+      throw safeError("INTERNAL_ERROR");
     },
   },
 

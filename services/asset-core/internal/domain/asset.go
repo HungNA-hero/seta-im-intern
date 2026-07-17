@@ -17,6 +17,7 @@ var (
 	ErrCycleDetected    = errors.New("cycle detected: cannot move folder into its own descendant")
 	ErrMetadataNotFound = errors.New("metadata not found")
 	ErrMetadataConflict = errors.New("metadata conflict: external identity already exists")
+	ErrCursorInvalid    = errors.New("pagination cursor is malformed or stale")
 	ErrInvalidInput     = errors.New("invalid input")
 )
 
@@ -130,6 +131,9 @@ type MetadataSearchFilter struct {
 	ExternalSource *string
 	Limit          int
 	Offset         int
+	Keyset         bool
+	AfterUpdatedAt *time.Time
+	AfterID        *string
 }
 
 // UpdateMetadataInput holds the data required to update a metadata item.

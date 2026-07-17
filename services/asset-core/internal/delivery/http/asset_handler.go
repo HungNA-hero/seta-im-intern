@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -407,6 +408,8 @@ func (h *AssetHandler) mapDomainError(w http.ResponseWriter, r *http.Request, er
 		writeError(w, r, http.StatusConflict, "FOLDER_CYCLE_DETECTED")
 	case errors.Is(err, domain.ErrMetadataConflict):
 		writeError(w, r, http.StatusConflict, "METADATA_IDENTITY_CONFLICT")
+	case errors.Is(err, domain.ErrCursorInvalid):
+		writeError(w, r, http.StatusBadRequest, "CURSOR_INVALID")
 	case errors.Is(err, domain.ErrInvalidInput):
 		writeError(w, r, http.StatusBadRequest, invalidInputCode)
 	default:
@@ -666,12 +669,15 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 		return
 	}
 
+	queryValues := r.URL.Query()
+	keyset := queryValues.Get("cursor") == "true"
 	filter := domain.MetadataSearchFilter{
-		Labels: r.URL.Query()["label"],
+		Labels: queryValues["label"],
+		Keyset: keyset,
 	}
 
-	if r.URL.Query().Has("folderId") {
-		fID := r.URL.Query().Get("folderId")
+	if queryValues.Has("folderId") {
+		fID := queryValues.Get("folderId")
 		if fID != "" {
 			if err := uuid.Validate(fID); err != nil {
 				writeLegacyError(w, r, "Invalid folderId format", http.StatusBadRequest)
@@ -680,20 +686,20 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 		}
 		filter.FolderID = &fID
 	}
-	if r.URL.Query().Has("query") {
-		q := r.URL.Query().Get("query")
+	if queryValues.Has("query") {
+		q := queryValues.Get("query")
 		filter.Query = &q
 	}
-	if r.URL.Query().Has("category") {
-		c := r.URL.Query().Get("category")
+	if queryValues.Has("category") {
+		c := queryValues.Get("category")
 		filter.Category = &c
 	}
-	if r.URL.Query().Has("externalSource") {
-		es := r.URL.Query().Get("externalSource")
+	if queryValues.Has("externalSource") {
+		es := queryValues.Get("externalSource")
 		filter.ExternalSource = &es
 	}
 
-	limitStr := r.URL.Query().Get("limit")
+	limitStr := queryValues.Get("limit")
 	if limitStr != "" {
 		if l, err := strconv.Atoi(limitStr); err == nil {
 			filter.Limit = l
@@ -705,7 +711,7 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 		filter.Limit = 50
 	}
 
-	offsetStr := r.URL.Query().Get("offset")
+	offsetStr := queryValues.Get("offset")
 	if offsetStr != "" {
 		if o, err := strconv.Atoi(offsetStr); err == nil {
 			filter.Offset = o
@@ -713,6 +719,34 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 			writeLegacyError(w, r, "Invalid offset format", http.StatusBadRequest)
 			return
 		}
+	}
+
+	if keyset {
+		if filter.FolderID == nil || *filter.FolderID == "" || filter.Offset != 0 || filter.Limit < 1 || filter.Limit > 101 {
+			writeError(w, r, http.StatusBadRequest, "CURSOR_INVALID")
+			return
+		}
+
+		hasAfterUpdatedAt := queryValues.Has("afterUpdatedAt")
+		hasAfterID := queryValues.Has("afterId")
+		if hasAfterUpdatedAt != hasAfterID {
+			writeError(w, r, http.StatusBadRequest, "CURSOR_INVALID")
+			return
+		}
+		if hasAfterUpdatedAt {
+			updatedAt, parseErr := time.Parse(time.RFC3339Nano, queryValues.Get("afterUpdatedAt"))
+			if parseErr != nil || uuid.Validate(queryValues.Get("afterId")) != nil {
+				writeError(w, r, http.StatusBadRequest, "CURSOR_INVALID")
+				return
+			}
+			afterID := queryValues.Get("afterId")
+			filter.AfterUpdatedAt = &updatedAt
+			filter.AfterID = &afterID
+		}
+
+		// Fetch one physical row beyond the requested candidate batch so Access
+		// Core can continue authorization traversal without using deep offsets.
+		filter.Limit++
 	}
 
 	items, err := h.usecase.SearchMetadataItems(r.Context(), orgID, filter)
@@ -724,12 +758,21 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 	if items == nil {
 		items = []domain.MetadataItem{}
 	}
+	hasMore := false
+	if keyset && len(items) > filter.Limit-1 {
+		hasMore = true
+		items = items[:filter.Limit-1]
+	}
 
-	writeJSON(w, r, http.StatusOK, map[string]any{
+	response := map[string]any{
 		"status": "success",
 		"count":  len(items),
 		"items":  items,
-	})
+	}
+	if keyset {
+		response["hasMore"] = hasMore
+	}
+	writeJSON(w, r, http.StatusOK, response)
 }
 
 // HandleFolderFacts returns lightweight authorization facts for a folder.

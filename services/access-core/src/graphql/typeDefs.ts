@@ -195,6 +195,26 @@ export const typeDefs = /* GraphQL */ `
     offset: Int = 0
   }
 
+  input MetadataConnectionSearchInput {
+    folderId: ID!
+    query: String
+    labels: [String!]
+    category: String
+    externalSource: String
+    first: Int = 50
+    after: String
+  }
+
+  type MetadataPageInfo {
+    endCursor: String
+    hasNextPage: Boolean!
+  }
+
+  type MetadataItemConnection {
+    nodes: [MetadataItem!]!
+    pageInfo: MetadataPageInfo!
+  }
+
   type Query {
     users: [User!]! @auth
     user(id: ID!): User @auth
@@ -223,5 +243,10 @@ export const typeDefs = /* GraphQL */ `
     searchMetadata(orgId: ID!, input: MetadataSearchInput!): [MetadataItem!]!
       @orgMember
       @sameOrg
+      @deprecated(reason: "Use searchMetadataConnection")
+    searchMetadataConnection(
+      orgId: ID!
+      input: MetadataConnectionSearchInput!
+    ): MetadataItemConnection! @orgMember @sameOrg
   }
 `;

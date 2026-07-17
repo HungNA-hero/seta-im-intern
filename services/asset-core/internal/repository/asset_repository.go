@@ -642,6 +642,22 @@ func escapeLike(s string) string {
 func (r *assetRepository) SearchMetadataItems(ctx context.Context, orgID string, filter domain.MetadataSearchFilter) ([]domain.MetadataItem, error) {
 	var items []domain.MetadataItem
 
+	if filter.Keyset && filter.AfterUpdatedAt != nil && filter.AfterID != nil {
+		var cursorTarget domain.MetadataItem
+		cursorCheck := r.db.WithContext(ctx).
+			Table("metadata_items").
+			Select("metadata_items.id").
+			Joins("JOIN folders ON folders.id = metadata_items.folder_id").
+			Where("metadata_items.id = ? AND metadata_items.updated_at = ? AND metadata_items.folder_id = ? AND folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", *filter.AfterID, *filter.AfterUpdatedAt, *filter.FolderID, orgID).
+			First(&cursorTarget).Error
+		if errors.Is(cursorCheck, gorm.ErrRecordNotFound) {
+			return nil, domain.ErrCursorInvalid
+		}
+		if cursorCheck != nil {
+			return nil, cursorCheck
+		}
+	}
+
 	query := r.db.WithContext(ctx).
 		Table("metadata_items").
 		Select("metadata_items.*").
@@ -668,12 +684,22 @@ func (r *assetRepository) SearchMetadataItems(ctx context.Context, orgID string,
 	if filter.ExternalSource != nil {
 		query = query.Where("metadata_items.external_source = ?", *filter.ExternalSource)
 	}
+	if filter.Keyset && filter.AfterUpdatedAt != nil && filter.AfterID != nil {
+		query = query.Where(
+			"(metadata_items.updated_at < ? OR (metadata_items.updated_at = ? AND metadata_items.id > ?))",
+			*filter.AfterUpdatedAt,
+			*filter.AfterUpdatedAt,
+			*filter.AfterID,
+		)
+	}
 
-	err := query.
+	query = query.
 		Order("metadata_items.updated_at DESC, metadata_items.id ASC").
-		Limit(filter.Limit).
-		Offset(filter.Offset).
-		Find(&items).Error
+		Limit(filter.Limit)
+	if !filter.Keyset {
+		query = query.Offset(filter.Offset)
+	}
+	err := query.Find(&items).Error
 
 	return items, err
 }
