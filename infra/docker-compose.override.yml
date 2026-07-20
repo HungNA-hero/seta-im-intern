@@ -1,0 +1,22 @@
+services:
+  asset-core:
+    build:
+      target: dev
+    volumes:
+      - ../services/asset-core:/app
+      - asset_go_modules:/go/pkg/mod
+      - asset_go_build_cache:/root/.cache/go-build
+
+  access-core:
+    build:
+      target: dev
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ../services/access-core:/app
+      - access_node_modules:/app/node_modules
+
+volumes:
+  access_node_modules:
+  asset_go_modules:
+  asset_go_build_cache:

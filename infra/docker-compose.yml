@@ -68,8 +68,10 @@ services:
   access-core:
     build:
       context: ../services/access-core
+      target: prod
     container_name: seta-access-core
     environment:
+      NODE_ENV: production
       PORT: 4000
       HOST: 0.0.0.0
       ACCESS_DB_HOST: access-db
@@ -77,12 +79,72 @@ services:
       ACCESS_DB_NAME: ${ACCESS_DB_NAME:-access_db}
       ACCESS_DB_USER: ${ACCESS_DB_USER:-access_user}
       ACCESS_DB_PASSWORD: ${ACCESS_DB_PASSWORD:-access_password}
+      GO_ASSET_URL: http://asset-core:8080
+      ASSET_INTERNAL_API_TOKEN: ${ASSET_INTERNAL_API_TOKEN:-seta-dam-local-development-token}
     ports:
       - "${NODE_ACCESS_CORE_PORT:-4000}:4000"
     depends_on:
       access-db:
         condition: service_healthy
+      asset-core:
+        condition: service_healthy
+    stop_grace_period: 15s
+
+  asset-core:
+    build:
+      context: ../services/asset-core
+      target: prod
+    container_name: seta-asset-core
+    environment:
+      PORT: 8080
+      ASSET_DB_HOST: asset-db
+      ASSET_DB_PORT: 5432
+      ASSET_DB_NAME: ${ASSET_DB_NAME:-asset_db}
+      ASSET_DB_USER: ${ASSET_DB_USER:-asset_user}
+      ASSET_DB_PASSWORD: ${ASSET_DB_PASSWORD:-asset_password}
+      ASSET_DB_SSLMODE: disable
+      ASSET_INTERNAL_API_TOKEN: ${ASSET_INTERNAL_API_TOKEN:-seta-dam-local-development-token}
+    ports:
+      - "${GO_ASSET_CORE_PORT:-8080}:8080"
+    depends_on:
+      asset-db:
+        condition: service_healthy
+    stop_grace_period: 15s
+
+  redis:
+    image: redis:7-alpine
+    container_name: seta-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    container_name: seta-otel-collector
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "${OTEL_GRPC_PORT:-4317}:4317"
+      - "${OTEL_HTTP_PORT:-4318}:4318"
+    depends_on:
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    container_name: seta-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "${JAEGER_UI_PORT:-16686}:16686"
 
 volumes:
   asset_db_data:
   access_db_data:
+  redis_data:
