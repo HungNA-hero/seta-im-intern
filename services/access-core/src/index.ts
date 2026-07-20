@@ -2,6 +2,7 @@ import './config';
 import { buildServer } from './server';
 import { assertRuntimeConfig, config } from './config';
 import { prisma }      from './db/prisma';
+import { registerGracefulShutdown } from './lifecycle';
 
 function logStartup(level: "info" | "warn" | "error", message: string, error?: unknown) {
   process.stdout.write(`${JSON.stringify({
@@ -25,32 +26,12 @@ async function main() {
   const server = await buildServer();
   await server.listen({ port: config.port, host: config.host });
 
-  let shuttingDown = false;
-  const shutdown = async (signal: NodeJS.Signals) => {
-    if (shuttingDown) return;
-    shuttingDown = true;
-    logStartup("info", `received ${signal}; shutting down gracefully`);
-
-    const forceExit = setTimeout(() => {
-      logStartup("error", "graceful shutdown timed out");
-      process.exit(1);
-    }, 10_000);
-    forceExit.unref();
-
-    try {
-      await server.close();
-      await prisma.$disconnect();
-      logStartup("info", "graceful shutdown complete");
-    } catch (err) {
-      logStartup("error", "graceful shutdown failed", err);
-      process.exitCode = 1;
-    } finally {
-      clearTimeout(forceExit);
-    }
-  };
-
-  (["SIGTERM", "SIGINT"] as const).forEach((signal) =>
-    process.once(signal, () => void shutdown(signal)),
+  registerGracefulShutdown(
+    [
+      { name: "server", close: () => server.close() },
+      { name: "prisma", close: () => prisma.$disconnect() },
+    ],
+    logStartup,
   );
 }
 
