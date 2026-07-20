@@ -88,6 +88,33 @@ func TestHandleMetadata_DetailMapsNotFound(t *testing.T) {
 	}
 }
 
+// TestHandleMetadata_CreateMapsInvalidInput verifies shared validation errors keep metadata semantics.
+func TestHandleMetadata_CreateMapsInvalidInput(t *testing.T) {
+	mux := http.NewServeMux()
+	fakeUsecase := &fakeAssetUsecase{metadataCreateErr: domain.ErrInvalidInput}
+	assetHTTP.NewAssetHandler(mux, fakeUsecase, nil)
+
+	orgID := uuid.NewString()
+	body := `{"folder_id":"` + uuid.NewString() + `","title":"Test Title"}`
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, metadataRequest(http.MethodPost, "/internal/api/v1/metadata-items?orgId="+orgID, orgID, body))
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 Bad Request, got %d", response.Code)
+	}
+	var payload struct {
+		Error struct {
+			Code string `json:"code"`
+		} `json:"error"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode error response: %v", err)
+	}
+	if payload.Error.Code != "METADATA_VALIDATION_ERROR" {
+		t.Fatalf("expected metadata validation error, got %q", payload.Error.Code)
+	}
+}
+
 // TestHandleMetadata_CreateRejectsMalformedFolderID verifies malformed resource identifiers fail before writes.
 func TestHandleMetadata_CreateRejectsMalformedFolderID(t *testing.T) {
 	mux := http.NewServeMux()

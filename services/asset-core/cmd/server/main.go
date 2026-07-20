@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	httpDelivery "seta-im-intern/go-asset-core/internal/delivery/http"
 	"seta-im-intern/go-asset-core/internal/repository"
@@ -17,20 +18,22 @@ import (
 )
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 	for _, p := range []string{"../../.env", ".env"} {
 		_ = godotenv.Load(p)
 	}
 	internalAPIToken := strings.TrimSpace(os.Getenv("ASSET_INTERNAL_API_TOKEN"))
 	if internalAPIToken == "" {
-		log.Fatal("ASSET_INTERNAL_API_TOKEN must be configured before Asset Core starts")
+		slog.Error("ASSET_INTERNAL_API_TOKEN must be configured before Asset Core starts")
+		os.Exit(1)
 	}
 
 	// 1. Setup Database Connection
 	db, err := openAssetDB(assetDSNFromEnv())
 	if err != nil {
-		log.Printf("Failed to connect to database: %v. Server will start but DB queries will fail.", err)
+		slog.Error("database connection failed; server will start but DB queries will fail", "error", err.Error())
 	} else {
-		log.Println("Connected to Asset DB successfully")
+		slog.Info("connected to Asset DB successfully")
 	}
 
 	// 2. Setup Clean Architecture Layers
@@ -48,14 +51,15 @@ func main() {
 		port = "8080"
 	}
 
-	log.Printf("Go Asset Core Internal API listening on port %s", port)
-	if err := http.ListenAndServe(":"+port, httpDelivery.RequireInternalAPI(internalAPIToken, muxPtr)); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
+	slog.Info("Go Asset Core Internal API listening", "port", port)
+	handler := httpDelivery.WithRequestCorrelation(httpDelivery.RequireInternalAPI(internalAPIToken, muxPtr))
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
+		slog.Error("server failed to start", "error", err.Error())
 	}
 }
 
 func openAssetDB(dsn string) (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	if err != nil {
 		return nil, err
 	}

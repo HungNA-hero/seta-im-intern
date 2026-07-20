@@ -89,13 +89,13 @@ async function queryGraphQL<T>(
   return response.json() as GraphQLResult<T>;
 }
 
-/** Asserts a safe policy denial with the expected decision reason. */
+/** Asserts a safe policy denial without exposing the internal decision reason. */
 function expectForbidden(
   result: GraphQLResult<unknown>,
-  expectedReason: string,
+  _expectedReason: string,
 ): void {
   expect(result.errors?.[0]).toMatchObject({
-    message: expectedReason,
+    message: "The requested action is not permitted",
     extensions: { code: "FORBIDDEN" },
   });
   expect(JSON.stringify(result.errors)).not.toMatch(

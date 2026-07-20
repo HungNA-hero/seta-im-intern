@@ -153,7 +153,7 @@ describe("Mutation.grantObjectPermission", () => {
     expect(mockGrant).not.toHaveBeenCalled();
   });
 
-  test("throws BAD_USER_INPUT when both grantee fields are set", async () => {
+  test("throws GRANT_INVALID_TARGET when both grantee fields are set", async () => {
     await expect(
       permissionResolvers.Mutation.grantObjectPermission(
         undefined,
@@ -161,13 +161,13 @@ describe("Mutation.grantObjectPermission", () => {
         makeCtx(),
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+      expect.objectContaining({ extensions: { code: "GRANT_INVALID_TARGET" } }),
     );
 
     expect(mockGrant).not.toHaveBeenCalled();
   });
 
-  test("throws BAD_USER_INPUT when neither grantee field is set", async () => {
+  test("throws GRANT_INVALID_TARGET when neither grantee field is set", async () => {
     await expect(
       permissionResolvers.Mutation.grantObjectPermission(
         undefined,
@@ -175,7 +175,7 @@ describe("Mutation.grantObjectPermission", () => {
         makeCtx(),
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+      expect.objectContaining({ extensions: { code: "GRANT_INVALID_TARGET" } }),
     );
 
     expect(mockGrant).not.toHaveBeenCalled();
@@ -242,10 +242,10 @@ describe("Mutation.grantObjectPermission", () => {
     expect(mockAssertResourceInOrg).toHaveBeenCalledTimes(1);
   });
 
-  test("propagates NOT_FOUND and does not grant when the resource is not in the org", async () => {
+  test("propagates FOLDER_NOT_FOUND and does not grant when the folder is not in the org", async () => {
     mockAssertResourceInOrg.mockRejectedValueOnce(
       new GraphQLError("Resource not found in this organization", {
-        extensions: { code: "NOT_FOUND" },
+        extensions: { code: "FOLDER_NOT_FOUND" },
       }),
     );
 
@@ -256,7 +256,7 @@ describe("Mutation.grantObjectPermission", () => {
         makeCtx(),
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "NOT_FOUND" } }),
+      expect.objectContaining({ extensions: { code: "FOLDER_NOT_FOUND" } }),
     );
 
     expect(mockGrant).not.toHaveBeenCalled();
@@ -279,7 +279,7 @@ describe("Mutation.grantObjectPermission", () => {
     expect(mockAssertResourceInOrg).not.toHaveBeenCalled();
   });
 
-  test("maps a duplicate grant to CONFLICT", async () => {
+  test("maps a duplicate grant to BAD_USER_INPUT", async () => {
     mockGrant.mockRejectedValueOnce({ code: "P2002" });
 
     await expect(
@@ -289,7 +289,7 @@ describe("Mutation.grantObjectPermission", () => {
         makeCtx(),
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "CONFLICT" } }),
+      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
     );
   });
 });
@@ -332,7 +332,7 @@ describe("Mutation.revokeObjectPermission", () => {
     expect(mockRevoke).not.toHaveBeenCalled();
   });
 
-  test("throws NOT_FOUND and does not delete when the grant is missing", async () => {
+  test("throws GRANT_NOT_FOUND and does not delete when the grant is missing", async () => {
     mockGetById.mockResolvedValueOnce(null);
 
     await expect(
@@ -342,7 +342,7 @@ describe("Mutation.revokeObjectPermission", () => {
         makeCtx(),
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "NOT_FOUND" } }),
+      expect.objectContaining({ extensions: { code: "GRANT_NOT_FOUND" } }),
     );
 
     expect(mockCanDo).not.toHaveBeenCalled();

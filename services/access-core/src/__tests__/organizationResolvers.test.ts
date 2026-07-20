@@ -42,7 +42,7 @@ describe("reserved role assignment protection", () => {
       organizationResolvers.Mutation.assignRole({}, {
         orgId: "org-1", userId: "user-2", roleId: "role-1",
       }),
-    ).rejects.toMatchObject({ extensions: { code: "NOT_FOUND" } });
+    ).rejects.toMatchObject({ extensions: { code: "BAD_USER_INPUT" } });
     expect(mockAssignRole).not.toHaveBeenCalled();
   });
 

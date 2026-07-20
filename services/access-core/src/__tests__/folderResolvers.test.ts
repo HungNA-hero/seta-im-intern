@@ -30,7 +30,7 @@ vi.stubGlobal("fetch", mockFetch);
 import { folderResolvers } from "../graphql/resolvers/folderResolvers";
 import type { GraphQLContext } from "../graphql/context";
 
-// ── fixtures ─────────────────────────────────────────────────────────────────
+// -- fixtures -----------------------------------------------------------------
 
 function makeCtx(overrides: Partial<GraphQLContext> = {}): GraphQLContext {
   return {
@@ -65,8 +65,29 @@ function fetchOk(folder: ReturnType<typeof makeGoFolder>) {
   });
 }
 
-function fetchError(status: number, statusText = "Error") {
-  mockFetch.mockResolvedValueOnce({ ok: false, status, statusText });
+function fetchError(status: number) {
+  const errorByStatus: Record<number, [string, number]> = {
+    400: ["BAD_REQUEST", 1001],
+    401: ["UNAUTHENTICATED", 2001],
+    403: ["FORBIDDEN", 2003],
+    404: ["FOLDER_NOT_FOUND", 3001],
+    409: ["FOLDER_NAME_CONFLICT", 3003],
+    500: ["INTERNAL_ERROR", 1000],
+  };
+  const [code, number] = errorByStatus[status] ?? errorByStatus[500];
+  mockFetch.mockResolvedValueOnce({
+    ok: false,
+    status,
+    json: async () => ({
+      error: {
+        code,
+        number,
+        message: "ignored test fixture text",
+        traceId: "a".repeat(32),
+        service: "asset-core",
+      },
+    }),
+  });
 }
 
 beforeEach(() => {
@@ -77,7 +98,7 @@ beforeEach(() => {
   );
 });
 
-// ── Mutation.createFolder ─────────────────────────────────────────────────────
+// -- Mutation.createFolder -----------------------------------------------------
 
 describe("Mutation.createFolder", () => {
   const org = "org-1";
@@ -190,7 +211,7 @@ describe("Mutation.createFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -203,13 +224,13 @@ describe("Mutation.createFolder", () => {
         makeCtx({ userId: null }),
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "UNAUTHENTICATED" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }),
     );
     expect(mockCanDo).not.toHaveBeenCalled();
   });
 
-  test("throws CONFLICT when Go returns 409", async () => {
-    fetchError(409, "Conflict");
+  test("throws FOLDER_NAME_CONFLICT when Go returns its safe 409 envelope", async () => {
+    fetchError(409);
 
     await expect(
       folderResolvers.Mutation.createFolder(
@@ -218,12 +239,12 @@ describe("Mutation.createFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "CONFLICT" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FOLDER_NAME_CONFLICT" }) }),
     );
   });
 
-  test("throws BAD_USER_INPUT when Go returns 400", async () => {
-    fetchError(400, "Bad Request");
+  test("throws BAD_REQUEST when Go returns its safe 400 envelope", async () => {
+    fetchError(400);
 
     await expect(
       folderResolvers.Mutation.createFolder(
@@ -232,11 +253,11 @@ describe("Mutation.createFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_REQUEST" }) }),
     );
   });
 
-  test("throws INTERNAL_SERVER_ERROR when response has no folder", async () => {
+  test("throws INTERNAL_ERROR when response has no folder", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ status: "success" }),
@@ -250,13 +271,13 @@ describe("Mutation.createFolder", () => {
       ),
     ).rejects.toThrow(
       expect.objectContaining({
-        extensions: { code: "INTERNAL_SERVER_ERROR" },
+        extensions: expect.objectContaining({ code: "INTERNAL_ERROR" }),
       }),
     );
   });
 });
 
-// ── Mutation.updateFolder ─────────────────────────────────────────────────────
+// -- Mutation.updateFolder -----------------------------------------------------
 
 describe("Mutation.updateFolder", () => {
   const org = "org-1";
@@ -335,7 +356,7 @@ describe("Mutation.updateFolder", () => {
     expect(body.description).toBe("New desc");
   });
 
-  test("throws BAD_USER_INPUT when neither name nor description is provided — before auth check", async () => {
+  test("throws BAD_USER_INPUT when neither name nor description is provided - before auth check", async () => {
     await expect(
       folderResolvers.Mutation.updateFolder(
         undefined,
@@ -343,12 +364,12 @@ describe("Mutation.updateFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }) }),
     );
     expect(mockCanDo).not.toHaveBeenCalled();
   });
 
-  test("throws BAD_USER_INPUT when name is null — before auth check", async () => {
+  test("throws BAD_USER_INPUT when name is null - before auth check", async () => {
     await expect(
       folderResolvers.Mutation.updateFolder(
         undefined,
@@ -356,7 +377,7 @@ describe("Mutation.updateFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }) }),
     );
     expect(mockCanDo).not.toHaveBeenCalled();
   });
@@ -374,7 +395,7 @@ describe("Mutation.updateFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -387,12 +408,12 @@ describe("Mutation.updateFolder", () => {
         makeCtx({ userId: null }),
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "UNAUTHENTICATED" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }),
     );
   });
 
-  test("throws CONFLICT when Go returns 409", async () => {
-    fetchError(409, "Conflict");
+  test("throws FOLDER_NAME_CONFLICT when Go returns its safe 409 envelope", async () => {
+    fetchError(409);
 
     await expect(
       folderResolvers.Mutation.updateFolder(
@@ -401,12 +422,12 @@ describe("Mutation.updateFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "CONFLICT" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FOLDER_NAME_CONFLICT" }) }),
     );
   });
 
-  test("throws NOT_FOUND when Go returns 404", async () => {
-    fetchError(404, "Not Found");
+  test("throws FOLDER_NOT_FOUND when Go returns its safe 404 envelope", async () => {
+    fetchError(404);
 
     await expect(
       folderResolvers.Mutation.updateFolder(
@@ -415,12 +436,12 @@ describe("Mutation.updateFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "NOT_FOUND" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FOLDER_NOT_FOUND" }) }),
     );
   });
 });
 
-// ── Query.folderTree ─────────────────────────────────────────────────────────
+// -- Query.folderTree ---------------------------------------------------------
 
 function fetchListOk(goFolders: ReturnType<typeof makeGoFolder>[]) {
   mockFetch.mockResolvedValueOnce({
@@ -554,16 +575,12 @@ describe("Query.folderTree", () => {
     expect(url).toContain("rootPath=docs");
   });
 
-  test("maps Go error codes (403 → FORBIDDEN, not INTERNAL_SERVER_ERROR)", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 403,
-      statusText: "Forbidden",
-    });
+  test("maps Go error codes (403 -> FORBIDDEN, not INTERNAL_SERVER_ERROR)", async () => {
+    fetchError(403);
     await expect(
       folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
   });
 
@@ -575,13 +592,13 @@ describe("Query.folderTree", () => {
         makeCtx({ userId: null }),
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "UNAUTHENTICATED" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });
 });
 
-// ── Query.folderChildren ──────────────────────────────────────────────────────
+// -- Query.folderChildren ------------------------------------------------------
 
 describe("Query.folderChildren", () => {
   const org = "org-1";
@@ -645,12 +662,8 @@ describe("Query.folderChildren", () => {
     expect(mockCanDo).not.toHaveBeenCalled();
   });
 
-  test("maps Go error codes (403 → FORBIDDEN)", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 403,
-      statusText: "Forbidden",
-    });
+  test("maps Go error codes (403 -> FORBIDDEN)", async () => {
+    fetchError(403);
     await expect(
       folderResolvers.Query.folderChildren(
         undefined,
@@ -658,12 +671,12 @@ describe("Query.folderChildren", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
   });
 });
 
-// ── Folder.children ───────────────────────────────────────────────────────────
+// -- Folder.children -----------------------------------------------------------
 
 describe("Folder.children", () => {
   const ctx = makeCtx();
@@ -774,7 +787,7 @@ describe("Folder.children", () => {
   });
 });
 
-// ── Query.folder ──────────────────────────────────────────────────────────────
+// -- Query.folder --------------------------------------------------------------
 
 describe("Query.folder", () => {
   const org = "org-1";
@@ -861,17 +874,13 @@ describe("Query.folder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  test("maps non-404 Go errors via GO_ERROR_CODES (403 → FORBIDDEN)", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 403,
-      statusText: "Forbidden",
-    });
+  test("maps non-404 Go errors via GO_ERROR_CODES (403 -> FORBIDDEN)", async () => {
+    fetchError(403);
     await expect(
       folderResolvers.Query.folder(
         undefined,
@@ -879,12 +888,12 @@ describe("Query.folder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
   });
 });
 
-// ── Mutation.moveFolder ───────────────────────────────────────────────────────
+// -- Mutation.moveFolder -------------------------------------------------------
 
 describe("Mutation.moveFolder", () => {
   const org = "org-1";
@@ -959,7 +968,7 @@ describe("Mutation.moveFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -977,7 +986,7 @@ describe("Mutation.moveFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -1003,7 +1012,7 @@ describe("Mutation.moveFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -1017,16 +1026,12 @@ describe("Mutation.moveFolder", () => {
         badCtx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "UNAUTHENTICATED" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }),
     );
   });
 
-  test("throws BAD_USER_INPUT for malformed UUIDs", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 400,
-      statusText: "Bad Request",
-    });
+  test("preserves BAD_REQUEST from the Asset Core validation contract", async () => {
+    fetchError(400);
     await expect(
       folderResolvers.Mutation.moveFolder(
         undefined,
@@ -1034,26 +1039,22 @@ describe("Mutation.moveFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_REQUEST" }) }),
     );
   });
 
-  test("maps Go HTTP errors correctly", async () => {
+  test("maps trusted Asset Core error envelopes correctly", async () => {
     const errorMap = [
-      { status: 400, expectedCode: "BAD_USER_INPUT" },
+      { status: 400, expectedCode: "BAD_REQUEST" },
       { status: 401, expectedCode: "UNAUTHENTICATED" },
       { status: 403, expectedCode: "FORBIDDEN" },
-      { status: 404, expectedCode: "NOT_FOUND" },
-      { status: 409, expectedCode: "CONFLICT" },
-      { status: 500, expectedCode: "INTERNAL_SERVER_ERROR" },
+      { status: 404, expectedCode: "FOLDER_NOT_FOUND" },
+      { status: 409, expectedCode: "FOLDER_NAME_CONFLICT" },
+      { status: 500, expectedCode: "INTERNAL_ERROR" },
     ];
 
     for (const { status, expectedCode } of errorMap) {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status,
-        statusText: "Error",
-      });
+      fetchError(status);
       await expect(
         folderResolvers.Mutation.moveFolder(
           undefined,
@@ -1061,7 +1062,9 @@ describe("Mutation.moveFolder", () => {
           ctx,
         ),
       ).rejects.toThrow(
-        expect.objectContaining({ extensions: { code: expectedCode } }),
+        expect.objectContaining({
+          extensions: expect.objectContaining({ code: expectedCode }),
+        }),
       );
     }
   });
@@ -1081,13 +1084,13 @@ describe("Mutation.moveFolder", () => {
       ),
     ).rejects.toThrow(
       expect.objectContaining({
-        extensions: { code: "INTERNAL_SERVER_ERROR" },
+        extensions: expect.objectContaining({ code: "INTERNAL_ERROR" }),
       }),
     );
   });
 });
 
-// ── Mutation.deleteFolder ─────────────────────────────────────────────────────
+// -- Mutation.deleteFolder -----------------------------------------------------
 
 describe("Mutation.deleteFolder", () => {
   const org = "org-1";
@@ -1141,7 +1144,7 @@ describe("Mutation.deleteFolder", () => {
     await expect(
       folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -1163,7 +1166,7 @@ describe("Mutation.deleteFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -1177,16 +1180,12 @@ describe("Mutation.deleteFolder", () => {
         badCtx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "UNAUTHENTICATED" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }),
     );
   });
 
-  test("throws BAD_USER_INPUT for malformed UUIDs", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 400,
-      statusText: "Bad Request",
-    });
+  test("preserves BAD_REQUEST from the Asset Core validation contract", async () => {
+    fetchError(400);
     await expect(
       folderResolvers.Mutation.deleteFolder(
         undefined,
@@ -1194,26 +1193,22 @@ describe("Mutation.deleteFolder", () => {
         ctx,
       ),
     ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_REQUEST" }) }),
     );
   });
 
-  test("maps Go HTTP errors correctly", async () => {
+  test("maps trusted Asset Core error envelopes correctly", async () => {
     const errorMap = [
-      { status: 400, expectedCode: "BAD_USER_INPUT" },
+      { status: 400, expectedCode: "BAD_REQUEST" },
       { status: 401, expectedCode: "UNAUTHENTICATED" },
       { status: 403, expectedCode: "FORBIDDEN" },
-      { status: 404, expectedCode: "NOT_FOUND" },
-      { status: 409, expectedCode: "CONFLICT" },
-      { status: 500, expectedCode: "INTERNAL_SERVER_ERROR" },
+      { status: 404, expectedCode: "FOLDER_NOT_FOUND" },
+      { status: 409, expectedCode: "FOLDER_NAME_CONFLICT" },
+      { status: 500, expectedCode: "INTERNAL_ERROR" },
     ];
 
     for (const { status, expectedCode } of errorMap) {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status,
-        statusText: "Error",
-      });
+      fetchError(status);
       await expect(
         folderResolvers.Mutation.deleteFolder(
           undefined,
@@ -1221,7 +1216,9 @@ describe("Mutation.deleteFolder", () => {
           ctx,
         ),
       ).rejects.toThrow(
-        expect.objectContaining({ extensions: { code: expectedCode } }),
+        expect.objectContaining({
+          extensions: expect.objectContaining({ code: expectedCode }),
+        }),
       );
     }
   });
@@ -1237,7 +1234,7 @@ describe("Mutation.deleteFolder", () => {
       folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx),
     ).rejects.toThrow(
       expect.objectContaining({
-        extensions: { code: "INTERNAL_SERVER_ERROR" },
+        extensions: expect.objectContaining({ code: "INTERNAL_ERROR" }),
       }),
     );
   });

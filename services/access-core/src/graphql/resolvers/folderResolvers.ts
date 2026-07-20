@@ -88,7 +88,7 @@ export const folderResolvers = {
       });
 
       if (resp.status === 404) return null;
-      if (!resp.ok) throwGoError(resp, "Failed to fetch folder");
+      if (!resp.ok) await throwGoError(resp);
 
       const data = await resp.json();
       return data.folder ? toFolder(data.folder as GoFolder) : null;

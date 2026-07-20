@@ -1,6 +1,7 @@
 package http_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -102,6 +103,41 @@ func TestRequireActor(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRequestCorrelationWrapsAuthenticationFailuresInSafeEnvelope(t *testing.T) {
+	handler := assetHttp.WithRequestCorrelation(assetHttp.RequireInternalAPI("token", http.NotFoundHandler()))
+	traceID := "a1b2c3d4e5f60718293a4b5c6d7e8f90"
+	req := httptest.NewRequest(http.MethodGet, "/internal/api/v1/folders", nil)
+	req.Header.Set("traceparent", "00-"+traceID+"-0123456789abcdef-01")
+	req.Header.Set("X-Request-Id", "kan-57-middleware-test")
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, req)
+
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, response.Code)
+	}
+	if got := response.Header().Get("Content-Type"); got != "application/json" {
+		t.Fatalf("expected JSON response, got %q", got)
+	}
+	var body struct {
+		Error struct {
+			Code    string `json:"code"`
+			Number  int    `json:"number"`
+			TraceID string `json:"traceId"`
+			Service string `json:"service"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode safe error response: %v", err)
+	}
+	if body.Error.Code != "UNAUTHENTICATED" || body.Error.Number != 2001 {
+		t.Fatalf("unexpected error identity: %#v", body.Error)
+	}
+	if body.Error.TraceID != traceID || body.Error.Service != "asset-core" {
+		t.Fatalf("correlation was not preserved: %#v", body.Error)
 	}
 }
 
