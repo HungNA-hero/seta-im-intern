@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -53,8 +57,41 @@ func main() {
 
 	slog.Info("Go Asset Core Internal API listening", "port", port)
 	handler := httpDelivery.WithRequestCorrelation(httpDelivery.RequireInternalAPI(internalAPIToken, muxPtr))
-	if err := http.ListenAndServe(":"+port, handler); err != nil {
-		slog.Error("server failed to start", "error", err.Error())
+	server := &http.Server{
+		Addr:              ":" + port,
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	serverErr := make(chan error, 1)
+	go func() {
+		serverErr <- server.ListenAndServe()
+	}()
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(signals)
+
+	select {
+	case sig := <-signals:
+		slog.Info("shutdown requested", "signal", sig.String())
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			slog.Error("graceful shutdown failed", "error", err.Error())
+			_ = server.Close()
+		}
+		if db != nil {
+			if sqlDB, err := db.DB(); err == nil {
+				_ = sqlDB.Close()
+			}
+		}
+		slog.Info("graceful shutdown complete")
+	case err := <-serverErr:
+		if err != nil && err != http.ErrServerClosed {
+			slog.Error("server failed", "error", err.Error())
+			os.Exit(1)
+		}
 	}
 }
 

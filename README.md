@@ -15,34 +15,42 @@ This baseline follows the M1 architecture:
 - Docker Desktop
 - Docker Compose v2
 
-### Quick Start (NPM Scripts)
+### Quick start
 
-We have provided NPM scripts at the root level to simplify running and managing the system. 
-Before starting, run the following to install all dependencies:
-```bash
-npm ci
-npm --prefix services/access-core ci
-```
-
-For a clean environment, start the databases and apply all Flyway migrations before starting the application services:
+The Make targets are the supported project-level interface. On a fresh clone:
 
 ```bash
-npm run docker:up
-npm run docker:migrate
+make setup
+make migrate
+make dev
 ```
 
-- **Start both application services** (databases must already be migrated):
-  ```bash
-  npm run dev:all
-  ```
-- **Start databases only**: `npm run docker:up`
-- **Run migrations**: `npm run docker:migrate`
-- **Stop databases**: `npm run shut:all`
-- **Clean databases (remove volumes)**: `npm run clean:all`
-- **View logs**: `npm run docker:logs`
-- **Run individual services**:
-  - `npm run dev:access` (starts access-core)
-  - `npm run dev:asset` (starts asset-core)
+`make setup` installs the Node and Go dependencies, creates `.env` from `.env.example`
+when needed, and builds the development images. `make migrate` starts both databases and
+applies their Flyway migrations. `make dev` starts the complete stack in the foreground:
+both databases, Redis, the OpenTelemetry collector, Jaeger, Asset Core, and Access Core.
+
+Development containers bind-mount each service's source. Air rebuilds/restarts Asset Core
+after a `.go` change, and `tsx watch` restarts Access Core after a `.ts` change; neither
+requires an image rebuild. Use `make up` for the same hot-reloading stack in the background.
+
+Useful endpoints:
+
+- Access Core GraphQL: `http://localhost:4000/graphql`
+- Access Core health: `http://localhost:4000/health`
+- Asset Core health: `http://localhost:8080/healthz`
+- Jaeger: `http://localhost:16686`
+
+Before pushing, run the full two-service verification pipeline:
+
+```bash
+make verify
+```
+
+Other commands are available through `make help`: `make down`, `make restart`,
+`make logs`, `make test`, `make build`, and `make clean`. `make clean` also removes local
+database, Redis, dependency, and build-cache volumes. `make build` builds the restricted
+production stages; development source mounts are only used by `make dev`/`make up`.
 
 ---
 
@@ -98,8 +106,8 @@ The trainer, Sprint 4, clean-setup, and E2E scripts apply these automatically as
 part of their own database bootstrap step.
 
 This pre-production baseline change rewrites the old demo migrations. If existing
-local volumes have already applied those migrations, reset them once with
-`npm run clean:all` before running `npm run docker:up` and `npm run docker:migrate`.
+local volumes have already applied those migrations, reset them once with `make clean`
+before running `make migrate` and `make dev`.
 
 #### Inspect databases
 
@@ -144,15 +152,26 @@ curl "http://localhost:8080/internal/api/v1/folders?orgId=00000000-0000-0000-000
 #### Reset local data
 
 ```bash
-docker compose -f infra/docker-compose.yml down -v
-docker compose -f infra/docker-compose.yml up -d asset-db access-db
-docker compose -f infra/docker-compose.yml --profile migration run --rm flyway-asset
-docker compose -f infra/docker-compose.yml --profile migration run --rm flyway-access
+make clean
+make migrate
+make up
 ```
 
 ### Environment overrides
 
-Docker Compose uses safe local defaults. If a local override is needed, set the variables in your shell or in an untracked `.env` file.
+Docker Compose uses safe local defaults. If a local override is needed, set the variables
+in your shell or in an untracked `.env` file. Production deployments must replace the local
+default `ASSET_INTERNAL_API_TOKEN` with a unique secret.
+
+### Backfill command interface
+
+`make backfill-metadata` invokes the existing one-shot Asset Core import CLI. Supply
+`BACKFILL_METADATA_FILE`, `BACKFILL_ORG_ID`, and `BACKFILL_USER_ID`; optional CLI flags can
+be passed in `BACKFILL_METADATA_ARGS`.
+
+`make backfill-refs` is the stable entry point for US6's one-shot reference-sync publisher.
+On branches where that US6 module has not landed, it exits immediately with an actionable
+message instead of silently doing nothing.
 
 ---
 
