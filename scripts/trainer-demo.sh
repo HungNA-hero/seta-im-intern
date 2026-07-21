@@ -2,7 +2,7 @@
 #
 # Interactive trainer demo script.
 # Walks through project functionality: service boundary, folder/metadata lifecycle,
-# RBAC vs OLP modes, soft delete, and optional Open Images import.
+# RBAC vs OLP modes, hard delete, and optional Open Images import.
 
 set -uo pipefail
 
@@ -384,29 +384,31 @@ run_olp() {
     echo -e "\nOLP mode disabled (restored to RBAC)."
 }
 
-run_soft_delete() {
-    scenario "soft-delete" "Soft delete keeps grants" "When a resource is deleted, it disappears from searches, but its grants remain in the access DB."
+run_hard_delete() {
+    scenario "hard-delete" "Hard delete keeps grant history" "When a resource is deleted, its Asset DB row is removed while its historical grant remains in the access DB."
     
     local create_folder='mutation($orgId: ID!, $name: String!, $parentPath: String) { createFolder(orgId: $orgId, name: $name, parentPath: $parentPath) { id name path } }'
-    local root_res=$(graphql_raw "$create_folder" "$(jq -nc --arg o "$ORG_ID" --arg n "$RUN_ID-soft-root" '{orgId:$o, name:$n, parentPath:null}')" "$ADMIN_USER" "$ORG_ID")
+    local root_res=$(graphql_raw "$create_folder" "$(jq -nc --arg o "$ORG_ID" --arg n "$RUN_ID-hard-root" '{orgId:$o, name:$n, parentPath:null}')" "$ADMIN_USER" "$ORG_ID")
     local root_id=$(jq -r '.data.createFolder.id' <<<"$root_res")
     
     local create_metadata='mutation($orgId: ID!, $input: CreateMetadataInput!) { createMetadata(orgId: $orgId, input: $input) { id title } }'
-    local soft_del_res=$(graphql_raw "$create_metadata" "$(jq -nc --arg o "$ORG_ID" --arg f "$root_id" --arg t "$RUN_ID-soft-delete" '{orgId:$o, input:{folderId:$f, title:$t, metadataJson:"{}"}}')" "$ADMIN_USER" "$ORG_ID")
-    local soft_del_id=$(jq -r '.data.createMetadata.id' <<<"$soft_del_res")
+    local hard_delete_res=$(graphql_raw "$create_metadata" "$(jq -nc --arg o "$ORG_ID" --arg f "$root_id" --arg t "$RUN_ID-hard-delete" '{orgId:$o, input:{folderId:$f, title:$t, metadataJson:"{}"}}')" "$ADMIN_USER" "$ORG_ID")
+    local hard_delete_id=$(jq -r '.data.createMetadata.id' <<<"$hard_delete_res")
     
-    local soft_del_grant_id=$(grant_permission "metadata_item" "$soft_del_id" "read" "$VIEWER_USER")
+    local hard_delete_grant_id=$(grant_permission "metadata_item" "$hard_delete_id" "read" "$VIEWER_USER")
     
     local delete_metadata='mutation($orgId: ID!, $id: ID!) { deleteMetadata(orgId: $orgId, id: $id) }'
-    graphql_raw "$delete_metadata" "$(jq -nc --arg o "$ORG_ID" --arg i "$soft_del_id" '{orgId:$o, id:$i}')" "$ADMIN_USER" "$ORG_ID" >/dev/null
+    graphql_raw "$delete_metadata" "$(jq -nc --arg o "$ORG_ID" --arg i "$hard_delete_id" '{orgId:$o, id:$i}')" "$ADMIN_USER" "$ORG_ID" >/dev/null
     
     local search_metadata='query($orgId: ID!, $input: MetadataSearchInput!) { searchMetadata(orgId: $orgId, input: $input) { id title externalId } }'
-    local del_search_res=$(graphql_raw "$search_metadata" "$(jq -nc --arg o "$ORG_ID" --arg q "$RUN_ID-soft-delete" '{orgId:$o, input:{query:$q}}')" "$ADMIN_USER" "$ORG_ID")
+    local del_search_res=$(graphql_raw "$search_metadata" "$(jq -nc --arg o "$ORG_ID" --arg q "$RUN_ID-hard-delete" '{orgId:$o, input:{query:$q}}')" "$ADMIN_USER" "$ORG_ID")
     local del_search_count=$(jq '.data.searchMetadata | length' <<<"$del_search_res")
     check "0" "$del_search_count" "Deleted item disappears from search"
+    local asset_row_count=$(invoke_psql "seta-asset-db" "asset_user" "asset_db" "SELECT COUNT(*) FROM metadata_items WHERE id='$hard_delete_id';")
+    check "0" "$asset_row_count" "Hard-deleted Asset row is absent"
     
-    local grant_count=$(invoke_psql "seta-access-db" "access_user" "access_db" "SELECT COUNT(*) FROM access.object_permissions WHERE id='$soft_del_grant_id';")
-    check "1" "$grant_count" "Grant remains in access_db after soft delete"
+    local grant_count=$(invoke_psql "seta-access-db" "access_user" "access_db" "SELECT COUNT(*) FROM access.object_permissions WHERE id='$hard_delete_grant_id';")
+    check "1" "$grant_count" "Grant history remains in access_db after hard delete"
 }
 
 run_open_images() {
@@ -457,7 +459,7 @@ run_section() {
         metadata) run_metadata ;;
         rbac) run_rbac ;;
         olp) run_olp ;;
-        soft-delete) run_soft_delete ;;
+        hard-delete) run_hard_delete ;;
         open-images) run_open_images ;;
         *) echo "Unknown section: $1" >&2 ;;
     esac
@@ -472,7 +474,7 @@ show_menu() {
     echo "4) metadata       - Create/update/search a metadata item"
     echo "5) rbac           - Viewer read-ok / write-FORBIDDEN under default RBAC mode"
     echo "6) olp            - OLP direct grant/revoke, inheritance, manage exactness, creator-no-bypass"
-    echo "7) soft-delete    - Delete a metadata item, show its grant row survives"
+    echo "7) hard-delete    - Hard-delete a metadata item and show its grant history survives"
     echo "8) open-images    - Open Images import (requires --open-images-directory)"
     echo "0) quit         - Exit the demo"
     echo "all)            - Run all sections sequentially"
@@ -520,7 +522,7 @@ boot_services() {
 # Run Boot
 boot_services
 
-ALL_SECTIONS=(architecture org-isolation folders metadata rbac olp soft-delete open-images)
+ALL_SECTIONS=(architecture org-isolation folders metadata rbac olp hard-delete open-images)
 
 if [[ ${#SECTIONS_TO_RUN[@]} -gt 0 ]]; then
     if [[ "${SECTIONS_TO_RUN[0]}" == "all" ]]; then
@@ -543,7 +545,7 @@ else
             4|metadata) run_section "metadata" ;;
             5|rbac) run_section "rbac" ;;
             6|olp) run_section "olp" ;;
-            7|soft-delete) run_section "soft-delete" ;;
+            7|hard-delete) run_section "hard-delete" ;;
             8|open-images) run_section "open-images" ;;
             all)
                 for s in "${ALL_SECTIONS[@]}"; do

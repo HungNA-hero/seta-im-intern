@@ -396,7 +396,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     });
   });
 
-  test("8. rejects missing, wrong-org, and soft-deleted resources", async () => {
+  test("8. rejects missing, wrong-org, and historical-tombstone resources", async () => {
     const traceId = "1234567890abcdef1234567890abcdef";
     const missingFolder = await queryGraphQL<unknown>(
       `query($orgId: ID!, $folderId: ID!) {
@@ -762,11 +762,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     expect(mockFilterAllowedResourceIds).toHaveBeenCalledTimes(1);
   });
 
-  test("15. deletes metadata, records audit fields, and maps repeat to 404", async () => {
-    const before = await assetDb.query(
-      "SELECT updated_at FROM metadata_items WHERE id = $1",
-      [createdItemId],
-    );
+  test("15. hard-deletes metadata and maps repeat to 404", async () => {
     const result = await queryGraphQL<{ deleteMetadata: boolean }>(
       `mutation($orgId: ID!, $id: ID!) {
         deleteMetadata(orgId: $orgId, id: $id)
@@ -777,15 +773,11 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     expect(result.errors).toBeUndefined();
     expect(result.data?.deleteMetadata).toBe(true);
 
-    const persisted = await assetDb.query(
-      `SELECT deleted_at, updated_by, updated_at FROM metadata_items WHERE id = $1`,
+    const persisted = await assetDb.query<{ count: number }>(
+      `SELECT COUNT(*)::int AS count FROM metadata_items WHERE id = $1`,
       [createdItemId],
     );
-    expect(persisted.rows[0].deleted_at).not.toBeNull();
-    expect(persisted.rows[0].updated_by).toBe(USER_ID);
-    expect(
-      new Date(persisted.rows[0].updated_at).getTime(),
-    ).toBeGreaterThanOrEqual(new Date(before.rows[0].updated_at).getTime());
+    expect(persisted.rows[0].count).toBe(0);
 
     const repeated = await queryGraphQL<unknown>(
       `mutation($orgId: ID!, $id: ID!) {

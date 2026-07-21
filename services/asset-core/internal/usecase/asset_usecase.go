@@ -302,7 +302,7 @@ func (u *assetUsecase) UpdateMetadataItem(ctx context.Context, orgID, userID, id
 	return u.repo.UpdateMetadataItem(ctx, orgID, userID, id, input)
 }
 
-// DeleteMetadataItem soft-deletes an org-scoped metadata item.
+// DeleteMetadataItem hard-deletes an org-scoped metadata item.
 func (u *assetUsecase) DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error {
 	return u.repo.DeleteMetadataItem(ctx, orgID, userID, id)
 }

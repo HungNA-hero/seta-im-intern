@@ -383,29 +383,31 @@ function Invoke-Olp {
     Write-Host "`nOLP mode disabled (restored to RBAC)."
 }
 
-function Invoke-SoftDelete {
-    Show-Scenario "soft-delete" "Soft delete keeps grants" "When a resource is deleted, it disappears from searches, but its grants remain in the access DB."
+function Invoke-HardDelete {
+    Show-Scenario "hard-delete" "Hard delete keeps grant history" "When a resource is deleted, its Asset DB row is removed while its historical grant remains in the access DB."
     
     $createFolder = 'mutation($orgId: ID!, $name: String!, $parentPath: String) { createFolder(orgId: $orgId, name: $name, parentPath: $parentPath) { id name path } }'
-    $rootRes = Invoke-GraphQLRaw -Query $createFolder -Variables @{orgId=$script:ORG_ID; name="$RunId-soft-root"; parentPath=$null} -UserId $script:ADMIN_USER -OrgId $script:ORG_ID
+    $rootRes = Invoke-GraphQLRaw -Query $createFolder -Variables @{orgId=$script:ORG_ID; name="$RunId-hard-root"; parentPath=$null} -UserId $script:ADMIN_USER -OrgId $script:ORG_ID
     $rootId = $rootRes.data.createFolder.id
     
     $createMetadata = 'mutation($orgId: ID!, $input: CreateMetadataInput!) { createMetadata(orgId: $orgId, input: $input) { id title } }'
-    $softDelRes = Invoke-GraphQLRaw -Query $createMetadata -Variables @{orgId=$script:ORG_ID; input=@{folderId=$rootId; title="$RunId-soft-delete"; metadataJson="{}"}} -UserId $script:ADMIN_USER -OrgId $script:ORG_ID
-    $softDelId = $softDelRes.data.createMetadata.id
+    $hardDeleteRes = Invoke-GraphQLRaw -Query $createMetadata -Variables @{orgId=$script:ORG_ID; input=@{folderId=$rootId; title="$RunId-hard-delete"; metadataJson="{}"}} -UserId $script:ADMIN_USER -OrgId $script:ORG_ID
+    $hardDeleteId = $hardDeleteRes.data.createMetadata.id
     
-    $softDelGrantId = Grant-Permission -ResourceType "metadata_item" -ResourceId $softDelId -Action "read" -GranteeUser $script:VIEWER_USER
+    $hardDeleteGrantId = Grant-Permission -ResourceType "metadata_item" -ResourceId $hardDeleteId -Action "read" -GranteeUser $script:VIEWER_USER
     
     $deleteMetadata = 'mutation($orgId: ID!, $id: ID!) { deleteMetadata(orgId: $orgId, id: $id) }'
-    Invoke-GraphQLRaw -Query $deleteMetadata -Variables @{orgId=$script:ORG_ID; id=$softDelId} -UserId $script:ADMIN_USER -OrgId $script:ORG_ID | Out-Null
+    Invoke-GraphQLRaw -Query $deleteMetadata -Variables @{orgId=$script:ORG_ID; id=$hardDeleteId} -UserId $script:ADMIN_USER -OrgId $script:ORG_ID | Out-Null
     
     $searchMetadata = 'query($orgId: ID!, $input: MetadataSearchInput!) { searchMetadata(orgId: $orgId, input: $input) { id title externalId } }'
-    $delSearchRes = Invoke-GraphQLRaw -Query $searchMetadata -Variables @{orgId=$script:ORG_ID; input=@{query="$RunId-soft-delete"}} -UserId $script:ADMIN_USER -OrgId $script:ORG_ID
+    $delSearchRes = Invoke-GraphQLRaw -Query $searchMetadata -Variables @{orgId=$script:ORG_ID; input=@{query="$RunId-hard-delete"}} -UserId $script:ADMIN_USER -OrgId $script:ORG_ID
     $delSearchCount = if ($delSearchRes.data -and $delSearchRes.data.searchMetadata) { @($delSearchRes.data.searchMetadata).Count } else { 0 }
     Assert-Check "0" $delSearchCount "Deleted item disappears from search"
+    $assetRowCount = Invoke-Psql -Container "seta-asset-db" -User "asset_user" -Database "asset_db" -Sql "SELECT COUNT(*) FROM metadata_items WHERE id='$hardDeleteId';"
+    Assert-Check "0" $assetRowCount "Hard-deleted Asset row is absent"
     
-    $grantCount = Invoke-Psql -Container "seta-access-db" -User "access_user" -Database "access_db" -Sql "SELECT COUNT(*) FROM access.object_permissions WHERE id='$softDelGrantId';"
-    Assert-Check "1" $grantCount "Grant remains in access_db after soft delete"
+    $grantCount = Invoke-Psql -Container "seta-access-db" -User "access_user" -Database "access_db" -Sql "SELECT COUNT(*) FROM access.object_permissions WHERE id='$hardDeleteGrantId';"
+    Assert-Check "1" $grantCount "Grant history remains in access_db after hard delete"
 }
 
 function Invoke-OpenImages {
@@ -458,7 +460,7 @@ function Invoke-Section {
         "metadata" { Invoke-Metadata }
         "rbac" { Invoke-Rbac }
         "olp" { Invoke-Olp }
-        "soft-delete" { Invoke-SoftDelete }
+        "hard-delete" { Invoke-HardDelete }
         "open-images" { Invoke-OpenImages }
         default { Write-Error "Unknown section: $Section" }
     }
@@ -473,7 +475,7 @@ function Show-Menu {
     Write-Host "4) metadata       - Create/update/search a metadata item"
     Write-Host "5) rbac           - Viewer read-ok / write-FORBIDDEN under default RBAC mode"
     Write-Host "6) olp            - OLP direct grant/revoke, inheritance, manage exactness, creator-no-bypass"
-    Write-Host "7) soft-delete    - Delete a metadata item, show its grant row survives"
+    Write-Host "7) hard-delete    - Hard-delete a metadata item and show its grant history survives"
     Write-Host "8) open-images    - Open Images import (requires -OpenImagesDirectory)"
     Write-Host "0) quit         - Exit the demo"
     Write-Host "all)            - Run all sections sequentially"
@@ -565,7 +567,7 @@ function Invoke-BootServices {
 try {
     Invoke-BootServices
     
-    $AllSections = @("architecture", "org-isolation", "folders", "metadata", "rbac", "olp", "soft-delete", "open-images")
+    $AllSections = @("architecture", "org-isolation", "folders", "metadata", "rbac", "olp", "hard-delete", "open-images")
     
     if ($SectionsToRun -and $SectionsToRun.Count -gt 0) {
         if ($SectionsToRun[0] -eq "all") {
@@ -587,7 +589,7 @@ try {
                 { $_ -in @("4", "metadata") } { Invoke-Section "metadata" }
                 { $_ -in @("5", "rbac") } { Invoke-Section "rbac" }
                 { $_ -in @("6", "olp") } { Invoke-Section "olp" }
-                { $_ -in @("7", "soft-delete") } { Invoke-Section "soft-delete" }
+                { $_ -in @("7", "hard-delete") } { Invoke-Section "hard-delete" }
                 { $_ -in @("8", "open-images") } { Invoke-Section "open-images" }
                 "all" { foreach ($s in $AllSections) { Invoke-Section $s } }
                 { $_ -in @("0", "quit", "q", "exit") } { Write-Host "Exiting..."; break }

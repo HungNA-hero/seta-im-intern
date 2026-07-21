@@ -243,19 +243,43 @@ func TestFolderRepository_PostgresIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected success deleting empty folder, got %v", err)
 	}
-	// Verify deleted_at is set
-	var deletedAt *string
-	if err := tx.Raw("SELECT deleted_at FROM folders WHERE id = ?", emptyFolderID).Scan(&deletedAt).Error; err != nil {
-		t.Fatalf("failed to query deleted_at: %v", err)
+	var emptyFolderCount int64
+	if err := tx.Raw("SELECT COUNT(*) FROM folders WHERE id = ?", emptyFolderID).Scan(&emptyFolderCount).Error; err != nil {
+		t.Fatalf("count hard-deleted folder: %v", err)
 	}
-	if deletedAt == nil {
-		t.Errorf("expected deleted_at to be set")
+	if emptyFolderCount != 0 {
+		t.Errorf("expected hard-deleted folder to be absent, got %d row", emptyFolderCount)
 	}
-	var deletedBy string
-	if err := tx.Raw("SELECT updated_by::text FROM folders WHERE id = ?", emptyFolderID).Scan(&deletedBy).Error; err != nil {
-		t.Fatalf("query delete audit actor: %v", err)
+
+	// 7. Hard deletion purges legacy tombstones inside the target subtree only.
+	legacyRootID := uuid.NewString()
+	legacyRootPath := strings.ReplaceAll(legacyRootID, "-", "")
+	legacyFolderID := uuid.NewString()
+	legacyFolderPath := legacyRootPath + "." + strings.ReplaceAll(legacyFolderID, "-", "")
+	legacyRootMetadataID := uuid.NewString()
+	legacyChildMetadataID := uuid.NewString()
+	if err := tx.Exec(`
+		INSERT INTO folders (id, org_id, path, name, created_by) VALUES (?, ?, ?::ltree, ?, ?);
+		INSERT INTO folders (id, org_id, path, name, created_by, deleted_at) VALUES (?, ?, ?::ltree, ?, ?, NOW());
+		INSERT INTO metadata_items (id, folder_id, title, created_by, deleted_at) VALUES (?, ?, ?, ?, NOW()), (?, ?, ?, ?, NOW());
+	`, legacyRootID, orgID, legacyRootPath, "Legacy purge root", userID,
+		legacyFolderID, orgID, legacyFolderPath, "Legacy tombstone child", userID,
+		legacyRootMetadataID, legacyRootID, "Legacy root metadata", userID,
+		legacyChildMetadataID, legacyFolderID, "Legacy child metadata", userID).Error; err != nil {
+		t.Fatalf("seed legacy tombstone subtree: %v", err)
 	}
-	if deletedBy != userID {
-		t.Errorf("expected delete updated_by to be %s, got %s", userID, deletedBy)
+	if err := repo.DeleteFolder(ctx, orgID, userID, legacyRootID); err != nil {
+		t.Fatalf("hard-delete legacy tombstone subtree root: %v", err)
+	}
+	var remainingLegacyRows int64
+	if err := tx.Raw(`
+		SELECT
+			(SELECT COUNT(*) FROM folders WHERE id IN (?, ?)) +
+			(SELECT COUNT(*) FROM metadata_items WHERE id IN (?, ?))
+	`, legacyRootID, legacyFolderID, legacyRootMetadataID, legacyChildMetadataID).Scan(&remainingLegacyRows).Error; err != nil {
+		t.Fatalf("query purged legacy tombstones: %v", err)
+	}
+	if remainingLegacyRows != 0 {
+		t.Errorf("expected legacy tombstones to be purged, got %d remaining row", remainingLegacyRows)
 	}
 }

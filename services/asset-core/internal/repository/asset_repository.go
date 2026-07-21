@@ -351,18 +351,11 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 	return folder, err
 }
 
-// DeleteFolder soft-deletes a folder, ensuring it contains no descendants and no attached metadata.
-func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, userID, folderID string) error {
+// DeleteFolder hard-deletes an eligible folder and only purges legacy tombstones
+// within the same organization and folder subtree.
+func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, _ string, folderID string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 1. Ensure refs
-		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
-			return err
-		}
-		if err := tx.Exec("INSERT INTO organization_ref (org_id) VALUES (?) ON CONFLICT (org_id) DO NOTHING", orgID).Error; err != nil {
-			return err
-		}
-
-		// 2. Lock active source
+		// 1. Lock the active source in the current organization.
 		var folder domain.Folder
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("id = ? AND org_id = ?", folderID, orgID).
@@ -373,10 +366,10 @@ func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, userID, folde
 			return err
 		}
 
-		// 3. Reject if any active descendant exists (path <@ folder.Path and id != folder.ID)
+		// 2. Never delete active descendants. Legacy tombstones are handled below.
 		var childCount int64
-		if err := tx.Model(&domain.Folder{}).
-			Where("org_id = ? AND path <@ ?::ltree AND id != ?", orgID, folder.Path, folder.ID).
+		if err := tx.Unscoped().Model(&domain.Folder{}).
+			Where("org_id = ? AND path <@ ?::ltree AND id != ? AND deleted_at IS NULL", orgID, folder.Path, folder.ID).
 			Count(&childCount).Error; err != nil {
 			return err
 		}
@@ -384,10 +377,12 @@ func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, userID, folde
 			return domain.ErrFolderNotEmpty
 		}
 
-		// 4. Reject if any active metadata exists for this folder
+		// 3. Reject active metadata anywhere in the subtree, including an
+		// inconsistent active row beneath a historical folder tombstone.
 		var metaCount int64
-		if err := tx.Model(&domain.MetadataItem{}).
-			Where("folder_id = ?", folder.ID).
+		if err := tx.Unscoped().Table("metadata_items").
+			Joins("JOIN folders ON folders.id = metadata_items.folder_id").
+			Where("folders.org_id = ? AND folders.path <@ ?::ltree AND metadata_items.deleted_at IS NULL", orgID, folder.Path).
 			Count(&metaCount).Error; err != nil {
 			return err
 		}
@@ -395,11 +390,32 @@ func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, userID, folde
 			return domain.ErrFolderNotEmpty
 		}
 
-		// 5. Soft delete the folder
-		if err := tx.Model(&folder).Updates(map[string]interface{}{
-			"deleted_at": gorm.Expr("now()"),
-			"updated_by": userID,
-		}).Error; err != nil {
+		// 4. Historical tombstones have a real metadata_items.folder_id foreign
+		// key. Purge them first, then remove historical descendant folders. This
+		// is deliberately scoped to the current org and target subtree only.
+		if err := tx.Unscoped().Exec(`
+			DELETE FROM metadata_items
+			USING folders
+			WHERE metadata_items.folder_id = folders.id
+			  AND folders.org_id = ?
+			  AND folders.path <@ ?::ltree
+			  AND metadata_items.deleted_at IS NOT NULL
+		`, orgID, folder.Path).Error; err != nil {
+			return err
+		}
+		if err := tx.Unscoped().Exec(`
+			DELETE FROM folders
+			WHERE org_id = ?
+			  AND path <@ ?::ltree
+			  AND id != ?
+			  AND deleted_at IS NOT NULL
+		`, orgID, folder.Path, folder.ID).Error; err != nil {
+			return err
+		}
+
+		// 5. Delete the active target physically. Unscoped is required because
+		// MetadataItem and Folder retain DeletedAt only for legacy-read compatibility.
+		if err := tx.Unscoped().Delete(&folder).Error; err != nil {
 			return err
 		}
 
@@ -596,16 +612,9 @@ func (r *assetRepository) UpdateMetadataItem(ctx context.Context, orgID, userID,
 	return item, err
 }
 
-// DeleteMetadataItem soft-deletes a metadata item in an active org-scoped folder.
-func (r *assetRepository) DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error {
+// DeleteMetadataItem physically deletes an active metadata item in the current organization.
+func (r *assetRepository) DeleteMetadataItem(ctx context.Context, orgID, _ string, id string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
-			return err
-		}
-		if err := tx.Exec("INSERT INTO organization_ref (org_id) VALUES (?) ON CONFLICT (org_id) DO NOTHING", orgID).Error; err != nil {
-			return err
-		}
-
 		var item domain.MetadataItem
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Table("metadata_items").
@@ -619,10 +628,9 @@ func (r *assetRepository) DeleteMetadataItem(ctx context.Context, orgID, userID,
 			return err
 		}
 
-		if err := tx.Model(&item).Updates(map[string]interface{}{
-			"deleted_at": gorm.Expr("now()"),
-			"updated_by": userID,
-		}).Error; err != nil {
+		// DeletedAt remains on the model to hide historical tombstones, so use
+		// Unscoped to make this public delete operation physically irreversible.
+		if err := tx.Unscoped().Delete(&item).Error; err != nil {
 			return err
 		}
 

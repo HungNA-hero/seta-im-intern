@@ -299,14 +299,15 @@ try {
         Revoke-Permission $ExactManage
         Revoke-Permission $InheritedWrite
 
-        Write-Scenario "FD-08" "Soft delete hides resource and preserves grant"
-        $SoftMetadata = (Invoke-GraphQL $CreateMetadata @{ orgId = $OrgID; input = @{ folderId = $PolicyRoot.id; title = "$RunId-soft-delete"; metadataJson = '{}' } } $AdminUser $OrgID).createMetadata
-        $SoftGrant = Grant-Permission "metadata_item" $SoftMetadata.id "read" $ViewerUser
-        $BeforeGrantCount = Invoke-Psql "seta-access-db" "access_user" "access_db" "SELECT COUNT(*) FROM access.object_permissions WHERE id='$SoftGrant';"
-        Invoke-GraphQL $DeleteMetadata @{ orgId = $OrgID; id = $SoftMetadata.id } $AdminUser $OrgID | Out-Null
-        $AfterDeleteSearch = (Invoke-GraphQL $SearchMetadata @{ orgId = $OrgID; input = @{ query = "$RunId-soft-delete" } } $AdminUser $OrgID).searchMetadata
-        Assert-Equal 0 $AfterDeleteSearch.Count "Soft-deleted metadata remained searchable"
-        Assert-Equal $BeforeGrantCount (Invoke-Psql "seta-access-db" "access_user" "access_db" "SELECT COUNT(*) FROM access.object_permissions WHERE id='$SoftGrant';") "Soft delete removed permission history"
+        Write-Scenario "FD-08" "Hard delete removes resource and preserves grant history"
+        $HardMetadata = (Invoke-GraphQL $CreateMetadata @{ orgId = $OrgID; input = @{ folderId = $PolicyRoot.id; title = "$RunId-hard-delete"; metadataJson = '{}' } } $AdminUser $OrgID).createMetadata
+        $HardGrant = Grant-Permission "metadata_item" $HardMetadata.id "read" $ViewerUser
+        $BeforeGrantCount = Invoke-Psql "seta-access-db" "access_user" "access_db" "SELECT COUNT(*) FROM access.object_permissions WHERE id='$HardGrant';"
+        Invoke-GraphQL $DeleteMetadata @{ orgId = $OrgID; id = $HardMetadata.id } $AdminUser $OrgID | Out-Null
+        $AfterDeleteSearch = (Invoke-GraphQL $SearchMetadata @{ orgId = $OrgID; input = @{ query = "$RunId-hard-delete" } } $AdminUser $OrgID).searchMetadata
+        Assert-Equal 0 $AfterDeleteSearch.Count "Hard-deleted metadata remained searchable"
+        Assert-Equal 0 (Invoke-Psql "seta-asset-db" "asset_user" "asset_db" "SELECT COUNT(*) FROM metadata_items WHERE id='$($HardMetadata.id)';") "Hard-deleted metadata row remained in Asset DB"
+        Assert-Equal $BeforeGrantCount (Invoke-Psql "seta-access-db" "access_user" "access_db" "SELECT COUNT(*) FROM access.object_permissions WHERE id='$HardGrant';") "Hard delete removed permission history"
 
         Write-Scenario "FD-09" "Reset invariants"
         Set-Olp $false
