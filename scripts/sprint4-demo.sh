@@ -64,6 +64,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ACCESS_CORE="$REPO_ROOT/services/access-core"
 ASSET_CORE="$REPO_ROOT/services/asset-core"
+COMPOSE=(docker compose -f "$REPO_ROOT/infra/docker-compose.yml")
 
 RUN_ID="s4demo-$(date -u +%Y%m%dT%H%M%SZ)-$$"
 TEMP_DIR="${TMPDIR:-/tmp}/$RUN_ID"
@@ -252,7 +253,7 @@ cleanup() {
                     wait "$pid" 2>/dev/null || true
                 fi
             done
-            (cd "$REPO_ROOT" && npm run clean:all) || { CLEANUP_ERROR="Final volume cleanup failed"; }
+            "${COMPOSE[@]}" down --volumes --remove-orphans || { CLEANUP_ERROR="Final volume cleanup failed"; }
             rm -rf "$TEMP_DIR"
             for port in "$NODE_PORT" "$GO_PORT"; do
                 if ss -H -ltn "sport = :$port" 2>/dev/null | grep -q .; then
@@ -299,10 +300,11 @@ run() {
     "$SCRIPT_DIR/fetch_open_images_metadata.sh" --verify-only --output-dir "$OPEN_IMAGES_DIR" || { die "Open Images fixture verification failed"; return 1; }
 
     scenario "FD-01" "Clean migration and exact service boot"
-    npm run clean:all || { die "Initial volume reset failed"; return 1; }
-    npm run docker:up || { die "Database startup failed"; return 1; }
-    npm run docker:migrate || { die "Flyway migration failed"; return 1; }
-    assert_equal "1" "$(invoke_psql "seta-asset-db" "asset_user" "asset_db" "SELECT MAX(version) FROM flyway_schema_history;")" "Asset Flyway version" || return 1
+    "${COMPOSE[@]}" down --volumes --remove-orphans || { die "Initial volume reset failed"; return 1; }
+    "${COMPOSE[@]}" up -d asset-db access-db || { die "Database startup failed"; return 1; }
+    "${COMPOSE[@]}" --profile migration run --rm flyway-asset || { die "Asset Flyway migration failed"; return 1; }
+    "${COMPOSE[@]}" --profile migration run --rm flyway-access || { die "Access Flyway migration failed"; return 1; }
+    assert_equal "4" "$(invoke_psql "seta-asset-db" "asset_user" "asset_db" "SELECT MAX(version) FROM flyway_schema_history;")" "Asset Flyway version" || return 1
     assert_equal "2" "$(invoke_psql "seta-access-db" "access_user" "access_db" "SELECT MAX(version) FROM flyway_schema_history;")" "Access Flyway version" || return 1
     docker exec -i seta-access-db psql -U access_user -d access_db < "$REPO_ROOT/infra/db/access/seed/demo_fixtures.sql" || { die "Access demo seed failed"; return 1; }
     docker exec -i seta-asset-db psql -U asset_user -d asset_db < "$REPO_ROOT/infra/db/asset/seed/demo_fixtures.sql" || { die "Asset demo seed failed"; return 1; }

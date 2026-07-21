@@ -642,6 +642,22 @@ func escapeLike(s string) string {
 func (r *assetRepository) SearchMetadataItems(ctx context.Context, orgID string, filter domain.MetadataSearchFilter) ([]domain.MetadataItem, error) {
 	var items []domain.MetadataItem
 
+	if filter.Keyset && filter.AfterUpdatedAt != nil && filter.AfterID != nil {
+		var cursorTarget domain.MetadataItem
+		cursorCheck := r.db.WithContext(ctx).
+			Table("metadata_items").
+			Select("metadata_items.id").
+			Joins("JOIN folders ON folders.id = metadata_items.folder_id").
+			Where("metadata_items.id = ? AND metadata_items.updated_at = ? AND metadata_items.folder_id = ? AND folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", *filter.AfterID, *filter.AfterUpdatedAt, *filter.FolderID, orgID).
+			First(&cursorTarget).Error
+		if errors.Is(cursorCheck, gorm.ErrRecordNotFound) {
+			return nil, domain.ErrCursorInvalid
+		}
+		if cursorCheck != nil {
+			return nil, cursorCheck
+		}
+	}
+
 	query := r.db.WithContext(ctx).
 		Table("metadata_items").
 		Select("metadata_items.*").
@@ -668,12 +684,36 @@ func (r *assetRepository) SearchMetadataItems(ctx context.Context, orgID string,
 	if filter.ExternalSource != nil {
 		query = query.Where("metadata_items.external_source = ?", *filter.ExternalSource)
 	}
+	if filter.Keyset && filter.AfterUpdatedAt != nil && filter.AfterID != nil {
+		// The public ordering mixes DESC updated_at with ASC id, so a row-value
+		// comparison cannot express the correct continuation. Split the two
+		// ordered ranges instead: PostgreSQL can seek each branch through the
+		// folder keyset index and Merge Append them without scanning prior pages.
+		sameTimestampRange := query.Session(&gorm.Session{}).
+			Where("metadata_items.updated_at = ? AND metadata_items.id > ?", *filter.AfterUpdatedAt, *filter.AfterID).
+			Order("metadata_items.updated_at DESC, metadata_items.id ASC")
+		earlierTimestampRange := query.Session(&gorm.Session{}).
+			Where("metadata_items.updated_at < ?", *filter.AfterUpdatedAt).
+			Order("metadata_items.updated_at DESC, metadata_items.id ASC")
+		keysetRanges := r.db.WithContext(ctx).Raw(
+			"(?) UNION ALL (?)",
+			sameTimestampRange,
+			earlierTimestampRange,
+		)
+		return items, r.db.WithContext(ctx).
+			Table("(?) AS keyset_metadata", keysetRanges).
+			Order("keyset_metadata.updated_at DESC, keyset_metadata.id ASC").
+			Limit(filter.Limit).
+			Find(&items).Error
+	}
 
-	err := query.
+	query = query.
 		Order("metadata_items.updated_at DESC, metadata_items.id ASC").
-		Limit(filter.Limit).
-		Offset(filter.Offset).
-		Find(&items).Error
+		Limit(filter.Limit)
+	if !filter.Keyset {
+		query = query.Offset(filter.Offset)
+	}
+	err := query.Find(&items).Error
 
 	return items, err
 }

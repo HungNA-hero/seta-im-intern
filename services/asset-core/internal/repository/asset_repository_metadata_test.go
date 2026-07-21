@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/lib/pq"
@@ -67,6 +68,78 @@ func TestMetadataRepository_GetByFolder_MissingFolder(t *testing.T) {
 	_, err = repo.GetMetadataItemsByFolder(context.Background(), "org-1", "missing-folder")
 	if !errors.Is(err, domain.ErrFolderNotFound) {
 		t.Fatalf("expected ErrFolderNotFound, got %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet SQL expectations: %v", err)
+	}
+}
+
+func TestMetadataRepository_SearchKeysetUsesSeekableMixedTimestampRanges(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: db}), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open gorm db: %v", err)
+	}
+	repo := repository.NewAssetRepository(gormDB)
+
+	updatedAt := time.Date(2026, time.July, 17, 10, 0, 0, 0, time.UTC)
+	mock.ExpectQuery(`SELECT metadata_items\.id FROM "metadata_items" JOIN folders ON folders\.id = metadata_items\.folder_id.*`).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("cursor-item"))
+	mock.ExpectQuery(`(?s)SELECT .*metadata_items\.updated_at = .*metadata_items\.id > .*ORDER BY metadata_items\.updated_at DESC, metadata_items\.id ASC.*UNION ALL.*metadata_items\.updated_at < .*ORDER BY metadata_items\.updated_at DESC, metadata_items\.id ASC.*ORDER BY keyset_metadata\.updated_at DESC, keyset_metadata\.id ASC`).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("next-item"))
+
+	folderID := "folder-1"
+	afterID := "cursor-item"
+	items, err := repo.SearchMetadataItems(context.Background(), "org-1", domain.MetadataSearchFilter{
+		FolderID:       &folderID,
+		Limit:          3,
+		Keyset:         true,
+		AfterUpdatedAt: &updatedAt,
+		AfterID:        &afterID,
+	})
+	if err != nil {
+		t.Fatalf("unexpected keyset search error: %v", err)
+	}
+	if len(items) != 1 || items[0].ID != "next-item" {
+		t.Fatalf("unexpected keyset results: %#v", items)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet SQL expectations: %v", err)
+	}
+}
+
+func TestMetadataRepository_SearchKeysetRejectsStaleCursor(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: db}), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open gorm db: %v", err)
+	}
+	repo := repository.NewAssetRepository(gormDB)
+
+	updatedAt := time.Date(2026, time.July, 17, 10, 0, 0, 0, time.UTC)
+	mock.ExpectQuery(`SELECT metadata_items\.id FROM "metadata_items" JOIN folders ON folders\.id = metadata_items\.folder_id.*`).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}))
+	folderID := "folder-1"
+	afterID := "stale-item"
+	_, err = repo.SearchMetadataItems(context.Background(), "org-1", domain.MetadataSearchFilter{
+		FolderID:       &folderID,
+		Limit:          3,
+		Keyset:         true,
+		AfterUpdatedAt: &updatedAt,
+		AfterID:        &afterID,
+	})
+	if !errors.Is(err, domain.ErrCursorInvalid) {
+		t.Fatalf("expected stale cursor error, got %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet SQL expectations: %v", err)
