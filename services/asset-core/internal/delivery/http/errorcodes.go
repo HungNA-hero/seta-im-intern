@@ -59,7 +59,7 @@ func writeError(w http.ResponseWriter, r *http.Request, status int, code string)
 			"number":  definition.Number,
 			"message": definition.Message,
 			"traceId": requestcontext.TraceID(r.Context()),
-			"service": "asset-core",
+			"service": ServiceNameAssetCore,
 		},
 	})
 }
