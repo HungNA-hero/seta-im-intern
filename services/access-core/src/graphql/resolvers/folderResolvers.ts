@@ -1,193 +1,56 @@
-import { GraphQLError } from "graphql";
+import { GraphQLResolveInfo } from "graphql";
+import { FolderNode } from "../../domain/folder";
 import {
-  assertAuthenticated,
-  assertCan,
-  assertOrgContext,
-  assertOrgMember,
-  GraphQLContext,
-} from "../context";
-import { filterVisible } from "../../db/queries/canDo";
-import {
-  assetFetch,
-  assetPath,
-  throwGoError,
-  unwrapEnvelope,
-  unwrapListEnvelope,
-  unwrap204,
-  FOLDERS_PATH,
-} from "../../clients/assetClient";
-import { ancestorIdsFromPath } from "../../util/ltreePath";
-
-interface GoFolder {
-  id: string;
-  org_id: string;
-  path: string;
-  name: string;
-  description: string | null;
-  created_by: string;
-  updated_by: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-function toFolder(f: GoFolder) {
-  return {
-    id: f.id,
-    orgId: f.org_id,
-    path: f.path,
-    name: f.name,
-    description: f.description,
-    createdBy: f.created_by,
-    updatedBy: f.updated_by,
-    createdAt: f.created_at,
-    updatedAt: f.updated_at,
-  };
-}
-
-type FolderNode = ReturnType<typeof toFolder>;
-
-function folderHierarchy(f: FolderNode) {
-  return { ancestorIds: ancestorIdsFromPath(f.path) };
-}
-
-function assertNotRootFolder(id: string, orgId: string, action: string): void {
-  if (id === orgId) {
-    throw new GraphQLError(`Cannot ${action} root folder`, {
-      extensions: { code: "FORBIDDEN" },
-    });
-  }
-}
-
-async function fetchFolderList(
-  path: string,
-  userId: string,
-  orgId: string,
-): Promise<FolderNode[]> {
-  const resp = await assetFetch(path, { userId, orgId });
-  return unwrapListEnvelope(
-    resp,
-    "folders",
-    toFolder,
-    "Failed to fetch folders",
-  );
-}
+  childrenOf,
+  createFolder,
+  deleteFolder,
+  getFolder,
+  listFolderChildren,
+  listFolderTree,
+  moveFolder,
+  updateFolder,
+} from "../../usecase/folderUsecase";
+import { GraphQLContext } from "../context";
+import { selectionIncludesField } from "../selection";
 
 export const folderResolvers = {
   Query: {
-    folder: async (
+    folder: (
       _: unknown,
       { orgId, id }: { orgId: string; id: string },
       ctx: GraphQLContext,
-    ) => {
-      assertAuthenticated(ctx);
-      await assertCan(ctx.userId, "read", "folder", id, orgId);
+    ) => getFolder(ctx, orgId, id),
 
-      const resp = await assetFetch(assetPath(FOLDERS_PATH, { orgId, id }), {
-        userId: ctx.userId,
-        orgId,
-      });
-
-      if (resp.status === 404) return null;
-      if (!resp.ok) await throwGoError(resp);
-
-      const data = await resp.json();
-      return data.folder ? toFolder(data.folder as GoFolder) : null;
-    },
-
-    folderTree: async (
+    folderTree: (
       _: unknown,
       { orgId, rootPath }: { orgId: string; rootPath?: string },
       ctx: GraphQLContext,
-    ) => {
-      assertOrgMember(ctx);
-
-      const path = assetPath(
-        FOLDERS_PATH,
-        rootPath ? { orgId, rootPath } : { orgId, tree: true },
-      );
-
-      const folders = await fetchFolderList(path, ctx.userId, orgId);
-      const visible = await filterVisible(
-        ctx.userId,
+      info?: GraphQLResolveInfo,
+    ) =>
+      listFolderTree(
+        ctx,
         orgId,
-        "read",
-        "folder",
-        folders,
-        folderHierarchy,
-      );
+        rootPath,
+        info === undefined || selectionIncludesField(info, "children"),
+      ),
 
-      const cached = visible as (FolderNode & {
-        subtreeNodes: FolderNode[];
-      })[];
-      cached.forEach((folder) => {
-        folder.subtreeNodes = cached;
-      });
-      return visible;
-    },
-
-    folderChildren: async (
+    folderChildren: (
       _: unknown,
       { orgId, parentPath }: { orgId: string; parentPath: string },
       ctx: GraphQLContext,
-    ) => {
-      assertOrgMember(ctx);
-
-      const path = assetPath(FOLDERS_PATH, {
-        orgId,
-        rootPath: parentPath,
-        children: true,
-      });
-      const folders = await fetchFolderList(path, ctx.userId, orgId);
-      return filterVisible(
-        ctx.userId,
-        orgId,
-        "read",
-        "folder",
-        folders,
-        folderHierarchy,
-      );
-    },
+    ) => listFolderChildren(ctx, orgId, parentPath),
   },
 
   Folder: {
-    children: async (
+    children: (
       parent: FolderNode & { subtreeNodes?: FolderNode[] },
       _: unknown,
       ctx: GraphQLContext,
-    ) => {
-      assertAuthenticated(ctx);
-      assertOrgContext(ctx, parent.orgId);
-
-      if (parent.subtreeNodes) {
-        const cache = parent.subtreeNodes;
-        const prefix = parent.path + ".";
-        const kids = cache.filter(
-          (f) =>
-            f.path.startsWith(prefix) &&
-            !f.path.slice(prefix.length).includes("."),
-        );
-        return kids.map((f) => ({ ...f, subtreeNodes: cache }));
-      }
-
-      const path = assetPath(FOLDERS_PATH, {
-        orgId: parent.orgId,
-        rootPath: parent.path,
-        children: true,
-      });
-      const folders = await fetchFolderList(path, ctx.userId, parent.orgId);
-      return filterVisible(
-        ctx.userId,
-        parent.orgId,
-        "read",
-        "folder",
-        folders,
-        folderHierarchy,
-      );
-    },
+    ) => childrenOf(ctx, parent),
   },
 
   Mutation: {
-    createFolder: async (
+    createFolder: (
       _: unknown,
       {
         orgId,
@@ -201,26 +64,9 @@ export const folderResolvers = {
         description?: string;
       },
       ctx: GraphQLContext,
-    ) => {
-      assertAuthenticated(ctx);
-      await assertCan(ctx.userId, "write", "folder", orgId, orgId);
+    ) => createFolder(ctx, orgId, name, parentPath, description),
 
-      const body = {
-        name,
-        ...(parentPath !== undefined && { parent_path: parentPath }),
-        ...(description !== undefined && { description }),
-      };
-
-      const res = await assetFetch(assetPath(FOLDERS_PATH, { orgId }), {
-        userId: ctx.userId,
-        orgId,
-        method: "POST",
-        body,
-      });
-      return unwrapEnvelope(res, "folder", toFolder, "Failed to create folder");
-    },
-
-    updateFolder: async (
+    updateFolder: (
       _: unknown,
       {
         orgId,
@@ -234,37 +80,9 @@ export const folderResolvers = {
         description?: string | null;
       },
       ctx: GraphQLContext,
-    ) => {
-      assertAuthenticated(ctx);
+    ) => updateFolder(ctx, orgId, id, name, description),
 
-      if (name === undefined && description === undefined) {
-        throw new GraphQLError("At least one field must be provided", {
-          extensions: { code: "BAD_USER_INPUT" },
-        });
-      }
-      if (name === null) {
-        throw new GraphQLError("Folder name cannot be null", {
-          extensions: { code: "BAD_USER_INPUT" },
-        });
-      }
-
-      await assertCan(ctx.userId, "write", "folder", id, orgId);
-
-      const body = {
-        ...(name !== undefined && { name }),
-        ...(description !== undefined && { description }),
-      };
-
-      const res = await assetFetch(assetPath(FOLDERS_PATH, { orgId, id }), {
-        userId: ctx.userId,
-        orgId,
-        method: "PATCH",
-        body,
-      });
-      return unwrapEnvelope(res, "folder", toFolder, "Failed to update folder");
-    },
-
-    moveFolder: async (
+    moveFolder: (
       _: unknown,
       {
         orgId,
@@ -276,49 +94,12 @@ export const folderResolvers = {
         destinationParentId?: string | null;
       },
       ctx: GraphQLContext,
-    ) => {
-      assertAuthenticated(ctx);
-      assertNotRootFolder(id, orgId, "move");
+    ) => moveFolder(ctx, orgId, id, destinationParentId),
 
-      await assertCan(ctx.userId, "write", "folder", id, orgId);
-      const destId = destinationParentId ?? orgId;
-      await assertCan(ctx.userId, "write", "folder", destId, orgId);
-
-      const res = await assetFetch(
-        assetPath(`${FOLDERS_PATH}/move`, { orgId, id }),
-        {
-          userId: ctx.userId,
-          orgId,
-          method: "PATCH",
-          body: { destination_parent_id: destinationParentId ?? null },
-        },
-      );
-      return unwrapEnvelope(res, "folder", toFolder, "Failed to move folder");
-    },
-
-    deleteFolder: async (
+    deleteFolder: (
       _: unknown,
-      {
-        orgId,
-        id,
-      }: {
-        orgId: string;
-        id: string;
-      },
+      { orgId, id }: { orgId: string; id: string },
       ctx: GraphQLContext,
-    ) => {
-      assertAuthenticated(ctx);
-      assertNotRootFolder(id, orgId, "delete");
-
-      await assertCan(ctx.userId, "delete", "folder", id, orgId);
-
-      const res = await assetFetch(assetPath(FOLDERS_PATH, { orgId, id }), {
-        userId: ctx.userId,
-        orgId,
-        method: "DELETE",
-      });
-
-      return unwrap204(res, "Failed to delete folder");
-    },
+    ) => deleteFolder(ctx, orgId, id),
   },
 };

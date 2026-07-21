@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "vitest";
-import { getTrainerAdminGateState } from "../security/trainerAdmin";
+import { getTrainerAdminGateState } from "../authz/trainerAdmin";
 
 const originalEnabled = process.env.TRAINER_ADMIN_ENABLED;
 const originalExpiry = process.env.TRAINER_ADMIN_EXPIRES_AT;

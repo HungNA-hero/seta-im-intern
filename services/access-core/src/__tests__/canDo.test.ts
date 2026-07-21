@@ -21,7 +21,7 @@ vi.mock("../clients/assetClient", () => ({
   getMetadataMeta: mockGetMetadataMeta,
 }));
 
-import { canDo, filterAllowedResourceIds } from "../db/queries/canDo";
+import { canDo, filterAllowedResourceIds } from "../authz/decision";
 
 // ── fixtures ──────────────────────────────────────────────────────────────────
 
@@ -349,10 +349,19 @@ describe("folder ancestor inheritance (OLP mode)", () => {
 
     const result = await canDo("user-1", "read", "folder", childId, "org-1");
     expect(result).toEqual({ allowed: true, reason: null });
-    expect(mockPrisma.objectPermission.findMany).toHaveBeenCalledWith(
+    expect(mockPrisma.objectPermission.findMany).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({
         where: expect.objectContaining({
-          resourceId: { in: [childId, rootId] },
+          resourceId: { in: [childId] },
+        }),
+      }),
+    );
+    expect(mockPrisma.objectPermission.findMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: expect.objectContaining({
+          resourceId: { in: [rootId] },
         }),
       }),
     );

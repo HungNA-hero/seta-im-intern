@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   decodeMetadataCursor,
   encodeMetadataCursor,
-} from "../graphql/resolvers/metadataCursor";
+} from "../domain/metadataCursor";
 
 const position = {
   updatedAt: "2026-07-17T10:11:12.123456789Z",
