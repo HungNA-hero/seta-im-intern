@@ -1,4 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
+import { ServiceName } from "./serviceName";
 
 export function logRequestCompletion(request: FastifyRequest, reply: FastifyReply): void {
   const correlation = request.correlation;
@@ -14,7 +15,7 @@ export function logRequestCompletion(request: FastifyRequest, reply: FastifyRepl
           : "success";
   request.log.info(
     {
-      service: "access-core",
+      service: ServiceName.ACCESS_CORE,
       traceId: correlation.traceId,
       requestId: correlation.requestId,
       operation: request.routeOptions.url ?? request.method,

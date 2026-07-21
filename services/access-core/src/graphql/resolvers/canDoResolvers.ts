@@ -1,5 +1,5 @@
 import { PermissionActionCode, ResourceType } from "@prisma/client";
-import { canDo } from "../../db/queries/canDo";
+import { canDo } from "../../authz/decision";
 import { assertOrgMember, GraphQLContext } from "../context";
 
 export const canDoResolvers = {

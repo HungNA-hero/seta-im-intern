@@ -6,7 +6,7 @@ const { mockCanDo } = vi.hoisted(() => ({ mockCanDo: vi.fn() }));
 const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({ mockFilterAllowedResourceIds: vi.fn() }));
 const { mockTrainerFindFirst } = vi.hoisted(() => ({ mockTrainerFindFirst: vi.fn() }));
 
-vi.mock("../db/queries/canDo", () =>
+vi.mock("../authz/decision", () =>
   createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
 );
 vi.mock("../config", () => ({

@@ -1,13 +1,13 @@
 import { GraphQLError } from "graphql";
-import { getErrorDefinition } from "../../errorCodes";
+import { cursorInvalid } from "../errors/factories";
 
 const CURSOR_VERSION = 1;
 const MAX_CURSOR_LENGTH = 1024;
 const base64UrlPattern = /^[A-Za-z0-9_-]+$/;
-// Asset IDs are PostgreSQL UUIDs. Deterministic fixtures can use a version-0
-// UUID, so validate the canonical UUID shape instead of excluding those rows.
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const rfc3339Pattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const rfc3339Pattern =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
 export interface MetadataCursorPosition {
   updatedAt: string;
@@ -18,23 +18,24 @@ interface EncodedMetadataCursor extends MetadataCursorPosition {
   v: number;
 }
 
-function cursorInvalid(): never {
-  const definition = getErrorDefinition("CURSOR_INVALID");
-  throw new GraphQLError(definition.message, {
-    extensions: { code: definition.code, number: definition.number },
-  });
-}
-
 function isLeapYear(year: number): boolean {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }
 
-/** Validates RFC3339 calendar fields without JavaScript date normalization. */
 function isCanonicalRfc3339(value: string): boolean {
   const match = rfc3339Pattern.exec(value);
   if (!match) return false;
 
-  const [, yearText, monthText, dayText, hourText, minuteText, secondText, timezone] = match;
+  const [
+    ,
+    yearText,
+    monthText,
+    dayText,
+    hourText,
+    minuteText,
+    secondText,
+    timezone,
+  ] = match;
   const year = Number(yearText);
   const month = Number(monthText);
   const day = Number(dayText);
@@ -43,7 +44,20 @@ function isCanonicalRfc3339(value: string): boolean {
   const second = Number(secondText);
   const timezoneHour = timezone === "Z" ? 0 : Number(timezone.slice(1, 3));
   const timezoneMinute = timezone === "Z" ? 0 : Number(timezone.slice(4, 6));
-  const daysInMonth = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const daysInMonth = [
+    31,
+    isLeapYear(year) ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
 
   return (
     month >= 1 &&
@@ -71,7 +85,6 @@ export function isValidMetadataCursorPosition(
   );
 }
 
-/** Encodes only the stable ordering tuple needed for metadata keyset traversal. */
 export function encodeMetadataCursor(position: MetadataCursorPosition): string {
   const payload: EncodedMetadataCursor = {
     v: CURSOR_VERSION,
@@ -81,7 +94,6 @@ export function encodeMetadataCursor(position: MetadataCursorPosition): string {
   return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
 }
 
-/** Decodes and validates the opaque public cursor without exposing parse details. */
 export function decodeMetadataCursor(cursor: string): MetadataCursorPosition {
   try {
     if (
@@ -90,7 +102,7 @@ export function decodeMetadataCursor(cursor: string): MetadataCursorPosition {
       cursor.length % 4 === 1 ||
       !base64UrlPattern.test(cursor)
     ) {
-      cursorInvalid();
+      throw cursorInvalid();
     }
     const decoded = Buffer.from(cursor, "base64url").toString("utf8");
     const payload = JSON.parse(decoded) as Partial<EncodedMetadataCursor>;
@@ -99,11 +111,11 @@ export function decodeMetadataCursor(cursor: string): MetadataCursorPosition {
       !isValidMetadataCursorPosition(payload) ||
       encodeMetadataCursor(payload) !== cursor
     ) {
-      cursorInvalid();
+      throw cursorInvalid();
     }
     return { updatedAt: payload.updatedAt, id: payload.id };
   } catch (error) {
     if (error instanceof GraphQLError) throw error;
-    cursorInvalid();
+    throw cursorInvalid();
   }
 }

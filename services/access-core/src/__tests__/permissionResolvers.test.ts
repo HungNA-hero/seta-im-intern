@@ -19,7 +19,7 @@ const {
   mockAssertResourceInOrg: vi.fn(),
 }));
 
-vi.mock("../db/queries/canDo", () => ({ canDo: mockCanDo }));
+vi.mock("../authz/decision", () => ({ canDo: mockCanDo }));
 vi.mock("../db/queries/objectPermissions", () => ({
   grantObjectPermission: mockGrant,
   listObjectPermissions: vi.fn(),

@@ -1,10 +1,11 @@
 import { GraphQLError } from "graphql";
 import { config } from "../config";
-import { getErrorDefinition, isKnownErrorCode } from "../errorCodes";
+import { getErrorDefinition, isKnownErrorCode } from "../errors/errorCodes";
 import {
   getRequestCorrelation,
   isTraceId,
 } from "../observability/requestContext";
+import { ServiceName } from "../observability/serviceName";
 
 export const FOLDERS_PATH = "/internal/api/v1/folders";
 export const METADATA_PATH = "/internal/api/v1/metadata-items";
@@ -34,7 +35,7 @@ export async function throwGoError(res: Response): Promise<never> {
       isKnownErrorCode(error.code) &&
       typeof error.number === "number" &&
       isTraceId(error.traceId) &&
-      error.service === "asset-core"
+      error.service === ServiceName.ASSET_CORE
     ) {
       const definition = getErrorDefinition(error.code);
       if (definition.number === error.number) {
@@ -43,7 +44,7 @@ export async function throwGoError(res: Response): Promise<never> {
             code: definition.code,
             number: definition.number,
             traceId: error.traceId,
-            service: "asset-core",
+            service: ServiceName.ASSET_CORE,
           },
         });
       }
@@ -57,7 +58,7 @@ export async function throwGoError(res: Response): Promise<never> {
       code: fallback.code,
       number: fallback.number,
       traceId: fallbackTraceId,
-      service: "access-core",
+      service: ServiceName.ACCESS_CORE,
     },
   });
 }

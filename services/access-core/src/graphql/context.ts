@@ -1,8 +1,8 @@
 import { GraphQLError } from "graphql";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { prisma } from "../db/prisma";
-import { canDo } from "../db/queries/canDo";
-import { assertTemporaryTrainerAdmin } from "../security/trainerAdmin";
+import { canDo } from "../authz/decision";
+import { assertTemporaryTrainerAdmin } from "../authz/trainerAdmin";
 
 export interface GraphQLContext {
   userId: string | null;
