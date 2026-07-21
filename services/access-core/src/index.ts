@@ -2,6 +2,7 @@ import './config';
 import { buildServer } from './server';
 import { assertRuntimeConfig, config } from './config';
 import { prisma }      from './db/prisma';
+import { registerGracefulShutdown } from './lifecycle';
 
 function logStartup(level: "info" | "warn" | "error", message: string, error?: unknown) {
   process.stdout.write(`${JSON.stringify({
@@ -24,6 +25,14 @@ async function main() {
 
   const server = await buildServer();
   await server.listen({ port: config.port, host: config.host });
+
+  registerGracefulShutdown(
+    [
+      { name: "server", close: () => server.close() },
+      { name: "prisma", close: () => prisma.$disconnect() },
+    ],
+    logStartup,
+  );
 }
 
 main().catch((err) => {

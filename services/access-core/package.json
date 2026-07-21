@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "ts-node src/index.ts",
+    "dev": "tsx watch --clear-screen=false src/index.ts",
     "build": "tsc",
+    "lint": "tsc --noEmit",
     "start": "node dist/index.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
@@ -25,12 +26,13 @@
     "@types/node": "^20",
     "@types/pg": "^8",
     "prisma": "^7.8.0",
-    "ts-node": "^10",
+    "tsx": "^4.20.6",
     "typescript": "^5",
     "vitest": "^4.1.9"
   },
   "allowScripts": {
     "@prisma/engines@7.8.0": true,
-    "prisma@7.8.0": true
+    "prisma@7.8.0": true,
+    "esbuild@0.28.1": true
   }
 }

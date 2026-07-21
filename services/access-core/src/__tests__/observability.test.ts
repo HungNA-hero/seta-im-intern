@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GraphQLError } from "graphql";
-import { maskGraphQLError } from "../server";
+import { maskGraphQLError } from "../graphql/errorMasking";
 import {
   createRequestCorrelation,
   getRequestCorrelation,
