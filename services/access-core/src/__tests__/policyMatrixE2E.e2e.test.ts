@@ -573,7 +573,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     expect(await readFolderName()).toBe("Inherited Edit");
   });
 
-  test("PM-12 soft delete preserves grants and hides deleted resources", async () => {
+  test("PM-12 hard delete removes Asset rows and preserves grant history", async () => {
     await createTargetMetadata();
     await prisma.objectPermission.createMany({
       data: [
@@ -621,16 +621,16 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     expect(deleteFolderResult.data?.deleteFolder).toBe(true);
     expect(fetchSpy).toHaveBeenCalledTimes(2);
 
-    const deletedFolder = await assetDb.query<{ deleted_at: Date | null }>(
-      "SELECT deleted_at FROM folders WHERE id = $1",
+    const deletedFolder = await assetDb.query<{ count: number }>(
+      "SELECT COUNT(*)::int AS count FROM folders WHERE id = $1",
       [FOLDER_ID],
     );
-    const deletedMetadata = await assetDb.query<{ deleted_at: Date | null }>(
-      "SELECT deleted_at FROM metadata_items WHERE id = $1",
+    const deletedMetadata = await assetDb.query<{ count: number }>(
+      "SELECT COUNT(*)::int AS count FROM metadata_items WHERE id = $1",
       [METADATA_ID],
     );
-    expect(deletedFolder.rows[0].deleted_at).not.toBeNull();
-    expect(deletedMetadata.rows[0].deleted_at).not.toBeNull();
+    expect(deletedFolder.rows[0].count).toBe(0);
+    expect(deletedMetadata.rows[0].count).toBe(0);
     expect(
       await prisma.objectPermission.count({
         where: { resourceId: { in: [FOLDER_ID, METADATA_ID] } },

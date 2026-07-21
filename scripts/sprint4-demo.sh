@@ -478,22 +478,23 @@ run() {
     revoke_permission "$exact_manage" || return 1
     revoke_permission "$inherited_write" || return 1
 
-    scenario "FD-08" "Soft delete hides resource and preserves grant"
-    local soft_metadata_data soft_metadata_id
-    soft_metadata_data=$(graphql "$create_metadata" "$(jq -nc --arg o "$ORG_ID" --arg f "$policy_root_id" --arg t "$RUN_ID-soft-delete" '{orgId:$o, input:{folderId:$f, title:$t, metadataJson:"{}"}}')" "$ADMIN_USER" "$ORG_ID") || return 1
-    soft_metadata_id=$(jq -r '.createMetadata.id' <<<"$soft_metadata_data")
+    scenario "FD-08" "Hard delete removes resource and preserves grant history"
+    local hard_metadata_data hard_metadata_id
+    hard_metadata_data=$(graphql "$create_metadata" "$(jq -nc --arg o "$ORG_ID" --arg f "$policy_root_id" --arg t "$RUN_ID-hard-delete" '{orgId:$o, input:{folderId:$f, title:$t, metadataJson:"{}"}}')" "$ADMIN_USER" "$ORG_ID") || return 1
+    hard_metadata_id=$(jq -r '.createMetadata.id' <<<"$hard_metadata_data")
 
-    local soft_grant
-    soft_grant=$(grant_permission "metadata_item" "$soft_metadata_id" "read" "$VIEWER_USER") || return 1
+    local hard_grant
+    hard_grant=$(grant_permission "metadata_item" "$hard_metadata_id" "read" "$VIEWER_USER") || return 1
     local before_grant_count
-    before_grant_count=$(invoke_psql "seta-access-db" "access_user" "access_db" "SELECT COUNT(*) FROM access.object_permissions WHERE id='$soft_grant';")
+    before_grant_count=$(invoke_psql "seta-access-db" "access_user" "access_db" "SELECT COUNT(*) FROM access.object_permissions WHERE id='$hard_grant';")
 
-    graphql "$delete_metadata" "$(jq -nc --arg o "$ORG_ID" --arg i "$soft_metadata_id" '{orgId:$o, id:$i}')" "$ADMIN_USER" "$ORG_ID" >/dev/null || return 1
+    graphql "$delete_metadata" "$(jq -nc --arg o "$ORG_ID" --arg i "$hard_metadata_id" '{orgId:$o, id:$i}')" "$ADMIN_USER" "$ORG_ID" >/dev/null || return 1
 
     local after_delete_search
-    after_delete_search=$(graphql "$search_metadata" "$(jq -nc --arg o "$ORG_ID" --arg q "$RUN_ID-soft-delete" '{orgId:$o, input:{query:$q}}')" "$ADMIN_USER" "$ORG_ID") || return 1
-    assert_equal "0" "$(jq '.searchMetadata | length' <<<"$after_delete_search")" "Soft-deleted metadata remained searchable" || return 1
-    assert_equal "$before_grant_count" "$(invoke_psql "seta-access-db" "access_user" "access_db" "SELECT COUNT(*) FROM access.object_permissions WHERE id='$soft_grant';")" "Soft delete removed permission history" || return 1
+    after_delete_search=$(graphql "$search_metadata" "$(jq -nc --arg o "$ORG_ID" --arg q "$RUN_ID-hard-delete" '{orgId:$o, input:{query:$q}}')" "$ADMIN_USER" "$ORG_ID") || return 1
+    assert_equal "0" "$(jq '.searchMetadata | length' <<<"$after_delete_search")" "Hard-deleted metadata remained searchable" || return 1
+    assert_equal "0" "$(invoke_psql "seta-asset-db" "asset_user" "asset_db" "SELECT COUNT(*) FROM metadata_items WHERE id='$hard_metadata_id';")" "Hard-deleted metadata row remained in Asset DB" || return 1
+    assert_equal "$before_grant_count" "$(invoke_psql "seta-access-db" "access_user" "access_db" "SELECT COUNT(*) FROM access.object_permissions WHERE id='$hard_grant';")" "Hard delete removed permission history" || return 1
 
     scenario "FD-09" "Reset invariants"
     set_olp 0

@@ -219,9 +219,10 @@ Two PostgreSQL 16 databases, strictly partitioned by owning service:
 **`asset_db`**:
 - `organization_ref`, `user_ref` — shadow UUIDs mirroring access-db's `organizations`/`users`
   IDs, purely so asset-db can enforce its own FK constraints without a cross-DB join.
-- `folders` — `ltree` path, self-referential tree, soft-delete via `deleted_at`, unique
+- `folders` — `ltree` path, self-referential tree, hard-delete for new public deletes;
+  `deleted_at` remains only for historical tombstones and import compatibility, unique
   sibling names enforced by a partial index on active (non-deleted) rows.
-- `metadata_items` — text-only image metadata, soft-delete, FK to `folders`.
+- `metadata_items` — text-only image metadata, hard-delete for new public deletes, FK to `folders`.
 - `updated_at` on both tables is auto-maintained by a trigger.
 
 **`access_db`** (all tables in the `access` schema) — full RBAC + OLP model:
@@ -285,11 +286,13 @@ granted on. RBAC mode has no concept of inheritance since it never looks at gran
 **no** automatic permission — there's no `owner` column and no bypass derived from it.
 Creators go through the same RBAC/OLP/grant checks as anyone else.
 
-### Soft-delete and grants
+### Hard delete and grant history
 
-Soft-deleting a folder or metadata item leaves its `object_permissions` rows in place.
-The grants are inert only because the resource is no longer readable through any path; if
-the resource is restored, prior access comes back without re-granting.
+Deleting a folder or metadata item is physically irreversible in Asset Core. The
+corresponding Access Core `object_permissions` rows are intentionally retained as
+historical grants; they cannot reveal or restore a resource because its Asset row
+no longer exists. Legacy `deleted_at` tombstones remain hidden and are purged only
+when they fall within the subtree of a folder being hard-deleted.
 
 ## Demo users & seed data
 
@@ -337,8 +340,8 @@ box.
   This is intentional but easy to misread as a bug when testing: granting a viewer
   `write` on a specific folder does nothing until the org's `olp_enabled` flag is turned
   on.
-- **Soft-deleted resources keep their grants** rather than cascading a permission
-  cleanup — by design, but means `object_permissions` can accumulate rows pointing at
-  dead resources.
+- **Hard-deleted resources retain historical grants** rather than cascading a
+  cross-service permission delete. This preserves audit history without creating
+  a partial cross-database mutation or a restore path.
 - Scope is sized for an intern training project: single-tenant defaults, ~100 users,
   ~10 orgs — not load-tested beyond that.

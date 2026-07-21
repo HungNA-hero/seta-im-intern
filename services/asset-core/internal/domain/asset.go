@@ -175,7 +175,7 @@ type AssetRepository interface {
 	UpdateFolder(ctx context.Context, orgID, userID, folderID string, input UpdateFolderInput) (Folder, error)
 	// MoveFolder updates the folder and its descendants' paths in a single transaction.
 	MoveFolder(ctx context.Context, orgID, userID, folderID string, input MoveFolderInput) (Folder, error)
-	// DeleteFolder soft-deletes an empty folder.
+	// DeleteFolder hard-deletes an eligible folder and purges legacy tombstones in its subtree.
 	DeleteFolder(ctx context.Context, orgID, userID, folderID string) error
 	EnsureRefs(ctx context.Context, userID, orgID string) error
 
@@ -187,7 +187,7 @@ type AssetRepository interface {
 	CreateMetadataItem(ctx context.Context, orgID, userID string, input CreateMetadataInput) (MetadataItem, error)
 	// UpdateMetadataItem applies sparse fields to a locked metadata row and preserves cross-field invariants.
 	UpdateMetadataItem(ctx context.Context, orgID, userID, id string, input UpdateMetadataInput) (MetadataItem, error)
-	// DeleteMetadataItem soft-deletes a metadata item in an active org-scoped folder.
+	// DeleteMetadataItem hard-deletes an active metadata item in the current organization.
 	DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error
 	// SearchMetadataItems returns active metadata items matching the filter within the organization.
 	SearchMetadataItems(ctx context.Context, orgID string, filter MetadataSearchFilter) ([]MetadataItem, error)
@@ -208,7 +208,7 @@ type AssetUsecase interface {
 	UpdateFolder(ctx context.Context, orgID, userID, folderID string, input UpdateFolderInput) (Folder, error)
 	// MoveFolder validates and applies a folder move, updating descendant paths.
 	MoveFolder(ctx context.Context, orgID, userID, folderID string, input MoveFolderInput) (Folder, error)
-	// DeleteFolder validates and soft-deletes a folder if it is empty.
+	// DeleteFolder validates and hard-deletes an eligible folder.
 	DeleteFolder(ctx context.Context, orgID, userID, folderID string) error
 	EnsureRefs(ctx context.Context, userID, orgID string) error
 
@@ -220,7 +220,7 @@ type AssetUsecase interface {
 	CreateMetadataItem(ctx context.Context, orgID, userID string, input CreateMetadataInput) (MetadataItem, error)
 	// UpdateMetadataItem validates and applies a sparse metadata update.
 	UpdateMetadataItem(ctx context.Context, orgID, userID, id string, input UpdateMetadataInput) (MetadataItem, error)
-	// DeleteMetadataItem soft-deletes an org-scoped metadata item.
+	// DeleteMetadataItem hard-deletes an org-scoped metadata item.
 	DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error
 	// SearchMetadataItems searches for metadata items based on the provided filter within the organization.
 	SearchMetadataItems(ctx context.Context, orgID string, filter MetadataSearchFilter) ([]MetadataItem, error)

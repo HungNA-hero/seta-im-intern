@@ -108,7 +108,7 @@ async function moveFolder(
   );
 }
 
-/** Soft-deletes a folder through the public GraphQL mutation. */
+/** Deletes a folder through the public GraphQL mutation. */
 async function deleteFolder(
   id: string,
 ): Promise<GraphQLResult<{ deleteFolder: boolean }>> {
@@ -233,14 +233,16 @@ describe("KAN-36 folder GraphQL to PostgreSQL E2E", () => {
     expect(await readFolder(source.id)).toEqual(beforeSource);
   });
 
-  test("soft-deletes an empty folder and records the actor", async () => {
+  test("hard-deletes an empty folder", async () => {
     const emptyFolder = await createFolder("Empty folder");
     const result = await deleteFolder(emptyFolder.id);
-    const row = await readFolder(emptyFolder.id);
+    const persisted = await assetDb.query<{ count: number }>(
+      "SELECT COUNT(*)::int AS count FROM folders WHERE id = $1",
+      [emptyFolder.id],
+    );
 
     expect(result.errors).toBeUndefined();
     expect(result.data?.deleteFolder).toBe(true);
-    expect(row.deleted_at).not.toBeNull();
-    expect(row.updated_by).toBe(USER_ID);
+    expect(persisted.rows[0].count).toBe(0);
   });
 });

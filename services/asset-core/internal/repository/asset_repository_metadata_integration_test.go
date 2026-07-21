@@ -2,7 +2,6 @@ package repository_test
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"os"
@@ -288,25 +287,16 @@ func TestMetadataRepository_SearchAndDelete_Integration(t *testing.T) {
 		t.Fatalf("expected deleted and cross-org rows to be excluded, got %#v", hiddenItems)
 	}
 
-	deleteItem := createItem(orgID, folderID, "Delete Audit Target", nil, nil, nil)
-	var beforeUpdatedAt time.Time
-	if err := tx.Raw("SELECT updated_at FROM metadata_items WHERE id = ?", deleteItem.ID).Scan(&beforeUpdatedAt).Error; err != nil {
-		t.Fatalf("read pre-delete audit: %v", err)
-	}
+	deleteItem := createItem(orgID, folderID, "Hard Delete Target", nil, nil, nil)
 	if err := repo.DeleteMetadataItem(ctx, orgID, userID, deleteItem.ID); err != nil {
 		t.Fatalf("delete metadata: %v", err)
 	}
-	var deletedAt sql.NullTime
-	var updatedBy sql.NullString
-	var updatedAt time.Time
-	if err := tx.Raw(
-		"SELECT deleted_at, updated_by, updated_at FROM metadata_items WHERE id = ?",
-		deleteItem.ID,
-	).Row().Scan(&deletedAt, &updatedBy, &updatedAt); err != nil {
-		t.Fatalf("read delete audit: %v", err)
+	var deletedCount int64
+	if err := tx.Raw("SELECT COUNT(*) FROM metadata_items WHERE id = ?", deleteItem.ID).Scan(&deletedCount).Error; err != nil {
+		t.Fatalf("count hard-deleted metadata: %v", err)
 	}
-	if !deletedAt.Valid || !updatedBy.Valid || updatedBy.String != userID || updatedAt.Before(beforeUpdatedAt) {
-		t.Fatalf("unexpected delete audit: deleted_at=%v updated_by=%v updated_at=%v", deletedAt, updatedBy, updatedAt)
+	if deletedCount != 0 {
+		t.Fatalf("expected hard-deleted metadata row to be absent, got %d row", deletedCount)
 	}
 	if err := repo.DeleteMetadataItem(ctx, orgID, userID, deleteItem.ID); !errors.Is(err, domain.ErrMetadataNotFound) {
 		t.Fatalf("expected ErrMetadataNotFound on double delete, got %v", err)
@@ -318,39 +308,29 @@ func TestMetadataRepository_SearchAndDelete_Integration(t *testing.T) {
 		t.Fatalf("expected ErrMetadataNotFound for missing item, got %v", err)
 	}
 
-	rollbackItem := createItem(orgID, folderID, "Delete Rollback Target", nil, nil, nil)
-	rollbackActorID := uuid.NewString()
+	rollbackItem := createItem(orgID, folderID, "Hard Delete Rollback Target", nil, nil, nil)
 	if err := tx.Exec(`
 		CREATE FUNCTION kan37_reject_metadata_delete() RETURNS trigger AS $$
 		BEGIN
-			IF NEW.deleted_at IS NOT NULL THEN
-				RAISE EXCEPTION 'forced delete failure';
-			END IF;
-			RETURN NEW;
+			RAISE EXCEPTION 'forced delete failure';
+			RETURN OLD;
 		END;
 		$$ LANGUAGE plpgsql;
 		CREATE TRIGGER kan37_reject_metadata_delete
-		BEFORE UPDATE ON metadata_items
+		BEFORE DELETE ON metadata_items
 		FOR EACH ROW EXECUTE FUNCTION kan37_reject_metadata_delete();
 	`).Error; err != nil {
 		t.Fatalf("create rollback trigger: %v", err)
 	}
-	if err := repo.DeleteMetadataItem(ctx, orgID, rollbackActorID, rollbackItem.ID); err == nil {
+	if err := repo.DeleteMetadataItem(ctx, orgID, userID, rollbackItem.ID); err == nil {
 		t.Fatal("expected forced delete failure")
 	}
-	var rollbackDeletedAt sql.NullTime
-	if err := tx.Raw("SELECT deleted_at FROM metadata_items WHERE id = ?", rollbackItem.ID).Row().Scan(&rollbackDeletedAt); err != nil {
+	var rollbackCount int64
+	if err := tx.Raw("SELECT COUNT(*) FROM metadata_items WHERE id = ?", rollbackItem.ID).Scan(&rollbackCount).Error; err != nil {
 		t.Fatalf("read rollback item: %v", err)
 	}
-	if rollbackDeletedAt.Valid {
-		t.Fatalf("expected rollback item to remain active, got deleted_at=%v", rollbackDeletedAt)
-	}
-	var rollbackActorCount int64
-	if err := tx.Table("user_ref").Where("user_id = ?", rollbackActorID).Count(&rollbackActorCount).Error; err != nil {
-		t.Fatalf("count rollback actor ref: %v", err)
-	}
-	if rollbackActorCount != 0 {
-		t.Fatalf("expected shadow ref insert to roll back, got %d row", rollbackActorCount)
+	if rollbackCount != 1 {
+		t.Fatalf("expected rollback item to remain after failed hard delete, got %d row", rollbackCount)
 	}
 	if err := tx.Exec("DROP TRIGGER kan37_reject_metadata_delete ON metadata_items; DROP FUNCTION kan37_reject_metadata_delete();").Error; err != nil {
 		t.Fatalf("drop rollback trigger: %v", err)
