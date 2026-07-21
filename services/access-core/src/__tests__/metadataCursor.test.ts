@@ -36,8 +36,21 @@ describe("metadata cursor codec", () => {
     "not-base64-json",
     Buffer.from(JSON.stringify({ v: 2, ...position })).toString("base64url"),
     Buffer.from(JSON.stringify({ v: 1, updatedAt: "not-a-time", id: position.id })).toString("base64url"),
+    Buffer.from(JSON.stringify({ v: 1, updatedAt: "2026-02-31T00:00:00Z", id: position.id })).toString("base64url"),
     Buffer.from(JSON.stringify({ v: 1, updatedAt: position.updatedAt, id: "not-a-uuid" })).toString("base64url"),
   ])("returns the stable CURSOR_INVALID contract for %s", (cursor) => {
+    expect(() => decodeMetadataCursor(cursor)).toThrow(
+      expect.objectContaining({
+        extensions: expect.objectContaining({ code: "CURSOR_INVALID", number: 1003 }),
+      }),
+    );
+  });
+
+  test.each([
+    `${encodeMetadataCursor(position)}!`,
+    `${encodeMetadataCursor(position)}=`,
+    Buffer.from(JSON.stringify({ id: position.id, updatedAt: position.updatedAt, v: 1 })).toString("base64url"),
+  ])("rejects non-canonical Base64URL input before it can become a valid cursor", (cursor) => {
     expect(() => decodeMetadataCursor(cursor)).toThrow(
       expect.objectContaining({
         extensions: expect.objectContaining({ code: "CURSOR_INVALID", number: 1003 }),

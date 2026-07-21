@@ -73,6 +73,7 @@ try {
 
     Write-Host "Applying Flyway migrations to empty databases..."
     docker run --rm `
+        --env FLYWAY_POSTGRESQL_TRANSACTIONAL_LOCK=false `
         --mount "type=bind,source=$AssetMigrations,target=/flyway/sql,readonly" `
         flyway/flyway:10-alpine `
         -url="jdbc:postgresql://host.docker.internal:$AssetPort/asset_db" `

@@ -17,8 +17,14 @@ import { ancestorIdsFromPath } from "../../util/ltreePath";
 import {
   decodeMetadataCursor,
   encodeMetadataCursor,
+  isValidMetadataCursorPosition,
   MetadataCursorPosition,
 } from "./metadataCursor";
+
+const MAX_METADATA_PAGE_SIZE = 100;
+const CURSOR_CANDIDATE_LOOKAHEAD = 1;
+const MAX_AUTHORIZATION_CANDIDATE_BATCHES = 10;
+const INTERNAL_CURSOR_MODE = "true";
 
 /** Represents one metadata item returned by the internal Go API. */
 interface GoMetadataItem {
@@ -48,14 +54,13 @@ interface GoMetadataItem {
  * batch metadata visibility checks get the same folder-ancestor inheritance
  * as single-item checks without an HTTP call per item.
  */
-async function buildFolderAncestorMap(
+async function buildFolderAncestorMapForFolderIds(
   orgId: string,
   userId: string,
-  items: GoMetadataItem[],
+  folderIds: string[],
 ): Promise<Map<string, string[]>> {
-  const folderIds = [...new Set(items.map((m) => m.folder_id))];
   const entries = await Promise.all(
-    folderIds.map(async (folderId) => {
+    [...new Set(folderIds)].map(async (folderId) => {
       const folderMeta = await getFolderMeta(orgId, userId, folderId);
       return [
         folderId,
@@ -64,6 +69,18 @@ async function buildFolderAncestorMap(
     }),
   );
   return new Map(entries);
+}
+
+async function buildFolderAncestorMap(
+  orgId: string,
+  userId: string,
+  items: GoMetadataItem[],
+): Promise<Map<string, string[]>> {
+  return buildFolderAncestorMapForFolderIds(
+    orgId,
+    userId,
+    items.map((item) => item.folder_id),
+  );
 }
 
 function metadataHierarchy(
@@ -152,8 +169,8 @@ function normalizeMetadataSearchInput(
     offset: input.offset ?? 0,
   };
 
-  if (normalized.limit < 1 || normalized.limit > 100) {
-    throw badUserInput("limit must be between 1 and 100");
+  if (normalized.limit < 1 || normalized.limit > MAX_METADATA_PAGE_SIZE) {
+    throw badUserInput(`limit must be between 1 and ${MAX_METADATA_PAGE_SIZE}`);
   }
   if (normalized.offset < 0 || normalized.offset > 10000) {
     throw badUserInput("offset must be between 0 and 10000");
@@ -235,8 +252,8 @@ function normalizeMetadataConnectionSearchInput(
   };
 }
 
-function safeError(code: "CURSOR_INVALID" | "INTERNAL_ERROR"): GraphQLError {
-  const definition = getErrorDefinition(code);
+function internalError(): GraphQLError {
+  const definition = getErrorDefinition("INTERNAL_ERROR");
   return new GraphQLError(definition.message, {
     extensions: { code: definition.code, number: definition.number },
   });
@@ -247,14 +264,51 @@ interface GoCursorSearchEnvelope {
   hasMore: boolean;
 }
 
+/** Validates only the internal fields used for authorization and continuation. */
+function isCursorCandidate(value: unknown): value is GoMetadataItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<GoMetadataItem>;
+  return (
+    typeof item.folder_id === "string" &&
+    item.folder_id.trim().length > 0 &&
+    isValidMetadataCursorPosition({ updatedAt: item.updated_at, id: item.id })
+  );
+}
+
+function toMetadataConnection(
+  visible: GoMetadataItem[],
+  requestedNodeCount: number,
+  hasNextPage: boolean,
+) {
+  const nodes = visible.slice(0, requestedNodeCount);
+  const lastNode = nodes[nodes.length - 1];
+  return {
+    nodes: nodes.map(toMetadataItem),
+    pageInfo: {
+      endCursor:
+        lastNode === undefined
+          ? null
+          : encodeMetadataCursor({
+              updatedAt: lastNode.updated_at,
+              id: lastNode.id,
+            }),
+      hasNextPage,
+    },
+  };
+}
+
 /** Validates the internal keyset envelope before Access Core uses a continuation tuple. */
 async function unwrapCursorSearchEnvelope(
   response: Response,
 ): Promise<GoCursorSearchEnvelope> {
   if (!response.ok) await throwGoError(response);
   const data = (await response.json()) as Record<string, unknown>;
-  if (!Array.isArray(data.items) || typeof data.hasMore !== "boolean") {
-    throw safeError("INTERNAL_ERROR");
+  if (
+    !Array.isArray(data.items) ||
+    typeof data.hasMore !== "boolean" ||
+    !data.items.every(isCursorCandidate)
+  ) {
+    throw internalError();
   }
   return { items: data.items as GoMetadataItem[], hasMore: data.hasMore };
 }
@@ -434,16 +488,27 @@ export const metadataResolvers = {
       assertAuthenticated(ctx);
 
       const filters = normalizeMetadataConnectionSearchInput(input);
-      const candidateLimit = filters.first + 1;
+      const candidateBatchSize = filters.first + CURSOR_CANDIDATE_LOOKAHEAD;
       const visible: GoMetadataItem[] = [];
       let scanAfter = filters.after;
+      // The connection contract requires a single folder, so its inherited
+      // authorization facts are invariant across all candidate batches.
+      const folderAncestorsByFolderId = await buildFolderAncestorMapForFolderIds(
+        orgId,
+        ctx.userId,
+        [filters.folderId],
+      );
 
-      for (let batch = 0; batch < 10; batch += 1) {
+      for (
+        let batch = 0;
+        batch < MAX_AUTHORIZATION_CANDIDATE_BATCHES;
+        batch += 1
+      ) {
         const queryParams: Record<string, string | string[]> = {
           orgId,
           folderId: filters.folderId,
-          cursor: "true",
-          limit: candidateLimit.toString(),
+          cursor: INTERNAL_CURSOR_MODE,
+          limit: candidateBatchSize.toString(),
         };
         if (filters.query) queryParams.query = filters.query;
         if (filters.labels) queryParams.label = filters.labels;
@@ -461,14 +526,9 @@ export const metadataResolvers = {
         );
         const candidatePage = await unwrapCursorSearchEnvelope(response);
         if (candidatePage.items.length === 0 && candidatePage.hasMore) {
-          throw safeError("INTERNAL_ERROR");
+          throw internalError();
         }
 
-        const folderAncestorsByFolderId = await buildFolderAncestorMap(
-          orgId,
-          ctx.userId,
-          candidatePage.items,
-        );
         const authorized = await filterVisible(
           ctx.userId,
           orgId,
@@ -479,35 +539,12 @@ export const metadataResolvers = {
         );
         visible.push(...authorized);
 
-        if (visible.length >= filters.first + 1) {
-          const nodes = visible.slice(0, filters.first);
-          return {
-            nodes: nodes.map(toMetadataItem),
-            pageInfo: {
-              endCursor: encodeMetadataCursor({
-                updatedAt: nodes[nodes.length - 1].updated_at,
-                id: nodes[nodes.length - 1].id,
-              }),
-              hasNextPage: true,
-            },
-          };
+        if (visible.length >= candidateBatchSize) {
+          return toMetadataConnection(visible, filters.first, true);
         }
 
         if (!candidatePage.hasMore) {
-          const nodes = visible.slice(0, filters.first);
-          return {
-            nodes: nodes.map(toMetadataItem),
-            pageInfo: {
-              endCursor:
-                nodes.length > 0
-                  ? encodeMetadataCursor({
-                      updatedAt: nodes[nodes.length - 1].updated_at,
-                      id: nodes[nodes.length - 1].id,
-                    })
-                  : null,
-              hasNextPage: false,
-            },
-          };
+          return toMetadataConnection(visible, filters.first, false);
         }
 
         const lastCandidate = candidatePage.items[candidatePage.items.length - 1];
@@ -519,7 +556,7 @@ export const metadataResolvers = {
 
       // Do not return a partially filled page when authorization makes the
       // candidate set sparse: the fixed bound protects Access and Asset Core.
-      throw safeError("INTERNAL_ERROR");
+      throw internalError();
     },
   },
 

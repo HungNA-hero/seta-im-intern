@@ -74,7 +74,7 @@ func TestMetadataRepository_GetByFolder_MissingFolder(t *testing.T) {
 	}
 }
 
-func TestMetadataRepository_SearchKeysetUsesMixedTimestampPredicate(t *testing.T) {
+func TestMetadataRepository_SearchKeysetUsesSeekableMixedTimestampRanges(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to open sqlmock: %v", err)
@@ -90,7 +90,7 @@ func TestMetadataRepository_SearchKeysetUsesMixedTimestampPredicate(t *testing.T
 	updatedAt := time.Date(2026, time.July, 17, 10, 0, 0, 0, time.UTC)
 	mock.ExpectQuery(`SELECT metadata_items\.id FROM "metadata_items" JOIN folders ON folders\.id = metadata_items\.folder_id.*`).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("cursor-item"))
-	mock.ExpectQuery(`SELECT metadata_items\.\* FROM "metadata_items" JOIN folders ON folders\.id = metadata_items\.folder_id.*metadata_items\.updated_at < .*metadata_items\.updated_at = .*metadata_items\.id > .*ORDER BY metadata_items\.updated_at DESC, metadata_items\.id ASC`).
+	mock.ExpectQuery(`(?s)SELECT .*metadata_items\.updated_at = .*metadata_items\.id > .*ORDER BY metadata_items\.updated_at DESC, metadata_items\.id ASC.*UNION ALL.*metadata_items\.updated_at < .*ORDER BY metadata_items\.updated_at DESC, metadata_items\.id ASC.*ORDER BY keyset_metadata\.updated_at DESC, keyset_metadata\.id ASC`).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("next-item"))
 
 	folderID := "folder-1"

@@ -685,12 +685,26 @@ func (r *assetRepository) SearchMetadataItems(ctx context.Context, orgID string,
 		query = query.Where("metadata_items.external_source = ?", *filter.ExternalSource)
 	}
 	if filter.Keyset && filter.AfterUpdatedAt != nil && filter.AfterID != nil {
-		query = query.Where(
-			"(metadata_items.updated_at < ? OR (metadata_items.updated_at = ? AND metadata_items.id > ?))",
-			*filter.AfterUpdatedAt,
-			*filter.AfterUpdatedAt,
-			*filter.AfterID,
+		// The public ordering mixes DESC updated_at with ASC id, so a row-value
+		// comparison cannot express the correct continuation. Split the two
+		// ordered ranges instead: PostgreSQL can seek each branch through the
+		// folder keyset index and Merge Append them without scanning prior pages.
+		sameTimestampRange := query.Session(&gorm.Session{}).
+			Where("metadata_items.updated_at = ? AND metadata_items.id > ?", *filter.AfterUpdatedAt, *filter.AfterID).
+			Order("metadata_items.updated_at DESC, metadata_items.id ASC")
+		earlierTimestampRange := query.Session(&gorm.Session{}).
+			Where("metadata_items.updated_at < ?", *filter.AfterUpdatedAt).
+			Order("metadata_items.updated_at DESC, metadata_items.id ASC")
+		keysetRanges := r.db.WithContext(ctx).Raw(
+			"(?) UNION ALL (?)",
+			sameTimestampRange,
+			earlierTimestampRange,
 		)
+		return items, r.db.WithContext(ctx).
+			Table("(?) AS keyset_metadata", keysetRanges).
+			Order("keyset_metadata.updated_at DESC, keyset_metadata.id ASC").
+			Limit(filter.Limit).
+			Find(&items).Error
 	}
 
 	query = query.

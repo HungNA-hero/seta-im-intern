@@ -46,6 +46,8 @@ services:
       FLYWAY_USER: ${ASSET_DB_USER:-asset_user}
       FLYWAY_PASSWORD: ${ASSET_DB_PASSWORD:-asset_password}
       FLYWAY_LOCATIONS: filesystem:/flyway/sql
+      # Concurrent KAN-58 index creation needs a session-level Flyway lock.
+      FLYWAY_POSTGRESQL_TRANSACTIONAL_LOCK: "false"
     volumes:
       - ./db/asset/migrations:/flyway/sql:ro
     command: -connectRetries=60 migrate

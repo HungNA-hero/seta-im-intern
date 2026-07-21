@@ -16,6 +16,12 @@ import (
 	"seta-im-intern/go-asset-core/internal/requestcontext"
 )
 
+const (
+	internalCursorMode              = "true"
+	maxCursorCandidateBatchSize     = 101
+	cursorDatabaseLookaheadRowCount = 1
+)
+
 // AssetHandler handles HTTP requests for assets.
 type AssetHandler struct {
 	usecase domain.AssetUsecase
@@ -670,7 +676,7 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 	}
 
 	queryValues := r.URL.Query()
-	keyset := queryValues.Get("cursor") == "true"
+	keyset := queryValues.Get("cursor") == internalCursorMode
 	filter := domain.MetadataSearchFilter{
 		Labels: queryValues["label"],
 		Keyset: keyset,
@@ -722,7 +728,7 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 	}
 
 	if keyset {
-		if filter.FolderID == nil || *filter.FolderID == "" || filter.Offset != 0 || filter.Limit < 1 || filter.Limit > 101 {
+		if filter.FolderID == nil || *filter.FolderID == "" || filter.Offset != 0 || filter.Limit < 1 || filter.Limit > maxCursorCandidateBatchSize {
 			writeError(w, r, http.StatusBadRequest, "CURSOR_INVALID")
 			return
 		}
@@ -746,7 +752,7 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 
 		// Fetch one physical row beyond the requested candidate batch so Access
 		// Core can continue authorization traversal without using deep offsets.
-		filter.Limit++
+		filter.Limit += cursorDatabaseLookaheadRowCount
 	}
 
 	items, err := h.usecase.SearchMetadataItems(r.Context(), orgID, filter)
@@ -759,9 +765,9 @@ func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.
 		items = []domain.MetadataItem{}
 	}
 	hasMore := false
-	if keyset && len(items) > filter.Limit-1 {
+	if keyset && len(items) > filter.Limit-cursorDatabaseLookaheadRowCount {
 		hasMore = true
-		items = items[:filter.Limit-1]
+		items = items[:filter.Limit-cursorDatabaseLookaheadRowCount]
 	}
 
 	response := map[string]any{

@@ -850,6 +850,32 @@ describe("Query.searchMetadataConnection", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
+  test("uses one candidate look-ahead for the maximum public page size", async () => {
+    fetchCursorPageOk([makeGoMetadataItem({ id: idA })], false);
+
+    await metadataResolvers.Query.searchMetadataConnection(
+      undefined,
+      { orgId: org, input: { folderId: "folder-1", first: 100 } },
+      ctx,
+    );
+
+    expect(mockFetch.mock.calls[0][0]).toContain("limit=101");
+  });
+
+  test("fails safely when Asset Core returns an invalid continuation tuple", async () => {
+    fetchCursorPageOk([makeGoMetadataItem({ id: "not-a-uuid" })], false);
+
+    await expect(
+      metadataResolvers.Query.searchMetadataConnection(
+        undefined,
+        { orgId: org, input: { folderId: "folder-1", first: 1 } },
+        ctx,
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "INTERNAL_ERROR" }) }),
+    );
+  });
+
   test("preserves Asset Core stale cursor contract and trace boundary", async () => {
     const cursor = Buffer.from(
       JSON.stringify({ v: 1, updatedAt: "2026-07-17T10:00:00Z", id: idA }),

@@ -183,10 +183,11 @@ try {
         $Baseline = @{ Folders = 0; Metadata = 0; Permissions = 0 }
 
         Write-Scenario "FD-01" "Clean migration and exact service boot"
-        Invoke-Checked { npm run clean:all } "Initial volume reset"
-        Invoke-Checked { npm run docker:up } "Database startup"
-        Invoke-Checked { npm run docker:migrate } "Flyway migration"
-        Assert-Equal "1" (Invoke-Psql "seta-asset-db" "asset_user" "asset_db" "SELECT MAX(version) FROM flyway_schema_history;") "Asset Flyway version"
+        Invoke-Checked { docker compose -f (Join-Path $RepoRoot "infra\docker-compose.yml") down --volumes --remove-orphans } "Initial volume reset"
+        Invoke-Checked { docker compose -f (Join-Path $RepoRoot "infra\docker-compose.yml") up -d asset-db access-db } "Database startup"
+        Invoke-Checked { docker compose -f (Join-Path $RepoRoot "infra\docker-compose.yml") --profile migration run --rm flyway-asset } "Asset Flyway migration"
+        Invoke-Checked { docker compose -f (Join-Path $RepoRoot "infra\docker-compose.yml") --profile migration run --rm flyway-access } "Access Flyway migration"
+        Assert-Equal "4" (Invoke-Psql "seta-asset-db" "asset_user" "asset_db" "SELECT MAX(version) FROM flyway_schema_history;") "Asset Flyway version"
         Assert-Equal "2" (Invoke-Psql "seta-access-db" "access_user" "access_db" "SELECT MAX(version) FROM flyway_schema_history;") "Access Flyway version"
         Invoke-Checked { Get-Content (Join-Path $RepoRoot "infra\db\access\seed\demo_fixtures.sql") | docker exec -i seta-access-db psql -U access_user -d access_db } "Access demo seed"
         Invoke-Checked { Get-Content (Join-Path $RepoRoot "infra\db\asset\seed\demo_fixtures.sql") | docker exec -i seta-asset-db psql -U asset_user -d asset_db } "Asset demo seed"
@@ -320,7 +321,7 @@ try {
                 foreach ($Process in @($NodeProcess, $GoProcess)) {
                     if ($Process -and -not $Process.HasExited) { Stop-Process -Id $Process.Id -Force -ErrorAction Stop; $Process.WaitForExit() }
                 }
-                Invoke-Checked { npm run clean:all } "Final volume cleanup"
+                Invoke-Checked { docker compose -f (Join-Path $RepoRoot "infra\docker-compose.yml") down --volumes --remove-orphans } "Final volume cleanup"
                 Remove-Item -LiteralPath $TempDir -Recurse -Force -ErrorAction SilentlyContinue
                 foreach ($Port in @($NodePort, $GoPort)) {
                     if (Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue) { throw "Cleanup left a listener on port $Port" }

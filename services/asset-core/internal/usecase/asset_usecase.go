@@ -13,6 +13,8 @@ import (
 	"seta-im-intern/go-asset-core/internal/domain"
 )
 
+const maxCursorDatabaseFetchLimit = 102
+
 var ltreePathPattern = regexp.MustCompile(`^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*$`)
 
 type assetUsecase struct {
@@ -311,7 +313,7 @@ func (u *assetUsecase) SearchMetadataItems(ctx context.Context, orgID string, fi
 	if filter.Keyset {
 		// The cursor handler requests one additional raw row to determine whether
 		// another candidate batch exists; GraphQL still caps public first at 100.
-		maxLimit = 102
+		maxLimit = maxCursorDatabaseFetchLimit
 	}
 	if filter.Limit <= 0 || filter.Limit > maxLimit {
 		return nil, domain.ErrInvalidInput
