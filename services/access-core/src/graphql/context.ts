@@ -2,6 +2,7 @@ import { GraphQLError } from "graphql";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { prisma } from "../db/prisma";
 import { canDo } from "../authz/decision";
+import { setAuthzRequestContext } from "../authz/authzRequestContext";
 import { assertTemporaryTrainerAdmin } from "../authz/trainerAdmin";
 
 export interface GraphQLContext {
@@ -9,9 +10,7 @@ export interface GraphQLContext {
   currentOrgId: string | null;
   isMember: boolean;
   roles: string[];
-  roleIds: string[];
   olpEnabled: boolean;
-  factMemo: Map<string, Promise<unknown>>;
 }
 
 export function assertAuthenticated(
@@ -103,9 +102,7 @@ function emptyContext(): GraphQLContext {
     currentOrgId: null,
     isMember: false,
     roles: [],
-    roleIds: [],
     olpEnabled: false,
-    factMemo: new Map(),
   };
 }
 
@@ -123,9 +120,7 @@ export async function loadRequestContext(
       currentOrgId: null,
       isMember: false,
       roles: [],
-      roleIds: [],
       olpEnabled: false,
-      factMemo: new Map(),
     };
   }
 
@@ -148,13 +143,22 @@ export async function loadRequestContext(
 
   if (!user || !user.isActive) return emptyContext();
 
+  const roles = user.userRoles.map((ur) => ur.role.code);
+  const olpEnabled = org?.olpEnabled ?? false;
+  setAuthzRequestContext({
+    userId,
+    orgId,
+    roleCodes: roles,
+    roleIds: user.userRoles.map((ur) => ur.roleId),
+    olpEnabled,
+    factMemo: new Map(),
+  });
+
   return {
     userId,
     currentOrgId: orgId,
     isMember: user.orgMembers.length > 0,
-    roles: user.userRoles.map((ur) => ur.role.code),
-    roleIds: user.userRoles.map((ur) => ur.roleId),
-    olpEnabled: org?.olpEnabled ?? false,
-    factMemo: new Map(),
+    roles,
+    olpEnabled,
   };
 }

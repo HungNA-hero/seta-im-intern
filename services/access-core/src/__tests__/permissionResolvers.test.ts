@@ -44,9 +44,7 @@ function makeCtx(overrides: Partial<GraphQLContext> = {}): GraphQLContext {
     currentOrgId: "org-1",
     isMember: true,
     roles: ["org_admin"],
-    roleIds: [],
     olpEnabled: false,
-    factMemo: new Map(),
     ...overrides,
   };
 }

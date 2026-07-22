@@ -10,6 +10,7 @@ import { singleFlight } from "../cache/singleFlight";
 import { readDecision, writeDecision } from "../cache/decisionCache";
 import { decisionKey, hashRoleEpochs } from "../cache/keys";
 import { getAssetEpoch, getRoleEpochs, getUserEpoch } from "../cache/epoch";
+import { AuthzRequestContext, getAuthzRequestContext } from "./authzRequestContext";
 
 let permActionCachePromise: Promise<Map<string, string>> | null = null;
 
@@ -25,19 +26,6 @@ function rbacCeilingCacheKey(
 
 export function resetInProcessAuthzCachesForTests(): void {
   rbacCeilingCache.clear();
-}
-
-export interface PreloadedAuthContext {
-  userId: string;
-  orgId: string;
-  roleCodes: string[];
-  roleIds: string[];
-  olpEnabled: boolean;
-}
-
-export interface CanDoOptions {
-  preloaded?: PreloadedAuthContext;
-  factMemo?: Map<string, Promise<unknown>>;
 }
 
 type RoleResolution =
@@ -57,7 +45,6 @@ interface DecideAllowedResourcesInput {
   resourceIds: string[];
   getAncestorIds?: (resourceId: string) => Promise<string[]> | string[];
   rbacOnly?: boolean;
-  preloaded?: PreloadedAuthContext;
   preResolved?: RoleResolution;
 }
 
@@ -81,7 +68,7 @@ async function getPermActionId(
 }
 
 async function resolveRolesFromPreloaded(
-  preloaded: PreloadedAuthContext,
+  preloaded: AuthzRequestContext,
   userId: string,
   action: PermissionActionCode,
 ): Promise<RoleResolution> {
@@ -116,8 +103,8 @@ async function resolveRoles(
   userId: string,
   orgId: string,
   action: PermissionActionCode,
-  preloaded?: PreloadedAuthContext,
 ): Promise<RoleResolution> {
+  const preloaded = getAuthzRequestContext();
   if (preloaded && preloaded.userId === userId && preloaded.orgId === orgId) {
     return resolveRolesFromPreloaded(preloaded, userId, action);
   }
@@ -223,11 +210,9 @@ async function decideAllowedResources({
   resourceIds,
   getAncestorIds,
   rbacOnly = false,
-  preloaded,
   preResolved,
 }: DecideAllowedResourcesInput): Promise<AllowedResourcesDecision> {
-  const resolution =
-    preResolved ?? (await resolveRoles(userId, orgId, action, preloaded));
+  const resolution = preResolved ?? (await resolveRoles(userId, orgId, action));
   if (!("roleIds" in resolution)) {
     return {
       reason: resolution.reason,
@@ -307,8 +292,12 @@ function ancestorLoader(
   userId: string,
   orgId: string,
   resourceType: ResourceType,
-  factMemo?: Map<string, Promise<unknown>>,
 ): ((resourceId: string) => Promise<string[]>) | undefined {
+  const authzCtx = getAuthzRequestContext();
+  const factMemo =
+    authzCtx && authzCtx.userId === userId && authzCtx.orgId === orgId
+      ? authzCtx.factMemo
+      : undefined;
   if (resourceType === "folder") {
     return async (resourceId) => {
       const meta = await memoized(
@@ -345,16 +334,10 @@ export async function canDo(
   resourceType: ResourceType,
   resourceId: string,
   orgId: string | null,
-  options?: CanDoOptions,
 ): Promise<{ allowed: boolean; reason: string | null }> {
   if (!orgId) return { allowed: false, reason: "no org context" };
 
-  const resolution = await resolveRoles(
-    userId,
-    orgId,
-    action,
-    options?.preloaded,
-  );
+  const resolution = await resolveRoles(userId, orgId, action);
   if (!("roleIds" in resolution)) {
     return { allowed: resolution.allowed, reason: resolution.reason };
   }
@@ -387,12 +370,7 @@ export async function canDo(
       action,
       resourceType,
       resourceIds: [resourceId],
-      getAncestorIds: ancestorLoader(
-        userId,
-        orgId,
-        resourceType,
-        options?.factMemo,
-      ),
+      getAncestorIds: ancestorLoader(userId, orgId, resourceType),
       rbacOnly: resourceType === "folder" && resourceId === orgId,
       preResolved: resolution,
     });

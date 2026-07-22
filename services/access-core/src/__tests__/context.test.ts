@@ -18,9 +18,7 @@ const emptyCtx: GraphQLContext = {
   currentOrgId: null,
   isMember: false,
   roles: [],
-  roleIds: [],
   olpEnabled: false,
-  factMemo: new Map(),
 };
 
 const authedCtx: GraphQLContext = {
@@ -28,9 +26,7 @@ const authedCtx: GraphQLContext = {
   currentOrgId: "o1",
   isMember: true,
   roles: ["org_admin"],
-  roleIds: [],
   olpEnabled: false,
-  factMemo: new Map(),
 };
 
 describe("assertAuthenticated", () => {
