@@ -5,7 +5,7 @@ import { createCanDoMock } from "./helpers/canDoMock";
 const { mockCanDo } = vi.hoisted(() => ({ mockCanDo: vi.fn() }));
 const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({ mockFilterAllowedResourceIds: vi.fn() }));
 
-vi.mock("../db/queries/canDo", () =>
+vi.mock("../authz/decision", () =>
   createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
 );
 vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));

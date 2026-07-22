@@ -64,7 +64,7 @@ func WithRequestCorrelation(next http.Handler) http.Handler {
 			result = "denied"
 		}
 		slog.Default().Info("request completed",
-			"service", "asset-core",
+			"service", ServiceNameAssetCore,
 			"traceId", correlation.TraceID,
 			"requestId", correlation.RequestID,
 			"operation", r.Method+" "+r.URL.Path,

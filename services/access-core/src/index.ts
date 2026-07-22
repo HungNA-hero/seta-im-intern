@@ -3,11 +3,12 @@ import { buildServer } from './server';
 import { assertRuntimeConfig, config } from './config';
 import { prisma }      from './db/prisma';
 import { registerGracefulShutdown } from './lifecycle';
+import { ServiceName } from './observability/serviceName';
 
 function logStartup(level: "info" | "warn" | "error", message: string, error?: unknown) {
   process.stdout.write(`${JSON.stringify({
     level,
-    service: "access-core",
+    service: ServiceName.ACCESS_CORE,
     message,
     error: error instanceof Error ? error.message : undefined,
     timestamp: new Date().toISOString(),

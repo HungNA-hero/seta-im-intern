@@ -18,7 +18,7 @@ const { mockCanDo } = vi.hoisted(() => ({
 }));
 
 // Policy is the only injected boundary; authentication and org membership use Access DB.
-vi.mock("../db/queries/canDo", () => ({ canDo: mockCanDo }));
+vi.mock("../authz/decision", () => ({ canDo: mockCanDo }));
 
 const ORG_ID = "00000000-0000-0000-0000-000000000010";
 const USER_ID = "00000000-0000-0000-0000-000000000001";

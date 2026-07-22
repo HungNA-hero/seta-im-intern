@@ -1,6 +1,7 @@
 import { GraphQLError } from "graphql";
-import { getErrorDefinition, isKnownErrorCode } from "../errorCodes";
+import { getErrorDefinition, isKnownErrorCode } from "../errors/errorCodes";
 import { getRequestCorrelation, isTraceId, recordRequestError } from "../observability/requestContext";
+import { ServiceName } from "../observability/serviceName";
 
 export function maskGraphQLError(error: unknown, fallbackMessage: string): Error {
   const executionError = error instanceof GraphQLError ? error : undefined;
@@ -24,9 +25,9 @@ export function maskGraphQLError(error: unknown, fallbackMessage: string): Error
     ) {
       const definition = getErrorDefinition(code);
       const service =
-        candidate.extensions?.service === "asset-core"
-          ? "asset-core"
-          : "access-core";
+        candidate.extensions?.service === ServiceName.ASSET_CORE
+          ? ServiceName.ASSET_CORE
+          : ServiceName.ACCESS_CORE;
       const traceId =
         candidate.extensions?.traceId ?? executionError?.extensions?.traceId;
       const correlationTraceId =
@@ -58,7 +59,7 @@ export function maskGraphQLError(error: unknown, fallbackMessage: string): Error
       code: definition.code,
       number: definition.number,
       traceId: getRequestCorrelation()?.traceId,
-      service: "access-core",
+      service: ServiceName.ACCESS_CORE,
     },
   });
 }
