@@ -48,7 +48,15 @@ CREATE INDEX idx_folder_deletion_jobs_expired_lease
 CREATE INDEX idx_folder_deletion_jobs_root_path
     ON folder_deletion_jobs USING GIST (root_path);
 
+CREATE OR REPLACE FUNCTION set_folder_deletion_job_updated_at()
+RETURNS trigger AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER trg_folder_deletion_jobs_set_updated_at
 BEFORE UPDATE ON folder_deletion_jobs
 FOR EACH ROW
-EXECUTE FUNCTION set_updated_at();
+EXECUTE FUNCTION set_folder_deletion_job_updated_at();

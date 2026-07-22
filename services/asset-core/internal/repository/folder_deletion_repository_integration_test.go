@@ -50,19 +50,25 @@ func TestFolderDeletionRepository_PostgresIntegration(t *testing.T) {
 	if err := database.Exec("INSERT INTO user_ref (user_id) VALUES (?)", userID).Error; err != nil {
 		t.Fatalf("seed user reference: %v", err)
 	}
-	if err := database.Exec("INSERT INTO folders (id, org_id, path, name, created_by, deleted_at) VALUES (?, ?, ?::ltree, ?, ?, NULL), (?, ?, ?::ltree, ?, ?, NULL), (?, ?, ?::ltree, ?, ?, NOW())",
+	if err := database.Exec("INSERT INTO folders (id, org_id, path, name, created_by, deleted_at) VALUES (?, ?, ?::ltree, ?, ?, NULL), (?, ?, ?::ltree, ?, ?, NULL), (?, ?, ?::ltree, ?, ?, NULL)",
 		rootID, orgID, rootPath, "Delete root", userID,
 		childID, orgID, childPath, "Delete child", userID,
 		legacyFolderID, orgID, legacyPath, "Legacy tombstone", userID,
 	).Error; err != nil {
 		t.Fatalf("seed folder subtree: %v", err)
 	}
-	if err := database.Exec("INSERT INTO metadata_items (id, folder_id, title, created_by, deleted_at) VALUES (?, ?, ?, ?, NULL), (?, ?, ?, ?, NULL), (?, ?, ?, ?, NOW())",
+	if err := database.Exec("INSERT INTO metadata_items (id, folder_id, title, created_by, deleted_at) VALUES (?, ?, ?, ?, NULL), (?, ?, ?, ?, NULL), (?, ?, ?, ?, NULL)",
 		uuid.NewString(), rootID, "Active root metadata", userID,
 		uuid.NewString(), childID, "Active child metadata", userID,
 		uuid.NewString(), legacyFolderID, "Legacy metadata", userID,
 	).Error; err != nil {
 		t.Fatalf("seed metadata subtree: %v", err)
+	}
+	if err := database.Exec("UPDATE metadata_items SET deleted_at = NOW() WHERE folder_id = ?", legacyFolderID).Error; err != nil {
+		t.Fatalf("soft-delete legacy metadata: %v", err)
+	}
+	if err := database.Exec("UPDATE folders SET deleted_at = NOW() WHERE id = ?", legacyFolderID).Error; err != nil {
+		t.Fatalf("soft-delete legacy folder: %v", err)
 	}
 
 	deletions := repository.NewFolderDeletionRepository(database)
