@@ -9,6 +9,7 @@ import { ServiceName } from "../observability/serviceName";
 
 export const FOLDERS_PATH = "/internal/api/v1/folders";
 export const METADATA_PATH = "/internal/api/v1/metadata-items";
+export const FOLDER_DELETIONS_PATH = "/internal/api/v1/folder-deletions";
 
 interface SafeAssetErrorEnvelope {
   error?: {
@@ -106,6 +107,7 @@ export function assetPath(
 interface AssetRequest {
   userId: string;
   orgId: string;
+  orgAdmin?: boolean;
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: Record<string, unknown>;
 }
@@ -123,6 +125,9 @@ export function assetFetch(path: string, req: AssetRequest): Promise<Response> {
     "X-Org-Id": req.orgId,
     Authorization: `Bearer ${config.assetInternalApiToken}`,
   };
+  if (req.orgAdmin === true) {
+    headers["X-Org-Admin"] = "true";
+  }
   const init: RequestInit = { method: req.method, headers };
   const correlation = getRequestCorrelation();
   if (correlation) {

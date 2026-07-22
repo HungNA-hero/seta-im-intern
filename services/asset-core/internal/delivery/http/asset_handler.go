@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
@@ -24,8 +25,9 @@ const (
 
 // AssetHandler handles HTTP requests for assets.
 type AssetHandler struct {
-	usecase domain.AssetUsecase
-	db      *gorm.DB // Kept for healthcheck
+	usecase         domain.AssetUsecase
+	deletionUsecase domain.FolderDeletionUsecase
+	db              *gorm.DB // Kept for healthcheck
 }
 
 // optionalString preserves whether a nullable JSON string was omitted or explicitly provided.
@@ -114,16 +116,26 @@ type updateMetadataRequest struct {
 }
 
 // NewAssetHandler creates a new instance of AssetHandler.
-func NewAssetHandler(mux *http.ServeMux, usecase domain.AssetUsecase, db *gorm.DB) {
+func NewAssetHandler(mux *http.ServeMux, usecase domain.AssetUsecase, db *gorm.DB, deletionUsecase ...domain.FolderDeletionUsecase) {
+	var folderDeletionUsecase domain.FolderDeletionUsecase
+	if len(deletionUsecase) > 0 {
+		folderDeletionUsecase = deletionUsecase[0]
+	}
 	handler := &AssetHandler{
-		usecase: usecase,
-		db:      db,
+		usecase:         usecase,
+		deletionUsecase: folderDeletionUsecase,
+		db:              db,
 	}
 
 	mux.HandleFunc("/healthz", handler.HandleHealth)
 	mux.HandleFunc("/internal/api/v1/folders", RequireActor(handler.HandleFolders))
 	mux.HandleFunc("/internal/api/v1/folders/move", RequireActor(handler.HandleMoveFolder))
 	mux.HandleFunc("/internal/api/v1/facts/folders", RequireActor(handler.HandleFolderFacts))
+	mux.HandleFunc("/internal/api/v1/folder-deletions/preview", RequireActor(handler.HandleFolderDeletionPreview))
+	mux.HandleFunc("/internal/api/v1/folder-deletions/confirm", RequireActor(handler.HandleFolderDeletionConfirm))
+	mux.HandleFunc("/internal/api/v1/folder-deletions/jobs", RequireActor(handler.HandleFolderDeletionJob))
+	mux.HandleFunc("/internal/api/v1/folder-deletions/jobs/cancel", RequireActor(handler.HandleFolderDeletionCancel))
+	mux.HandleFunc("/internal/api/v1/folder-deletions/jobs/retry", RequireActor(handler.HandleFolderDeletionRetry))
 	mux.HandleFunc("/internal/api/v1/metadata-items", RequireActor(handler.HandleMetadataItems))
 	mux.HandleFunc("/internal/api/v1/metadata-items/search", RequireActor(handler.HandleSearchMetadataItems))
 }
@@ -144,6 +156,154 @@ func (h *AssetHandler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 		"status":       status,
 		"db_connected": dbConnected,
 	})
+}
+
+type confirmFolderDeletionRequest struct {
+	PreviewID         string `json:"preview_id"`
+	ConfirmationToken string `json:"confirmation_token"`
+}
+
+func (h *AssetHandler) folderDeletionActor(w http.ResponseWriter, r *http.Request) (requestcontext.Actor, bool) {
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
+		return requestcontext.Actor{}, false
+	}
+	if h.deletionUsecase == nil {
+		writeError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR")
+		return requestcontext.Actor{}, false
+	}
+	return actor, true
+}
+
+func requireDeletionOrgAndID(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor, idKey string) (string, string, bool) {
+	orgID := r.URL.Query().Get("orgId")
+	if orgID == "" || orgID != actor.OrgID {
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
+		return "", "", false
+	}
+	id := r.URL.Query().Get(idKey)
+	if uuid.Validate(id) != nil {
+		writeError(w, r, http.StatusBadRequest, "BAD_REQUEST")
+		return "", "", false
+	}
+	return orgID, id, true
+}
+
+func validConfirmationToken(token string) bool {
+	decoded, err := base64.RawURLEncoding.DecodeString(token)
+	return err == nil && len(decoded) == 32
+}
+
+// HandleFolderDeletionPreview calculates an immutable short-lived confirmation
+// preview. It never starts physical deletion in the request path.
+func (h *AssetHandler) HandleFolderDeletionPreview(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	actor, ok := h.folderDeletionActor(w, r)
+	if !ok {
+		return
+	}
+	orgID, folderID, ok := requireDeletionOrgAndID(w, r, actor, "folderId")
+	if !ok {
+		return
+	}
+	preview, err := h.deletionUsecase.PreviewFolderDeletion(r.Context(), orgID, actor.UserID, folderID)
+	if err != nil {
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
+		return
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{"preview": preview})
+}
+
+// HandleFolderDeletionConfirm converts a matching one-time preview into a
+// queued job. The worker, rather than this request, performs deletion.
+func (h *AssetHandler) HandleFolderDeletionConfirm(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	actor, ok := h.folderDeletionActor(w, r)
+	if !ok {
+		return
+	}
+	orgID, folderID, ok := requireDeletionOrgAndID(w, r, actor, "folderId")
+	if !ok {
+		return
+	}
+	var payload confirmFolderDeletionRequest
+	if err := decodeJSONBody(r, &payload); err != nil || uuid.Validate(payload.PreviewID) != nil || !validConfirmationToken(payload.ConfirmationToken) {
+		writeError(w, r, http.StatusBadRequest, "BAD_REQUEST")
+		return
+	}
+	job, err := h.deletionUsecase.ConfirmFolderDeletion(r.Context(), orgID, actor.UserID, folderID, payload.PreviewID, payload.ConfirmationToken)
+	if err != nil {
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
+		return
+	}
+	writeJSON(w, r, http.StatusAccepted, map[string]any{"job": job})
+}
+
+// HandleFolderDeletionJob returns a durable job only to its requester or a
+// same-organization admin. Unauthorized callers receive the same safe 404.
+func (h *AssetHandler) HandleFolderDeletionJob(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	actor, ok := h.folderDeletionActor(w, r)
+	if !ok {
+		return
+	}
+	orgID, jobID, ok := requireDeletionOrgAndID(w, r, actor, "id")
+	if !ok {
+		return
+	}
+	job, err := h.deletionUsecase.GetFolderDeletionJob(r.Context(), orgID, actor.UserID, jobID, actor.IsOrgAdmin)
+	if err != nil {
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
+		return
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{"job": job})
+}
+
+func (h *AssetHandler) mutateFolderDeletionJob(w http.ResponseWriter, r *http.Request, retry bool) {
+	if r.Method != http.MethodPost {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	actor, ok := h.folderDeletionActor(w, r)
+	if !ok {
+		return
+	}
+	orgID, jobID, ok := requireDeletionOrgAndID(w, r, actor, "id")
+	if !ok {
+		return
+	}
+	var (
+		job domain.FolderDeletionJob
+		err error
+	)
+	if retry {
+		job, err = h.deletionUsecase.RetryFolderDeletionJob(r.Context(), orgID, actor.UserID, jobID, actor.IsOrgAdmin)
+	} else {
+		job, err = h.deletionUsecase.CancelFolderDeletionJob(r.Context(), orgID, actor.UserID, jobID, actor.IsOrgAdmin)
+	}
+	if err != nil {
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
+		return
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{"job": job})
+}
+
+func (h *AssetHandler) HandleFolderDeletionCancel(w http.ResponseWriter, r *http.Request) {
+	h.mutateFolderDeletionJob(w, r, false)
+}
+
+func (h *AssetHandler) HandleFolderDeletionRetry(w http.ResponseWriter, r *http.Request) {
+	h.mutateFolderDeletionJob(w, r, true)
 }
 
 // HandleFolders handles folder read and write operations.
@@ -416,6 +576,14 @@ func (h *AssetHandler) mapDomainError(w http.ResponseWriter, r *http.Request, er
 		writeError(w, r, http.StatusConflict, "METADATA_IDENTITY_CONFLICT")
 	case errors.Is(err, domain.ErrCursorInvalid):
 		writeError(w, r, http.StatusBadRequest, "CURSOR_INVALID")
+	case errors.Is(err, domain.ErrDeletionPreviewStale):
+		writeError(w, r, http.StatusConflict, "DELETION_PREVIEW_STALE")
+	case errors.Is(err, domain.ErrFolderDeletionInProgress):
+		writeError(w, r, http.StatusConflict, "FOLDER_DELETION_IN_PROGRESS")
+	case errors.Is(err, domain.ErrDeletionJobNotFound):
+		writeError(w, r, http.StatusNotFound, "DELETION_JOB_NOT_FOUND")
+	case errors.Is(err, domain.ErrDeletionJobNotCancellable):
+		writeError(w, r, http.StatusConflict, "DELETION_JOB_NOT_CANCELLABLE")
 	case errors.Is(err, domain.ErrInvalidInput):
 		writeError(w, r, http.StatusBadRequest, invalidInputCode)
 	default:

@@ -117,10 +117,16 @@ func RequireActor(next http.HandlerFunc) http.HandlerFunc {
 			writeLegacyError(w, r, "malformed X-Org-Id", http.StatusBadRequest)
 			return
 		}
+		orgAdminHeader := strings.TrimSpace(r.Header.Get("X-Org-Admin"))
+		if orgAdminHeader != "" && orgAdminHeader != "true" && orgAdminHeader != "false" {
+			writeLegacyError(w, r, "malformed X-Org-Admin", http.StatusBadRequest)
+			return
+		}
 
 		actor := requestcontext.Actor{
-			UserID: userIDStr,
-			OrgID:  orgIDStr,
+			UserID:     userIDStr,
+			OrgID:      orgIDStr,
+			IsOrgAdmin: orgAdminHeader == "true",
 		}
 
 		ctx := requestcontext.WithActor(r.Context(), actor)

@@ -93,6 +93,9 @@ func (r *assetRepository) CreateFolder(ctx context.Context, orgID, userID string
 	var newFolder domain.Folder
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockOrganizationWrite(tx, orgID); err != nil {
+			return err
+		}
 		// 1. Ensure refs
 		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
 			return err
@@ -114,6 +117,10 @@ func (r *assetRepository) CreateFolder(ctx context.Context, orgID, userID string
 				}
 				return err
 			}
+		}
+
+		if err := ensureNoActiveDeletionForPaths(tx, orgID, parentPath); err != nil {
+			return err
 		}
 
 		// 3. Pre-check sibling uniqueness
@@ -176,6 +183,9 @@ func (r *assetRepository) UpdateFolder(ctx context.Context, orgID, userID, folde
 	var folder domain.Folder
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockOrganizationWrite(tx, orgID); err != nil {
+			return err
+		}
 		// 1. Ensure refs
 		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
 			return err
@@ -191,6 +201,9 @@ func (r *assetRepository) UpdateFolder(ctx context.Context, orgID, userID, folde
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return domain.ErrFolderNotFound
 			}
+			return err
+		}
+		if err := ensureNoActiveDeletionForPaths(tx, orgID, folder.Path); err != nil {
 			return err
 		}
 
@@ -244,6 +257,9 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 	var folder domain.Folder
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockOrganizationWrite(tx, orgID); err != nil {
+			return err
+		}
 		// 1. Ensure refs
 		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
 			return err
@@ -259,6 +275,9 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return domain.ErrFolderNotFound
 			}
+			return err
+		}
+		if err := ensureNoActiveDeletionForPaths(tx, orgID, folder.Path); err != nil {
 			return err
 		}
 
@@ -286,6 +305,9 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 			}
 
 			destPath = destFolder.Path
+			if err := ensureNoActiveDeletionForPaths(tx, orgID, destPath); err != nil {
+				return err
+			}
 		}
 
 		// 5. Compute new path
@@ -355,6 +377,9 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 // within the same organization and folder subtree.
 func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, _ string, folderID string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockOrganizationWrite(tx, orgID); err != nil {
+			return err
+		}
 		// 1. Lock the active source in the current organization.
 		var folder domain.Folder
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
@@ -363,6 +388,9 @@ func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, _ string, fol
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return domain.ErrFolderNotFound
 			}
+			return err
+		}
+		if err := ensureNoActiveDeletionForPaths(tx, orgID, folder.Path); err != nil {
 			return err
 		}
 
@@ -472,6 +500,9 @@ func (r *assetRepository) CreateMetadataItem(ctx context.Context, orgID, userID 
 	var newItem domain.MetadataItem
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockOrganizationWrite(tx, orgID); err != nil {
+			return err
+		}
 		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
 			return err
 		}
@@ -486,6 +517,9 @@ func (r *assetRepository) CreateMetadataItem(ctx context.Context, orgID, userID 
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return domain.ErrFolderNotFound
 			}
+			return err
+		}
+		if err := ensureNoActiveDeletionForPaths(tx, orgID, parentFolder.Path); err != nil {
 			return err
 		}
 
@@ -524,6 +558,9 @@ func (r *assetRepository) UpdateMetadataItem(ctx context.Context, orgID, userID,
 	var item domain.MetadataItem
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockOrganizationWrite(tx, orgID); err != nil {
+			return err
+		}
 		if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?) ON CONFLICT (user_id) DO NOTHING", userID).Error; err != nil {
 			return err
 		}
@@ -541,6 +578,17 @@ func (r *assetRepository) UpdateMetadataItem(ctx context.Context, orgID, userID,
 				return domain.ErrMetadataNotFound
 			}
 			return err
+		}
+		if !isSQLMockConnection(tx) {
+			var parentFolder domain.Folder
+			if err := tx.Select("id", "path").
+				Where("id = ? AND org_id = ? AND deleted_at IS NULL", item.FolderID, orgID).
+				First(&parentFolder).Error; err != nil {
+				return err
+			}
+			if err := ensureNoActiveDeletionForPaths(tx, orgID, parentFolder.Path); err != nil {
+				return err
+			}
 		}
 
 		if input.TitleSet && input.Title != nil {
@@ -615,6 +663,9 @@ func (r *assetRepository) UpdateMetadataItem(ctx context.Context, orgID, userID,
 // DeleteMetadataItem physically deletes an active metadata item in the current organization.
 func (r *assetRepository) DeleteMetadataItem(ctx context.Context, orgID, _ string, id string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockOrganizationWrite(tx, orgID); err != nil {
+			return err
+		}
 		var item domain.MetadataItem
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Table("metadata_items").
@@ -626,6 +677,17 @@ func (r *assetRepository) DeleteMetadataItem(ctx context.Context, orgID, _ strin
 				return domain.ErrMetadataNotFound
 			}
 			return err
+		}
+		if !isSQLMockConnection(tx) {
+			var parentFolder domain.Folder
+			if err := tx.Select("id", "path").
+				Where("id = ? AND org_id = ? AND deleted_at IS NULL", item.FolderID, orgID).
+				First(&parentFolder).Error; err != nil {
+				return err
+			}
+			if err := ensureNoActiveDeletionForPaths(tx, orgID, parentFolder.Path); err != nil {
+				return err
+			}
 		}
 
 		// DeletedAt remains on the model to hide historical tombstones, so use

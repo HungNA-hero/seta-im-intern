@@ -7,6 +7,10 @@ services:
       - asset_go_modules:/go/pkg/mod
       - asset_go_build_cache:/root/.cache/go-build
 
+  asset-delete-worker:
+    build:
+      target: prod
+
   access-core:
     build:
       target: dev
