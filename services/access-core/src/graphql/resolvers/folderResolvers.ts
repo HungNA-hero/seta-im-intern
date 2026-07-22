@@ -10,6 +10,13 @@ import {
   moveFolder,
   updateFolder,
 } from "../../usecase/folderUsecase";
+import {
+  cancelFolderDeletionJob,
+  confirmFolderDeletion,
+  getFolderDeletionJob,
+  previewFolderDeletion,
+  retryFolderDeletionJob,
+} from "../../usecase/folderDeletionUsecase";
 import { GraphQLContext } from "../context";
 import { selectionIncludesField } from "../selection";
 
@@ -39,6 +46,12 @@ export const folderResolvers = {
       { orgId, parentPath }: { orgId: string; parentPath: string },
       ctx: GraphQLContext,
     ) => listFolderChildren(ctx, orgId, parentPath),
+
+    folderDeletionJob: (
+      _: unknown,
+      { orgId, id }: { orgId: string; id: string },
+      ctx: GraphQLContext,
+    ) => getFolderDeletionJob(ctx, orgId, id),
   },
 
   Folder: {
@@ -101,5 +114,39 @@ export const folderResolvers = {
       { orgId, id }: { orgId: string; id: string },
       ctx: GraphQLContext,
     ) => deleteFolder(ctx, orgId, id),
+
+    previewFolderDeletion: (
+      _: unknown,
+      { orgId, folderId }: { orgId: string; folderId: string },
+      ctx: GraphQLContext,
+    ) => previewFolderDeletion(ctx, orgId, folderId),
+
+    confirmFolderDeletion: (
+      _: unknown,
+      {
+        orgId,
+        folderId,
+        previewId,
+        confirmationToken,
+      }: {
+        orgId: string;
+        folderId: string;
+        previewId: string;
+        confirmationToken: string;
+      },
+      ctx: GraphQLContext,
+    ) => confirmFolderDeletion(ctx, orgId, folderId, previewId, confirmationToken),
+
+    cancelFolderDeletion: (
+      _: unknown,
+      { orgId, id }: { orgId: string; id: string },
+      ctx: GraphQLContext,
+    ) => cancelFolderDeletionJob(ctx, orgId, id),
+
+    retryFolderDeletion: (
+      _: unknown,
+      { orgId, id }: { orgId: string; id: string },
+      ctx: GraphQLContext,
+    ) => retryFolderDeletionJob(ctx, orgId, id),
   },
 };

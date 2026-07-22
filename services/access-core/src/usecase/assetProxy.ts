@@ -15,6 +15,7 @@ export interface Precondition {
 export interface AuthorizedFetchInit {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: Record<string, unknown>;
+  includeOrgAdmin?: boolean;
 }
 
 export async function assertPreconditions(
@@ -43,5 +44,10 @@ export async function authorizedFetch(
 ): Promise<Response> {
   assertAuthenticated(ctx);
   await assertPreconditions(ctx, orgId, require);
-  return assetFetch(path, { userId: ctx.userId, orgId, ...init });
+  return assetFetch(path, {
+    userId: ctx.userId,
+    orgId,
+    orgAdmin: init.includeOrgAdmin && ctx.roles.includes("org_admin"),
+    ...init,
+  });
 }

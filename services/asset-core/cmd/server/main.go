@@ -43,11 +43,13 @@ func main() {
 	// 2. Setup Clean Architecture Layers
 	assetRepo := repository.NewAssetRepository(db)
 	assetUsecase := usecase.NewAssetUsecase(assetRepo)
+	folderDeletionRepo := repository.NewFolderDeletionRepository(db)
+	folderDeletionUsecase := usecase.NewFolderDeletionUsecase(folderDeletionRepo)
 
 	// 3. Setup Routes and Handlers
 	muxPtr := http.NewServeMux()
 
-	httpDelivery.NewAssetHandler(muxPtr, assetUsecase, db)
+	httpDelivery.NewAssetHandler(muxPtr, assetUsecase, db, folderDeletionUsecase)
 
 	// 4. Start Server
 	port := os.Getenv("PORT")

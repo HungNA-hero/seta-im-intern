@@ -13,12 +13,14 @@ CMD ["air", "-c", ".air.toml"]
 
 FROM dependencies AS build
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/asset-core ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/asset-core ./cmd/server \
+ && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/asset-delete-worker ./cmd/asset-delete-worker
 
 FROM alpine:3.23 AS prod
 RUN addgroup -S asset && adduser -S -G asset -H -s /sbin/nologin asset
 WORKDIR /app
 COPY --from=build --chown=asset:asset /out/asset-core /app/asset-core
+COPY --from=build --chown=asset:asset /out/asset-delete-worker /app/asset-delete-worker
 USER asset
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=5 \

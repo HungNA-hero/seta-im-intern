@@ -258,15 +258,25 @@ func TestFolderRepository_PostgresIntegration(t *testing.T) {
 	legacyFolderPath := legacyRootPath + "." + strings.ReplaceAll(legacyFolderID, "-", "")
 	legacyRootMetadataID := uuid.NewString()
 	legacyChildMetadataID := uuid.NewString()
-	if err := tx.Exec(`
-		INSERT INTO folders (id, org_id, path, name, created_by) VALUES (?, ?, ?::ltree, ?, ?);
-		INSERT INTO folders (id, org_id, path, name, created_by, deleted_at) VALUES (?, ?, ?::ltree, ?, ?, NOW());
-		INSERT INTO metadata_items (id, folder_id, title, created_by, deleted_at) VALUES (?, ?, ?, ?, NOW()), (?, ?, ?, ?, NOW());
-	`, legacyRootID, orgID, legacyRootPath, "Legacy purge root", userID,
-		legacyFolderID, orgID, legacyFolderPath, "Legacy tombstone child", userID,
+	if err := tx.Exec("INSERT INTO folders (id, org_id, path, name, created_by) VALUES (?, ?, ?::ltree, ?, ?)",
+		legacyRootID, orgID, legacyRootPath, "Legacy purge root", userID).Error; err != nil {
+		t.Fatalf("seed legacy purge root: %v", err)
+	}
+	if err := tx.Exec("INSERT INTO folders (id, org_id, path, name, created_by) VALUES (?, ?, ?::ltree, ?, ?)",
+		legacyFolderID, orgID, legacyFolderPath, "Legacy tombstone child", userID).Error; err != nil {
+		t.Fatalf("seed legacy tombstone child: %v", err)
+	}
+	if err := tx.Exec("INSERT INTO metadata_items (id, folder_id, title, created_by) VALUES (?, ?, ?, ?), (?, ?, ?, ?)",
 		legacyRootMetadataID, legacyRootID, "Legacy root metadata", userID,
 		legacyChildMetadataID, legacyFolderID, "Legacy child metadata", userID).Error; err != nil {
-		t.Fatalf("seed legacy tombstone subtree: %v", err)
+		t.Fatalf("seed legacy metadata: %v", err)
+	}
+	if err := tx.Exec("UPDATE metadata_items SET deleted_at = NOW() WHERE id IN (?, ?)",
+		legacyRootMetadataID, legacyChildMetadataID).Error; err != nil {
+		t.Fatalf("soft-delete legacy metadata: %v", err)
+	}
+	if err := tx.Exec("UPDATE folders SET deleted_at = NOW() WHERE id = ?", legacyFolderID).Error; err != nil {
+		t.Fatalf("soft-delete legacy child: %v", err)
 	}
 	if err := repo.DeleteFolder(ctx, orgID, userID, legacyRootID); err != nil {
 		t.Fatalf("hard-delete legacy tombstone subtree root: %v", err)

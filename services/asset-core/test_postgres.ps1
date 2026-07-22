@@ -29,19 +29,29 @@ try {
         if ($LASTEXITCODE -eq 0) { break }
         Start-Sleep -Milliseconds 500
     }
+    if ($LASTEXITCODE -ne 0) {
+        throw "Disposable PostgreSQL did not become ready."
+    }
 
     Write-Host "Applying Flyway migrations..."
     docker run --rm `
+        --env FLYWAY_POSTGRESQL_TRANSACTIONAL_LOCK=false `
         --mount "type=bind,source=$AssetMigrations,target=/flyway/sql,readonly" `
         flyway/flyway:10-alpine `
         -url="jdbc:postgresql://host.docker.internal:$AssetPort/asset_db" `
         -user=asset_user -password=asset_password `
         -locations=filesystem:/flyway/sql -connectRetries=60 migrate
+    if ($LASTEXITCODE -ne 0) {
+        throw "Flyway migration validation failed."
+    }
 
     $env:ASSET_TEST_DATABASE_URL = "postgresql://asset_user:asset_password@127.0.0.1:$AssetPort/asset_db"
 
     Write-Host "Running go tests..."
     go test ./internal/repository -v -count=1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Asset repository integration tests failed."
+    }
 
 } finally {
     docker stop $AssetContainer 2>$null | Out-Null

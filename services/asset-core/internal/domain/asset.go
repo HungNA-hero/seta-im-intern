@@ -11,14 +11,18 @@ import (
 )
 
 var (
-	ErrFolderNotFound   = errors.New("folder not found")
-	ErrFolderConflict   = errors.New("folder conflict: sibling name or path already exists")
-	ErrFolderNotEmpty   = errors.New("folder is not empty")
-	ErrCycleDetected    = errors.New("cycle detected: cannot move folder into its own descendant")
-	ErrMetadataNotFound = errors.New("metadata not found")
-	ErrMetadataConflict = errors.New("metadata conflict: external identity already exists")
-	ErrCursorInvalid    = errors.New("pagination cursor is malformed or stale")
-	ErrInvalidInput     = errors.New("invalid input")
+	ErrFolderNotFound            = errors.New("folder not found")
+	ErrFolderConflict            = errors.New("folder conflict: sibling name or path already exists")
+	ErrFolderNotEmpty            = errors.New("folder is not empty")
+	ErrCycleDetected             = errors.New("cycle detected: cannot move folder into its own descendant")
+	ErrMetadataNotFound          = errors.New("metadata not found")
+	ErrMetadataConflict          = errors.New("metadata conflict: external identity already exists")
+	ErrCursorInvalid             = errors.New("pagination cursor is malformed or stale")
+	ErrInvalidInput              = errors.New("invalid input")
+	ErrDeletionPreviewStale      = errors.New("folder deletion preview is stale")
+	ErrFolderDeletionInProgress  = errors.New("folder deletion is in progress")
+	ErrDeletionJobNotFound       = errors.New("folder deletion job not found")
+	ErrDeletionJobNotCancellable = errors.New("folder deletion job is not cancellable")
 )
 
 // CreateFolderInput holds the data required to create a folder.

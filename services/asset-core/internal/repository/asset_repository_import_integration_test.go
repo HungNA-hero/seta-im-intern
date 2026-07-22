@@ -127,8 +127,9 @@ func TestImportSampleTransaction_Integration(t *testing.T) {
 		assert.Equal(t, 1, summary.MetadataUnchanged)
 	})
 
-	t.Run("Soft Deleted Reactivation", func(t *testing.T) {
-		// Soft delete the item
+	t.Run("Hard Deleted Item Reimports", func(t *testing.T) {
+		// KAN-59 physically deletes the item, so importing the same external
+		// identity creates a new active Asset row instead of reactivating a tombstone.
 		items, _ := repo.SearchMetadataItems(ctx, orgID1, domain.MetadataSearchFilter{
 			ExternalSource: ptr("open_images_v7"),
 			Limit:          100,
@@ -140,10 +141,12 @@ func TestImportSampleTransaction_Integration(t *testing.T) {
 		// Re-run import
 		summary, err := repo.ImportSampleTransaction(ctx, orgID1, userID, dataset, false)
 		require.NoError(t, err)
-		assert.Equal(t, 1, summary.MetadataUpdated) // Reactivated
+		assert.Equal(t, 1, summary.MetadataCreated)
+		assert.Equal(t, 0, summary.MetadataUpdated)
 		assert.Equal(t, 0, summary.MetadataUnchanged)
 
-		// Verify it's active again and audit is updated
+		// Verify a new active row is present. Import records the actor in both
+		// create and update audit fields for its upsert-compatible insert path.
 		itemsAfter, err := repo.SearchMetadataItems(ctx, orgID1, domain.MetadataSearchFilter{
 			ExternalSource: ptr("open_images_v7"),
 			Limit:          100,
@@ -151,9 +154,9 @@ func TestImportSampleTransaction_Integration(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, itemsAfter, 1)
 		assert.False(t, itemsAfter[0].DeletedAt.Valid)
+		assert.Equal(t, userID, itemsAfter[0].CreatedBy)
 		require.NotNil(t, itemsAfter[0].UpdatedBy)
 		assert.Equal(t, userID, *itemsAfter[0].UpdatedBy)
-		assert.True(t, itemsAfter[0].UpdatedAt.After(items[0].UpdatedAt))
 	})
 
 	t.Run("Same Identity Another Org Conflicts", func(t *testing.T) {

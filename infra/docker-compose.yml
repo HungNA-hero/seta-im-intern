@@ -113,6 +113,24 @@ services:
         condition: service_healthy
     stop_grace_period: 15s
 
+  asset-delete-worker:
+    build:
+      context: ../services/asset-core
+      target: prod
+    container_name: seta-asset-delete-worker
+    entrypoint: ["/app/asset-delete-worker"]
+    environment:
+      ASSET_DB_HOST: asset-db
+      ASSET_DB_PORT: 5432
+      ASSET_DB_NAME: ${ASSET_DB_NAME:-asset_db}
+      ASSET_DB_USER: ${ASSET_DB_USER:-asset_user}
+      ASSET_DB_PASSWORD: ${ASSET_DB_PASSWORD:-asset_password}
+      ASSET_DB_SSLMODE: disable
+    depends_on:
+      asset-db:
+        condition: service_healthy
+    stop_grace_period: 15s
+
   redis:
     image: redis:7-alpine
     container_name: seta-redis

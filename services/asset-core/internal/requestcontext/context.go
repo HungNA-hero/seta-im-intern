@@ -17,8 +17,9 @@ const (
 )
 
 type Actor struct {
-	UserID string
-	OrgID  string
+	UserID     string
+	OrgID      string
+	IsOrgAdmin bool
 }
 
 type Correlation struct {
