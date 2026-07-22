@@ -20,6 +20,7 @@
     "fastify": "^4",
     "graphql": "^16",
     "graphql-yoga": "^5",
+    "ioredis": "^5.11.1",
     "pg": "^8"
   },
   "devDependencies": {
