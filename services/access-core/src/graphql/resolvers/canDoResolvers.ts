@@ -13,7 +13,16 @@ export const canDoResolvers = {
       ctx: GraphQLContext,
     ) => {
       assertOrgMember(ctx);
-      return canDo(ctx.userId, action, resourceType, resourceId, ctx.currentOrgId);
+      return canDo(ctx.userId, action, resourceType, resourceId, ctx.currentOrgId, {
+        preloaded: {
+          userId: ctx.userId,
+          orgId: ctx.currentOrgId,
+          roleCodes: ctx.roles,
+          roleIds: ctx.roleIds,
+          olpEnabled: ctx.olpEnabled,
+        },
+        factMemo: ctx.factMemo,
+      });
     },
   },
 };

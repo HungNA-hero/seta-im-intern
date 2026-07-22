@@ -31,8 +31,12 @@ function recordFailure(): void {
 export async function withFailOpen<T>(
   operation: (redis: ReturnType<typeof getRedisClient>) => Promise<T>,
   fallback: T,
+  onBypass?: () => void,
 ): Promise<T> {
-  if (circuitOpen()) return fallback;
+  if (circuitOpen()) {
+    onBypass?.();
+    return fallback;
+  }
   try {
     const redis = getRedisClient();
     const result = await operation(redis);
@@ -40,6 +44,7 @@ export async function withFailOpen<T>(
     return result;
   } catch {
     recordFailure();
+    onBypass?.();
     return fallback;
   }
 }

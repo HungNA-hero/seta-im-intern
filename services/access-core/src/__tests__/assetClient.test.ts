@@ -1,5 +1,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { GraphQLError } from "graphql";
+
+vi.mock("../cache/factCache", () => ({
+  readFolderFactThrough: (
+    _orgId: string,
+    _id: string,
+    loader: () => Promise<unknown>,
+  ) => loader(),
+  readItemFactThrough: (
+    _orgId: string,
+    _id: string,
+    loader: () => Promise<unknown>,
+  ) => loader(),
+}));
+
 import {
   assetPath,
   assetFetch,
@@ -114,6 +128,7 @@ describe("assetClient", () => {
           "Content-Type": "application/json",
         },
         body: '{"foo":"bar"}',
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -132,6 +147,7 @@ describe("assetClient", () => {
           "X-Org-Id": "o1",
           Authorization: `Bearer ${config.assetInternalApiToken}`,
         },
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -175,6 +191,7 @@ describe("assetClient", () => {
           traceparent: correlation.traceparent,
           "x-request-id": "request-57",
         },
+        signal: expect.any(AbortSignal),
       });
     });
   });

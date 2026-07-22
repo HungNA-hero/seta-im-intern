@@ -35,7 +35,9 @@ function ctx(overrides: Partial<GraphQLContext> = {}): GraphQLContext {
     currentOrgId: "org-1",
     isMember: true,
     roles: ["org_admin"],
+    roleIds: [],
     olpEnabled: false,
+    factMemo: new Map(),
     ...overrides,
   };
 }
@@ -258,7 +260,17 @@ describe("@sameOrg directive", () => {
     );
     expect(result.errors).toBeUndefined();
     expect(mockCanDo).toHaveBeenCalledWith(
-      "current-user", "read", "folder", "folder-1", "org-1",
+      "current-user",
+      "read",
+      "folder",
+      "folder-1",
+      "org-1",
+      expect.objectContaining({
+        preloaded: expect.objectContaining({
+          userId: "current-user",
+          orgId: "org-1",
+        }),
+      }),
     );
   });
 });

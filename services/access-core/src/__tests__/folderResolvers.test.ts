@@ -38,7 +38,9 @@ function makeCtx(overrides: Partial<GraphQLContext> = {}): GraphQLContext {
     currentOrgId: "org-1",
     isMember: true,
     roles: ["org_admin"],
+    roleIds: [],
     olpEnabled: false,
+    factMemo: new Map(),
     ...overrides,
   };
 }
@@ -75,7 +77,7 @@ function fetchError(status: number) {
     500: ["INTERNAL_ERROR", 1000],
   };
   const [code, number] = errorByStatus[status] ?? errorByStatus[500];
-  mockFetch.mockResolvedValueOnce({
+  const response = {
     ok: false,
     status,
     json: async () => ({
@@ -87,7 +89,12 @@ function fetchError(status: number) {
         service: "asset-core",
       },
     }),
-  });
+  };
+  if (status >= 500) {
+    mockFetch.mockResolvedValue(response);
+  } else {
+    mockFetch.mockResolvedValueOnce(response);
+  }
 }
 
 beforeEach(() => {

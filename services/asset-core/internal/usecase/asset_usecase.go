@@ -36,6 +36,10 @@ func (u *assetUsecase) GetFolderByID(ctx context.Context, orgID string, folderID
 	return u.repo.GetFolderByID(ctx, orgID, folderID)
 }
 
+func (u *assetUsecase) GetFoldersByIDs(ctx context.Context, orgID string, folderIDs []string) ([]domain.Folder, error) {
+	return u.repo.GetFoldersByIDs(ctx, orgID, folderIDs)
+}
+
 func (u *assetUsecase) GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]domain.Folder, error) {
 	return u.repo.GetFolderChildren(ctx, orgID, parentPath)
 }

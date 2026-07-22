@@ -33,7 +33,9 @@ function metadataContext(
     currentOrgId: "org-1",
     isMember: true,
     roles: ["viewer"],
+    roleIds: [],
     olpEnabled: false,
+    factMemo: new Map(),
     ...overrides,
   };
 }

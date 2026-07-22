@@ -9,7 +9,9 @@ export interface GraphQLContext {
   currentOrgId: string | null;
   isMember: boolean;
   roles: string[];
+  roleIds: string[];
   olpEnabled: boolean;
+  factMemo: Map<string, Promise<unknown>>;
 }
 
 export function assertAuthenticated(
@@ -101,7 +103,9 @@ function emptyContext(): GraphQLContext {
     currentOrgId: null,
     isMember: false,
     roles: [],
+    roleIds: [],
     olpEnabled: false,
+    factMemo: new Map(),
   };
 }
 
@@ -119,7 +123,9 @@ export async function loadRequestContext(
       currentOrgId: null,
       isMember: false,
       roles: [],
+      roleIds: [],
       olpEnabled: false,
+      factMemo: new Map(),
     };
   }
 
@@ -147,6 +153,8 @@ export async function loadRequestContext(
     currentOrgId: orgId,
     isMember: user.orgMembers.length > 0,
     roles: user.userRoles.map((ur) => ur.role.code),
+    roleIds: user.userRoles.map((ur) => ur.roleId),
     olpEnabled: org?.olpEnabled ?? false,
+    factMemo: new Map(),
   };
 }

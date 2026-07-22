@@ -4,3 +4,5 @@ export * from "./singleFlight";
 export * from "./keys";
 export * from "./epoch";
 export * from "./metrics";
+export * from "./factCache";
+export * from "./decisionCache";

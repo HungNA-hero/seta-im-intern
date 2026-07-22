@@ -29,12 +29,17 @@ vi.mock("../db/prisma", () => ({
   },
 }));
 
-const { mockGetFolderMeta } = vi.hoisted(() => ({
+const { mockGetFolderMeta, mockGetFolderMetaBatch } = vi.hoisted(() => ({
   mockGetFolderMeta: vi.fn(),
+  mockGetFolderMetaBatch: vi.fn(),
 }));
 vi.mock("../clients/assetClient", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../clients/assetClient")>();
-  return { ...actual, getFolderMeta: mockGetFolderMeta };
+  return {
+    ...actual,
+    getFolderMeta: mockGetFolderMeta,
+    getFolderMetaBatch: mockGetFolderMetaBatch,
+  };
 });
 
 const mockFetch = vi.fn();
@@ -52,7 +57,9 @@ function makeCtx(overrides: Partial<GraphQLContext> = {}): GraphQLContext {
     currentOrgId: "org-1",
     isMember: true,
     roles: ["org_admin"],
+    roleIds: [],
     olpEnabled: false,
+    factMemo: new Map(),
     ...overrides,
   };
 }
@@ -124,9 +131,10 @@ function fetchError(status: number) {
     500: ["INTERNAL_ERROR", 1000],
   };
   const [code, number] = errorByStatus[status] ?? errorByStatus[500];
-  mockFetch.mockResolvedValueOnce({
+  const wireStatus = status > 599 ? 400 : status;
+  const response = {
     ok: false,
-    status,
+    status: wireStatus,
     json: async () => ({
       error: {
         code,
@@ -136,7 +144,12 @@ function fetchError(status: number) {
         service: "asset-core",
       },
     }),
-  });
+  };
+  if (wireStatus >= 500) {
+    mockFetch.mockResolvedValue(response);
+  } else {
+    mockFetch.mockResolvedValueOnce(response);
+  }
 }
 
 beforeEach(() => {
@@ -146,6 +159,7 @@ beforeEach(() => {
     async (_u: string, _o: string, _a: string, _r: string, ids: string[]) => new Set(ids),
   );
   mockGetFolderMeta.mockResolvedValue(null);
+  mockGetFolderMetaBatch.mockResolvedValue(new Map());
 });
 
 // -- Query.metadataItems -------------------------------------------------------
@@ -221,7 +235,7 @@ describe("Query.metadataItems", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  test("fetches each distinct folder's ancestry once, not once per item", async () => {
+  test("fetches each distinct folder's ancestry in one bounded batch, not once per item", async () => {
     fetchListOk([
       makeGoMetadataItem({ id: "m1", folder_id: "folder-a" }),
       makeGoMetadataItem({ id: "m2", folder_id: "folder-a" }),
@@ -234,9 +248,13 @@ describe("Query.metadataItems", () => {
       ctx,
     );
 
-    expect(mockGetFolderMeta).toHaveBeenCalledTimes(2);
-    expect(mockGetFolderMeta).toHaveBeenCalledWith(org, ctx.userId, "folder-a");
-    expect(mockGetFolderMeta).toHaveBeenCalledWith(org, ctx.userId, "folder-b");
+    expect(mockGetFolderMetaBatch).toHaveBeenCalledTimes(1);
+    expect(mockGetFolderMetaBatch).toHaveBeenCalledWith(
+      org,
+      ctx.userId,
+      expect.arrayContaining(["folder-a", "folder-b"]),
+    );
+    expect(mockGetFolderMetaBatch.mock.calls[0][2]).toHaveLength(2);
   });
 });
 
@@ -469,6 +487,7 @@ describe("metadata transport and failure gates", () => {
           "X-Org-Id": "org-1",
           Authorization: "Bearer test-internal-token",
         },
+        signal: expect.any(AbortSignal),
       },
     );
   });

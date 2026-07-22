@@ -26,7 +26,9 @@ function context(overrides: Partial<GraphQLContext> = {}): GraphQLContext {
     currentOrgId: "org-1",
     isMember: true,
     roles: ["org_admin"],
+    roleIds: [],
     olpEnabled: false,
+    factMemo: new Map(),
     ...overrides,
   };
 }
@@ -94,6 +96,7 @@ describe("folder deletion usecase", () => {
           "X-Org-Id": "org-1",
           Authorization: `Bearer ${config.assetInternalApiToken}`,
         },
+        signal: expect.any(AbortSignal),
       },
     );
   });
@@ -116,6 +119,7 @@ describe("folder deletion usecase", () => {
           "X-Org-Admin": "true",
           Authorization: `Bearer ${config.assetInternalApiToken}`,
         },
+        signal: expect.any(AbortSignal),
       },
     );
   });

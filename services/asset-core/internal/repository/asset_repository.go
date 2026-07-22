@@ -45,6 +45,19 @@ func (r *assetRepository) GetFolderByID(ctx context.Context, orgID string, folde
 	return folder, err
 }
 
+func (r *assetRepository) GetFoldersByIDs(ctx context.Context, orgID string, folderIDs []string) ([]domain.Folder, error) {
+	var folders []domain.Folder
+	if len(folderIDs) == 0 {
+		return folders, nil
+	}
+
+	err := r.db.WithContext(ctx).
+		Where("org_id = ? AND id IN ?", orgID, folderIDs).
+		Find(&folders).Error
+
+	return folders, err
+}
+
 func (r *assetRepository) GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]domain.Folder, error) {
 	var folders []domain.Folder
 

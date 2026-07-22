@@ -335,7 +335,7 @@ func (h *AssetHandler) HandleFolders(w http.ResponseWriter, r *http.Request) {
 
 func (h *AssetHandler) handleGetFolders(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor) {
 
-	folderID := r.URL.Query().Get("id")
+	folderIDs := r.URL.Query()["id"]
 	orgID := r.URL.Query().Get("orgId")
 
 	// If orgId is provided, it MUST match the actor's org.
@@ -344,8 +344,30 @@ func (h *AssetHandler) handleGetFolders(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
+	if len(folderIDs) > 1 {
+		for _, id := range folderIDs {
+			if err := uuid.Validate(id); err != nil {
+				writeLegacyError(w, r, "Invalid folder id format", http.StatusBadRequest)
+				return
+			}
+		}
+
+		folders, err := h.usecase.GetFoldersByIDs(r.Context(), actor.OrgID, folderIDs)
+		if err != nil {
+			writeLegacyError(w, r, "Database error", http.StatusInternalServerError)
+			return
+		}
+
+		writeJSON(w, r, http.StatusOK, map[string]any{
+			"status":  "success",
+			"folders": folders,
+		})
+		return
+	}
+
 	// 1. Detail request (by ID)
-	if folderID != "" {
+	if len(folderIDs) == 1 {
+		folderID := folderIDs[0]
 		if err := uuid.Validate(folderID); err != nil {
 			writeLegacyError(w, r, "Invalid folder id format", http.StatusBadRequest)
 			return
