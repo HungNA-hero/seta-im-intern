@@ -15,6 +15,7 @@ import { GraphQLError } from "graphql";
 import { assertAuthenticated, assertCan, GraphQLContext } from "../context";
 import { serializePermission, rethrowPrismaError } from "./utils";
 import { getRoleById } from "../../db/queries/roles";
+import { bumpRoleEpoch, bumpUserEpoch } from "../../cache/epoch";
 
 export const permissionResolvers = {
   Query: {
@@ -99,17 +100,16 @@ export const permissionResolvers = {
         granteeIsValid,
         assertResourceInOrg(resourceType, resourceId, orgId, ctx.userId),
       ]);
+      let granted;
       try {
-        return serializePermission(
-          await grantObjectPermission(
-            orgId,
-            resourceType,
-            resourceId,
-            action,
-            ctx.userId,
-            granteeUserId,
-            granteeRoleId,
-          ),
+        granted = await grantObjectPermission(
+          orgId,
+          resourceType,
+          resourceId,
+          action,
+          ctx.userId,
+          granteeUserId,
+          granteeRoleId,
         );
       } catch (err) {
         rethrowPrismaError(err, {
@@ -117,6 +117,12 @@ export const permissionResolvers = {
           P2025: { message: "Permission action not found", errorCode: "UNKNOWN_ACTION" },
         });
       }
+      if (granteeUserId) {
+        await bumpUserEpoch(orgId, granteeUserId);
+      } else {
+        await bumpRoleEpoch(orgId, granteeRoleId!);
+      }
+      return serializePermission(granted);
     },
     revokeObjectPermission: async (
       _: unknown,
@@ -143,6 +149,11 @@ export const permissionResolvers = {
         existing.orgId,
       );
       await revokeObjectPermission(id);
+      if (existing.granteeUserId) {
+        await bumpUserEpoch(existing.orgId, existing.granteeUserId);
+      } else if (existing.granteeRoleId) {
+        await bumpRoleEpoch(existing.orgId, existing.granteeRoleId);
+      }
       return true;
     },
   },

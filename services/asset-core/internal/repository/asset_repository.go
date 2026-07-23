@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"seta-im-intern/go-asset-core/internal/domain"
+	"seta-im-intern/go-asset-core/internal/eventing"
 )
 
 type assetRepository struct {
@@ -268,6 +269,8 @@ func (r *assetRepository) UpdateFolder(ctx context.Context, orgID, userID, folde
 // MoveFolder safely shifts a folder and its descendants to a new parent in a single transaction.
 func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderID string, input domain.MoveFolderInput) (domain.Folder, error) {
 	var folder domain.Folder
+	var oldPath string
+	moved := false
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := lockOrganizationWrite(tx, orgID); err != nil {
@@ -336,6 +339,7 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 		if folder.Path == newPath {
 			return nil
 		}
+		oldPath = folder.Path
 
 		// 6. Pre-check sibling uniqueness at destination
 		var siblingCount int64
@@ -380,8 +384,13 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 			return err
 		}
 
+		moved = true
 		return nil
 	})
+
+	if err == nil && moved {
+		eventing.PublishFolderMoved(ctx, orgID, folderID, oldPath, folder.Path)
+	}
 
 	return folder, err
 }
@@ -389,7 +398,9 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 // DeleteFolder hard-deletes an eligible folder and only purges legacy tombstones
 // within the same organization and folder subtree.
 func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, _ string, folderID string) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	var rootPath string
+
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := lockOrganizationWrite(tx, orgID); err != nil {
 			return err
 		}
@@ -406,6 +417,7 @@ func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, _ string, fol
 		if err := ensureNoActiveDeletionForPaths(tx, orgID, folder.Path); err != nil {
 			return err
 		}
+		rootPath = folder.Path
 
 		// 2. Never delete active descendants. Legacy tombstones are handled below.
 		var childCount int64
@@ -462,6 +474,12 @@ func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, _ string, fol
 
 		return nil
 	})
+
+	if err == nil {
+		eventing.PublishFolderDeleted(ctx, orgID, folderID, rootPath, "")
+	}
+
+	return err
 }
 
 // GetMetadataItemsByFolder retrieves all active metadata items for a given folder in an organization.

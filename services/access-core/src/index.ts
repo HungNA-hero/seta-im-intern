@@ -4,6 +4,7 @@ import { assertRuntimeConfig, config } from './config';
 import { prisma }      from './db/prisma';
 import { registerGracefulShutdown } from './lifecycle';
 import { ServiceName } from './observability/serviceName';
+import { startCacheInvalidator } from './eventing/cacheInvalidator';
 
 function logStartup(level: "info" | "warn" | "error", message: string, error?: unknown) {
   process.stdout.write(`${JSON.stringify({
@@ -27,9 +28,15 @@ async function main() {
   const server = await buildServer();
   await server.listen({ port: config.port, host: config.host });
 
+  // Cross-service invalidation (folder.moved/folder.deleted -> epoch:asset
+  // bump) depends on this consumer running; without it, invalidation for
+  // those two event types falls back entirely to the ≤4s cache TTL.
+  const cacheInvalidator = startCacheInvalidator();
+
   registerGracefulShutdown(
     [
       { name: "server", close: () => server.close() },
+      { name: "cacheInvalidator", close: async () => cacheInvalidator.stop() },
       { name: "prisma", close: () => prisma.$disconnect() },
     ],
     logStartup,

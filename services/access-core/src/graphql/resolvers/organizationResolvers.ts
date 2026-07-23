@@ -4,6 +4,7 @@ import { serializeDates, rethrowPrismaError } from "./utils";
 import { GraphQLContext } from "../context";
 import { GraphQLError } from "graphql";
 import { getRoleById } from "../../db/queries/roles";
+import { bumpUserEpoch } from "../../cache/epoch";
 
 const RESERVED_ROLE_CODES = new Set(["trainer_admin", "org_admin"]);
 
@@ -60,23 +61,25 @@ export const organizationResolvers = {
       try {
         assertAssignableRole(await getRoleById(roleId), orgId);
         await assignRole(orgId, userId, roleId);
-        return true;
       } catch (err) {
         rethrowPrismaError(err, {
           P2002: { message: "Role already assigned to this user", errorCode: "BAD_USER_INPUT" },
         });
       }
+      await bumpUserEpoch(orgId, userId);
+      return true;
     },
     revokeRole: async (_: unknown, { orgId, userId, roleId }: { orgId: string; userId: string; roleId: string }) => {
       try {
         assertAssignableRole(await getRoleById(roleId), orgId);
         await revokeRole(orgId, userId, roleId);
-        return true;
       } catch (err) {
         rethrowPrismaError(err, {
           P2025: { message: "Role assignment not found", errorCode: "BAD_USER_INPUT" },
         });
       }
+      await bumpUserEpoch(orgId, userId);
+      return true;
     },
   },
 };

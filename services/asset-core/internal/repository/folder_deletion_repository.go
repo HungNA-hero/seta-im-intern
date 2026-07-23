@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"seta-im-intern/go-asset-core/internal/domain"
+	"seta-im-intern/go-asset-core/internal/eventing"
 )
 
 type folderDeletionRepository struct {
@@ -345,8 +346,8 @@ func (r *folderDeletionRepository) ProcessFolderDeletionJob(ctx context.Context,
 
 func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Context, jobID, workerID string) (bool, error) {
 	var done bool
+	var job domain.FolderDeletionJob
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var job domain.FolderDeletionJob
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("id = ? AND status = ? AND lease_owner = ?", jobID, domain.FolderDeletionRunning, workerID).
 			First(&job).Error; err != nil {
@@ -408,6 +409,9 @@ func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Contex
 		done = true
 		return nil
 	})
+	if err == nil && done {
+		eventing.PublishFolderDeleted(ctx, job.OrgID, job.RootFolderID, job.RootPath, jobID)
+	}
 	return done, err
 }
 

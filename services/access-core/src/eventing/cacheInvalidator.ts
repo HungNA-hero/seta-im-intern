@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type Redis from "ioredis";
 import { getRedisClient } from "../cache/redisClient";
-import { epochAssetKey, processedEventKey } from "../cache/keys";
 import { incrementCounter } from "../cache/metrics";
+import { applyLifecycleEffect, type AssetEventEnvelope } from "./effects";
 
 export const STREAM_KEY = "stream:asset-events";
 export const CONSUMER_GROUP = "cache-invalidator";
@@ -14,24 +14,6 @@ const READ_BLOCK_MS = 5000;
 const CLAIM_IDLE_MS = 30_000;
 const MAX_DELIVERIES = 5;
 const PROCESSED_MARKER_TTL_SECONDS = 60;
-
-// KEYS[1] = processed marker key, KEYS[2] = epoch:asset key
-// ARGV[1] = marker TTL seconds
-// Atomically dedupes on the marker and bumps the epoch only for a new marker.
-const DEDUPE_AND_BUMP_SCRIPT = `
-if redis.call("SET", KEYS[1], "1", "NX", "EX", ARGV[1]) then
-  redis.call("INCR", KEYS[2])
-  return 1
-end
-return 0
-`;
-
-interface AssetEventEnvelope {
-  eventId: string;
-  eventType: string;
-  orgId: string;
-  [key: string]: unknown;
-}
 
 function parseEnvelope(fields: string[]): AssetEventEnvelope | null {
   const record: Record<string, string> = {};
@@ -59,13 +41,28 @@ export async function ensureConsumerGroup(redis: Redis): Promise<void> {
 }
 
 async function applyEffect(redis: Redis, event: AssetEventEnvelope): Promise<void> {
-  if (event.eventType !== "folder.moved" && event.eventType !== "folder.deleted") return;
-  await redis.eval(
-    DEDUPE_AND_BUMP_SCRIPT,
-    2,
-    processedEventKey(CONSUMER_GROUP, event.eventId),
-    epochAssetKey(event.orgId),
-    String(PROCESSED_MARKER_TTL_SECONDS),
+  await applyLifecycleEffect(redis, CONSUMER_GROUP, PROCESSED_MARKER_TTL_SECONDS, event);
+}
+
+/**
+ * Emits a structured, alert-level log line. There is no external alert
+ * integration in this repo (see CLAUDE.md) — log-based alerting on this
+ * `level: "error"` event is the alert surface for FR-013's dead-letter
+ * requirement, matching the JSON logging convention used elsewhere
+ * (see authz/trainerAdmin.ts).
+ */
+function alertDlqEntry(messageId: string, event: AssetEventEnvelope | null): void {
+  process.stderr.write(
+    `${JSON.stringify({
+      level: "error",
+      service: "access-core",
+      event: "cache_invalidator_dlq",
+      messageId,
+      eventId: event?.eventId,
+      eventType: event?.eventType,
+      orgId: event?.orgId,
+      timestamp: new Date().toISOString(),
+    })}\n`,
   );
 }
 
@@ -73,6 +70,7 @@ async function deadLetter(redis: Redis, messageId: string, fields: string[]): Pr
   await redis.xadd(DLQ_KEY, "*", ...fields, "originalId", messageId);
   await redis.xack(STREAM_KEY, CONSUMER_GROUP, messageId);
   incrementCounter("invalidation_dlq");
+  alertDlqEntry(messageId, parseEnvelope(fields));
 }
 
 async function processMessage(redis: Redis, messageId: string, fields: string[]): Promise<void> {
@@ -153,6 +151,12 @@ let running = false;
  * crashing the process — a stalled consumer is bounded by the decision/fact
  * TTL, not by keeping the service up.
  */
+const ERROR_BACKOFF_MS = 1000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function startCacheInvalidator(): { stop: () => void } {
   running = true;
   const redis = getRedisClient();
@@ -164,7 +168,11 @@ export function startCacheInvalidator(): { stop: () => void } {
         await reclaimStalePending(redis);
         await processBatch(redis);
       } catch {
-        // fail-open: keep looping, bounded by cache TTL
+        // A rejected Redis command (e.g. the connection is down) resolves
+        // near-instantly, not after READ_BLOCK_MS — without this backoff
+        // the loop would spin as fast as the event loop allows, starving
+        // request handling for the whole outage. Bounded by cache TTL either way.
+        await delay(ERROR_BACKOFF_MS);
       }
     }
   })();
