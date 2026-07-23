@@ -1,4 +1,5 @@
 export * from "./redisClient";
+export * from "./config";
 export * from "./failOpen";
 export * from "./singleFlight";
 export * from "./keys";

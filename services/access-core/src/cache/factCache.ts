@@ -2,12 +2,10 @@ import { withFailOpen } from "./failOpen";
 import { getAssetEpoch } from "./epoch";
 import { factFolderKey, factItemKey, serializeValue, deserializeValue } from "./keys";
 import { incrementCounter } from "./metrics";
-
-const MAX_TTL_MS = 4000;
-const MAX_DOWNWARD_JITTER_MS = 500;
+import { cacheTtlConfig, jitteredTtlMs as sharedJitteredTtlMs } from "./config";
 
 function jitteredTtlMs(): number {
-  return MAX_TTL_MS - Math.floor(Math.random() * MAX_DOWNWARD_JITTER_MS);
+  return sharedJitteredTtlMs(cacheTtlConfig.factMaxTtlMs, cacheTtlConfig.factMaxDownwardJitterMs);
 }
 
 async function readThrough<T>(key: string, loader: () => Promise<T | null>): Promise<T | null> {

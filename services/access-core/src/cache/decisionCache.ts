@@ -1,12 +1,13 @@
 import { withFailOpen } from "./failOpen";
 import { deserializeValue, serializeValue } from "./keys";
 import { incrementCounter } from "./metrics";
-
-const MAX_TTL_MS = 4000;
-const MAX_DOWNWARD_JITTER_MS = 500;
+import { cacheTtlConfig, jitteredTtlMs as sharedJitteredTtlMs } from "./config";
 
 function jitteredTtlMs(): number {
-  return MAX_TTL_MS - Math.floor(Math.random() * MAX_DOWNWARD_JITTER_MS);
+  return sharedJitteredTtlMs(
+    cacheTtlConfig.decisionMaxTtlMs,
+    cacheTtlConfig.decisionMaxDownwardJitterMs,
+  );
 }
 
 export interface CachedDecision {
