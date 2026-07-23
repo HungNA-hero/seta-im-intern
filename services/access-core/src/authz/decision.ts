@@ -6,11 +6,11 @@ import {
   getTrainerAdminGateState,
 } from "./trainerAdmin";
 import { ancestorIdsFromPath } from "../domain/ltreePath";
-import { singleFlight } from "../cache/singleFlight";
+import { singleFlight, memoize } from "../cache/singleFlight";
 import { readDecision, writeDecision } from "../cache/decisionCache";
 import { decisionKey, hashRoleEpochs } from "../cache/keys";
 import { getAssetEpoch, getRoleEpochs, getUserEpoch } from "../cache/epoch";
-import { AuthzRequestContext, getAuthzRequestContext } from "./authzRequestContext";
+import { getAuthzRequestContext } from "./authzRequestContext";
 
 let permActionCachePromise: Promise<Map<string, string>> | null = null;
 
@@ -67,14 +67,17 @@ async function getPermActionId(
   return (await permActionCachePromise).get(code) ?? null;
 }
 
-async function resolveRolesFromPreloaded(
-  preloaded: AuthzRequestContext,
+async function decideRoleResolution(
   userId: string,
+  trainerAdminRoleCodes: string[],
+  orgAdminRoleCodes: string[],
+  roleIds: string[],
+  loadOlpEnabled: () => Promise<boolean>,
   action: PermissionActionCode,
 ): Promise<RoleResolution> {
   if (
     process.env.NODE_ENV !== "production" &&
-    preloaded.roleCodes.includes("trainer_admin")
+    trainerAdminRoleCodes.includes("trainer_admin")
   ) {
     const state = getTrainerAdminGateState();
     auditTrainerAdminDecision(userId, state.enabled, state.reason);
@@ -83,20 +86,19 @@ async function resolveRolesFromPreloaded(
     }
   }
 
-  if (preloaded.roleCodes.includes("org_admin")) {
+  if (orgAdminRoleCodes.includes("org_admin")) {
     return { allowed: true, reason: "org_admin" };
   }
 
-  const permActionId = await getPermActionId(action);
+  const [olpEnabled, permActionId] = await Promise.all([
+    loadOlpEnabled(),
+    getPermActionId(action),
+  ]);
   if (!permActionId) {
     return { allowed: false, reason: "unknown action" };
   }
 
-  return {
-    roleIds: preloaded.roleIds,
-    olpEnabled: preloaded.olpEnabled,
-    permActionId,
-  };
+  return { roleIds, olpEnabled, permActionId };
 }
 
 async function resolveRoles(
@@ -106,7 +108,14 @@ async function resolveRoles(
 ): Promise<RoleResolution> {
   const preloaded = getAuthzRequestContext();
   if (preloaded && preloaded.userId === userId && preloaded.orgId === orgId) {
-    return resolveRolesFromPreloaded(preloaded, userId, action);
+    return decideRoleResolution(
+      userId,
+      preloaded.roleCodes,
+      preloaded.roleCodes,
+      preloaded.roleIds,
+      () => Promise.resolve(preloaded.olpEnabled),
+      action,
+    );
   }
 
   const user = await prisma.user.findUnique({
@@ -122,40 +131,21 @@ async function resolveRoles(
     return { allowed: false, reason: "user not found" };
   }
 
-  if (
-    process.env.NODE_ENV !== "production" &&
-    user.userRoles.some((userRole) => userRole.role.code === "trainer_admin")
-  ) {
-    const state = getTrainerAdminGateState();
-    auditTrainerAdminDecision(userId, state.enabled, state.reason);
-    if (state.enabled) {
-      return { allowed: true, reason: "trainer_admin" };
-    }
-  }
-
   const orgRoles = user.userRoles.filter(
     (userRole) => userRole.orgId === orgId,
   );
-  if (orgRoles.some((userRole) => userRole.role.code === "org_admin")) {
-    return { allowed: true, reason: "org_admin" };
-  }
 
-  const [org, permActionId] = await Promise.all([
-    prisma.organization.findUnique({
-      where: { id: orgId },
-      select: { olpEnabled: true },
-    }),
-    getPermActionId(action),
-  ]);
-  if (!permActionId) {
-    return { allowed: false, reason: "unknown action" };
-  }
-
-  return {
-    roleIds: orgRoles.map((userRole) => userRole.roleId),
-    olpEnabled: org?.olpEnabled ?? false,
-    permActionId,
-  };
+  return decideRoleResolution(
+    userId,
+    user.userRoles.map((userRole) => userRole.role.code),
+    orgRoles.map((userRole) => userRole.role.code),
+    orgRoles.map((userRole) => userRole.roleId),
+    () =>
+      prisma.organization
+        .findUnique({ where: { id: orgId }, select: { olpEnabled: true } })
+        .then((org) => org?.olpEnabled ?? false),
+    action,
+  );
 }
 
 async function hasRbacCeiling(
@@ -275,19 +265,6 @@ async function decideAllowedResources({
   };
 }
 
-function memoized<T>(
-  memo: Map<string, Promise<unknown>> | undefined,
-  key: string,
-  fn: () => Promise<T>,
-): Promise<T> {
-  if (!memo) return fn();
-  const existing = memo.get(key);
-  if (existing) return existing as Promise<T>;
-  const promise = fn();
-  memo.set(key, promise);
-  return promise;
-}
-
 function ancestorLoader(
   userId: string,
   orgId: string,
@@ -297,10 +274,10 @@ function ancestorLoader(
   const factMemo =
     authzCtx && authzCtx.userId === userId && authzCtx.orgId === orgId
       ? authzCtx.factMemo
-      : undefined;
+      : new Map<string, Promise<unknown>>();
   if (resourceType === "folder") {
     return async (resourceId) => {
-      const meta = await memoized(
+      const meta = await memoize(
         factMemo,
         `folder:${orgId}:${resourceId}`,
         () => getFolderMeta(orgId, userId, resourceId),
@@ -310,11 +287,11 @@ function ancestorLoader(
   }
   if (resourceType === "metadata_item") {
     return async (resourceId) => {
-      const meta = await memoized(factMemo, `item:${orgId}:${resourceId}`, () =>
+      const meta = await memoize(factMemo, `item:${orgId}:${resourceId}`, () =>
         getMetadataMeta(orgId, userId, resourceId),
       );
       if (!meta) return [];
-      const folderMeta = await memoized(
+      const folderMeta = await memoize(
         factMemo,
         `folder:${orgId}:${meta.folderId}`,
         () => getFolderMeta(orgId, userId, meta.folderId),
@@ -337,16 +314,16 @@ export async function canDo(
 ): Promise<{ allowed: boolean; reason: string | null }> {
   if (!orgId) return { allowed: false, reason: "no org context" };
 
-  const resolution = await resolveRoles(userId, orgId, action);
+  const [resolution, assetEpoch, userEpoch] = await Promise.all([
+    resolveRoles(userId, orgId, action),
+    getAssetEpoch(orgId),
+    getUserEpoch(orgId, userId),
+  ]);
   if (!("roleIds" in resolution)) {
     return { allowed: resolution.allowed, reason: resolution.reason };
   }
 
-  const [assetEpoch, userEpoch, roleEpochs] = await Promise.all([
-    getAssetEpoch(orgId),
-    getUserEpoch(orgId, userId),
-    getRoleEpochs(orgId, resolution.roleIds),
-  ]);
+  const roleEpochs = await getRoleEpochs(orgId, resolution.roleIds);
   const key = decisionKey({
     orgId,
     assetEpoch,
