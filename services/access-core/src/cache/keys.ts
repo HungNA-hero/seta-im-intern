@@ -1,17 +1,22 @@
 import { createHash } from "node:crypto";
 
 /**
- * Combines a user's current role epochs into one short, order-independent
- * token embedded in decision keys. Sorting first means the same role set
- * always hashes the same way regardless of fetch order.
+ * Combines role identities and their current epochs into one short,
+ * order-independent token embedded in decision keys. The role id is part of
+ * each entry so two distinct role sets at the initial epoch cannot share a
+ * decision cache key.
  */
-export function hashRoleEpochs(roleEpochs: number[]): string {
-  const normalized = [...roleEpochs].sort((a, b) => a - b).join(",");
+export function hashRoleEpochs(roleIds: string[], roleEpochs: number[]): string {
+  const normalized = roleIds
+    .map((roleId, index) => `${roleId}:${roleEpochs[index] ?? 0}`)
+    .sort()
+    .join(",");
   return createHash("sha1").update(normalized).digest("hex").slice(0, 12);
 }
 
 export interface DecisionKeyParams {
   orgId: string;
+  userId: string;
   assetEpoch: number;
   userEpoch: number;
   roleEpochsHash: string;
@@ -21,9 +26,9 @@ export interface DecisionKeyParams {
 }
 
 export function decisionKey(params: DecisionKeyParams): string {
-  const { orgId, assetEpoch, userEpoch, roleEpochsHash, action, resourceType, resourceId } =
+  const { orgId, userId, assetEpoch, userEpoch, roleEpochsHash, action, resourceType, resourceId } =
     params;
-  return `authz:${orgId}:av${assetEpoch}:uv${userEpoch}:rv${roleEpochsHash}:${action}:${resourceType}:${resourceId}`;
+  return `authz:${orgId}:u${userId}:av${assetEpoch}:uv${userEpoch}:rv${roleEpochsHash}:${action}:${resourceType}:${resourceId}`;
 }
 
 export function factFolderKey(orgId: string, assetEpoch: number, folderId: string): string {

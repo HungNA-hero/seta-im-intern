@@ -23,5 +23,6 @@ export const cacheTtlConfig = {
 };
 
 export function jitteredTtlMs(maxTtlMs: number, maxDownwardJitterMs: number): number {
-  return maxTtlMs - Math.floor(Math.random() * maxDownwardJitterMs);
+  const safeJitterMs = Math.min(maxDownwardJitterMs, Math.max(0, maxTtlMs - 1));
+  return maxTtlMs - Math.floor(Math.random() * safeJitterMs);
 }

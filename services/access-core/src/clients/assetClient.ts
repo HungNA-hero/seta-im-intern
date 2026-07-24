@@ -127,8 +127,9 @@ function fetchWithDeadline(url: string, init: RequestInit): Promise<Response> {
 /**
  * Executes a fetch request to the Go Asset Service.
  * Automatically attaches X-User-Id and X-Org-Id headers, and JSON stringifies the body if present.
- * Bounded by a deadline (AbortController) and retried once for network/timeout/5xx failures —
- * never for 4xx, which reflect a real client error, not a transient dependency failure.
+ * Bounded by a deadline (AbortController). Only idempotent GET requests retry
+ * once for network, timeout, or 5xx failures. Mutations do not retry until an
+ * end-to-end idempotency-key contract exists.
  * @param path The endpoint path including query parameters.
  * @param req The request configuration including user, org, method, and optional body.
  * @returns A promise resolving to the standard fetch Response.
@@ -154,13 +155,15 @@ export async function assetFetch(path: string, req: AssetRequest): Promise<Respo
   }
 
   const url = `${config.goAssetUrl}${path}`;
+  const canRetry = (req.method ?? "GET") === "GET";
   try {
     const res = await fetchWithDeadline(url, init);
-    if (typeof res.status === "number" && res.status >= 500) {
+    if (canRetry && typeof res.status === "number" && res.status >= 500) {
       return await fetchWithDeadline(url, init);
     }
     return res;
-  } catch {
+  } catch (error) {
+    if (!canRetry) throw error;
     return await fetchWithDeadline(url, init);
   }
 }

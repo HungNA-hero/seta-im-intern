@@ -326,9 +326,10 @@ export async function canDo(
   const roleEpochs = await getRoleEpochs(orgId, resolution.roleIds);
   const key = decisionKey({
     orgId,
+    userId,
     assetEpoch,
     userEpoch,
-    roleEpochsHash: hashRoleEpochs(roleEpochs),
+    roleEpochsHash: hashRoleEpochs(resolution.roleIds, roleEpochs),
     action,
     resourceType,
     resourceId,
