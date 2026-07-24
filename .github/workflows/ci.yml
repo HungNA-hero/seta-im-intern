@@ -46,7 +46,14 @@ jobs:
         with:
           go-version-file: services/asset-core/go.mod
           cache-dependency-path: services/asset-core/go.sum
-      - run: test -z "$(gofmt -l $(find . -type f -name '*.go' -not -path './tmp/*'))"
+      - name: Check Go formatting
+        run: |
+          unformatted="$(gofmt -l $(find . -type f -name '*.go' -not -path './tmp/*'))"
+          if [ -n "$unformatted" ]; then
+            echo "Go files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
       - run: go vet ./...
       - run: go test ./...
       - run: go build ./...
@@ -83,6 +90,7 @@ jobs:
           ACCESS_REDIS_PORT: "6379"
         run: |
           npm ci
+          npm run db:generate
           npm test
       - name: Run Asset Core live-Redis test
         working-directory: services/asset-core
