@@ -6,6 +6,8 @@ import {
   isTraceId,
 } from "../observability/requestContext";
 import { ServiceName } from "../observability/serviceName";
+import { singleFlight } from "../cache/singleFlight";
+import { readFolderFactThrough, readItemFactThrough } from "../cache/factCache";
 
 export const FOLDERS_PATH = "/internal/api/v1/folders";
 export const METADATA_PATH = "/internal/api/v1/metadata-items";
@@ -112,14 +114,27 @@ interface AssetRequest {
   body?: Record<string, unknown>;
 }
 
+const ASSET_FETCH_TIMEOUT_MS = 3000;
+
+function fetchWithDeadline(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ASSET_FETCH_TIMEOUT_MS);
+  return fetch(url, { ...init, signal: controller.signal }).finally(() =>
+    clearTimeout(timeout),
+  );
+}
+
 /**
  * Executes a fetch request to the Go Asset Service.
  * Automatically attaches X-User-Id and X-Org-Id headers, and JSON stringifies the body if present.
+ * Bounded by a deadline (AbortController). Only idempotent GET requests retry
+ * once for network, timeout, or 5xx failures. Mutations do not retry until an
+ * end-to-end idempotency-key contract exists.
  * @param path The endpoint path including query parameters.
  * @param req The request configuration including user, org, method, and optional body.
  * @returns A promise resolving to the standard fetch Response.
  */
-export function assetFetch(path: string, req: AssetRequest): Promise<Response> {
+export async function assetFetch(path: string, req: AssetRequest): Promise<Response> {
   const headers: Record<string, string> = {
     "X-User-Id": req.userId,
     "X-Org-Id": req.orgId,
@@ -138,7 +153,19 @@ export function assetFetch(path: string, req: AssetRequest): Promise<Response> {
     headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(req.body);
   }
-  return fetch(`${config.goAssetUrl}${path}`, init);
+
+  const url = `${config.goAssetUrl}${path}`;
+  const canRetry = (req.method ?? "GET") === "GET";
+  try {
+    const res = await fetchWithDeadline(url, init);
+    if (canRetry && typeof res.status === "number" && res.status >= 500) {
+      return await fetchWithDeadline(url, init);
+    }
+    return res;
+  } catch (error) {
+    if (!canRetry) throw error;
+    return await fetchWithDeadline(url, init);
+  }
 }
 
 /**
@@ -225,7 +252,7 @@ export interface MetadataItemMeta {
  * propagate rather than silently resolve to "no ancestors", which could
  * otherwise mask an outage as a plain permission denial.
  */
-export async function getFolderMeta(
+async function fetchFolderMeta(
   orgId: string,
   userId: string,
   id: string,
@@ -241,6 +268,46 @@ export async function getFolderMeta(
   return { path: data.folder.path };
 }
 
+export async function getFolderMeta(
+  orgId: string,
+  userId: string,
+  id: string,
+): Promise<FolderMeta | null> {
+  return readFolderFactThrough(orgId, id, () =>
+    singleFlight(`folder-meta:${orgId}:${id}`, () => fetchFolderMeta(orgId, userId, id)),
+  );
+}
+
+/**
+ * Batches a page's worth of folder fact lookups into one request to
+ * asset-core's repeated-`id` query support, instead of one round-trip per
+ * folder id. Missing/not-found ids are simply absent from the returned map.
+ */
+export async function getFolderMetaBatch(
+  orgId: string,
+  userId: string,
+  ids: string[],
+): Promise<Map<string, FolderMeta>> {
+  const uniqueIds = [...new Set(ids)];
+  if (uniqueIds.length === 0) return new Map();
+  if (uniqueIds.length === 1) {
+    const meta = await getFolderMeta(orgId, userId, uniqueIds[0]);
+    return meta ? new Map([[uniqueIds[0], meta]]) : new Map();
+  }
+
+  const res = await assetFetch(assetPath(FOLDERS_PATH, { orgId, id: uniqueIds }), {
+    userId,
+    orgId,
+  });
+  const folders = await unwrapListEnvelope(
+    res,
+    "folders",
+    (raw: any) => ({ id: raw.id as string, path: raw.path as string }),
+    "Failed to fetch folder facts",
+  );
+  return new Map(folders.map((folder) => [folder.id, { path: folder.path }]));
+}
+
 /**
  * Looks up a metadata item's containing folder id, for canDo's
  * folder-inheritance checks. The folder's own ancestry is resolved
@@ -248,7 +315,7 @@ export async function getFolderMeta(
  * if the item doesn't exist (404); any other non-2xx response propagates as
  * a dependency failure (see `getFolderMeta`).
  */
-export async function getMetadataMeta(
+async function fetchMetadataMeta(
   orgId: string,
   userId: string,
   id: string,
@@ -266,4 +333,14 @@ export async function getMetadataMeta(
   return {
     folderId: data.item.folder_id,
   };
+}
+
+export async function getMetadataMeta(
+  orgId: string,
+  userId: string,
+  id: string,
+): Promise<MetadataItemMeta | null> {
+  return readItemFactThrough(orgId, id, () =>
+    singleFlight(`item-meta:${orgId}:${id}`, () => fetchMetadataMeta(orgId, userId, id)),
+  );
 }

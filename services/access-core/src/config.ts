@@ -8,6 +8,8 @@ const dbPort = process.env.ACCESS_DB_PORT ?? "5434";
 const dbName = process.env.ACCESS_DB_NAME ?? "access_db";
 const dbUser = process.env.ACCESS_DB_USER ?? "access_user";
 const dbPassword = process.env.ACCESS_DB_PASSWORD ?? "access_password";
+const redisHost = process.env.ACCESS_REDIS_HOST ?? "localhost";
+const redisPort = process.env.ACCESS_REDIS_PORT ?? "6379";
 
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
@@ -24,6 +26,14 @@ export const config = {
     database: dbName,
     user: dbUser,
     password: dbPassword,
+  },
+  redis: {
+    host: redisHost,
+    port: parseInt(redisPort, 10),
+    password: process.env.ACCESS_REDIS_PASSWORD || undefined,
+    db: parseInt(process.env.ACCESS_REDIS_DB ?? "0", 10),
+    connectTimeoutMs: parseInt(process.env.ACCESS_REDIS_CONNECT_TIMEOUT_MS ?? "250", 10),
+    commandTimeoutMs: parseInt(process.env.ACCESS_REDIS_COMMAND_TIMEOUT_MS ?? "75", 10),
   },
 } as const;
 

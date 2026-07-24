@@ -1,6 +1,6 @@
 import {
   assetPath,
-  getFolderMeta,
+  getFolderMetaBatch,
   METADATA_PATH,
   snakeCaseKeys,
   throwGoError,
@@ -44,16 +44,14 @@ async function buildFolderAncestorMapForFolderIds(
   userId: string,
   folderIds: string[],
 ): Promise<Map<string, string[]>> {
-  const entries = await Promise.all(
-    [...new Set(folderIds)].map(async (folderId) => {
-      const folderMeta = await getFolderMeta(orgId, userId, folderId);
-      return [
-        folderId,
-        folderMeta ? ancestorIdsFromPath(folderMeta.path) : [],
-      ] as const;
+  const uniqueIds = [...new Set(folderIds)];
+  const metaById = await getFolderMetaBatch(orgId, userId, uniqueIds);
+  return new Map(
+    uniqueIds.map((folderId) => {
+      const folderMeta = metaById.get(folderId);
+      return [folderId, folderMeta ? ancestorIdsFromPath(folderMeta.path) : []];
     }),
   );
-  return new Map(entries);
 }
 
 function buildSearchQueryParams(

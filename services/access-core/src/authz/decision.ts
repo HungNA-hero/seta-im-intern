@@ -6,8 +6,27 @@ import {
   getTrainerAdminGateState,
 } from "./trainerAdmin";
 import { ancestorIdsFromPath } from "../domain/ltreePath";
+import { singleFlight, memoize } from "../cache/singleFlight";
+import { readDecision, writeDecision } from "../cache/decisionCache";
+import { decisionKey, hashRoleEpochs } from "../cache/keys";
+import { getAssetEpoch, getRoleEpochs, getUserEpoch } from "../cache/epoch";
+import { getAuthzRequestContext } from "./authzRequestContext";
 
 let permActionCachePromise: Promise<Map<string, string>> | null = null;
+
+const rbacCeilingCache = new Map<string, boolean>();
+
+function rbacCeilingCacheKey(
+  roleIds: string[],
+  permActionId: string,
+  resourceType: ResourceType,
+): string {
+  return `${[...roleIds].sort().join(",")}::${permActionId}::${resourceType}`;
+}
+
+export function resetInProcessAuthzCachesForTests(): void {
+  rbacCeilingCache.clear();
+}
 
 type RoleResolution =
   | { allowed: boolean; reason: string | null }
@@ -26,6 +45,7 @@ interface DecideAllowedResourcesInput {
   resourceIds: string[];
   getAncestorIds?: (resourceId: string) => Promise<string[]> | string[];
   rbacOnly?: boolean;
+  preResolved?: RoleResolution;
 }
 
 interface ResourceHierarchy {
@@ -47,11 +67,57 @@ async function getPermActionId(
   return (await permActionCachePromise).get(code) ?? null;
 }
 
+async function decideRoleResolution(
+  userId: string,
+  trainerAdminRoleCodes: string[],
+  orgAdminRoleCodes: string[],
+  roleIds: string[],
+  loadOlpEnabled: () => Promise<boolean>,
+  action: PermissionActionCode,
+): Promise<RoleResolution> {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    trainerAdminRoleCodes.includes("trainer_admin")
+  ) {
+    const state = getTrainerAdminGateState();
+    auditTrainerAdminDecision(userId, state.enabled, state.reason);
+    if (state.enabled) {
+      return { allowed: true, reason: "trainer_admin" };
+    }
+  }
+
+  if (orgAdminRoleCodes.includes("org_admin")) {
+    return { allowed: true, reason: "org_admin" };
+  }
+
+  const [olpEnabled, permActionId] = await Promise.all([
+    loadOlpEnabled(),
+    getPermActionId(action),
+  ]);
+  if (!permActionId) {
+    return { allowed: false, reason: "unknown action" };
+  }
+
+  return { roleIds, olpEnabled, permActionId };
+}
+
 async function resolveRoles(
   userId: string,
   orgId: string,
   action: PermissionActionCode,
 ): Promise<RoleResolution> {
+  const preloaded = getAuthzRequestContext();
+  if (preloaded && preloaded.userId === userId && preloaded.orgId === orgId) {
+    return decideRoleResolution(
+      userId,
+      preloaded.roleCodes,
+      preloaded.roleCodes,
+      preloaded.roleIds,
+      () => Promise.resolve(preloaded.olpEnabled),
+      action,
+    );
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
@@ -65,40 +131,21 @@ async function resolveRoles(
     return { allowed: false, reason: "user not found" };
   }
 
-  if (
-    process.env.NODE_ENV !== "production" &&
-    user.userRoles.some((userRole) => userRole.role.code === "trainer_admin")
-  ) {
-    const state = getTrainerAdminGateState();
-    auditTrainerAdminDecision(userId, state.enabled, state.reason);
-    if (state.enabled) {
-      return { allowed: true, reason: "trainer_admin" };
-    }
-  }
-
   const orgRoles = user.userRoles.filter(
     (userRole) => userRole.orgId === orgId,
   );
-  if (orgRoles.some((userRole) => userRole.role.code === "org_admin")) {
-    return { allowed: true, reason: "org_admin" };
-  }
 
-  const [org, permActionId] = await Promise.all([
-    prisma.organization.findUnique({
-      where: { id: orgId },
-      select: { olpEnabled: true },
-    }),
-    getPermActionId(action),
-  ]);
-  if (!permActionId) {
-    return { allowed: false, reason: "unknown action" };
-  }
-
-  return {
-    roleIds: orgRoles.map((userRole) => userRole.roleId),
-    olpEnabled: org?.olpEnabled ?? false,
-    permActionId,
-  };
+  return decideRoleResolution(
+    userId,
+    user.userRoles.map((userRole) => userRole.role.code),
+    orgRoles.map((userRole) => userRole.role.code),
+    orgRoles.map((userRole) => userRole.roleId),
+    () =>
+      prisma.organization
+        .findUnique({ where: { id: orgId }, select: { olpEnabled: true } })
+        .then((org) => org?.olpEnabled ?? false),
+    action,
+  );
 }
 
 async function hasRbacCeiling(
@@ -106,7 +153,11 @@ async function hasRbacCeiling(
   permActionId: string,
   resourceType: ResourceType,
 ): Promise<boolean> {
-  return prisma.rolePermission
+  const cacheKey = rbacCeilingCacheKey(roleIds, permActionId, resourceType);
+  const cached = rbacCeilingCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  const allowed = await prisma.rolePermission
     .findFirst({
       where: {
         roleId: { in: roleIds },
@@ -115,6 +166,8 @@ async function hasRbacCeiling(
       },
     })
     .then(Boolean);
+  rbacCeilingCache.set(cacheKey, allowed);
+  return allowed;
 }
 
 async function queryGrantedIds(
@@ -147,8 +200,9 @@ async function decideAllowedResources({
   resourceIds,
   getAncestorIds,
   rbacOnly = false,
+  preResolved,
 }: DecideAllowedResourcesInput): Promise<AllowedResourcesDecision> {
-  const resolution = await resolveRoles(userId, orgId, action);
+  const resolution = preResolved ?? (await resolveRoles(userId, orgId, action));
   if (!("roleIds" in resolution)) {
     return {
       reason: resolution.reason,
@@ -195,7 +249,9 @@ async function decideAllowedResources({
       resolution.roleIds,
     );
     for (const [id, ancestorIds] of ancestorEntries) {
-      if (ancestorIds.some((ancestorId) => grantedAncestorIds.has(ancestorId))) {
+      if (
+        ancestorIds.some((ancestorId) => grantedAncestorIds.has(ancestorId))
+      ) {
         allowedIds.add(id);
       }
     }
@@ -214,17 +270,32 @@ function ancestorLoader(
   orgId: string,
   resourceType: ResourceType,
 ): ((resourceId: string) => Promise<string[]>) | undefined {
+  const authzCtx = getAuthzRequestContext();
+  const factMemo =
+    authzCtx && authzCtx.userId === userId && authzCtx.orgId === orgId
+      ? authzCtx.factMemo
+      : new Map<string, Promise<unknown>>();
   if (resourceType === "folder") {
     return async (resourceId) => {
-      const meta = await getFolderMeta(orgId, userId, resourceId);
+      const meta = await memoize(
+        factMemo,
+        `folder:${orgId}:${resourceId}`,
+        () => getFolderMeta(orgId, userId, resourceId),
+      );
       return meta ? ancestorIdsFromPath(meta.path) : [];
     };
   }
   if (resourceType === "metadata_item") {
     return async (resourceId) => {
-      const meta = await getMetadataMeta(orgId, userId, resourceId);
+      const meta = await memoize(factMemo, `item:${orgId}:${resourceId}`, () =>
+        getMetadataMeta(orgId, userId, resourceId),
+      );
       if (!meta) return [];
-      const folderMeta = await getFolderMeta(orgId, userId, meta.folderId);
+      const folderMeta = await memoize(
+        factMemo,
+        `folder:${orgId}:${meta.folderId}`,
+        () => getFolderMeta(orgId, userId, meta.folderId),
+      );
       return [
         meta.folderId,
         ...(folderMeta ? ancestorIdsFromPath(folderMeta.path) : []),
@@ -243,19 +314,53 @@ export async function canDo(
 ): Promise<{ allowed: boolean; reason: string | null }> {
   if (!orgId) return { allowed: false, reason: "no org context" };
 
-  const decision = await decideAllowedResources({
-    userId,
+  const [resolution, assetEpoch, userEpoch] = await Promise.all([
+    resolveRoles(userId, orgId, action),
+    getAssetEpoch(orgId),
+    getUserEpoch(orgId, userId),
+  ]);
+  if (!("roleIds" in resolution)) {
+    return { allowed: resolution.allowed, reason: resolution.reason };
+  }
+
+  const roleEpochs = await getRoleEpochs(orgId, resolution.roleIds);
+  const key = decisionKey({
     orgId,
+    userId,
+    assetEpoch,
+    userEpoch,
+    roleEpochsHash: hashRoleEpochs(resolution.roleIds, roleEpochs),
     action,
     resourceType,
-    resourceIds: [resourceId],
-    getAncestorIds: ancestorLoader(userId, orgId, resourceType),
-    rbacOnly: resourceType === "folder" && resourceId === orgId,
+    resourceId,
   });
-  return {
-    allowed: decision.allowedIds.has(resourceId),
-    reason: decision.reason,
+
+  const cached = await readDecision(key);
+  if (cached) return cached;
+
+  const compute = async (): Promise<{
+    allowed: boolean;
+    reason: string | null;
+  }> => {
+    const decision = await decideAllowedResources({
+      userId,
+      orgId,
+      action,
+      resourceType,
+      resourceIds: [resourceId],
+      getAncestorIds: ancestorLoader(userId, orgId, resourceType),
+      rbacOnly: resourceType === "folder" && resourceId === orgId,
+      preResolved: resolution,
+    });
+    return {
+      allowed: decision.allowedIds.has(resourceId),
+      reason: decision.reason,
+    };
   };
+
+  const result = await singleFlight(key, compute);
+  await writeDecision(key, result);
+  return result;
 }
 
 export async function filterAllowedResourceIds<T extends { id: string }>(

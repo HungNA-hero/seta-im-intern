@@ -94,6 +94,7 @@ describe("folder deletion usecase", () => {
           "X-Org-Id": "org-1",
           Authorization: `Bearer ${config.assetInternalApiToken}`,
         },
+        signal: expect.any(AbortSignal),
       },
     );
   });
@@ -116,6 +117,7 @@ describe("folder deletion usecase", () => {
           "X-Org-Admin": "true",
           Authorization: `Bearer ${config.assetInternalApiToken}`,
         },
+        signal: expect.any(AbortSignal),
       },
     );
   });

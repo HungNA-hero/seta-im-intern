@@ -2,6 +2,7 @@ import { GraphQLError } from "graphql";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { prisma } from "../db/prisma";
 import { canDo } from "../authz/decision";
+import { setAuthzRequestContext } from "../authz/authzRequestContext";
 import { assertTemporaryTrainerAdmin } from "../authz/trainerAdmin";
 
 export interface GraphQLContext {
@@ -142,11 +143,22 @@ export async function loadRequestContext(
 
   if (!user || !user.isActive) return emptyContext();
 
+  const roles = user.userRoles.map((ur) => ur.role.code);
+  const olpEnabled = org?.olpEnabled ?? false;
+  setAuthzRequestContext({
+    userId,
+    orgId,
+    roleCodes: roles,
+    roleIds: user.userRoles.map((ur) => ur.roleId),
+    olpEnabled,
+    factMemo: new Map(),
+  });
+
   return {
     userId,
     currentOrgId: orgId,
     isMember: user.orgMembers.length > 0,
-    roles: user.userRoles.map((ur) => ur.role.code),
-    olpEnabled: org?.olpEnabled ?? false,
+    roles,
+    olpEnabled,
   };
 }

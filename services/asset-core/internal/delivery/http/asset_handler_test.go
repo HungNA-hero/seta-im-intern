@@ -14,20 +14,22 @@ import (
 )
 
 type fakeAssetUsecase struct {
-	called       bool
-	methodCalled string
-	orgID        string
-	folderByID   *domain.Folder
-	folderByErr  error
-	childrenResp []domain.Folder
-	childrenErr  error
-	rootResp     []domain.Folder
-	rootErr      error
-	treeRootPath string
-	createInput  domain.CreateFolderInput
-	createErr    error
-	updateInput  domain.UpdateFolderInput
-	updateErr    error
+	called           bool
+	methodCalled     string
+	orgID            string
+	folderByID       *domain.Folder
+	folderByErr      error
+	foldersByIDsResp []domain.Folder
+	foldersByIDsErr  error
+	childrenResp     []domain.Folder
+	childrenErr      error
+	rootResp         []domain.Folder
+	rootErr          error
+	treeRootPath     string
+	createInput      domain.CreateFolderInput
+	createErr        error
+	updateInput      domain.UpdateFolderInput
+	updateErr        error
 
 	metadataItemsResp   []domain.MetadataItem
 	metadataItemsErr    error
@@ -72,6 +74,16 @@ func (f *fakeAssetUsecase) GetFolderByID(_ context.Context, orgID, folderID stri
 		return *f.folderByID, nil
 	}
 	return domain.Folder{}, gorm.ErrRecordNotFound
+}
+
+func (f *fakeAssetUsecase) GetFoldersByIDs(_ context.Context, orgID string, folderIDs []string) ([]domain.Folder, error) {
+	f.called = true
+	f.methodCalled = "GetFoldersByIDs"
+	f.orgID = orgID
+	if f.foldersByIDsErr != nil {
+		return nil, f.foldersByIDsErr
+	}
+	return f.foldersByIDsResp, nil
 }
 
 func (f *fakeAssetUsecase) GetFolderChildren(_ context.Context, orgID, parentPath string) ([]domain.Folder, error) {

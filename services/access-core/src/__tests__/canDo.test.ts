@@ -15,13 +15,36 @@ const { mockGetFolderMeta, mockGetMetadataMeta } = vi.hoisted(() => ({
   mockGetMetadataMeta: vi.fn(),
 }));
 
+const { mockCache } = vi.hoisted(() => ({
+  mockCache: {
+    readDecision: vi.fn(),
+    writeDecision: vi.fn(),
+    getAssetEpoch: vi.fn(),
+    getUserEpoch: vi.fn(),
+    getRoleEpochs: vi.fn(),
+  },
+}));
+
 vi.mock("../db/prisma", () => ({ prisma: mockPrisma }));
 vi.mock("../clients/assetClient", () => ({
   getFolderMeta: mockGetFolderMeta,
   getMetadataMeta: mockGetMetadataMeta,
 }));
+vi.mock("../cache/decisionCache", () => ({
+  readDecision: mockCache.readDecision,
+  writeDecision: mockCache.writeDecision,
+}));
+vi.mock("../cache/epoch", () => ({
+  getAssetEpoch: mockCache.getAssetEpoch,
+  getUserEpoch: mockCache.getUserEpoch,
+  getRoleEpochs: mockCache.getRoleEpochs,
+}));
 
-import { canDo, filterAllowedResourceIds } from "../authz/decision";
+import {
+  canDo,
+  filterAllowedResourceIds,
+  resetInProcessAuthzCachesForTests,
+} from "../authz/decision";
 
 // ── fixtures ──────────────────────────────────────────────────────────────────
 
@@ -47,6 +70,12 @@ beforeEach(() => {
   delete process.env.TRAINER_ADMIN_ENABLED;
   delete process.env.TRAINER_ADMIN_EXPIRES_AT;
   vi.resetAllMocks();
+  resetInProcessAuthzCachesForTests();
+  mockCache.readDecision.mockResolvedValue(undefined);
+  mockCache.writeDecision.mockResolvedValue(undefined);
+  mockCache.getAssetEpoch.mockResolvedValue(0);
+  mockCache.getUserEpoch.mockResolvedValue(0);
+  mockCache.getRoleEpochs.mockResolvedValue([]);
   mockPrisma.permissionAction.findMany.mockResolvedValue(ACTIONS);
   mockPrisma.organization.findUnique.mockResolvedValue({ olpEnabled: false });
   mockPrisma.user.findUnique.mockResolvedValue(activeUser());

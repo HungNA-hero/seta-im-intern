@@ -1,5 +1,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { GraphQLError } from "graphql";
+
+vi.mock("../cache/factCache", () => ({
+  readFolderFactThrough: (
+    _orgId: string,
+    _id: string,
+    loader: () => Promise<unknown>,
+  ) => loader(),
+  readItemFactThrough: (
+    _orgId: string,
+    _id: string,
+    loader: () => Promise<unknown>,
+  ) => loader(),
+}));
+
 import {
   assetPath,
   assetFetch,
@@ -114,6 +128,7 @@ describe("assetClient", () => {
           "Content-Type": "application/json",
         },
         body: '{"foo":"bar"}',
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -132,7 +147,33 @@ describe("assetClient", () => {
           "X-Org-Id": "o1",
           Authorization: `Bearer ${config.assetInternalApiToken}`,
         },
+        signal: expect.any(AbortSignal),
       });
+    });
+
+    it("retries a failed GET request once", async () => {
+      mockFetch
+        .mockResolvedValueOnce(new Response(null, { status: 503 }))
+        .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+      const response = await assetFetch("/test", { userId: "u1", orgId: "o1" });
+
+      expect(response.status).toBe(200);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not retry a failed mutation without an idempotency contract", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 503 }));
+
+      const response = await assetFetch("/test", {
+        userId: "u1",
+        orgId: "o1",
+        method: "POST",
+        body: { name: "once-only" },
+      });
+
+      expect(response.status).toBe(503);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
     it("fails closed when the dependency trace id is not canonical", async () => {
@@ -175,6 +216,7 @@ describe("assetClient", () => {
           traceparent: correlation.traceparent,
           "x-request-id": "request-57",
         },
+        signal: expect.any(AbortSignal),
       });
     });
   });

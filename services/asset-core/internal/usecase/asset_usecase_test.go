@@ -24,6 +24,9 @@ func (f *fakeAssetRepo) GetFolderTree(_ context.Context, _ string, _ string) ([]
 func (f *fakeAssetRepo) GetFolderByID(_ context.Context, _ string, _ string) (domain.Folder, error) {
 	return domain.Folder{}, nil
 }
+func (f *fakeAssetRepo) GetFoldersByIDs(_ context.Context, _ string, _ []string) ([]domain.Folder, error) {
+	return nil, nil
+}
 func (f *fakeAssetRepo) GetFolderChildren(_ context.Context, _ string, _ string) ([]domain.Folder, error) {
 	return nil, nil
 }

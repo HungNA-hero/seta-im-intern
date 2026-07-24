@@ -173,6 +173,7 @@ type UpdateMetadataInput struct {
 type AssetRepository interface {
 	GetFolderTree(ctx context.Context, orgID string, rootPath string) ([]Folder, error)
 	GetFolderByID(ctx context.Context, orgID string, folderID string) (Folder, error)
+	GetFoldersByIDs(ctx context.Context, orgID string, folderIDs []string) ([]Folder, error)
 	GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]Folder, error)
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
 	CreateFolder(ctx context.Context, orgID, userID string, input CreateFolderInput) (Folder, error)
@@ -206,6 +207,7 @@ type AssetRepository interface {
 type AssetUsecase interface {
 	GetFolderTree(ctx context.Context, orgID string, rootPath string) ([]Folder, error)
 	GetFolderByID(ctx context.Context, orgID string, folderID string) (Folder, error)
+	GetFoldersByIDs(ctx context.Context, orgID string, folderIDs []string) ([]Folder, error)
 	GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]Folder, error)
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
 	CreateFolder(ctx context.Context, orgID, userID string, input CreateFolderInput) (Folder, error)
