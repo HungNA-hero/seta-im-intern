@@ -5,6 +5,7 @@ import { prisma }      from './db/prisma';
 import { registerGracefulShutdown } from './lifecycle';
 import { ServiceName } from './observability/serviceName';
 import { startCacheInvalidator } from './eventing/cacheInvalidator';
+import { closeRedisConsumerClient } from './cache/redisClient';
 
 function logStartup(level: "info" | "warn" | "error", message: string, error?: unknown) {
   process.stdout.write(`${JSON.stringify({
@@ -36,7 +37,13 @@ async function main() {
   registerGracefulShutdown(
     [
       { name: "server", close: () => server.close() },
-      { name: "cacheInvalidator", close: async () => cacheInvalidator.stop() },
+      {
+        name: "cacheInvalidator",
+        close: async () => {
+          cacheInvalidator.stop();
+          await closeRedisConsumerClient();
+        },
+      },
       { name: "prisma", close: () => prisma.$disconnect() },
     ],
     logStartup,

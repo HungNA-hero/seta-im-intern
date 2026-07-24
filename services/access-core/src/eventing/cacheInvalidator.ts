@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type Redis from "ioredis";
-import { getRedisClient } from "../cache/redisClient";
+import { getRedisConsumerClient } from "../cache/redisClient";
 import { incrementCounter } from "../cache/metrics";
 import { applyLifecycleEffect, type AssetEventEnvelope } from "./effects";
 
@@ -159,7 +159,7 @@ function delay(ms: number): Promise<void> {
 
 export function startCacheInvalidator(): { stop: () => void } {
   running = true;
-  const redis = getRedisClient();
+  const redis = getRedisConsumerClient();
 
   void (async () => {
     await ensureConsumerGroup(redis).catch(() => undefined);
