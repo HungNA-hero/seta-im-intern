@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  access-core:
+    name: Access Core verification
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/access-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/access-core/package-lock.json
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  asset-core:
+    name: Asset Core verification
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/asset-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/asset-core/go.mod
+          cache-dependency-path: services/asset-core/go.sum
+      - name: Check Go formatting
+        run: |
+          unformatted="$(gofmt -l $(find . -type f -name '*.go' -not -path './tmp/*'))"
+          if [ -n "$unformatted" ]; then
+            echo "Go files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+      - run: go vet ./...
+      - run: go test ./...
+      - run: go build ./...
+
+  redis-integration:
+    name: Redis integration verification
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/access-core/package-lock.json
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/asset-core/go.mod
+          cache-dependency-path: services/asset-core/go.sum
+      - name: Run Access Core live-Redis tests
+        working-directory: services/access-core
+        env:
+          ACCESS_REDIS_LIVE_TEST: "1"
+          ACCESS_REDIS_HOST: 127.0.0.1
+          ACCESS_REDIS_PORT: "6379"
+        run: |
+          npm ci
+          npm run db:generate
+          npm test
+      - name: Run Asset Core live-Redis test
+        working-directory: services/asset-core
+        env:
+          ASSET_REDIS_LIVE_TEST: "1"
+          ASSET_REDIS_HOST: 127.0.0.1
+          ASSET_REDIS_PORT: "6379"
+        run: go test ./...
+
+  compose-smoke:
+    name: Disposable Compose smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate production topology, migrations, and health endpoints
+        env:
+          COMPOSE_PROJECT_NAME: seta-ci-${{ github.run_id }}-${{ github.run_attempt }}
+        run: bash ./scripts/ci/compose-smoke.sh
