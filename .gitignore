@@ -15,6 +15,7 @@ dist/
 *.dylib
 *.test
 *.out
+vendor/
 
 # Environment files
 *.env
@@ -41,6 +42,7 @@ logs/
 *.njsproj
 *.sln
 *.sw?
+*.tmp
 
 # OS metadata
 .DS_Store
@@ -55,4 +57,3 @@ CLAUDE.md
 
 # Local spec / planning docs
 specs/
-
