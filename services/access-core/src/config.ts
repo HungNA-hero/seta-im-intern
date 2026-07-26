@@ -19,7 +19,7 @@ function intInRange(
 ): number {
   const raw = process.env[name];
   if (raw === undefined) return fallback;
-  if (!/^-?\d+$/.test(raw)) {
+  if (!/^\d+$/.test(raw)) {
     throw new Error(`${name} must be a whole integer between ${min} and ${max}`);
   }
   const value = Number(raw);

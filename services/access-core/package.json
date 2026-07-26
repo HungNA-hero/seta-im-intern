@@ -13,7 +13,6 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "test": "vitest run",
-    "test:breaker:smoke": "tsx scripts/circuitBreakerSmoke.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },

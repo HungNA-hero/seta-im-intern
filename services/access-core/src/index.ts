@@ -6,7 +6,7 @@ import { registerGracefulShutdown } from './lifecycle';
 import { ServiceName } from './observability/serviceName';
 import { startCacheInvalidator } from './eventing/cacheInvalidator';
 import { closeRedisConsumerClient } from './cache/redisClient';
-import { cancelAssetBreakerCapacityLog, shutdownAssetBreaker } from './clients/assetBreaker';
+import { disableAssetBreakerCapacityLog, shutdownAssetBreaker } from './clients/assetBreaker';
 
 function logStartup(level: "info" | "warn" | "error", message: string, error?: unknown) {
   process.stdout.write(`${JSON.stringify({
@@ -47,7 +47,7 @@ async function main() {
       },
       {
         name: "assetBreaker",
-        immediate: () => cancelAssetBreakerCapacityLog(),
+        immediate: () => disableAssetBreakerCapacityLog(),
         close: () => shutdownAssetBreaker(),
       },
       { name: "prisma", close: () => prisma.$disconnect() },

@@ -130,6 +130,71 @@ describe("asset breaker observability", () => {
     await admitted;
   });
 
+  it("blocks a summary from a capacity rejection that happens after logging is disabled", async () => {
+    const stderrSpy = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+    const harness = createAssetBreakerForTests(options);
+    const slow = deferredResponse();
+    mockFetch.mockImplementationOnce(() => slow.promise);
+
+    try {
+      const admitted = harness.fire("http://asset/slow", {});
+      await Promise.resolve();
+      // First rejection arms a pending summary timer.
+      await expect(
+        harness.fire("http://asset/rejected-1", {}),
+      ).rejects.toBeDefined();
+
+      // Simulates the shutdown-immediate hook running before server.close()'s
+      // request drain: logging is permanently disabled while the breaker
+      // itself keeps serving in-flight work.
+      harness.disableCapacityLogging();
+
+      // A request still draining hits the capacity gate again after logging
+      // was disabled — this must not re-arm a new timer.
+      await expect(
+        harness.fire("http://asset/rejected-2", {}),
+      ).rejects.toBeDefined();
+
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(stderrSpy).not.toHaveBeenCalled();
+
+      slow.resolve(new Response(null, { status: 200 }));
+      await admitted;
+    } finally {
+      harness.shutdown();
+    }
+  });
+
+  it("treats disableCapacityLogging and shutdown as idempotent", async () => {
+    const stderrSpy = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation(() => true);
+    const harness = createAssetBreakerForTests(options);
+    const slow = deferredResponse();
+    mockFetch.mockImplementationOnce(() => slow.promise);
+
+    const admitted = harness.fire("http://asset/slow", {});
+    await Promise.resolve();
+    await expect(
+      harness.fire("http://asset/rejected", {}),
+    ).rejects.toBeDefined();
+
+    expect(() => {
+      harness.disableCapacityLogging();
+      harness.disableCapacityLogging();
+      harness.shutdown();
+      harness.shutdown();
+    }).not.toThrow();
+
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(stderrSpy).not.toHaveBeenCalled();
+
+    slow.resolve(new Response(null, { status: 200 }));
+    await admitted;
+  });
+
   it("bypasses both breaker and capacity when disabled by environment", async () => {
     vi.stubEnv("ACCESS_ASSET_BREAKER_ENABLED", "false");
     vi.resetModules();

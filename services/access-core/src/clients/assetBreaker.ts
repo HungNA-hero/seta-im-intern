@@ -25,7 +25,7 @@ export interface AssetBreakerSnapshot {
 export interface AssetBreakerHarness {
   fire(url: string, init: RequestInit): Promise<Response>;
   snapshot(): AssetBreakerSnapshot;
-  cancelPendingCapacityLog(): void;
+  disableCapacityLogging(): void;
   shutdown(): void;
 }
 
@@ -80,15 +80,24 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
   let inFlight = 0;
   let capacityRejectedCount = 0;
   let capacityLogTimer: NodeJS.Timeout | undefined;
+  // Permanent kill switch for the capacity-summary log, distinct from the
+  // per-window `capacityLogTimer`. Once set, no future capacity rejection can
+  // schedule a new timer or emit a summary — set at shutdown so an in-flight
+  // request that hits the capacity gate during Fastify's drain window (after
+  // shutdown begins but before `server.close()` resolves) cannot re-arm the
+  // timer this same call already tore down.
+  let capacityLoggingDisabled = false;
 
   const recordCapacityRejection = (): void => {
     incrementCounter("asset_breaker_capacity_rejected");
+    if (capacityLoggingDisabled) return;
     capacityRejectedCount += 1;
     if (capacityLogTimer) return;
     capacityLogTimer = setTimeout(() => {
+      capacityLogTimer = undefined;
+      if (capacityLoggingDisabled) return;
       const rejectedCount = capacityRejectedCount;
       capacityRejectedCount = 0;
-      capacityLogTimer = undefined;
       writeBreakerEvent(
         "warn",
         "asset_breaker_capacity_rejected_summary",
@@ -98,7 +107,8 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
     capacityLogTimer.unref();
   };
 
-  const cancelPendingCapacityLog = (): void => {
+  const disableCapacityLogging = (): void => {
+    capacityLoggingDisabled = true;
     if (capacityLogTimer) {
       clearTimeout(capacityLogTimer);
       capacityLogTimer = undefined;
@@ -174,9 +184,9 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
         stats: breaker.stats,
       };
     },
-    cancelPendingCapacityLog,
+    disableCapacityLogging,
     shutdown(): void {
-      cancelPendingCapacityLog();
+      disableCapacityLogging();
       breaker.shutdown();
     },
   };
@@ -213,10 +223,12 @@ export function shutdownAssetBreaker(): void {
 }
 
 /**
- * Stops the pending capacity-rejection summary log without tearing down the
- * breaker itself, so no summary can fire during the request-drain phase of
- * shutdown, which runs before the breaker's own `close` target.
+ * Permanently disables the capacity-rejection summary log without tearing
+ * down the breaker itself, so no summary can fire during the request-drain
+ * phase of shutdown (which runs before the breaker's own `close` target) —
+ * including from a capacity rejection that happens after this call returns.
+ * Safe to call multiple times.
  */
-export function cancelAssetBreakerCapacityLog(): void {
-  assetBreaker.cancelPendingCapacityLog();
+export function disableAssetBreakerCapacityLog(): void {
+  assetBreaker.disableCapacityLogging();
 }
