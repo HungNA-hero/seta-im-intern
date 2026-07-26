@@ -186,7 +186,7 @@ default `ASSET_INTERNAL_API_TOKEN` with a unique secret.
 | `ACCESS_ASSET_BREAKER_ERROR_THRESHOLD_PCT` | `50` | Rolling error percentage above which the breaker opens |
 | `ACCESS_ASSET_BREAKER_VOLUME_THRESHOLD` | `10` | Minimum calls before the breaker may open |
 | `ACCESS_ASSET_BREAKER_RESET_MS` | `5000` | Delay before one recovery probe is admitted |
-| `ACCESS_ASSET_BREAKER_CAPACITY` | `800` | Measured maximum concurrent asset-core calls; see `infra/db/access/loadtest/circuit-breaker-results.md` |
+| `ACCESS_ASSET_BREAKER_CAPACITY` | `800` | Measured maximum concurrent asset-core calls |
 
 ### Backfill command interface
 
