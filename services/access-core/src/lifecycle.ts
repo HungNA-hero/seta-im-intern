@@ -1,6 +1,13 @@
 type Logger = (level: "info" | "warn" | "error", message: string, error?: unknown) => void;
 
-type ShutdownTarget = { name: string; close: () => Promise<unknown> };
+type ShutdownTarget = {
+  name: string;
+  close: () => Promise<unknown> | void;
+  /** Runs synchronously the instant shutdown begins, before any target's `close`
+   * (which may block on request drain). Use for state that must stop immediately
+   * rather than wait its turn in the sequential close order. */
+  immediate?: () => void;
+};
 
 export function registerGracefulShutdown(
   targets: ShutdownTarget[],
@@ -12,6 +19,10 @@ export function registerGracefulShutdown(
     if (shuttingDown) return;
     shuttingDown = true;
     log("info", `received ${signal}; shutting down gracefully`);
+
+    for (const target of targets) {
+      target.immediate?.();
+    }
 
     const forceExit = setTimeout(() => {
       log("error", "graceful shutdown timed out");

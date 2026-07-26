@@ -11,6 +11,33 @@ const dbPassword = process.env.ACCESS_DB_PASSWORD ?? "access_password";
 const redisHost = process.env.ACCESS_REDIS_HOST ?? "localhost";
 const redisPort = process.env.ACCESS_REDIS_PORT ?? "6379";
 
+function intInRange(
+  name: string,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  const raw = process.env[name];
+  if (raw === undefined) return fallback;
+  if (!/^-?\d+$/.test(raw)) {
+    throw new Error(`${name} must be a whole integer between ${min} and ${max}`);
+  }
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < min || value > max) {
+    throw new Error(`${name} must be a whole integer between ${min} and ${max}`);
+  }
+  return value;
+}
+
+function boolEnv(name: string, fallback: boolean): boolean {
+  const raw = process.env[name];
+  if (raw === undefined) return fallback;
+  const normalized = raw.toLowerCase();
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+  throw new Error(`${name} must be either true or false`);
+}
+
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
 }
@@ -20,6 +47,28 @@ export const config = {
   assetInternalApiToken: process.env.ASSET_INTERNAL_API_TOKEN ?? "",
   port: parseInt(process.env.PORT ?? "4000", 10),
   host: process.env.HOST ?? "0.0.0.0",
+  assetBreaker: {
+    enabled: boolEnv("ACCESS_ASSET_BREAKER_ENABLED", true),
+    errorThresholdPercentage: intInRange(
+      "ACCESS_ASSET_BREAKER_ERROR_THRESHOLD_PCT",
+      50,
+      1,
+      99,
+    ),
+    volumeThreshold: intInRange(
+      "ACCESS_ASSET_BREAKER_VOLUME_THRESHOLD",
+      10,
+      1,
+      1000,
+    ),
+    resetTimeoutMs: intInRange(
+      "ACCESS_ASSET_BREAKER_RESET_MS",
+      5000,
+      500,
+      120000,
+    ),
+    capacity: intInRange("ACCESS_ASSET_BREAKER_CAPACITY", 800, 1, 10000),
+  },
   db: {
     host: dbHost,
     port: parseInt(dbPort, 10),

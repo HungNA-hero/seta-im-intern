@@ -1,6 +1,7 @@
 import { GraphQLError } from "graphql";
 import { config } from "../config";
 import { getErrorDefinition, isKnownErrorCode } from "../errors/errorCodes";
+import { internalDependencyError } from "../errors/factories";
 import {
   getRequestCorrelation,
   isTraceId,
@@ -8,6 +9,7 @@ import {
 import { ServiceName } from "../observability/serviceName";
 import { singleFlight } from "../cache/singleFlight";
 import { readFolderFactThrough, readItemFactThrough } from "../cache/factCache";
+import { fireAssetRequest } from "./assetBreaker";
 
 export const FOLDERS_PATH = "/internal/api/v1/folders";
 export const METADATA_PATH = "/internal/api/v1/metadata-items";
@@ -28,8 +30,6 @@ interface SafeAssetErrorEnvelope {
  * Malformed or legacy dependency failures fail closed to the local internal error.
  */
 export async function throwGoError(res: Response): Promise<never> {
-  const fallback = getErrorDefinition("INTERNAL_ERROR");
-  const fallbackTraceId = getRequestCorrelation()?.traceId;
   try {
     const body = (await res.json()) as SafeAssetErrorEnvelope;
     const error = body.error;
@@ -56,14 +56,7 @@ export async function throwGoError(res: Response): Promise<never> {
     if (error instanceof GraphQLError) throw error;
   }
 
-  throw new GraphQLError(fallback.message, {
-    extensions: {
-      code: fallback.code,
-      number: fallback.number,
-      traceId: fallbackTraceId,
-      service: ServiceName.ACCESS_CORE,
-    },
-  });
+  throw internalDependencyError(getRequestCorrelation()?.traceId);
 }
 
 /**
@@ -114,22 +107,11 @@ interface AssetRequest {
   body?: Record<string, unknown>;
 }
 
-const ASSET_FETCH_TIMEOUT_MS = 3000;
-
-function fetchWithDeadline(url: string, init: RequestInit): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), ASSET_FETCH_TIMEOUT_MS);
-  return fetch(url, { ...init, signal: controller.signal }).finally(() =>
-    clearTimeout(timeout),
-  );
-}
-
 /**
  * Executes a fetch request to the Go Asset Service.
  * Automatically attaches X-User-Id and X-Org-Id headers, and JSON stringifies the body if present.
- * Bounded by a deadline (AbortController). Only idempotent GET requests retry
- * once for network, timeout, or 5xx failures. Mutations do not retry until an
- * end-to-end idempotency-key contract exists.
+ * Bounded by a deadline and protected by the service-wide Asset Core circuit breaker.
+ * Each call makes at most one outbound attempt; 4xx responses remain normal dependency answers.
  * @param path The endpoint path including query parameters.
  * @param req The request configuration including user, org, method, and optional body.
  * @returns A promise resolving to the standard fetch Response.
@@ -155,17 +137,7 @@ export async function assetFetch(path: string, req: AssetRequest): Promise<Respo
   }
 
   const url = `${config.goAssetUrl}${path}`;
-  const canRetry = (req.method ?? "GET") === "GET";
-  try {
-    const res = await fetchWithDeadline(url, init);
-    if (canRetry && typeof res.status === "number" && res.status >= 500) {
-      return await fetchWithDeadline(url, init);
-    }
-    return res;
-  } catch (error) {
-    if (!canRetry) throw error;
-    return await fetchWithDeadline(url, init);
-  }
+  return await fireAssetRequest(url, init);
 }
 
 /**
