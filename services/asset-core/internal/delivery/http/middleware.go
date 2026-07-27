@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"seta-im-intern/go-asset-core/internal/observability"
 	"seta-im-intern/go-asset-core/internal/requestcontext"
 )
 
@@ -51,11 +52,19 @@ func WithRequestCorrelation(next http.Handler) http.Handler {
 			StartedAt: startedAt,
 		}
 		response := &correlationResponseWriter{ResponseWriter: w}
-		next.ServeHTTP(response, r.WithContext(requestcontext.WithCorrelation(r.Context(), correlation)))
+		correlatedRequest := r.WithContext(requestcontext.WithCorrelation(r.Context(), correlation))
+		next.ServeHTTP(response, correlatedRequest)
 
 		status := response.status
 		if status == 0 {
 			status = http.StatusOK
+		}
+		if r.URL.Path != "/metrics" {
+			route := correlatedRequest.Pattern
+			if route == "" {
+				route = "unmatched"
+			}
+			observability.RecordHTTP(r.Method, route, status, time.Since(startedAt))
 		}
 		result := "success"
 		if correlation.ErrorCode == "INTERNAL_ERROR" || status >= http.StatusInternalServerError {

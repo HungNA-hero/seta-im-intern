@@ -8,6 +8,7 @@ dist/
 
 # Go binaries
 /services/core-go/server
+/services/asset-core/tmp/
 *.exe
 *.exe~
 *.dll

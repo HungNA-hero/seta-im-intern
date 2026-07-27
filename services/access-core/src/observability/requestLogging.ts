@@ -1,7 +1,12 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { ServiceName } from "./serviceName";
+import { recordHttpRequest } from "./prometheus";
 
-export function logRequestCompletion(request: FastifyRequest, reply: FastifyReply): void {
+export function logRequestCompletion(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  metricsEnabled: boolean,
+): void {
   const correlation = request.correlation;
   const result =
     correlation.errorCode !== undefined
@@ -31,4 +36,13 @@ export function logRequestCompletion(request: FastifyRequest, reply: FastifyRepl
     },
     "request completed",
   );
+  if (metricsEnabled && request.routeOptions.url !== "/metrics") {
+    recordHttpRequest(
+      request.method,
+      request.routeOptions.url ?? "unmatched",
+      reply.statusCode,
+      result,
+      Math.max(0, Date.now() - correlation.startedAt),
+    );
+  }
 }

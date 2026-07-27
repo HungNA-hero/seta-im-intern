@@ -68,6 +68,7 @@ export const config = {
   assetInternalApiToken: process.env.ASSET_INTERNAL_API_TOKEN ?? "",
   port: parseInt(process.env.PORT ?? "4000", 10),
   host: process.env.HOST ?? "0.0.0.0",
+  metricsEnabled: boolEnv("METRICS_ENABLED", false),
   assetBreaker: {
     enabled: boolEnv("ACCESS_ASSET_BREAKER_ENABLED", true),
     errorThresholdPercentage: intInRange(

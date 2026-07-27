@@ -231,6 +231,10 @@ export function fireAssetRequest(
   return assetBreaker.fire(url, init);
 }
 
+export function getAssetBreakerSnapshot(): AssetBreakerSnapshot {
+  return assetBreaker.snapshot();
+}
+
 export function resetAssetBreakerForTests(): void {
   shutdownAssetBreaker();
   assetBreaker = createController(configuredOptions());

@@ -1,0 +1,58 @@
+discovery.docker "seta" {
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "5s"
+}
+
+discovery.relabel "seta" {
+	targets = discovery.docker.seta.targets
+
+	rule {
+		source_labels = ["__meta_docker_container_label_seta_observability_scrape"]
+		regex         = "true"
+		action        = "keep"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_seta_observability_service"]
+		target_label  = "service"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		replacement   = "$1"
+		target_label  = "container"
+	}
+}
+
+loki.source.docker "seta" {
+	host       = "unix:///var/run/docker.sock"
+	targets    = discovery.relabel.seta.output
+	forward_to = [loki.process.seta.receiver]
+}
+
+loki.process "seta" {
+	stage.docker { }
+
+	stage.json {
+		expressions = {
+			level  = "level",
+			result = "result",
+		}
+	}
+
+	stage.labels {
+		values = {
+			level  = "",
+			result = "",
+		}
+	}
+
+	forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+}

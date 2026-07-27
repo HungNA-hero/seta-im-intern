@@ -134,6 +134,10 @@ services:
       asset-db:
         condition: service_healthy
     stop_grace_period: 15s
+    # The worker has no HTTP listener; inheriting the Asset API healthcheck would
+    # report a false unhealthy state even while the job loop is running.
+    healthcheck:
+      disable: true
 
   redis:
     image: redis:7-alpine
