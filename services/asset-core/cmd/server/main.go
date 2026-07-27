@@ -17,6 +17,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	httpDelivery "seta-im-intern/go-asset-core/internal/delivery/http"
+	"seta-im-intern/go-asset-core/internal/observability"
 	"seta-im-intern/go-asset-core/internal/repository"
 	"seta-im-intern/go-asset-core/internal/usecase"
 )
@@ -48,6 +49,9 @@ func main() {
 
 	// 3. Setup Routes and Handlers
 	muxPtr := http.NewServeMux()
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("METRICS_ENABLED")), "true") {
+		muxPtr.HandleFunc("/metrics", observability.MetricsHandler)
+	}
 
 	httpDelivery.NewAssetHandler(muxPtr, assetUsecase, db, folderDeletionUsecase)
 

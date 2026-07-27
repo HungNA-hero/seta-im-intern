@@ -1,0 +1,83 @@
+services:
+  access-core:
+    environment:
+      METRICS_ENABLED: "true"
+    labels:
+      seta.observability.scrape: "true"
+      seta.observability.service: "access-core"
+
+  asset-core:
+    environment:
+      METRICS_ENABLED: "true"
+    labels:
+      seta.observability.scrape: "true"
+      seta.observability.service: "asset-core"
+
+  asset-delete-worker:
+    labels:
+      seta.observability.scrape: "true"
+      seta.observability.service: "asset-delete-worker"
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    profiles: ["observability"]
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      - access-core
+      - asset-core
+
+  loki:
+    image: grafana/loki:3.2.1
+    profiles: ["observability"]
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-loki
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./observability/loki/config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+
+  promtail:
+    image: grafana/promtail:3.2.1
+    profiles: ["observability"]
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-promtail
+    command: ["-config.file=/etc/promtail/config.yml"]
+    volumes:
+      - ./observability/promtail/config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - promtail_positions:/tmp
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    profiles: ["observability"]
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+      - loki
+
+volumes:
+  prometheus_data:
+  loki_data:
+  promtail_positions:
+  grafana_data:

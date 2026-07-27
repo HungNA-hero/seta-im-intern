@@ -1,0 +1,55 @@
+{
+  "annotations": { "list": [] },
+  "editable": false,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [{ "expr": "sum(rate(seta_access_http_requests_total[1m]))", "legendFormat": "requests/s", "refId": "A" }],
+      "title": "Access Core request rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(seta_access_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95", "refId": "A" }],
+      "title": "Access Core p95 latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(seta_asset_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95", "refId": "A" }],
+      "title": "Asset Core p95 latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "targets": [{ "expr": "sum by (event) (increase(seta_access_events_total{event=~\"asset_breaker_.*\"}[5m]))", "legendFormat": "{{event}}", "refId": "A" }],
+      "title": "Circuit Breaker events (5m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 16 },
+      "id": 5,
+      "targets": [{ "expr": "{service=~\"access-core|asset-core\"}", "refId": "A" }],
+      "title": "Correlated service logs",
+      "type": "logs"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["seta", "load-testing"],
+  "title": "SETA DAM - Load Testing",
+  "uid": "seta-load-testing",
+  "version": 1
+}

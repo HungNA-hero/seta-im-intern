@@ -4,6 +4,8 @@ import { schema } from "./graphql/schema";
 import { GraphQLContext, loadRequestContext } from "./graphql/context";
 import { maskGraphQLError } from "./graphql/errorMasking";
 import { logRequestCompletion } from "./observability/requestLogging";
+import { renderPrometheusMetrics } from "./observability/prometheus";
+import { config } from "./config";
 import {
   createRequestCorrelation,
   RequestCorrelation,
@@ -69,6 +71,13 @@ export async function buildServer(): Promise<FastifyInstance> {
   });
 
   app.get("/health", async () => ({ status: "ok" }));
+
+  if (config.metricsEnabled) {
+    app.get("/metrics", async (_request, reply) => {
+      reply.type("text/plain; version=0.0.4; charset=utf-8");
+      return renderPrometheusMetrics();
+    });
+  }
 
   return app;
 }

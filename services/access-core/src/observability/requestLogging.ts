@@ -1,5 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { ServiceName } from "./serviceName";
+import { recordHttpRequest } from "./prometheus";
 
 export function logRequestCompletion(request: FastifyRequest, reply: FastifyReply): void {
   const correlation = request.correlation;
@@ -31,4 +32,13 @@ export function logRequestCompletion(request: FastifyRequest, reply: FastifyRepl
     },
     "request completed",
   );
+  if (request.routeOptions.url !== "/metrics") {
+    recordHttpRequest(
+      request.method,
+      request.routeOptions.url ?? request.url.split("?")[0],
+      reply.statusCode,
+      result,
+      Math.max(0, Date.now() - correlation.startedAt),
+    );
+  }
 }

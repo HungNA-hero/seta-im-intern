@@ -1,0 +1,18 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: access-core
+    metrics_path: /metrics
+    static_configs:
+      - targets: [access-core:4000]
+        labels:
+          service: access-core
+
+  - job_name: asset-core
+    metrics_path: /metrics
+    static_configs:
+      - targets: [asset-core:8080]
+        labels:
+          service: asset-core
