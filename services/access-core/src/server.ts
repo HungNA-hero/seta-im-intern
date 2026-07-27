@@ -31,7 +31,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   });
 
   app.addHook("onResponse", async (request, reply) => {
-    logRequestCompletion(request, reply);
+    logRequestCompletion(request, reply, config.metricsEnabled);
   });
 
   const yoga = createYoga<YogaServerContext, GraphQLContext>({

@@ -5,12 +5,14 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"seta-im-intern/go-asset-core/internal/eventing"
 )
 
 var durationBucketsSeconds = []float64{0.05, 0.1, 0.25, 0.5, 1, 2, 3, 5}
+var metricsEnabled atomic.Bool
 
 type httpKey struct {
 	Method string
@@ -40,10 +42,23 @@ func resultForStatus(status int) string {
 	return "success"
 }
 
+func boundedHTTPMethod(method string) string {
+	switch strings.ToUpper(method) {
+	case http.MethodConnect, http.MethodDelete, http.MethodGet, http.MethodHead,
+		http.MethodOptions, http.MethodPatch, http.MethodPost, http.MethodPut, http.MethodTrace:
+		return strings.ToUpper(method)
+	default:
+		return "OTHER"
+	}
+}
+
 // RecordHTTP stores bounded-cardinality HTTP metrics. Callers pass route patterns,
 // not user-controlled URLs, to avoid turning labels into unbounded storage.
 func RecordHTTP(method, route string, status int, duration time.Duration) {
-	key := httpKey{Method: method, Route: route, Status: status, Result: resultForStatus(status)}
+	if !metricsEnabled.Load() {
+		return
+	}
+	key := httpKey{Method: boundedHTTPMethod(method), Route: route, Status: status, Result: resultForStatus(status)}
 	durationSeconds := max(0, duration.Seconds())
 
 	httpMetrics.Lock()
@@ -60,6 +75,11 @@ func RecordHTTP(method, route string, status int, duration time.Duration) {
 			stats.Buckets[index]++
 		}
 	}
+}
+
+// SetMetricsEnabled controls metric collection as well as endpoint exposure.
+func SetMetricsEnabled(enabled bool) {
+	metricsEnabled.Store(enabled)
 }
 
 func prometheusLabels(values map[string]string) string {
@@ -130,6 +150,7 @@ func mergeLabels(values map[string]string, key, value string) map[string]string 
 
 // ResetMetricsForTests avoids cross-test state when this package is tested directly.
 func ResetMetricsForTests() {
+	metricsEnabled.Store(false)
 	httpMetrics.Lock()
 	defer httpMetrics.Unlock()
 	httpMetrics.Requests = make(map[httpKey]*httpStats)

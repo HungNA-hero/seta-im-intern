@@ -19,6 +19,17 @@ interface HttpRequestStats {
 }
 
 const httpRequests = new Map<string, HttpRequestStats>();
+const KNOWN_HTTP_METHODS = new Set([
+  "CONNECT",
+  "DELETE",
+  "GET",
+  "HEAD",
+  "OPTIONS",
+  "PATCH",
+  "POST",
+  "PUT",
+  "TRACE",
+]);
 
 function escapeLabel(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/"/g, '\\"');
@@ -46,7 +57,10 @@ export function recordHttpRequest(
   result: string,
   durationMs: number,
 ): void {
-  const key = requestKey(method, route, status, result);
+  const normalizedMethod = KNOWN_HTTP_METHODS.has(method.toUpperCase())
+    ? method.toUpperCase()
+    : "OTHER";
+  const key = requestKey(normalizedMethod, route, status, result);
   const current = httpRequests.get(key) ?? {
     count: 0,
     sumSeconds: 0,

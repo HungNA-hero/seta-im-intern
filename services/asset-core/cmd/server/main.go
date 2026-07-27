@@ -49,7 +49,9 @@ func main() {
 
 	// 3. Setup Routes and Handlers
 	muxPtr := http.NewServeMux()
-	if strings.EqualFold(strings.TrimSpace(os.Getenv("METRICS_ENABLED")), "true") {
+	metricsEnabled := strings.EqualFold(strings.TrimSpace(os.Getenv("METRICS_ENABLED")), "true")
+	observability.SetMetricsEnabled(metricsEnabled)
+	if metricsEnabled {
 		muxPtr.HandleFunc("/metrics", observability.MetricsHandler)
 	}
 

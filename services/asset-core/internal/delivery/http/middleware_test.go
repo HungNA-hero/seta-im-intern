@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	assetHttp "seta-im-intern/go-asset-core/internal/delivery/http"
+	"seta-im-intern/go-asset-core/internal/observability"
 	"seta-im-intern/go-asset-core/internal/requestcontext"
 )
 
@@ -138,6 +140,34 @@ func TestRequestCorrelationWrapsAuthenticationFailuresInSafeEnvelope(t *testing.
 	}
 	if body.Error.TraceID != traceID || body.Error.Service != "asset-core" {
 		t.Fatalf("correlation was not preserved: %#v", body.Error)
+	}
+}
+
+func TestRequestCorrelationUsesBoundedMetricRouteLabels(t *testing.T) {
+	observability.ResetMetricsForTests()
+	t.Cleanup(observability.ResetMetricsForTests)
+	observability.SetMetricsEnabled(true)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /known/{id}", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+	handler := assetHttp.WithRequestCorrelation(mux)
+
+	for _, path := range []string{"/known/one", "/missing/one", "/missing/two"} {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
+	}
+
+	rendered := observability.RenderPrometheusMetrics()
+	if !strings.Contains(rendered, `route="GET /known/{id}"`) {
+		t.Fatalf("registered route pattern was not recorded: %s", rendered)
+	}
+	if !strings.Contains(rendered, `route="unmatched"`) {
+		t.Fatalf("unmatched route label was not recorded: %s", rendered)
+	}
+	if strings.Contains(rendered, "/missing/") || strings.Contains(rendered, "/known/one") {
+		t.Fatalf("raw request path leaked into a metric label: %s", rendered)
 	}
 }
 
