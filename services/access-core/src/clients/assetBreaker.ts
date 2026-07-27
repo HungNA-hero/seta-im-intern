@@ -1,12 +1,12 @@
 import CircuitBreaker from "opossum";
-import { config } from "../config";
+import { ASSET_FETCH_TIMEOUT_MS, config } from "../config";
 import { incrementCounter } from "../cache/metrics";
 import { internalDependencyError } from "../errors/factories";
 import { getRequestCorrelation } from "../observability/requestContext";
 import { ServiceName } from "../observability/serviceName";
 
-const ASSET_FETCH_TIMEOUT_MS = 3000;
 const CAPACITY_LOG_WINDOW_MS = 5000;
+const NULL_BODY_STATUSES = new Set([101, 103, 204, 205, 304]);
 
 export interface AssetBreakerOptions {
   enabled: boolean;
@@ -34,7 +34,7 @@ const DEFAULT_BREAKER_OPTIONS: AssetBreakerOptions = {
   errorThresholdPercentage: 50,
   volumeThreshold: 10,
   resetTimeoutMs: 5000,
-  capacity: 800,
+  capacity: 50,
 };
 
 class AssetServerResponseError extends Error {
@@ -65,12 +65,23 @@ async function fetchWithDeadline(
   init: RequestInit,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    ASSET_FETCH_TIMEOUT_MS,
-  );
+  const timeout = setTimeout(() => controller.abort(), ASSET_FETCH_TIMEOUT_MS);
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    if (typeof (response as Response).arrayBuffer !== "function") {
+      return response;
+    }
+    const body = await response.arrayBuffer();
+    return new Response(
+      NULL_BODY_STATUSES.has(response.status) && body.byteLength === 0
+        ? null
+        : body,
+      {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      },
+    );
   } finally {
     clearTimeout(timeout);
   }
@@ -80,12 +91,6 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
   let inFlight = 0;
   let capacityRejectedCount = 0;
   let capacityLogTimer: NodeJS.Timeout | undefined;
-  // Permanent kill switch for the capacity-summary log, distinct from the
-  // per-window `capacityLogTimer`. Once set, no future capacity rejection can
-  // schedule a new timer or emit a summary — set at shutdown so an in-flight
-  // request that hits the capacity gate during Fastify's drain window (after
-  // shutdown begins but before `server.close()` resolves) cannot re-arm the
-  // timer this same call already tore down.
   let capacityLoggingDisabled = false;
 
   const recordCapacityRejection = (): void => {
@@ -98,11 +103,10 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
       if (capacityLoggingDisabled) return;
       const rejectedCount = capacityRejectedCount;
       capacityRejectedCount = 0;
-      writeBreakerEvent(
-        "warn",
-        "asset_breaker_capacity_rejected_summary",
-        { rejectedCount, windowMs: CAPACITY_LOG_WINDOW_MS },
-      );
+      writeBreakerEvent("warn", "asset_breaker_capacity_rejected_summary", {
+        rejectedCount,
+        windowMs: CAPACITY_LOG_WINDOW_MS,
+      });
     }, CAPACITY_LOG_WINDOW_MS);
     capacityLogTimer.unref();
   };
@@ -132,25 +136,49 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
     resetTimeout: options.resetTimeoutMs,
   });
 
+  let halfOpenProbeClaimed = false;
+
   breaker.on("open", () => {
+    halfOpenProbeClaimed = false;
     incrementCounter("asset_breaker_open");
     writeBreakerEvent("error", "asset_breaker_open");
   });
   breaker.on("halfOpen", () => {
+    halfOpenProbeClaimed = false;
     incrementCounter("asset_breaker_half_open");
     writeBreakerEvent("warn", "asset_breaker_half_open");
   });
   breaker.on("close", () => {
+    halfOpenProbeClaimed = false;
     incrementCounter("asset_breaker_close");
     writeBreakerEvent("warn", "asset_breaker_close");
   });
   breaker.on("reject", () => incrementCounter("asset_breaker_reject"));
+
+  const breakerOpenError = (): Error =>
+    internalDependencyError(getRequestCorrelation()?.traceId);
+
+  const rejectAsBreakerOpen = (): never => {
+    incrementCounter("asset_breaker_reject");
+    throw breakerOpenError();
+  };
 
   return {
     async fire(url: string, init: RequestInit): Promise<Response> {
       if (!options.enabled) {
         return await fetchWithDeadline(url, init);
       }
+
+      if (breaker.opened) {
+        rejectAsBreakerOpen();
+      }
+      if (breaker.halfOpen) {
+        if (halfOpenProbeClaimed) {
+          rejectAsBreakerOpen();
+        }
+        halfOpenProbeClaimed = true;
+      }
+
       if (inFlight >= options.capacity) {
         recordCapacityRejection();
         throw internalDependencyError(getRequestCorrelation()?.traceId);
@@ -166,7 +194,7 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
           error instanceof Error &&
           (error as Error & { code?: string }).code === "EOPENBREAKER"
         ) {
-          throw internalDependencyError(getRequestCorrelation()?.traceId);
+          throw breakerOpenError();
         }
         throw error;
       } finally {
@@ -193,8 +221,6 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
 }
 
 function configuredOptions(): AssetBreakerOptions {
-  // A few resolver unit tests replace `config` with a deliberately minimal
-  // runtime mock. Production always has the validated block from config.ts.
   return config.assetBreaker ?? DEFAULT_BREAKER_OPTIONS;
 }
 
@@ -222,13 +248,6 @@ export function shutdownAssetBreaker(): void {
   assetBreaker.shutdown();
 }
 
-/**
- * Permanently disables the capacity-rejection summary log without tearing
- * down the breaker itself, so no summary can fire during the request-drain
- * phase of shutdown (which runs before the breaker's own `close` target) —
- * including from a capacity rejection that happens after this call returns.
- * Safe to call multiple times.
- */
 export function disableAssetBreakerCapacityLog(): void {
   assetBreaker.disableCapacityLogging();
 }
