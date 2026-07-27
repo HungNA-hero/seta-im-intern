@@ -21,7 +21,8 @@ param(
   [ValidateRange(1, 100000)]
   [int]$TargetRps = 50,
   [ValidateRange(1, 10000)]
-  [int]$PreAllocatedVUs = 20
+  [int]$PreAllocatedVUs = 20,
+  [string]$RunId = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -34,6 +35,14 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
   throw "Docker Desktop is required because k6 runs in a disposable container."
 }
 
+if ([string]::IsNullOrWhiteSpace($RunId)) {
+  $shortGuid = ([guid]::NewGuid().ToString("N")).Substring(0, 8)
+  $RunId = "$(Get-Date -Format 'yyyyMMddHHmmss')-$PID-$shortGuid"
+}
+if ($RunId -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$') {
+  throw "RunId must be 1-64 characters using letters, digits, dot, underscore, or hyphen."
+}
+
 try {
   $health = Invoke-WebRequest -UseBasicParsing -TimeoutSec 5 "$BaseUrl/health"
   if ($health.StatusCode -ne 200) {
@@ -43,13 +52,30 @@ try {
   throw "Access Core is not healthy at $BaseUrl/health. Start the local stack before load testing. $($_.Exception.Message)"
 }
 
+try {
+  $preflightBody = @{
+    query = 'query LoadPreflight($orgId: ID!) { folderTree(orgId: $orgId) { id } }'
+    variables = @{ orgId = $OrgId }
+  } | ConvertTo-Json -Depth 4
+  $preflight = Invoke-RestMethod -Method Post -TimeoutSec 15 -Uri "$BaseUrl/graphql" `
+    -ContentType "application/json" `
+    -Headers @{ "x-user-id" = $UserId; "x-org-id" = $OrgId } `
+    -Body $preflightBody
+  if ($null -eq $preflight.data -or $null -ne $preflight.errors) {
+    throw "GraphQL returned an application error."
+  }
+} catch {
+  throw "GraphQL preflight failed. Run the migrations and demo seeds documented in scripts/load/README.md. $($_.Exception.Message)"
+}
+
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$summaryFile = "/results/$timestamp-$Scenario-summary.json"
+$summaryFile = "/results/$timestamp-$RunId-$Scenario-summary.json"
 $dockerArgs = @(
   "run", "--rm", "-i",
   "-v", "${repoRoot}:/scripts:ro",
   "-v", "${resultsDir}:/results",
   "-e", "BASE_URL=$K6BaseUrl",
+  "-e", "RUN_ID=$RunId",
   "-e", "USER_ID=$UserId",
   "-e", "ORG_ID=$OrgId",
   "-e", "FOLDER_ID=$FolderId",
@@ -66,7 +92,7 @@ $dockerArgs = @(
   "run", "--summary-export", $summaryFile, $scenarioPath
 )
 
-Write-Host "Running $Scenario against $K6BaseUrl with at most $MaxVUs."
+Write-Host "Running $Scenario (run ID $RunId) against $K6BaseUrl with at most $MaxVUs."
 & docker @dockerArgs
 if ($LASTEXITCODE -ne 0) {
   throw "k6 reported a failed threshold or runtime error. See the console and $resultsDir."

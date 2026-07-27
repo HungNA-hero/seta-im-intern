@@ -41,6 +41,9 @@ Useful endpoints:
 - Asset Core health: `http://localhost:8080/healthz`
 - Jaeger: `http://localhost:16686`
 
+For the local k6 scenarios, Prometheus/Loki/Grafana stack, and circuit-breaker
+fault-injection procedure, see [scripts/load/README.md](scripts/load/README.md).
+
 Before pushing, run the full two-service verification pipeline:
 
 ```bash
