@@ -2,6 +2,9 @@
   "name": "node-access-core",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "^22 || ^24 || ^26"
+  },
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts",
     "build": "tsc",
@@ -21,10 +24,12 @@
     "graphql": "^16",
     "graphql-yoga": "^5",
     "ioredis": "^5.11.1",
+    "opossum": "^10.0.0",
     "pg": "^8"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^22",
+    "@types/opossum": "^8.1.9",
     "@types/pg": "^8",
     "prisma": "^7.8.0",
     "tsx": "^4.20.6",

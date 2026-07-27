@@ -180,6 +180,14 @@ Docker Compose uses safe local defaults. If a local override is needed, set the 
 in your shell or in an untracked `.env` file. Production deployments must replace the local
 default `ASSET_INTERNAL_API_TOKEN` with a unique secret.
 
+| Variable | Default | Purpose |
+|---|---:|---|
+| `ACCESS_ASSET_BREAKER_ENABLED` | `true` | Enable dependency circuit breaking and concurrency protection |
+| `ACCESS_ASSET_BREAKER_ERROR_THRESHOLD_PCT` | `50` | Rolling error percentage above which the breaker opens |
+| `ACCESS_ASSET_BREAKER_VOLUME_THRESHOLD` | `10` | Minimum calls before the breaker may open |
+| `ACCESS_ASSET_BREAKER_RESET_MS` | `5000` | Delay before one recovery probe is admitted |
+| `ACCESS_ASSET_BREAKER_CAPACITY` | `50` | Max concurrent asset-core calls — provisional starting candidate (FR-019), not yet measured |
+
 ### Backfill command interface
 
 `make backfill-metadata` invokes the existing one-shot Asset Core import CLI. Supply
@@ -197,7 +205,7 @@ message instead of silently doing nothing.
 ```
 services/
   asset-core/     Go 1.26 · stdlib net/http · GORM · REST/JSON        (port 8080)
-  access-core/    Node 20 · TypeScript 5 · Fastify 4 · GraphQL Yoga 5 · Prisma 7  (port 4000)
+  access-core/    Node 22 · TypeScript 5 · Fastify 4 · GraphQL Yoga 5 · Prisma 7  (port 4000)
 ```
 
 - **asset-core** is an internal, non-public REST service. It owns folders and metadata

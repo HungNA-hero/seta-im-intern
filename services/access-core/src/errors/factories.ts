@@ -1,5 +1,6 @@
 import { GraphQLError } from "graphql";
 import { getErrorDefinition } from "./errorCodes";
+import { ServiceName } from "../observability/serviceName";
 
 export function badUserInput(message: string): GraphQLError {
   return new GraphQLError(message, {
@@ -22,6 +23,23 @@ function fromDefinition(code: string): GraphQLError {
 
 export function internalError(): GraphQLError {
   return fromDefinition("INTERNAL_ERROR");
+}
+
+/**
+ * Local INTERNAL_ERROR attributed to access-core itself (as opposed to a
+ * relayed asset-core failure), for dependency-call failures with no safe
+ * envelope to parse — e.g. a tripped circuit breaker or unreachable asset-core.
+ */
+export function internalDependencyError(traceId: string | undefined): GraphQLError {
+  const definition = getErrorDefinition("INTERNAL_ERROR");
+  return new GraphQLError(definition.message, {
+    extensions: {
+      code: definition.code,
+      number: definition.number,
+      traceId,
+      service: ServiceName.ACCESS_CORE,
+    },
+  });
 }
 
 export function cursorInvalid(): GraphQLError {

@@ -8,7 +8,12 @@ type Counter =
   | "epoch_bump"
   | "single_flight_coalesced"
   | "lost_publish"
-  | "invalidation_dlq";
+  | "invalidation_dlq"
+  | "asset_breaker_open"
+  | "asset_breaker_half_open"
+  | "asset_breaker_close"
+  | "asset_breaker_reject"
+  | "asset_breaker_capacity_rejected";
 
 const counters: Record<Counter, number> = {
   decision_hit: 0,
@@ -21,6 +26,11 @@ const counters: Record<Counter, number> = {
   single_flight_coalesced: 0,
   lost_publish: 0,
   invalidation_dlq: 0,
+  asset_breaker_open: 0,
+  asset_breaker_half_open: 0,
+  asset_breaker_close: 0,
+  asset_breaker_reject: 0,
+  asset_breaker_capacity_rejected: 0,
 };
 
 const invalidationLatenciesMs: number[] = [];

@@ -18,6 +18,7 @@ vi.mock("../config", () => ({
     goAssetUrl: "http://go-mock",
     assetInternalApiToken: "test-internal-token",
   },
+  ASSET_FETCH_TIMEOUT_MS: 3000,
 }));
 const { mockObjectPermissionDeleteMany } = vi.hoisted(() => ({
   mockObjectPermissionDeleteMany: vi.fn(),
