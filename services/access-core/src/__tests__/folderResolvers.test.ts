@@ -13,7 +13,10 @@ const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({
 vi.mock("../authz/decision", () =>
   createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
 );
-vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));
+vi.mock("../config", () => ({
+  config: { goAssetUrl: "http://go-mock" },
+  ASSET_FETCH_TIMEOUT_MS: 3000,
+}));
 const { mockObjectPermissionDeleteMany } = vi.hoisted(() => ({
   mockObjectPermissionDeleteMany: vi.fn(),
 }));

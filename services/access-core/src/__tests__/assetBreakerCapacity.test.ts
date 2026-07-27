@@ -108,7 +108,7 @@ describe("asset dependency concurrency capacity", () => {
     }
   });
 
-  it("does not treat saturation during recovery as a successful probe", async () => {
+  it("rejects a second call during half-open as a breaker rejection, not capacity, and never touches inFlight for it", async () => {
     vi.useFakeTimers();
     const harness = createAssetBreakerForTests({ ...options, capacity: 1 });
     try {
@@ -121,20 +121,58 @@ describe("asset dependency concurrency capacity", () => {
       mockFetch.mockImplementationOnce(() => probeResult.promise);
       const probe = harness.fire("http://asset/probe", {});
       await Promise.resolve();
+      expect(harness.snapshot().inFlight).toBe(1);
 
+      // A second call arriving while the one probe is still in flight is a
+      // breaker-open-overflow rejection, not a capacity rejection — it must
+      // never consume a capacity slot, since it was never going to reach the
+      // network regardless of how much capacity was free.
       await expect(
-        harness.fire("http://asset/saturated", {}),
+        harness.fire("http://asset/second-caller", {}),
       ).rejects.toMatchObject({
         extensions: { code: "INTERNAL_ERROR" },
       });
-      expect(harness.snapshot().state).toBe("halfOpen");
+      expect(harness.snapshot()).toMatchObject({
+        state: "halfOpen",
+        inFlight: 1,
+      });
       expect(getMetricsSnapshotForTests().counters).toMatchObject({
-        asset_breaker_capacity_rejected: 1,
-        asset_breaker_reject: 0,
+        asset_breaker_capacity_rejected: 0,
+        asset_breaker_reject: 1,
       });
 
       probeResult.resolve(new Response(null, { status: 200 }));
       await probe;
+    } finally {
+      harness.shutdown();
+    }
+  });
+
+  it("classifies every call in a synchronous batch made while open as a breaker rejection, none as capacity", async () => {
+    vi.useFakeTimers();
+    const harness = createAssetBreakerForTests({ ...options, capacity: 2 });
+    try {
+      await openBreaker(harness, mockFetch);
+      expect(harness.snapshot().state).toBe("open");
+      mockFetch.mockClear();
+
+      // Fired synchronously, back-to-back, with no await between them —
+      // exactly the batch shape that could inflate `inFlight` if the
+      // capacity gate ran before the breaker-state check.
+      const batch = Array.from({ length: 10 }, (_, index) =>
+        harness.fire(`http://asset/batch-${index}`, {}),
+      );
+      const results = await Promise.allSettled(batch);
+
+      expect(results.every((result) => result.status === "rejected")).toBe(
+        true,
+      );
+      expect(harness.snapshot().inFlight).toBe(0);
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(getMetricsSnapshotForTests().counters).toMatchObject({
+        asset_breaker_capacity_rejected: 0,
+        asset_breaker_reject: 10,
+      });
     } finally {
       harness.shutdown();
     }

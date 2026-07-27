@@ -8,7 +8,10 @@ const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({ mockFilterAllowedRe
 vi.mock("../authz/decision", () =>
   createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
 );
-vi.mock("../config", () => ({ config: { goAssetUrl: "http://go-mock" } }));
+vi.mock("../config", () => ({
+  config: { goAssetUrl: "http://go-mock" },
+  ASSET_FETCH_TIMEOUT_MS: 3000,
+}));
 vi.mock("../db/prisma", () => ({ prisma: {} }));
 
 const mockFetch = vi.fn();
