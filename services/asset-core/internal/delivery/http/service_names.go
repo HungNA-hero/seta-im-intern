@@ -7,4 +7,3 @@ const (
 	ServiceNameAssetCore  ServiceName = "asset-core"
 	ServiceNameAccessCore ServiceName = "access-core"
 )
-

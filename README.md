@@ -10,7 +10,7 @@ This baseline follows the M1 architecture:
 
 ### Prerequisites
 
-- Node.js (v20+ recommended)
+- Node.js (v22+ recommended)
 - Go (1.21+ recommended)
 - Docker Desktop
 - Docker Compose v2
@@ -46,6 +46,23 @@ Before pushing, run the full two-service verification pipeline:
 ```bash
 make verify
 ```
+
+## Continuous integration
+
+GitHub Actions runs on every pull request to `main`, every push to `main`, and
+manual dispatch. It verifies Access Core, Asset Core, the live Redis contracts,
+and a disposable production-Compose startup with both Flyway migration sets and
+health checks. The workflow does not deploy, publish images, or use production
+secrets.
+
+The local equivalent of the service-quality jobs is still:
+
+```bash
+make verify
+```
+
+The Compose smoke job is intentionally executed in Linux CI because its helper
+is Bash-based and cleans up disposable Docker volumes after every run.
 
 Other commands are available through `make help`: `make down`, `make restart`,
 `make logs`, `make test`, `make build`, and `make clean`. `make clean` also removes local

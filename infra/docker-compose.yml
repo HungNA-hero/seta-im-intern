@@ -3,7 +3,7 @@ name: seta-dam
 services:
   asset-db:
     image: postgres:16-alpine
-    container_name: seta-asset-db
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-asset-db
     environment:
       POSTGRES_DB: ${ASSET_DB_NAME:-asset_db}
       POSTGRES_USER: ${ASSET_DB_USER:-asset_user}
@@ -20,7 +20,7 @@ services:
 
   access-db:
     image: postgres:16-alpine
-    container_name: seta-access-db
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-access-db
     environment:
       POSTGRES_DB: ${ACCESS_DB_NAME:-access_db}
       POSTGRES_USER: ${ACCESS_DB_USER:-access_user}
@@ -71,7 +71,7 @@ services:
     build:
       context: ../services/access-core
       target: prod
-    container_name: seta-access-core
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-access-core
     environment:
       NODE_ENV: production
       PORT: 4000
@@ -96,7 +96,7 @@ services:
     build:
       context: ../services/asset-core
       target: prod
-    container_name: seta-asset-core
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-asset-core
     environment:
       PORT: 8080
       ASSET_DB_HOST: asset-db
@@ -117,7 +117,7 @@ services:
     build:
       context: ../services/asset-core
       target: prod
-    container_name: seta-asset-delete-worker
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-asset-delete-worker
     entrypoint: ["/app/asset-delete-worker"]
     environment:
       ASSET_DB_HOST: asset-db
@@ -133,7 +133,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: seta-redis
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-redis
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
@@ -146,7 +146,7 @@ services:
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.111.0
-    container_name: seta-otel-collector
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-otel-collector
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
@@ -158,7 +158,7 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:1.62.0
-    container_name: seta-jaeger
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-jaeger
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
