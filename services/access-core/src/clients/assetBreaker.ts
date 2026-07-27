@@ -136,20 +136,15 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
     resetTimeout: options.resetTimeoutMs,
   });
 
-  let halfOpenProbeClaimed = false;
-
   breaker.on("open", () => {
-    halfOpenProbeClaimed = false;
     incrementCounter("asset_breaker_open");
     writeBreakerEvent("error", "asset_breaker_open");
   });
   breaker.on("halfOpen", () => {
-    halfOpenProbeClaimed = false;
     incrementCounter("asset_breaker_half_open");
     writeBreakerEvent("warn", "asset_breaker_half_open");
   });
   breaker.on("close", () => {
-    halfOpenProbeClaimed = false;
     incrementCounter("asset_breaker_close");
     writeBreakerEvent("warn", "asset_breaker_close");
   });
@@ -172,11 +167,8 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
       if (breaker.opened) {
         rejectAsBreakerOpen();
       }
-      if (breaker.halfOpen) {
-        if (halfOpenProbeClaimed) {
-          rejectAsBreakerOpen();
-        }
-        halfOpenProbeClaimed = true;
+      if (breaker.halfOpen && !breaker.pendingClose) {
+        rejectAsBreakerOpen();
       }
 
       if (inFlight >= options.capacity) {

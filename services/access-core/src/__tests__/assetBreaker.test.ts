@@ -44,17 +44,16 @@ import {
 import { canDo, resetInProcessAuthzCachesForTests } from "../authz/decision";
 import { setAuthzRequestContext } from "../authz/authzRequestContext";
 import { createMetadata } from "../usecase/metadataUsecase";
+import { makeBreakerOptions } from "./helpers/assetBreakerTestFixtures";
 
 const originalFetch = global.fetch;
 const mockFetch = vi.fn();
 
-const testOptions = {
-  enabled: true,
-  errorThresholdPercentage: 50,
+const testOptions = makeBreakerOptions({
   volumeThreshold: 4,
   resetTimeoutMs: 5000,
   capacity: 20,
-};
+});
 
 beforeEach(() => {
   global.fetch = mockFetch;
