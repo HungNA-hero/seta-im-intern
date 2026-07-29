@@ -48,6 +48,10 @@ func (u *assetUsecase) GetRootFolders(ctx context.Context, orgID string) ([]doma
 	return u.repo.GetRootFolders(ctx, orgID)
 }
 
+func (u *assetUsecase) GetFolderRestoreAuthorizationFact(ctx context.Context, orgID, folderID string) (domain.FolderRestoreAuthorizationFact, error) {
+	return u.repo.GetFolderRestoreAuthorizationFact(ctx, orgID, folderID)
+}
+
 func (u *assetUsecase) EnsureRefs(ctx context.Context, userID, orgID string) error {
 	return u.repo.EnsureRefs(ctx, userID, orgID)
 }
@@ -92,9 +96,14 @@ func (u *assetUsecase) MoveFolder(ctx context.Context, orgID, userID, folderID s
 	return u.repo.MoveFolder(ctx, orgID, userID, folderID, input)
 }
 
-// DeleteFolder delegates soft-deleting a folder to the repository.
+// DeleteFolder delegates tombstoning a folder to the repository.
 func (u *assetUsecase) DeleteFolder(ctx context.Context, orgID, userID, folderID string) error {
 	return u.repo.DeleteFolder(ctx, orgID, userID, folderID)
+}
+
+// RestoreFolder delegates a parent-first folder restore to the repository.
+func (u *assetUsecase) RestoreFolder(ctx context.Context, orgID, userID, folderID string) (domain.Folder, error) {
+	return u.repo.RestoreFolder(ctx, orgID, userID, folderID)
 }
 
 // GetMetadataItemsByFolder delegates an org-scoped active-folder metadata query to the repository.
@@ -105,6 +114,10 @@ func (u *assetUsecase) GetMetadataItemsByFolder(ctx context.Context, orgID, fold
 // GetMetadataItemByID delegates an org-scoped active metadata lookup to the repository.
 func (u *assetUsecase) GetMetadataItemByID(ctx context.Context, orgID, id string) (domain.MetadataItem, error) {
 	return u.repo.GetMetadataItemByID(ctx, orgID, id)
+}
+
+func (u *assetUsecase) GetMetadataRestoreAuthorizationFact(ctx context.Context, orgID, id string) (domain.MetadataRestoreAuthorizationFact, error) {
+	return u.repo.GetMetadataRestoreAuthorizationFact(ctx, orgID, id)
 }
 
 // normalizeLabels trims labels, rejects blank entries, and preserves first-seen order while deduplicating.
@@ -306,9 +319,14 @@ func (u *assetUsecase) UpdateMetadataItem(ctx context.Context, orgID, userID, id
 	return u.repo.UpdateMetadataItem(ctx, orgID, userID, id, input)
 }
 
-// DeleteMetadataItem hard-deletes an org-scoped metadata item.
+// DeleteMetadataItem tombstones an org-scoped metadata item.
 func (u *assetUsecase) DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error {
 	return u.repo.DeleteMetadataItem(ctx, orgID, userID, id)
+}
+
+// RestoreMetadataItem delegates a parent-first metadata restore to the repository.
+func (u *assetUsecase) RestoreMetadataItem(ctx context.Context, orgID, userID, id string) (domain.MetadataItem, error) {
+	return u.repo.RestoreMetadataItem(ctx, orgID, userID, id)
 }
 
 // SearchMetadataItems searches for metadata items based on the provided filter within the organization.

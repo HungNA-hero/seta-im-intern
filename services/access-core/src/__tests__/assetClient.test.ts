@@ -24,6 +24,8 @@ import {
   throwGoError,
   getFolderMeta,
   getMetadataMeta,
+  getFolderRestoreAuthorizationFact,
+  getMetadataRestoreAuthorizationFact,
 } from "../clients/assetClient";
 import { config } from "../config";
 import {
@@ -333,6 +335,32 @@ describe("assetClient", () => {
         getMetadataMeta("org-1", "user-1", "m1"),
       ).rejects.toMatchObject({
         extensions: { code: "INTERNAL_ERROR", number: 1000 },
+      });
+    });
+  });
+
+  describe("tombstone restore facts", () => {
+    it("decodes the private folder restore fact", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ fact: { id: "folder-1", path: "root.child" } }), { status: 200 }),
+      );
+
+      await expect(getFolderRestoreAuthorizationFact("org-1", "user-1", "folder-1")).resolves.toEqual({
+        id: "folder-1",
+        path: "root.child",
+      });
+      expect(mockFetch.mock.calls[0][0]).toContain("/restore-facts/folders?orgId=org-1&id=folder-1");
+    });
+
+    it("decodes snake_case metadata restore facts without exposing them as public metadata", async () => {
+      mockFetch.mockResolvedValue(
+        new Response(JSON.stringify({ fact: { id: "metadata-1", folder_id: "folder-1", folder_path: "root.child" } }), { status: 200 }),
+      );
+
+      await expect(getMetadataRestoreAuthorizationFact("org-1", "user-1", "metadata-1")).resolves.toEqual({
+        id: "metadata-1",
+        folderId: "folder-1",
+        folderPath: "root.child",
       });
     });
   });

@@ -38,8 +38,9 @@ type FolderDeletionPreview struct {
 	ExpiresAt              time.Time `json:"expires_at"`
 }
 
-// FolderDeletionJob tracks an irreversible, bounded-batch physical delete.
-// RootFolderID intentionally has no foreign key because the root is deleted on success.
+// FolderDeletionJob tracks a bounded-batch recursive soft delete. Progress
+// fields retain their legacy JSON names for compatibility; they count rows
+// newly tombstoned by this job, not physically removed rows.
 type FolderDeletionJob struct {
 	ID                     string                  `gorm:"type:uuid;primaryKey;column:id" json:"id"`
 	OrgID                  string                  `gorm:"type:uuid;not null;column:org_id" json:"org_id"`

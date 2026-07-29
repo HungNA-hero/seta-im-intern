@@ -1019,3 +1019,45 @@ describe("Mutation.deleteMetadata", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 });
+
+// -- Mutation.restoreMetadata --------------------------------------------------
+
+describe("Mutation.restoreMetadata", () => {
+  const org = "org-1";
+  const id = "meta-1";
+  const ctx = makeCtx();
+
+  test("authorizes from the private metadata-to-folder fact before restoring", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        fact: { id, folder_id: "folder-1", folder_path: "deleted-folder" },
+      }),
+    });
+    fetchOk(makeGoMetadataItem({ id, title: "Restored item" }));
+
+    const result = await metadataResolvers.Mutation.restoreMetadata(
+      undefined,
+      { orgId: org, id },
+      ctx,
+    );
+
+    expect(result).toMatchObject({ id, title: "Restored item" });
+    expect(mockCanDo).toHaveBeenCalledWith(
+      "user-1",
+      "write",
+      "metadata_item",
+      id,
+      org,
+      ["folder-1"],
+    );
+    expect(mockFetch.mock.calls[0][0]).toBe(
+      `http://go-mock/internal/api/v1/restore-facts/metadata-items?orgId=${org}&id=${id}`,
+    );
+    expect(mockFetch.mock.calls[1][0]).toBe(
+      `http://go-mock/internal/api/v1/metadata-items/restore?orgId=${org}&id=${id}`,
+    );
+    expect(mockFetch.mock.calls[1][1].method).toBe("POST");
+  });
+});

@@ -119,15 +119,23 @@ func TestFolderDeletionRepository_PostgresIntegration(t *testing.T) {
 	if err != nil || job.Status != domain.FolderDeletionSucceeded {
 		t.Fatalf("read completed job: status=%s err=%v", job.Status, err)
 	}
-	if job.DeletedFolderCount != 3 || job.DeletedMetadataCount != 3 {
-		t.Fatalf("unexpected physical deletion progress: %#v", job)
+	if job.DeletedFolderCount != 2 || job.DeletedMetadataCount != 2 {
+		t.Fatalf("unexpected tombstone progress: %#v", job)
 	}
 
-	var remaining int64
-	if err := database.Raw("SELECT (SELECT count(*) FROM folders WHERE org_id = ?) + (SELECT count(*) FROM metadata_items WHERE folder_id IN (?, ?, ?))", orgID, rootID, childID, legacyFolderID).Scan(&remaining).Error; err != nil {
-		t.Fatalf("count deleted subtree rows: %v", err)
+	var activeRows int64
+	if err := database.Raw("SELECT (SELECT count(*) FROM folders WHERE org_id = ? AND deleted_at IS NULL) + (SELECT count(*) FROM metadata_items WHERE folder_id IN (?, ?, ?) AND deleted_at IS NULL)", orgID, rootID, childID, legacyFolderID).Scan(&activeRows).Error; err != nil {
+		t.Fatalf("count active subtree rows: %v", err)
 	}
-	if remaining != 0 {
-		t.Fatalf("expected physically deleted subtree, found %d rows", remaining)
+	if activeRows != 0 {
+		t.Fatalf("expected no active rows in tombstoned subtree, found %d", activeRows)
+	}
+
+	var storedRows int64
+	if err := database.Raw("SELECT (SELECT count(*) FROM folders WHERE org_id = ?) + (SELECT count(*) FROM metadata_items WHERE folder_id IN (?, ?, ?))", orgID, rootID, childID, legacyFolderID).Scan(&storedRows).Error; err != nil {
+		t.Fatalf("count stored subtree rows: %v", err)
+	}
+	if storedRows != 6 {
+		t.Fatalf("expected all rows to remain restorable, found %d", storedRows)
 	}
 }

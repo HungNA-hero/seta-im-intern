@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
@@ -127,9 +128,9 @@ func TestImportSampleTransaction_Integration(t *testing.T) {
 		assert.Equal(t, 1, summary.MetadataUnchanged)
 	})
 
-	t.Run("Hard Deleted Item Reimports", func(t *testing.T) {
-		// KAN-59 physically deletes the item, so importing the same external
-		// identity creates a new active Asset row instead of reactivating a tombstone.
+	t.Run("Soft Deleted Item Reimports", func(t *testing.T) {
+		// KAN-70 keeps the row as a tombstone, so the import reactivates that
+		// same external identity instead of creating a duplicate Asset row.
 		items, _ := repo.SearchMetadataItems(ctx, orgID1, domain.MetadataSearchFilter{
 			ExternalSource: ptr("open_images_v7"),
 			Limit:          100,
@@ -141,12 +142,12 @@ func TestImportSampleTransaction_Integration(t *testing.T) {
 		// Re-run import
 		summary, err := repo.ImportSampleTransaction(ctx, orgID1, userID, dataset, false)
 		require.NoError(t, err)
-		assert.Equal(t, 1, summary.MetadataCreated)
-		assert.Equal(t, 0, summary.MetadataUpdated)
+		assert.Equal(t, 0, summary.MetadataCreated)
+		assert.Equal(t, 1, summary.MetadataUpdated)
 		assert.Equal(t, 0, summary.MetadataUnchanged)
 
-		// Verify a new active row is present. Import records the actor in both
-		// create and update audit fields for its upsert-compatible insert path.
+		// Verify the original row is active again. Import records the actor in
+		// updated_by while retaining the immutable creation history.
 		itemsAfter, err := repo.SearchMetadataItems(ctx, orgID1, domain.MetadataSearchFilter{
 			ExternalSource: ptr("open_images_v7"),
 			Limit:          100,
@@ -154,9 +155,47 @@ func TestImportSampleTransaction_Integration(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, itemsAfter, 1)
 		assert.False(t, itemsAfter[0].DeletedAt.Valid)
-		assert.Equal(t, userID, itemsAfter[0].CreatedBy)
+		assert.Equal(t, items[0].CreatedBy, itemsAfter[0].CreatedBy)
 		require.NotNil(t, itemsAfter[0].UpdatedBy)
 		assert.Equal(t, userID, *itemsAfter[0].UpdatedBy)
+	})
+
+	t.Run("Import Prefers Active Identity Over Older Tombstone", func(t *testing.T) {
+		items, err := repo.SearchMetadataItems(ctx, orgID1, domain.MetadataSearchFilter{
+			ExternalSource: ptr("open_images_v7"),
+			Limit:          100,
+		})
+		require.NoError(t, err)
+		require.Len(t, items, 1)
+		require.NoError(t, repo.DeleteMetadataItem(ctx, orgID1, userID, items[0].ID))
+
+		// V6 permits this active replacement while the historical row remains a
+		// tombstone. Import must update this active row, not revive the old one.
+		replacementID := uuid.NewString()
+		require.NoError(t, db.Exec(`
+			INSERT INTO metadata_items (id, folder_id, title, external_source, external_id, created_by)
+			VALUES (?, ?, ?, ?, ?, ?)
+		`, replacementID, items[0].FolderID, "Temporary replacement", dataset.ExternalSource, dataset.Metadata[0].ExternalID, userID).Error)
+
+		summary, err := repo.ImportSampleTransaction(ctx, orgID1, userID, dataset, false)
+		require.NoError(t, err)
+		assert.Equal(t, 0, summary.MetadataCreated)
+		assert.Equal(t, 1, summary.MetadataUpdated)
+
+		activeItems, err := repo.SearchMetadataItems(ctx, orgID1, domain.MetadataSearchFilter{
+			ExternalSource: ptr("open_images_v7"),
+			Limit:          100,
+		})
+		require.NoError(t, err)
+		require.Len(t, activeItems, 1)
+		assert.Equal(t, replacementID, activeItems[0].ID)
+		assert.Equal(t, dataset.Metadata[0].Title, activeItems[0].Title)
+
+		var historicalTombstones int64
+		require.NoError(t, db.Unscoped().Model(&domain.MetadataItem{}).
+			Where("external_source = ? AND external_id = ? AND deleted_at IS NOT NULL", dataset.ExternalSource, dataset.Metadata[0].ExternalID).
+			Count(&historicalTombstones).Error)
+		assert.Equal(t, int64(1), historicalTombstones)
 	})
 
 	t.Run("Same Identity Another Org Conflicts", func(t *testing.T) {

@@ -287,16 +287,16 @@ func TestMetadataRepository_SearchAndDelete_Integration(t *testing.T) {
 		t.Fatalf("expected deleted and cross-org rows to be excluded, got %#v", hiddenItems)
 	}
 
-	deleteItem := createItem(orgID, folderID, "Hard Delete Target", nil, nil, nil)
+	deleteItem := createItem(orgID, folderID, "Soft Delete Target", nil, nil, nil)
 	if err := repo.DeleteMetadataItem(ctx, orgID, userID, deleteItem.ID); err != nil {
 		t.Fatalf("delete metadata: %v", err)
 	}
 	var deletedCount int64
-	if err := tx.Raw("SELECT COUNT(*) FROM metadata_items WHERE id = ?", deleteItem.ID).Scan(&deletedCount).Error; err != nil {
-		t.Fatalf("count hard-deleted metadata: %v", err)
+	if err := tx.Raw("SELECT COUNT(*) FROM metadata_items WHERE id = ? AND deleted_at IS NOT NULL", deleteItem.ID).Scan(&deletedCount).Error; err != nil {
+		t.Fatalf("count tombstoned metadata: %v", err)
 	}
-	if deletedCount != 0 {
-		t.Fatalf("expected hard-deleted metadata row to be absent, got %d row", deletedCount)
+	if deletedCount != 1 {
+		t.Fatalf("expected deleted metadata row to remain as a tombstone, got %d row", deletedCount)
 	}
 	if err := repo.DeleteMetadataItem(ctx, orgID, userID, deleteItem.ID); !errors.Is(err, domain.ErrMetadataNotFound) {
 		t.Fatalf("expected ErrMetadataNotFound on double delete, got %v", err)
@@ -308,17 +308,17 @@ func TestMetadataRepository_SearchAndDelete_Integration(t *testing.T) {
 		t.Fatalf("expected ErrMetadataNotFound for missing item, got %v", err)
 	}
 
-	rollbackItem := createItem(orgID, folderID, "Hard Delete Rollback Target", nil, nil, nil)
+	rollbackItem := createItem(orgID, folderID, "Soft Delete Rollback Target", nil, nil, nil)
 	if err := tx.Exec(`
-		CREATE FUNCTION kan37_reject_metadata_delete() RETURNS trigger AS $$
+		CREATE FUNCTION kan37_reject_metadata_soft_delete() RETURNS trigger AS $$
 		BEGIN
 			RAISE EXCEPTION 'forced delete failure';
-			RETURN OLD;
+			RETURN NEW;
 		END;
 		$$ LANGUAGE plpgsql;
-		CREATE TRIGGER kan37_reject_metadata_delete
-		BEFORE DELETE ON metadata_items
-		FOR EACH ROW EXECUTE FUNCTION kan37_reject_metadata_delete();
+		CREATE TRIGGER kan37_reject_metadata_soft_delete
+		BEFORE UPDATE OF deleted_at ON metadata_items
+		FOR EACH ROW EXECUTE FUNCTION kan37_reject_metadata_soft_delete();
 	`).Error; err != nil {
 		t.Fatalf("create rollback trigger: %v", err)
 	}
@@ -330,9 +330,9 @@ func TestMetadataRepository_SearchAndDelete_Integration(t *testing.T) {
 		t.Fatalf("read rollback item: %v", err)
 	}
 	if rollbackCount != 1 {
-		t.Fatalf("expected rollback item to remain after failed hard delete, got %d row", rollbackCount)
+		t.Fatalf("expected rollback item to remain after failed soft delete, got %d row", rollbackCount)
 	}
-	if err := tx.Exec("DROP TRIGGER kan37_reject_metadata_delete ON metadata_items; DROP FUNCTION kan37_reject_metadata_delete();").Error; err != nil {
+	if err := tx.Exec("DROP TRIGGER kan37_reject_metadata_soft_delete ON metadata_items; DROP FUNCTION kan37_reject_metadata_soft_delete();").Error; err != nil {
 		t.Fatalf("drop rollback trigger: %v", err)
 	}
 }

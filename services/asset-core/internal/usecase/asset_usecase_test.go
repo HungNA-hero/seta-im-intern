@@ -51,6 +51,14 @@ func (f *fakeAssetRepo) DeleteFolder(_ context.Context, _, _, _ string) error {
 	return nil
 }
 
+func (f *fakeAssetRepo) GetFolderRestoreAuthorizationFact(_ context.Context, _, _ string) (domain.FolderRestoreAuthorizationFact, error) {
+	return domain.FolderRestoreAuthorizationFact{}, nil
+}
+
+func (f *fakeAssetRepo) RestoreFolder(_ context.Context, _, _, _ string) (domain.Folder, error) {
+	return domain.Folder{}, nil
+}
+
 // GetMetadataItemsByFolder satisfies the metadata list repository contract for use-case tests.
 func (f *fakeAssetRepo) GetMetadataItemsByFolder(ctx context.Context, orgID, folderID string) ([]domain.MetadataItem, error) {
 	return nil, nil
@@ -76,6 +84,14 @@ func (f *fakeAssetRepo) UpdateMetadataItem(ctx context.Context, orgID, userID, i
 // DeleteMetadataItem satisfies the metadata delete repository contract for use-case tests.
 func (f *fakeAssetRepo) DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error {
 	return nil
+}
+
+func (f *fakeAssetRepo) GetMetadataRestoreAuthorizationFact(_ context.Context, _, _ string) (domain.MetadataRestoreAuthorizationFact, error) {
+	return domain.MetadataRestoreAuthorizationFact{}, nil
+}
+
+func (f *fakeAssetRepo) RestoreMetadataItem(_ context.Context, _, _, _ string) (domain.MetadataItem, error) {
+	return domain.MetadataItem{}, nil
 }
 
 // SearchMetadataItems satisfies the metadata search repository contract for use-case tests.

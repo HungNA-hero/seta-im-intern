@@ -34,6 +34,7 @@ import {
   validateAndParseJsonString,
 } from "../domain/metadataValidation";
 import { assertPreconditions, authorizedFetch } from "./assetProxy";
+import { authorizeMetadataRestore } from "./restoreAuthorization";
 
 const CURSOR_CANDIDATE_LOOKAHEAD = 1;
 const MAX_AUTHORIZATION_CANDIDATE_BATCHES = 10;
@@ -348,4 +349,25 @@ export async function deleteMetadata(
     { method: "DELETE" },
   );
   return unwrap204(response, "Failed to delete metadata item");
+}
+
+export async function restoreMetadata(
+  ctx: GraphQLContext,
+  orgId: string,
+  id: string,
+) {
+  await authorizeMetadataRestore(ctx, orgId, id);
+  const response = await authorizedFetch(
+    ctx,
+    orgId,
+    [],
+    assetPath(`${METADATA_PATH}/restore`, { orgId, id }),
+    { method: "POST" },
+  );
+  return unwrapEnvelope(
+    response,
+    "item",
+    toMetadataItem,
+    "Failed to restore metadata item",
+  );
 }

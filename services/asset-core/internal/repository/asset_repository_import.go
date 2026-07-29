@@ -93,13 +93,21 @@ func (r *assetRepository) ImportSampleTransaction(ctx context.Context, orgID, us
 				domain.MetadataItem
 				OrgID string `gorm:"column:org_id"`
 			}
-			// Must check global identity across orgs (Unscoped because soft-deleted items count)
-			err := tx.Table("metadata_items").
-				Select("metadata_items.*, folders.org_id").
-				Joins("JOIN folders ON folders.id = metadata_items.folder_id").
-				Unscoped().
-				Where("metadata_items.external_source = ? AND metadata_items.external_id = ?", dataset.ExternalSource, m.ExternalID).
-				First(&existing).Error
+			identityQuery := func() *gorm.DB {
+				return tx.Table("metadata_items").
+					Unscoped().
+					Select("metadata_items.*, folders.org_id").
+					Joins("JOIN folders ON folders.id = metadata_items.folder_id").
+					Where("metadata_items.external_source = ? AND metadata_items.external_id = ?", dataset.ExternalSource, m.ExternalID)
+			}
+			// Since KAN-70 permits a tombstoned historical identity and an active
+			// replacement to coexist, import must update the active row first. If
+			// it picked the tombstone arbitrarily, it could revive the wrong row and
+			// violate the active-identity uniqueness contract.
+			err := identityQuery().Where("metadata_items.deleted_at IS NULL").First(&existing).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				err = identityQuery().Where("metadata_items.deleted_at IS NOT NULL").First(&existing).Error
+			}
 
 			folderID := folderKeyToID[m.FolderKey]
 

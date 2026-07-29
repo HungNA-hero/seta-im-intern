@@ -243,15 +243,16 @@ func TestFolderRepository_PostgresIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected success deleting empty folder, got %v", err)
 	}
-	var emptyFolderCount int64
-	if err := tx.Raw("SELECT COUNT(*) FROM folders WHERE id = ?", emptyFolderID).Scan(&emptyFolderCount).Error; err != nil {
-		t.Fatalf("count hard-deleted folder: %v", err)
+	var emptyFolderTombstones int64
+	if err := tx.Raw("SELECT COUNT(*) FROM folders WHERE id = ? AND deleted_at IS NOT NULL", emptyFolderID).Scan(&emptyFolderTombstones).Error; err != nil {
+		t.Fatalf("count tombstoned folder: %v", err)
 	}
-	if emptyFolderCount != 0 {
-		t.Errorf("expected hard-deleted folder to be absent, got %d row", emptyFolderCount)
+	if emptyFolderTombstones != 1 {
+		t.Errorf("expected deleted folder row to remain as a tombstone, got %d row", emptyFolderTombstones)
 	}
 
-	// 7. Hard deletion purges legacy tombstones inside the target subtree only.
+	// 7. Soft deletion preserves legacy tombstones inside the target subtree so
+	// parent-first restore remains possible later.
 	legacyRootID := uuid.NewString()
 	legacyRootPath := strings.ReplaceAll(legacyRootID, "-", "")
 	legacyFolderID := uuid.NewString()
@@ -279,7 +280,7 @@ func TestFolderRepository_PostgresIntegration(t *testing.T) {
 		t.Fatalf("soft-delete legacy child: %v", err)
 	}
 	if err := repo.DeleteFolder(ctx, orgID, userID, legacyRootID); err != nil {
-		t.Fatalf("hard-delete legacy tombstone subtree root: %v", err)
+		t.Fatalf("soft-delete legacy tombstone subtree root: %v", err)
 	}
 	var remainingLegacyRows int64
 	if err := tx.Raw(`
@@ -287,9 +288,9 @@ func TestFolderRepository_PostgresIntegration(t *testing.T) {
 			(SELECT COUNT(*) FROM folders WHERE id IN (?, ?)) +
 			(SELECT COUNT(*) FROM metadata_items WHERE id IN (?, ?))
 	`, legacyRootID, legacyFolderID, legacyRootMetadataID, legacyChildMetadataID).Scan(&remainingLegacyRows).Error; err != nil {
-		t.Fatalf("query purged legacy tombstones: %v", err)
+		t.Fatalf("query preserved legacy tombstones: %v", err)
 	}
-	if remainingLegacyRows != 0 {
-		t.Errorf("expected legacy tombstones to be purged, got %d remaining row", remainingLegacyRows)
+	if remainingLegacyRows != 4 {
+		t.Errorf("expected all legacy rows to remain as tombstones, got %d remaining row", remainingLegacyRows)
 	}
 }

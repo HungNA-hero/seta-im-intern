@@ -305,12 +305,17 @@ function ancestorLoader(
   return undefined;
 }
 
-export async function canDo(
+type AncestorIdLoader =
+  | ((resourceId: string) => Promise<string[]> | string[])
+  | undefined;
+
+async function evaluateCanDo(
   userId: string,
   action: PermissionActionCode,
   resourceType: ResourceType,
   resourceId: string,
   orgId: string | null,
+  getAncestorIds: AncestorIdLoader,
 ): Promise<{ allowed: boolean; reason: string | null }> {
   if (!orgId) return { allowed: false, reason: "no org context" };
 
@@ -348,7 +353,7 @@ export async function canDo(
       action,
       resourceType,
       resourceIds: [resourceId],
-      getAncestorIds: ancestorLoader(userId, orgId, resourceType),
+      getAncestorIds,
       rbacOnly: resourceType === "folder" && resourceId === orgId,
       preResolved: resolution,
     });
@@ -361,6 +366,44 @@ export async function canDo(
   const result = await singleFlight(key, compute);
   await writeDecision(key, result);
   return result;
+}
+
+export async function canDo(
+  userId: string,
+  action: PermissionActionCode,
+  resourceType: ResourceType,
+  resourceId: string,
+  orgId: string | null,
+): Promise<{ allowed: boolean; reason: string | null }> {
+  return evaluateCanDo(
+    userId,
+    action,
+    resourceType,
+    resourceId,
+    orgId,
+    orgId ? ancestorLoader(userId, orgId, resourceType) : undefined,
+  );
+}
+
+// canDoWithKnownAncestors evaluates the same current RBAC/object-grant policy
+// as canDo, but uses a trusted tombstone fact instead of a normal active-resource
+// lookup. It is intentionally only used by restore authorization.
+export async function canDoWithKnownAncestors(
+  userId: string,
+  action: PermissionActionCode,
+  resourceType: ResourceType,
+  resourceId: string,
+  orgId: string | null,
+  ancestorIds: string[],
+): Promise<{ allowed: boolean; reason: string | null }> {
+  return evaluateCanDo(
+    userId,
+    action,
+    resourceType,
+    resourceId,
+    orgId,
+    () => ancestorIds,
+  );
 }
 
 export async function filterAllowedResourceIds<T extends { id: string }>(

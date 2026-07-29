@@ -38,15 +38,20 @@ type FolderMovedData struct {
 }
 
 // FolderDeletedData is the `folder.deleted` event payload. JobID is present
-// only when the event originates from the async deletion job's `succeeded`
-// transition, not from a synchronous single-folder delete.
+// when the event originates from the async job's root tombstone transition,
+// not from a synchronous single-folder delete.
 type FolderDeletedData struct {
 	FolderID string `json:"folderId"`
 	RootPath string `json:"rootPath"`
 	JobID    string `json:"jobId,omitempty"`
 }
 
-func newEnvelope(orgID, aggregateID, eventType string, data any) (Envelope, error) {
+// MetadataLifecycleData is the compact payload for metadata visibility changes.
+type MetadataLifecycleData struct {
+	MetadataID string `json:"metadataId"`
+}
+
+func newEnvelope(orgID, aggregateType, aggregateID, eventType string, data any) (Envelope, error) {
 	payload, err := json.Marshal(data)
 	if err != nil {
 		return Envelope{}, err
@@ -57,7 +62,7 @@ func newEnvelope(orgID, aggregateID, eventType string, data any) (Envelope, erro
 		SchemaVersion: 1,
 		Source:        "asset-core",
 		OccurredAt:    time.Now().UTC(),
-		AggregateType: "folder",
+		AggregateType: aggregateType,
 		AggregateID:   aggregateID,
 		OrgID:         orgID,
 		Data:          payload,
@@ -68,7 +73,7 @@ func newEnvelope(orgID, aggregateID, eventType string, data any) (Envelope, erro
 // commit. Best-effort: a failure here does not roll back the commit and is
 // bounded by the receiving cache's hard TTL, not retried.
 func PublishFolderMoved(ctx context.Context, orgID, folderID, oldPath, newPath string) {
-	envelope, err := newEnvelope(orgID, folderID, "folder.moved", FolderMovedData{
+	envelope, err := newEnvelope(orgID, "folder", folderID, "folder.moved", FolderMovedData{
 		FolderID: folderID,
 		OldPath:  oldPath,
 		NewPath:  newPath,
@@ -81,10 +86,10 @@ func PublishFolderMoved(ctx context.Context, orgID, folderID, oldPath, newPath s
 }
 
 // PublishFolderDeleted directly XADDs a `folder.deleted` event after either a
-// synchronous folder delete commits or a deletion job reaches `succeeded`.
+// synchronous folder delete commits or an async job tombstones its root.
 // jobID is empty for the synchronous path.
 func PublishFolderDeleted(ctx context.Context, orgID, folderID, rootPath, jobID string) {
-	envelope, err := newEnvelope(orgID, folderID, "folder.deleted", FolderDeletedData{
+	envelope, err := newEnvelope(orgID, "folder", folderID, "folder.deleted", FolderDeletedData{
 		FolderID: folderID,
 		RootPath: rootPath,
 		JobID:    jobID,
@@ -94,6 +99,41 @@ func PublishFolderDeleted(ctx context.Context, orgID, folderID, rootPath, jobID 
 		return
 	}
 	publish(ctx, envelope)
+}
+
+// PublishFolderRestored directly XADDs a visibility-change event after a
+// parent-first restore commits.
+func PublishFolderRestored(ctx context.Context, orgID, folderID, rootPath string) {
+	envelope, err := newEnvelope(orgID, "folder", folderID, "folder.restored", FolderDeletedData{
+		FolderID: folderID,
+		RootPath: rootPath,
+	})
+	if err != nil {
+		slog.Default().Error("failed to build folder.restored event", "error", err, "folderId", folderID)
+		return
+	}
+	publish(ctx, envelope)
+}
+
+func publishMetadataLifecycle(ctx context.Context, orgID, metadataID, eventType string) {
+	envelope, err := newEnvelope(orgID, "metadata_item", metadataID, eventType, MetadataLifecycleData{
+		MetadataID: metadataID,
+	})
+	if err != nil {
+		slog.Default().Error("failed to build metadata lifecycle event", "error", err, "eventType", eventType, "metadataId", metadataID)
+		return
+	}
+	publish(ctx, envelope)
+}
+
+// PublishMetadataDeleted emits a cache-invalidation event after a metadata tombstone commits.
+func PublishMetadataDeleted(ctx context.Context, orgID, metadataID string) {
+	publishMetadataLifecycle(ctx, orgID, metadataID, "metadata.deleted")
+}
+
+// PublishMetadataRestored emits a cache-invalidation event after a metadata restore commits.
+func PublishMetadataRestored(ctx context.Context, orgID, metadataID string) {
+	publishMetadataLifecycle(ctx, orgID, metadataID, "metadata.restored")
 }
 
 // publish uses a fresh background context with its own short timeout rather

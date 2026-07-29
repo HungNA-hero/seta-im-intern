@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -26,7 +27,10 @@ func NewAssetRepository(db *gorm.DB) domain.AssetRepository {
 func (r *assetRepository) GetFolderTree(ctx context.Context, orgID string, rootPath string) ([]domain.Folder, error) {
 	var folders []domain.Folder
 
-	query := r.db.WithContext(ctx).Where("org_id = ?", orgID)
+	query := r.db.WithContext(ctx).
+		Unscoped().
+		Where("folders.org_id = ?", orgID).
+		Where(visibleFolderPredicate("folders"))
 	// An empty root requests the full organization forest for one-call GraphQL tree assembly.
 	if rootPath != "" {
 		query = query.Where("path <@ ?", rootPath)
@@ -40,7 +44,9 @@ func (r *assetRepository) GetFolderByID(ctx context.Context, orgID string, folde
 	var folder domain.Folder
 
 	err := r.db.WithContext(ctx).
-		Where("id = ? AND org_id = ?", folderID, orgID).
+		Unscoped().
+		Where("folders.id = ? AND folders.org_id = ?", folderID, orgID).
+		Where(visibleFolderPredicate("folders")).
 		First(&folder).Error
 
 	return folder, err
@@ -53,7 +59,9 @@ func (r *assetRepository) GetFoldersByIDs(ctx context.Context, orgID string, fol
 	}
 
 	err := r.db.WithContext(ctx).
-		Where("org_id = ? AND id IN ?", orgID, folderIDs).
+		Unscoped().
+		Where("folders.org_id = ? AND folders.id IN ?", orgID, folderIDs).
+		Where(visibleFolderPredicate("folders")).
 		Find(&folders).Error
 
 	return folders, err
@@ -65,8 +73,10 @@ func (r *assetRepository) GetFolderChildren(ctx context.Context, orgID string, p
 	// Direct children are nodes whose path descends from parentPath and whose
 	// ltree level is exactly one more than parentPath's level.
 	err := r.db.WithContext(ctx).
-		Where("org_id = ? AND path <@ ? AND nlevel(path) = nlevel(?::ltree) + 1",
+		Unscoped().
+		Where("folders.org_id = ? AND folders.path <@ ? AND nlevel(folders.path) = nlevel(?::ltree) + 1",
 			orgID, parentPath, parentPath).
+		Where(visibleFolderPredicate("folders")).
 		Order("name ASC").
 		Find(&folders).Error
 
@@ -78,7 +88,9 @@ func (r *assetRepository) GetRootFolders(ctx context.Context, orgID string) ([]d
 
 	// Root-level folders have an ltree level of 1
 	err := r.db.WithContext(ctx).
-		Where("org_id = ? AND nlevel(path) = 1", orgID).
+		Unscoped().
+		Where("folders.org_id = ? AND nlevel(folders.path) = 1", orgID).
+		Where(visibleFolderPredicate("folders")).
 		Order("name ASC").
 		Find(&folders).Error
 
@@ -123,8 +135,9 @@ func (r *assetRepository) CreateFolder(ctx context.Context, orgID, userID string
 		if input.ParentPath != nil && *input.ParentPath != "" {
 			parentPath = *input.ParentPath
 			var parent domain.Folder
-			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-				Where("org_id = ? AND path = ?", orgID, parentPath).
+			if err := tx.Unscoped().Clauses(clause.Locking{Strength: "UPDATE"}).
+				Where("folders.org_id = ? AND folders.path = ?", orgID, parentPath).
+				Where(visibleFolderPredicate("folders")).
 				First(&parent).Error; err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					return domain.ErrFolderNotFound
@@ -209,8 +222,9 @@ func (r *assetRepository) UpdateFolder(ctx context.Context, orgID, userID, folde
 		}
 
 		// 2. Load active folder
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("id = ? AND org_id = ?", folderID, orgID).
+		if err := tx.Unscoped().Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("folders.id = ? AND folders.org_id = ?", folderID, orgID).
+			Where(visibleFolderPredicate("folders")).
 			First(&folder).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return domain.ErrFolderNotFound
@@ -285,8 +299,9 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 		}
 
 		// 2. Lock active source
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("id = ? AND org_id = ?", folderID, orgID).
+		if err := tx.Unscoped().Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("folders.id = ? AND folders.org_id = ?", folderID, orgID).
+			Where(visibleFolderPredicate("folders")).
 			First(&folder).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return domain.ErrFolderNotFound
@@ -301,8 +316,9 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 		var destPath string
 		if input.DestinationParentID != nil && *input.DestinationParentID != "" {
 			var destFolder domain.Folder
-			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-				Where("id = ? AND org_id = ?", *input.DestinationParentID, orgID).
+			if err := tx.Unscoped().Clauses(clause.Locking{Strength: "UPDATE"}).
+				Where("folders.id = ? AND folders.org_id = ?", *input.DestinationParentID, orgID).
+				Where(visibleFolderPredicate("folders")).
 				First(&destFolder).Error; err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					return domain.ErrFolderNotFound
@@ -369,7 +385,7 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 			    ELSE ?::ltree || subpath(path, nlevel(?::ltree))
 			END,
 			    updated_by = ?
-			WHERE org_id = ? AND path <@ ?::ltree AND deleted_at IS NULL
+			WHERE org_id = ? AND path <@ ?::ltree
 		`
 		if err := tx.Exec(updateQuery, folder.Path, newPath, newPath, folder.Path, userID, orgID, folder.Path).Error; err != nil {
 			var pgErr *pgconn.PgError
@@ -395,19 +411,21 @@ func (r *assetRepository) MoveFolder(ctx context.Context, orgID, userID, folderI
 	return folder, err
 }
 
-// DeleteFolder hard-deletes an eligible folder and only purges legacy tombstones
-// within the same organization and folder subtree.
-func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, _ string, folderID string) error {
+// DeleteFolder tombstones an eligible folder without physically deleting it.
+func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, userID, folderID string) error {
 	var rootPath string
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := lockOrganizationWrite(tx, orgID); err != nil {
 			return err
 		}
-		// 1. Lock the active source in the current organization.
+		// Lock the active source in the current organization. The ancestor-aware
+		// predicate prevents a still-active descendant of a tombstoned folder from
+		// being mutated through a direct-id operation.
 		var folder domain.Folder
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("id = ? AND org_id = ?", folderID, orgID).
+		if err := tx.Unscoped().Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("folders.id = ? AND folders.org_id = ?", folderID, orgID).
+			Where(visibleFolderPredicate("folders")).
 			First(&folder).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return domain.ErrFolderNotFound
@@ -419,7 +437,9 @@ func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, _ string, fol
 		}
 		rootPath = folder.Path
 
-		// 2. Never delete active descendants. Legacy tombstones are handled below.
+		// Never tombstone a non-empty tree through the synchronous mutation. Large
+		// trees use the durable worker, which hides the root before batching its
+		// descendants.
 		var childCount int64
 		if err := tx.Unscoped().Model(&domain.Folder{}).
 			Where("org_id = ? AND path <@ ?::ltree AND id != ? AND deleted_at IS NULL", orgID, folder.Path, folder.ID).
@@ -430,8 +450,7 @@ func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, _ string, fol
 			return domain.ErrFolderNotEmpty
 		}
 
-		// 3. Reject active metadata anywhere in the subtree, including an
-		// inconsistent active row beneath a historical folder tombstone.
+		// Reject active metadata anywhere in the subtree.
 		var metaCount int64
 		if err := tx.Unscoped().Table("metadata_items").
 			Joins("JOIN folders ON folders.id = metadata_items.folder_id").
@@ -443,32 +462,10 @@ func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, _ string, fol
 			return domain.ErrFolderNotEmpty
 		}
 
-		// 4. Historical tombstones have a real metadata_items.folder_id foreign
-		// key. Purge them first, then remove historical descendant folders. This
-		// is deliberately scoped to the current org and target subtree only.
-		if err := tx.Unscoped().Exec(`
-			DELETE FROM metadata_items
-			USING folders
-			WHERE metadata_items.folder_id = folders.id
-			  AND folders.org_id = ?
-			  AND folders.path <@ ?::ltree
-			  AND metadata_items.deleted_at IS NOT NULL
-		`, orgID, folder.Path).Error; err != nil {
-			return err
-		}
-		if err := tx.Unscoped().Exec(`
-			DELETE FROM folders
-			WHERE org_id = ?
-			  AND path <@ ?::ltree
-			  AND id != ?
-			  AND deleted_at IS NOT NULL
-		`, orgID, folder.Path, folder.ID).Error; err != nil {
-			return err
-		}
-
-		// 5. Delete the active target physically. Unscoped is required because
-		// MetadataItem and Folder retain DeletedAt only for legacy-read compatibility.
-		if err := tx.Unscoped().Delete(&folder).Error; err != nil {
+		now := time.Now().UTC()
+		if err := tx.Unscoped().Model(&domain.Folder{}).
+			Where("id = ? AND org_id = ? AND deleted_at IS NULL", folder.ID, orgID).
+			Updates(map[string]any{"deleted_at": now, "updated_by": userID}).Error; err != nil {
 			return err
 		}
 
@@ -489,8 +486,10 @@ func (r *assetRepository) GetMetadataItemsByFolder(ctx context.Context, orgID, f
 	// Verify the active parent independently so a missing, deleted, or cross-org folder cannot masquerade as an empty list.
 	var folder domain.Folder
 	if err := r.db.WithContext(ctx).
-		Select("id").
-		Where("id = ? AND org_id = ?", folderID, orgID).
+		Unscoped().
+		Select("folders.id").
+		Where("folders.id = ? AND folders.org_id = ?", folderID, orgID).
+		Where(visibleFolderPredicate("folders")).
 		First(&folder).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrFolderNotFound
@@ -502,7 +501,8 @@ func (r *assetRepository) GetMetadataItemsByFolder(ctx context.Context, orgID, f
 		Table("metadata_items").
 		Select("metadata_items.*").
 		Joins("JOIN folders ON folders.id = metadata_items.folder_id").
-		Where("metadata_items.folder_id = ? AND folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", folderID, orgID).
+		Where("metadata_items.folder_id = ? AND folders.org_id = ?", folderID, orgID).
+		Where(visibleMetadataPredicate("metadata_items", "folders")).
 		Order("metadata_items.created_at DESC, metadata_items.id ASC").
 		Find(&items).Error
 
@@ -517,7 +517,8 @@ func (r *assetRepository) GetMetadataItemByID(ctx context.Context, orgID, id str
 		Table("metadata_items").
 		Select("metadata_items.*").
 		Joins("JOIN folders ON folders.id = metadata_items.folder_id").
-		Where("metadata_items.id = ? AND folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", id, orgID).
+		Where("metadata_items.id = ? AND folders.org_id = ?", id, orgID).
+		Where(visibleMetadataPredicate("metadata_items", "folders")).
 		First(&item).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -542,8 +543,9 @@ func (r *assetRepository) CreateMetadataItem(ctx context.Context, orgID, userID 
 		}
 
 		var parentFolder domain.Folder
-		if err := tx.Clauses(clause.Locking{Strength: "SHARE"}).
-			Where("id = ? AND org_id = ?", input.FolderID, orgID).
+		if err := tx.Unscoped().Clauses(clause.Locking{Strength: "SHARE"}).
+			Where("folders.id = ? AND folders.org_id = ?", input.FolderID, orgID).
+			Where(visibleFolderPredicate("folders")).
 			First(&parentFolder).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return domain.ErrFolderNotFound
@@ -603,7 +605,8 @@ func (r *assetRepository) UpdateMetadataItem(ctx context.Context, orgID, userID,
 			Table("metadata_items").
 			Select("metadata_items.*").
 			Joins("JOIN folders ON folders.id = metadata_items.folder_id").
-			Where("metadata_items.id = ? AND folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", id, orgID).
+			Where("metadata_items.id = ? AND folders.org_id = ?", id, orgID).
+			Where(visibleMetadataPredicate("metadata_items", "folders")).
 			First(&item).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return domain.ErrMetadataNotFound
@@ -612,8 +615,9 @@ func (r *assetRepository) UpdateMetadataItem(ctx context.Context, orgID, userID,
 		}
 		if !isSQLMockConnection(tx) {
 			var parentFolder domain.Folder
-			if err := tx.Select("id", "path").
-				Where("id = ? AND org_id = ? AND deleted_at IS NULL", item.FolderID, orgID).
+			if err := tx.Unscoped().Select("folders.id", "folders.path").
+				Where("folders.id = ? AND folders.org_id = ?", item.FolderID, orgID).
+				Where(visibleFolderPredicate("folders")).
 				First(&parentFolder).Error; err != nil {
 				return err
 			}
@@ -691,9 +695,9 @@ func (r *assetRepository) UpdateMetadataItem(ctx context.Context, orgID, userID,
 	return item, err
 }
 
-// DeleteMetadataItem physically deletes an active metadata item in the current organization.
-func (r *assetRepository) DeleteMetadataItem(ctx context.Context, orgID, _ string, id string) error {
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+// DeleteMetadataItem tombstones an active metadata item in the current organization.
+func (r *assetRepository) DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error {
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := lockOrganizationWrite(tx, orgID); err != nil {
 			return err
 		}
@@ -702,33 +706,41 @@ func (r *assetRepository) DeleteMetadataItem(ctx context.Context, orgID, _ strin
 			Table("metadata_items").
 			Select("metadata_items.*").
 			Joins("JOIN folders ON folders.id = metadata_items.folder_id").
-			Where("metadata_items.id = ? AND folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", id, orgID).
+			Where("metadata_items.id = ? AND folders.org_id = ?", id, orgID).
+			Where(visibleMetadataPredicate("metadata_items", "folders")).
 			First(&item).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return domain.ErrMetadataNotFound
 			}
 			return err
 		}
-		if !isSQLMockConnection(tx) {
-			var parentFolder domain.Folder
-			if err := tx.Select("id", "path").
-				Where("id = ? AND org_id = ? AND deleted_at IS NULL", item.FolderID, orgID).
-				First(&parentFolder).Error; err != nil {
-				return err
+		var parentFolder domain.Folder
+		if err := tx.Unscoped().Select("folders.id", "folders.path").
+			Where("folders.id = ? AND folders.org_id = ?", item.FolderID, orgID).
+			Where(visibleFolderPredicate("folders")).
+			First(&parentFolder).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return domain.ErrMetadataNotFound
 			}
-			if err := ensureNoActiveDeletionForPaths(tx, orgID, parentFolder.Path); err != nil {
-				return err
-			}
+			return err
+		}
+		if err := ensureNoActiveDeletionForPaths(tx, orgID, parentFolder.Path); err != nil {
+			return err
 		}
 
-		// DeletedAt remains on the model to hide historical tombstones, so use
-		// Unscoped to make this public delete operation physically irreversible.
-		if err := tx.Unscoped().Delete(&item).Error; err != nil {
+		now := time.Now().UTC()
+		if err := tx.Unscoped().Model(&domain.MetadataItem{}).
+			Where("id = ? AND deleted_at IS NULL", item.ID).
+			Updates(map[string]any{"deleted_at": now, "updated_by": userID}).Error; err != nil {
 			return err
 		}
 
 		return nil
 	})
+	if err == nil {
+		eventing.PublishMetadataDeleted(ctx, orgID, id)
+	}
+	return err
 }
 
 // escapeLike replaces `%`, `_`, and `\` with escaped versions for ILIKE queries.
@@ -749,7 +761,8 @@ func (r *assetRepository) SearchMetadataItems(ctx context.Context, orgID string,
 			Table("metadata_items").
 			Select("metadata_items.id").
 			Joins("JOIN folders ON folders.id = metadata_items.folder_id").
-			Where("metadata_items.id = ? AND metadata_items.updated_at = ? AND metadata_items.folder_id = ? AND folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", *filter.AfterID, *filter.AfterUpdatedAt, *filter.FolderID, orgID).
+			Where("metadata_items.id = ? AND metadata_items.updated_at = ? AND metadata_items.folder_id = ? AND folders.org_id = ?", *filter.AfterID, *filter.AfterUpdatedAt, *filter.FolderID, orgID).
+			Where(visibleMetadataPredicate("metadata_items", "folders")).
 			First(&cursorTarget).Error
 		if errors.Is(cursorCheck, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrCursorInvalid
@@ -763,7 +776,8 @@ func (r *assetRepository) SearchMetadataItems(ctx context.Context, orgID string,
 		Table("metadata_items").
 		Select("metadata_items.*").
 		Joins("JOIN folders ON folders.id = metadata_items.folder_id").
-		Where("folders.org_id = ? AND folders.deleted_at IS NULL AND metadata_items.deleted_at IS NULL", orgID)
+		Where("folders.org_id = ?", orgID).
+		Where(visibleMetadataPredicate("metadata_items", "folders"))
 
 	if filter.FolderID != nil {
 		query = query.Where("metadata_items.folder_id = ?", *filter.FolderID)

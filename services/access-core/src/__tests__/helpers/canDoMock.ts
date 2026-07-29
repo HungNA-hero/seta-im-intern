@@ -6,6 +6,7 @@ export function createCanDoMock(
 ) {
   return {
     canDo: mockCanDo,
+    canDoWithKnownAncestors: mockCanDo,
     filterAllowedResourceIds: mockFilterAllowedResourceIds,
     filterVisible: async (
       userId: string,
