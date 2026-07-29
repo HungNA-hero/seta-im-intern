@@ -337,15 +337,28 @@ func (r *folderDeletionRepository) ClaimNextFolderDeletionJob(ctx context.Contex
 
 func (r *folderDeletionRepository) ProcessFolderDeletionJob(ctx context.Context, jobID, workerID string) error {
 	for {
-		done, err := r.processFolderDeletionBatch(ctx, jobID, workerID)
-		if err != nil || done {
+		done, visibilityChanged, err := r.processFolderDeletionBatch(ctx, jobID, workerID)
+		if err != nil {
 			return err
+		}
+		if visibilityChanged {
+			// A single root event invalidates derived Access decisions for the whole
+			// subtree without placing a potentially huge descendant list on Redis.
+			var job domain.FolderDeletionJob
+			if err := r.db.WithContext(ctx).Where("id = ?", jobID).First(&job).Error; err != nil {
+				return err
+			}
+			eventing.PublishFolderDeleted(ctx, job.OrgID, job.RootFolderID, job.RootPath, jobID)
+		}
+		if done {
+			return nil
 		}
 	}
 }
 
-func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Context, jobID, workerID string) (bool, error) {
+func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Context, jobID, workerID string) (bool, bool, error) {
 	var done bool
+	var visibilityChanged bool
 	var job domain.FolderDeletionJob
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
@@ -357,18 +370,35 @@ func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Contex
 			return err
 		}
 
+		// Tombstone the root in the first transaction. Every normal Asset read
+		// checks for a deleted ancestor, so this one update hides the entire
+		// subtree before the worker processes the remaining rows in batches.
+		rootResult := tx.Exec(`
+			UPDATE folders
+			SET deleted_at = ?, updated_by = ?
+			WHERE id = ? AND org_id = ? AND deleted_at IS NULL
+		`, time.Now().UTC(), job.RequestedBy, job.RootFolderID, job.OrgID)
+		if rootResult.Error != nil {
+			return rootResult.Error
+		}
+		visibilityChanged = rootResult.RowsAffected > 0
+		job.DeletedFolderCount += rootResult.RowsAffected
+
 		metadataResult := tx.Exec(`
-			DELETE FROM metadata_items
+			UPDATE metadata_items
+			SET deleted_at = ?, updated_by = ?
 			WHERE id IN (
 				SELECT metadata_items.id
 				FROM metadata_items
 				JOIN folders ON folders.id = metadata_items.folder_id
-				WHERE folders.org_id = ? AND folders.path <@ ?::ltree
+				WHERE folders.org_id = ?
+				  AND folders.path <@ ?::ltree
+				  AND metadata_items.deleted_at IS NULL
 				ORDER BY metadata_items.id
 				LIMIT ?
 				FOR UPDATE OF metadata_items SKIP LOCKED
 			)
-		`, job.OrgID, job.RootPath, domain.FolderDeletionMetadataBatchSize)
+		`, time.Now().UTC(), job.RequestedBy, job.OrgID, job.RootPath, domain.FolderDeletionMetadataBatchSize)
 		if metadataResult.Error != nil {
 			return metadataResult.Error
 		}
@@ -381,16 +411,19 @@ func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Contex
 		}
 
 		folderResult := tx.Exec(`
-			DELETE FROM folders
+			UPDATE folders
+			SET deleted_at = ?, updated_by = ?
 			WHERE id IN (
 				SELECT id
 				FROM folders
-				WHERE org_id = ? AND path <@ ?::ltree
+				WHERE org_id = ?
+				  AND path <@ ?::ltree
+				  AND deleted_at IS NULL
 				ORDER BY nlevel(path) DESC, path DESC
 				LIMIT ?
 				FOR UPDATE SKIP LOCKED
 			)
-		`, job.OrgID, job.RootPath, domain.FolderDeletionFolderBatchSize)
+		`, time.Now().UTC(), job.RequestedBy, job.OrgID, job.RootPath, domain.FolderDeletionFolderBatchSize)
 		if folderResult.Error != nil {
 			return folderResult.Error
 		}
@@ -409,10 +442,7 @@ func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Contex
 		done = true
 		return nil
 	})
-	if err == nil && done {
-		eventing.PublishFolderDeleted(ctx, job.OrgID, job.RootFolderID, job.RootPath, jobID)
-	}
-	return done, err
+	return done, visibilityChanged, err
 }
 
 func automaticRetryDelay(attempt int) time.Duration {

@@ -78,6 +78,7 @@ export const folderMutationFields = /* GraphQL */ `
     @orgMember
     @sameOrg
   deleteFolder(orgId: ID!, id: ID!): Boolean! @orgMember @sameOrg
+  restoreFolder(orgId: ID!, id: ID!): Folder! @orgMember @sameOrg
   previewFolderDeletion(orgId: ID!, folderId: ID!): FolderDeletionPreview!
     @orgMember
     @sameOrg

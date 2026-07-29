@@ -45,3 +45,9 @@ export function internalDependencyError(traceId: string | undefined): GraphQLErr
 export function cursorInvalid(): GraphQLError {
   return fromDefinition("CURSOR_INVALID");
 }
+
+export function resourceNotFound(
+  code: "FOLDER_NOT_FOUND" | "METADATA_NOT_FOUND",
+): GraphQLError {
+  return fromDefinition(code);
+}

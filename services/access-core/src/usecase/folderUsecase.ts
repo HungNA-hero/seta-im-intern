@@ -21,6 +21,7 @@ import {
   GraphQLContext,
 } from "../graphql/context";
 import { authorizedFetch, Precondition } from "./assetProxy";
+import { authorizeFolderRestore } from "./restoreAuthorization";
 
 type FolderWithSubtree = FolderNode & { subtreeNodes?: FolderNode[] };
 
@@ -265,4 +266,26 @@ export async function deleteFolder(
     { method: "DELETE" },
   );
   return unwrap204(response, "Failed to delete folder");
+}
+
+export async function restoreFolder(
+  ctx: GraphQLContext,
+  orgId: string,
+  id: string,
+) {
+  assertNotRootFolder(id, orgId, "restore");
+  await authorizeFolderRestore(ctx, orgId, id);
+  const response = await authorizedFetch(
+    ctx,
+    orgId,
+    [],
+    assetPath(`${FOLDERS_PATH}/restore`, { orgId, id }),
+    { method: "POST" },
+  );
+  return unwrapEnvelope(
+    response,
+    "folder",
+    toFolder,
+    "Failed to restore folder",
+  );
 }

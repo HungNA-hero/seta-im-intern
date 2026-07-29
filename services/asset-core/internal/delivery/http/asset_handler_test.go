@@ -41,8 +41,14 @@ type fakeAssetUsecase struct {
 	metadataUpdateErr   error
 	metadataSearchInput domain.MetadataSearchFilter
 
-	moveFolderFunc   func(ctx context.Context, orgID, userID, folderID string, input domain.MoveFolderInput) (domain.Folder, error)
-	deleteFolderFunc func(ctx context.Context, orgID, userID, folderID string) error
+	moveFolderFunc         func(ctx context.Context, orgID, userID, folderID string, input domain.MoveFolderInput) (domain.Folder, error)
+	deleteFolderFunc       func(ctx context.Context, orgID, userID, folderID string) error
+	restoreFolderFunc      func(ctx context.Context, orgID, userID, folderID string) (domain.Folder, error)
+	restoreMetadataFunc    func(ctx context.Context, orgID, userID, metadataID string) (domain.MetadataItem, error)
+	folderRestoreFact      domain.FolderRestoreAuthorizationFact
+	folderRestoreFactErr   error
+	metadataRestoreFact    domain.MetadataRestoreAuthorizationFact
+	metadataRestoreFactErr error
 }
 
 func (f *fakeAssetUsecase) GetFolderTree(_ context.Context, orgID, rootPath string) ([]domain.Folder, error) {
@@ -131,6 +137,23 @@ func (f *fakeAssetUsecase) DeleteFolder(ctx context.Context, orgID, userID, fold
 	return nil
 }
 
+func (f *fakeAssetUsecase) GetFolderRestoreAuthorizationFact(_ context.Context, orgID, folderID string) (domain.FolderRestoreAuthorizationFact, error) {
+	f.called = true
+	f.methodCalled = "GetFolderRestoreAuthorizationFact"
+	f.orgID = orgID
+	return f.folderRestoreFact, f.folderRestoreFactErr
+}
+
+func (f *fakeAssetUsecase) RestoreFolder(ctx context.Context, orgID, userID, folderID string) (domain.Folder, error) {
+	f.called = true
+	f.methodCalled = "RestoreFolder"
+	f.orgID = orgID
+	if f.restoreFolderFunc != nil {
+		return f.restoreFolderFunc(ctx, orgID, userID, folderID)
+	}
+	return domain.Folder{}, nil
+}
+
 func (f *fakeAssetUsecase) EnsureRefs(_ context.Context, userID, orgID string) error {
 	return nil
 }
@@ -184,6 +207,23 @@ func (f *fakeAssetUsecase) DeleteMetadataItem(_ context.Context, orgID, userID, 
 	f.methodCalled = "DeleteMetadataItem"
 	f.orgID = orgID
 	return f.metadataItemErr
+}
+
+func (f *fakeAssetUsecase) GetMetadataRestoreAuthorizationFact(_ context.Context, orgID, metadataID string) (domain.MetadataRestoreAuthorizationFact, error) {
+	f.called = true
+	f.methodCalled = "GetMetadataRestoreAuthorizationFact"
+	f.orgID = orgID
+	return f.metadataRestoreFact, f.metadataRestoreFactErr
+}
+
+func (f *fakeAssetUsecase) RestoreMetadataItem(ctx context.Context, orgID, userID, metadataID string) (domain.MetadataItem, error) {
+	f.called = true
+	f.methodCalled = "RestoreMetadataItem"
+	f.orgID = orgID
+	if f.restoreMetadataFunc != nil {
+		return f.restoreMetadataFunc(ctx, orgID, userID, metadataID)
+	}
+	return domain.MetadataItem{}, nil
 }
 
 // ────────────────────────────────────────────────────────────

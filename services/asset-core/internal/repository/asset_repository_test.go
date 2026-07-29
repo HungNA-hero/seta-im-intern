@@ -153,7 +153,7 @@ func TestGetFolderByID_Success(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id", "org_id", "path", "name", "created_by"}).
 		AddRow(folderID, orgID, "root", "Root Folder", "user-1")
 
-	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE \\(id = \\$1 AND org_id = \\$2\\) AND \"folders\".\"deleted_at\" IS NULL ORDER BY \"folders\".\"id\" LIMIT \\$3$").
+	mock.ExpectQuery(`(?s)^SELECT \* FROM "folders".*deleted_ancestor.*ORDER BY "folders"."id" LIMIT \$3$`).
 		WithArgs(folderID, orgID, 1).
 		WillReturnRows(rows)
 
@@ -186,7 +186,7 @@ func TestGetFolderByID_NotFoundOrOrgMismatch(t *testing.T) {
 	orgID := "org-1"
 	folderID := "folder-1"
 
-	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE \\(id = \\$1 AND org_id = \\$2\\) AND \"folders\".\"deleted_at\" IS NULL ORDER BY \"folders\".\"id\" LIMIT \\$3$").
+	mock.ExpectQuery(`(?s)^SELECT \* FROM "folders".*deleted_ancestor.*ORDER BY "folders"."id" LIMIT \$3$`).
 		WithArgs(folderID, orgID, 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
@@ -216,8 +216,8 @@ func TestGetFolderByID_SoftDeleted(t *testing.T) {
 	orgID := "org-1"
 	folderID := "folder-1"
 
-	// If soft-deleted, GORM won't find it due to IS NULL clause
-	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE \\(id = \\$1 AND org_id = \\$2\\) AND \"folders\".\"deleted_at\" IS NULL ORDER BY \"folders\".\"id\" LIMIT \\$3$").
+	// A tombstoned folder (or a folder below one) is not visible to normal reads.
+	mock.ExpectQuery(`(?s)^SELECT \* FROM "folders".*deleted_ancestor.*ORDER BY "folders"."id" LIMIT \$3$`).
 		WithArgs(folderID, orgID, 1).
 		WillReturnError(gorm.ErrRecordNotFound)
 
@@ -251,7 +251,7 @@ func TestGetFolderChildren_Success(t *testing.T) {
 		AddRow("folder-2", orgID, "root.folder_2", "Folder 2", "user-1").
 		AddRow("folder-3", orgID, "root.folder_3", "Folder 3", "user-1")
 
-	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE \\(org_id = \\$1 AND path <@ \\$2 AND nlevel\\(path\\) = nlevel\\(\\$3::ltree\\) \\+ 1\\) AND \"folders\".\"deleted_at\" IS NULL ORDER BY name ASC$").
+	mock.ExpectQuery(`(?s)^SELECT \* FROM "folders".*deleted_ancestor.*ORDER BY name ASC$`).
 		WithArgs(orgID, parentPath, parentPath).
 		WillReturnRows(rows)
 
@@ -290,7 +290,7 @@ func TestGetRootFolders_Success(t *testing.T) {
 		AddRow("folder-1", orgID, "folder_1", "Folder 1", "user-1").
 		AddRow("folder-2", orgID, "folder_2", "Folder 2", "user-1")
 
-	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE \\(org_id = \\$1 AND nlevel\\(path\\) = 1\\) AND \"folders\".\"deleted_at\" IS NULL ORDER BY name ASC$").
+	mock.ExpectQuery(`(?s)^SELECT \* FROM "folders".*deleted_ancestor.*ORDER BY name ASC$`).
 		WithArgs(orgID).
 		WillReturnRows(rows)
 
@@ -325,7 +325,7 @@ func TestGetFolderChildren_Empty(t *testing.T) {
 
 	rows := sqlmock.NewRows([]string{"id", "org_id", "path", "name", "created_by"})
 
-	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE \\(org_id = \\$1 AND path <@ \\$2 AND nlevel\\(path\\) = nlevel\\(\\$3::ltree\\) \\+ 1\\) AND \"folders\".\"deleted_at\" IS NULL ORDER BY name ASC$").
+	mock.ExpectQuery(`(?s)^SELECT \* FROM "folders".*deleted_ancestor.*ORDER BY name ASC$`).
 		WithArgs(orgID, parentPath, parentPath).
 		WillReturnRows(rows)
 
@@ -363,7 +363,7 @@ func TestGetFolderTree_Success(t *testing.T) {
 		AddRow("folder-2", orgID, "root.folder_2", "Folder 2", "user-1")
 
 	// Verify ordering assertion for folderTree
-	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE org_id = \\$1 AND path <@ \\$2 AND \"folders\".\"deleted_at\" IS NULL ORDER BY path ASC$").
+	mock.ExpectQuery(`(?s)^SELECT \* FROM "folders".*deleted_ancestor.*ORDER BY path ASC$`).
 		WithArgs(orgID, rootPath).
 		WillReturnRows(rows)
 
@@ -396,7 +396,7 @@ func TestGetFolderTree_EmptyRootReturnsOrganizationForest(t *testing.T) {
 		AddRow("root", orgID, "root", "Root", "user-1").
 		AddRow("child", orgID, "root.child", "Child", "user-1")
 
-	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE org_id = \\$1 AND \"folders\"\\.\"deleted_at\" IS NULL ORDER BY path ASC$").
+	mock.ExpectQuery(`(?s)^SELECT \* FROM "folders".*deleted_ancestor.*ORDER BY path ASC$`).
 		WithArgs(orgID).
 		WillReturnRows(rows)
 

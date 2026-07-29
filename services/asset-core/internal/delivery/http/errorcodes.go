@@ -37,10 +37,12 @@ var errorCodes = map[string]ErrorCode{
 	"FOLDER_DELETION_IN_PROGRESS":  {"FOLDER_DELETION_IN_PROGRESS", 3009, "Folder deletion is already in progress"},
 	"DELETION_JOB_NOT_FOUND":       {"DELETION_JOB_NOT_FOUND", 3010, "Folder deletion job not found"},
 	"DELETION_JOB_NOT_CANCELLABLE": {"DELETION_JOB_NOT_CANCELLABLE", 3011, "Folder deletion job cannot be cancelled or retried in its current state"},
+	"FOLDER_NOT_DELETED":           {"FOLDER_NOT_DELETED", 3012, "Folder is already active"},
 	"METADATA_NOT_FOUND":           {"METADATA_NOT_FOUND", 4001, "Metadata item not found"},
 	"METADATA_IDENTITY_CONFLICT":   {"METADATA_IDENTITY_CONFLICT", 4002, "External identity already exists on an active item"},
 	"METADATA_VALIDATION_ERROR":    {"METADATA_VALIDATION_ERROR", 4003, "Metadata field validation failed"},
 	"METADATA_FOLDER_DELETED":      {"METADATA_FOLDER_DELETED", 4004, "Containing folder is deleted"},
+	"METADATA_NOT_DELETED":         {"METADATA_NOT_DELETED", 4005, "Metadata item is already active"},
 	"GRANT_NOT_FOUND":              {"GRANT_NOT_FOUND", 5001, "Object permission not found"},
 	"GRANT_INVALID_TARGET":         {"GRANT_INVALID_TARGET", 5002, "Grant must target exactly one of user or role"},
 }

@@ -1247,3 +1247,73 @@ describe("Mutation.deleteFolder", () => {
     );
   });
 });
+
+// -- Mutation.restoreFolder ----------------------------------------------------
+
+describe("Mutation.restoreFolder", () => {
+  const org = "org-1";
+  const id = "folder-1";
+  const ctx = makeCtx();
+
+  test("uses a private tombstone fact, current write permission, then restores", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ fact: { id, path: "deleted-folder" } }),
+    });
+    fetchOk(makeGoFolder({ id, name: "Restored Folder" }));
+
+    const result = await folderResolvers.Mutation.restoreFolder(
+      undefined,
+      { orgId: org, id },
+      ctx,
+    );
+
+    expect(result).toMatchObject({ id, name: "Restored Folder" });
+    expect(mockCanDo).toHaveBeenCalledWith(
+      "user-1",
+      "write",
+      "folder",
+      id,
+      org,
+      [],
+    );
+    expect(mockFetch.mock.calls[0][0]).toBe(
+      `http://go-mock/internal/api/v1/restore-facts/folders?orgId=${org}&id=${id}`,
+    );
+    expect(mockFetch.mock.calls[1][0]).toBe(
+      `http://go-mock/internal/api/v1/folders/restore?orgId=${org}&id=${id}`,
+    );
+    expect(mockFetch.mock.calls[1][1].method).toBe("POST");
+  });
+
+  test("allows current delete permission when current write is denied", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ fact: { id, path: "deleted-folder" } }),
+    });
+    mockCanDo
+      .mockResolvedValueOnce({ allowed: false, reason: "no write" })
+      .mockResolvedValueOnce({ allowed: true, reason: null });
+    fetchOk(makeGoFolder({ id }));
+
+    await expect(
+      folderResolvers.Mutation.restoreFolder(undefined, { orgId: org, id }, ctx),
+    ).resolves.toMatchObject({ id });
+    expect(mockCanDo).toHaveBeenNthCalledWith(2, "user-1", "delete", "folder", id, org, []);
+  });
+
+  test("rejects restoring the organization root before any private lookup", async () => {
+    await expect(
+      folderResolvers.Mutation.restoreFolder(
+        undefined,
+        { orgId: org, id: org },
+        ctx,
+      ),
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
+    );
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+});
