@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"seta-im-intern/go-asset-core/internal/eventing"
 	"seta-im-intern/go-asset-core/internal/observability"
 )
 
@@ -53,5 +54,30 @@ func TestRecordHTTPBoundsArbitraryMethods(t *testing.T) {
 	}
 	if strings.Contains(rendered, "ATTACK-") {
 		t.Fatalf("arbitrary method leaked into a metric label: %s", rendered)
+	}
+}
+
+func TestRenderPrometheusMetricsUsesExactPublishMetricAndLabels(t *testing.T) {
+	observability.ResetMetricsForTests()
+	eventing.ResetMetricsForTests()
+	t.Cleanup(observability.ResetMetricsForTests)
+	t.Cleanup(eventing.ResetMetricsForTests)
+
+	rendered := observability.RenderPrometheusMetrics()
+	want := []string{
+		"# HELP seta_asset_lifecycle_event_publish_total Asset lifecycle event XADD outcomes.",
+		"# TYPE seta_asset_lifecycle_event_publish_total counter",
+		`seta_asset_lifecycle_event_publish_total{outcome="success"} 0`,
+		`seta_asset_lifecycle_event_publish_total{outcome="failure"} 0`,
+	}
+	for _, line := range want {
+		if !strings.Contains(rendered, line) {
+			t.Fatalf("missing exact publish metric line %q:\n%s", line, rendered)
+		}
+	}
+	if strings.Contains(rendered, "lifecycle_events_total") ||
+		strings.Contains(rendered, `outcome="published"`) ||
+		strings.Contains(rendered, `outcome="lost"`) {
+		t.Fatalf("legacy publish metric leaked into exposition:\n%s", rendered)
 	}
 }

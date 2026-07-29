@@ -131,10 +131,10 @@ func RenderPrometheusMetrics() string {
 	}
 
 	events := eventing.Metrics()
-	fmt.Fprintln(&output, "# HELP seta_asset_lifecycle_events_total Asset lifecycle event publish outcomes.")
-	fmt.Fprintln(&output, "# TYPE seta_asset_lifecycle_events_total counter")
-	fmt.Fprintf(&output, "seta_asset_lifecycle_events_total%s %d\n", prometheusLabels(map[string]string{"outcome": "published"}), events.PublishedTotal)
-	fmt.Fprintf(&output, "seta_asset_lifecycle_events_total%s %d\n", prometheusLabels(map[string]string{"outcome": "lost"}), events.LostPublishTotal)
+	fmt.Fprintln(&output, "# HELP seta_asset_lifecycle_event_publish_total Asset lifecycle event XADD outcomes.")
+	fmt.Fprintln(&output, "# TYPE seta_asset_lifecycle_event_publish_total counter")
+	fmt.Fprintf(&output, "seta_asset_lifecycle_event_publish_total%s %d\n", prometheusLabels(map[string]string{"outcome": "success"}), events.PublishSuccessTotal)
+	fmt.Fprintf(&output, "seta_asset_lifecycle_event_publish_total%s %d\n", prometheusLabels(map[string]string{"outcome": "failure"}), events.PublishFailureTotal)
 
 	return output.String()
 }

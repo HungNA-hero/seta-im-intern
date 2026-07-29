@@ -15,6 +15,10 @@ const (
 	publishTimeout    = 200 * time.Millisecond
 )
 
+type xAdder interface {
+	XAdd(context.Context, *redis.XAddArgs) *redis.StringCmd
+}
+
 // Envelope is the compact Redis Stream event shape shared with access-core's
 // cache-invalidator consumer (see specs/003-cando-cache/contracts/invalidation-events.md).
 // Payloads never carry subtree id lists — a subtree can hold ~1M items.
@@ -65,8 +69,8 @@ func newEnvelope(orgID, aggregateID, eventType string, data any) (Envelope, erro
 }
 
 // PublishFolderMoved directly XADDs a `folder.moved` event after MoveFolder's
-// commit. Best-effort: a failure here does not roll back the commit and is
-// bounded by the receiving cache's hard TTL, not retried.
+// commit. Best-effort: a failure here does not roll back the commit or retry;
+// the receiving cache's hard TTL only bounds stale cache exposure.
 func PublishFolderMoved(ctx context.Context, orgID, folderID, oldPath, newPath string) {
 	envelope, err := newEnvelope(orgID, folderID, "folder.moved", FolderMovedData{
 		FolderID: folderID,
@@ -100,6 +104,10 @@ func PublishFolderDeleted(ctx context.Context, orgID, folderID, rootPath, jobID 
 // than the caller's request context, so a post-commit publish is not cut
 // short by the caller's request already finishing.
 func publish(_ context.Context, envelope Envelope) {
+	publishWith(envelope, RedisClient())
+}
+
+func publishWith(envelope Envelope, client xAdder) {
 	payload, err := json.Marshal(envelope)
 	if err != nil {
 		slog.Default().Error("failed to marshal event envelope", "error", err, "eventType", envelope.EventType, "eventId", envelope.EventID)
@@ -109,14 +117,14 @@ func publish(_ context.Context, envelope Envelope) {
 	publishCtx, cancel := context.WithTimeout(context.Background(), publishTimeout)
 	defer cancel()
 
-	_, err = RedisClient().XAdd(publishCtx, &redis.XAddArgs{
+	_, err = client.XAdd(publishCtx, &redis.XAddArgs{
 		Stream: assetEventsStream,
 		Values: map[string]any{"payload": string(payload)},
 	}).Result()
 	if err != nil {
-		recordLostPublish()
+		recordPublishFailure()
 		slog.Default().Error(
-			"failed to publish lifecycle event; bounded by cache TTL backstop",
+			"failed to publish lifecycle event; publication is not retried",
 			"error", err,
 			"eventType", envelope.EventType,
 			"eventId", envelope.EventID,
