@@ -101,11 +101,17 @@ jobs:
         run: go test ./...
 
   compose-smoke:
-    name: Disposable Compose smoke
+    name: Compose and event-model verification
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate event-model observability configuration
+        run: bash ./scripts/ci/validate-event-observability.sh
       - name: Validate production topology, migrations, and health endpoints
         env:
           COMPOSE_PROJECT_NAME: seta-ci-${{ github.run_id }}-${{ github.run_attempt }}
         run: bash ./scripts/ci/compose-smoke.sh
+      - name: Run controlled event-model observability scenario
+        env:
+          COMPOSE_PROJECT_NAME: seta-ci-events-${{ github.run_id }}-${{ github.run_attempt }}
+        run: bash ./scripts/ci/event-model-scenario.sh
