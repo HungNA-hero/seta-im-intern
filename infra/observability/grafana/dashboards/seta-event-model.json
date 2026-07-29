@@ -1,0 +1,252 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Rate of Redis XADD outcomes in each Asset producer process. A failure is not retried.",
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "sum by (service, outcome) (rate(seta_asset_lifecycle_event_publish_total[5m]))",
+          "legendFormat": "{{service}} / {{outcome}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Producer publish outcomes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Observer is 1 only when Prometheus can scrape the exporter and the exporter can reach Redis. Group present is unavailable while the observer is down.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "text": "DOWN"
+                },
+                "1": {
+                  "color": "green",
+                  "text": "UP"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "expr": "seta_asset_event_stream_observer_up",
+          "legendFormat": "Redis observer",
+          "refId": "A"
+        },
+        {
+          "expr": "seta_asset_event_consumer_group_present",
+          "legendFormat": "cache-invalidator group",
+          "refId": "B"
+        }
+      ],
+      "title": "Observer and consumer group health",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Entries that have never been delivered to a cache-invalidator consumer.",
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "seta_asset_event_consumer_group_lag",
+          "legendFormat": "lag",
+          "refId": "A"
+        }
+      ],
+      "title": "Never-delivered work (lag)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Entries delivered to a consumer but not yet acknowledged.",
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 8
+      },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "seta_asset_event_consumer_group_pending",
+          "legendFormat": "pending",
+          "refId": "A"
+        }
+      ],
+      "title": "Delivered, unacknowledged work",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Operational outstanding work: entries not delivered plus entries delivered but not acknowledged.",
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 8
+      },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "seta_asset_event_consumer_group_lag + seta_asset_event_consumer_group_pending",
+          "legendFormat": "lag + pending",
+          "refId": "A"
+        }
+      ],
+      "title": "Total outstanding work",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Total entries currently retained in stream:asset-events:dlq. The DLQ has no automatic replay or retention.",
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "seta_asset_event_dlq_depth",
+          "legendFormat": "DLQ entries",
+          "refId": "A"
+        }
+      ],
+      "title": "Dead-letter stream depth",
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [
+    "seta",
+    "event-model",
+    "redis-streams"
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "title": "SETA DAM - Event Model",
+  "uid": "seta-event-model",
+  "version": 1
+}

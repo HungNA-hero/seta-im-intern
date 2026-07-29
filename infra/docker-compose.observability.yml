@@ -14,9 +14,22 @@ services:
       seta.observability.service: "asset-core"
 
   asset-delete-worker:
+    environment:
+      METRICS_ENABLED: "true"
     labels:
       seta.observability.scrape: "true"
       seta.observability.service: "asset-delete-worker"
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.87.0
+    profiles: ["observability"]
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-redis-exporter
+    command:
+      - --redis.addr=redis://redis:6379
+      - --check-single-streams=stream:asset-events,stream:asset-events:dlq
+      - --streams-exclude-consumer-metrics
+    ports:
+      - "${REDIS_EXPORTER_PORT:-9121}:9121"
 
   prometheus:
     image: prom/prometheus:v2.54.1
@@ -28,12 +41,15 @@ services:
       - --storage.tsdb.retention.time=7d
     volumes:
       - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/event-model.rules.yml:/etc/prometheus/event-model.rules.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
     depends_on:
       - access-core
       - asset-core
+      - asset-delete-worker
+      - redis-exporter
 
   loki:
     image: grafana/loki:3.2.1

@@ -1,0 +1,17 @@
+groups:
+  - name: seta_asset_event_model
+    rules:
+      - record: seta_asset_event_stream_observer_up
+        expr: min(up{job="redis-exporter"}) * (max(redis_up{job="redis-exporter"}) or vector(0))
+
+      - record: seta_asset_event_consumer_group_present
+        expr: max(redis_stream_group_lag{job="redis-exporter",db="db0",stream="stream:asset-events",group="cache-invalidator"} * 0 + 1) or ((seta_asset_event_stream_observer_up == 1) * 0)
+
+      - record: seta_asset_event_consumer_group_lag
+        expr: max(redis_stream_group_lag{job="redis-exporter",db="db0",stream="stream:asset-events",group="cache-invalidator"})
+
+      - record: seta_asset_event_consumer_group_pending
+        expr: max(redis_stream_group_messages_pending{job="redis-exporter",db="db0",stream="stream:asset-events",group="cache-invalidator"})
+
+      - record: seta_asset_event_dlq_depth
+        expr: max(redis_stream_length{job="redis-exporter",db="db0",stream="stream:asset-events:dlq"}) or ((seta_asset_event_stream_observer_up == 1) * 0)

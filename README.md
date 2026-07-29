@@ -43,6 +43,9 @@ Useful endpoints:
 
 For the local k6 scenarios, Prometheus/Loki/Grafana stack, and circuit-breaker
 fault-injection procedure, see [scripts/load/README.md](scripts/load/README.md).
+For lifecycle-event producer outcomes, Redis Stream backlog semantics, and
+recovery, see
+[infra/observability/event-model-runbook.md](infra/observability/event-model-runbook.md).
 
 Before pushing, run the full two-service verification pipeline:
 
