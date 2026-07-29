@@ -31,6 +31,11 @@ for local use. The provisioned **SETA DAM - Load Testing** dashboard reads
 Prometheus at `http://localhost:9090` and Loki at `http://localhost:3100`.
 Grafana Alloy's local status UI is at `http://localhost:12345`.
 
+The separate **SETA DAM - Event Model** dashboard covers Asset producer
+outcomes, Redis Stream group lag/pending work, and DLQ depth. See the
+[event model observability runbook](../../infra/observability/event-model-runbook.md)
+before interpreting or recovering those signals.
+
 ## Run a scenario
 
 Linux or WSL2:

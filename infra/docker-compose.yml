@@ -87,12 +87,16 @@ services:
       ACCESS_ASSET_BREAKER_VOLUME_THRESHOLD: ${ACCESS_ASSET_BREAKER_VOLUME_THRESHOLD-10}
       ACCESS_ASSET_BREAKER_RESET_MS: ${ACCESS_ASSET_BREAKER_RESET_MS-5000}
       ACCESS_ASSET_BREAKER_CAPACITY: ${ACCESS_ASSET_BREAKER_CAPACITY-50}
+      ACCESS_REDIS_HOST: redis
+      ACCESS_REDIS_PORT: 6379
     ports:
       - "${NODE_ACCESS_CORE_PORT:-4000}:4000"
     depends_on:
       access-db:
         condition: service_healthy
       asset-core:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     stop_grace_period: 15s
 
@@ -110,6 +114,8 @@ services:
       ASSET_DB_PASSWORD: ${ASSET_DB_PASSWORD:-asset_password}
       ASSET_DB_SSLMODE: disable
       ASSET_INTERNAL_API_TOKEN: ${ASSET_INTERNAL_API_TOKEN:-seta-dam-local-development-token}
+      ASSET_REDIS_HOST: redis
+      ASSET_REDIS_PORT: 6379
     ports:
       - "${GO_ASSET_CORE_PORT:-8080}:8080"
     depends_on:
@@ -130,6 +136,8 @@ services:
       ASSET_DB_USER: ${ASSET_DB_USER:-asset_user}
       ASSET_DB_PASSWORD: ${ASSET_DB_PASSWORD:-asset_password}
       ASSET_DB_SSLMODE: disable
+      ASSET_REDIS_HOST: redis
+      ASSET_REDIS_PORT: 6379
     depends_on:
       asset-db:
         condition: service_healthy

@@ -54,6 +54,15 @@ describe("cache-invalidator idempotency, retry, and DLQ", () => {
 
     await reclaimStalePending(redis);
 
+    expect(redis.xpending).toHaveBeenCalledWith(
+      "stream:asset-events",
+      "cache-invalidator",
+      "IDLE",
+      30_000,
+      "-",
+      "+",
+      20,
+    );
     expect(redis.eval).toHaveBeenCalledTimes(1);
     expect(redis.xadd).not.toHaveBeenCalled();
     expect(redis.xack).toHaveBeenCalledWith("stream:asset-events", "cache-invalidator", messageId);
@@ -90,5 +99,71 @@ describe("cache-invalidator idempotency, retry, and DLQ", () => {
       messageId,
       eventId,
     });
+  });
+
+  test("a processing failure remains unacknowledged for later reclaim", async () => {
+    const { processBatch } = await import("../eventing/cacheInvalidator");
+    const messageId = "3-0";
+    const payload = JSON.stringify({
+      eventId: randomUUID(),
+      eventType: "folder.moved",
+      orgId: randomUUID(),
+    });
+    const redis = fakeRedis({
+      eval: vi.fn().mockRejectedValue(new Error("effect failed")),
+      xreadgroup: vi.fn().mockResolvedValue([
+        ["stream:asset-events", [[messageId, ["payload", payload]]]],
+      ]),
+    });
+
+    await expect(processBatch(redis)).rejects.toThrow("effect failed");
+
+    expect(redis.xack).not.toHaveBeenCalled();
+    expect(redis.xadd).not.toHaveBeenCalled();
+  });
+
+  test("a malformed event is acknowledged without an effect or DLQ entry", async () => {
+    const { processBatch } = await import("../eventing/cacheInvalidator");
+    const messageId = "4-0";
+    const redis = fakeRedis({
+      xreadgroup: vi.fn().mockResolvedValue([
+        ["stream:asset-events", [[messageId, ["payload", "{not-json"]]]],
+      ]),
+    });
+
+    await expect(processBatch(redis)).resolves.toBe(1);
+
+    expect(redis.eval).not.toHaveBeenCalled();
+    expect(redis.xadd).not.toHaveBeenCalled();
+    expect(redis.xack).toHaveBeenCalledWith(
+      "stream:asset-events",
+      "cache-invalidator",
+      messageId,
+    );
+  });
+
+  test("an unsupported event type is acknowledged without an effect or DLQ entry", async () => {
+    const { processBatch } = await import("../eventing/cacheInvalidator");
+    const messageId = "5-0";
+    const payload = JSON.stringify({
+      eventId: randomUUID(),
+      eventType: "folder.renamed",
+      orgId: randomUUID(),
+    });
+    const redis = fakeRedis({
+      xreadgroup: vi.fn().mockResolvedValue([
+        ["stream:asset-events", [[messageId, ["payload", payload]]]],
+      ]),
+    });
+
+    await expect(processBatch(redis)).resolves.toBe(1);
+
+    expect(redis.eval).not.toHaveBeenCalled();
+    expect(redis.xadd).not.toHaveBeenCalled();
+    expect(redis.xack).toHaveBeenCalledWith(
+      "stream:asset-events",
+      "cache-invalidator",
+      messageId,
+    );
   });
 });

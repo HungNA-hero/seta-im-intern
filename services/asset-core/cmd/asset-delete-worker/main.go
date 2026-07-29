@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -16,10 +17,14 @@ import (
 	"gorm.io/gorm/logger"
 
 	"seta-im-intern/go-asset-core/internal/domain"
+	"seta-im-intern/go-asset-core/internal/observability"
 	"seta-im-intern/go-asset-core/internal/repository"
 )
 
-const pollInterval = time.Second
+const (
+	pollInterval     = time.Second
+	workerMetricsURL = ":8081"
+)
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
@@ -49,6 +54,26 @@ func main() {
 	repo := repository.NewFolderDeletionRepository(db)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	metricsEnabled := strings.EqualFold(strings.TrimSpace(os.Getenv("METRICS_ENABLED")), "true")
+	observability.SetMetricsEnabled(metricsEnabled)
+	if metricsEnabled {
+		metricsServer := newWorkerMetricsServer()
+		go func() {
+			if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				slog.Error("asset delete worker metrics listener failed", "error", err.Error())
+			}
+		}()
+		defer func() {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := metricsServer.Shutdown(shutdownCtx); err != nil {
+				slog.Error("asset delete worker metrics shutdown failed", "error", err.Error())
+			}
+		}()
+		slog.Info("asset delete worker metrics listening", "port", 8081)
+	}
+
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
@@ -61,6 +86,16 @@ func main() {
 			return
 		case <-ticker.C:
 		}
+	}
+}
+
+func newWorkerMetricsServer() *http.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/metrics", observability.MetricsHandler)
+	return &http.Server{
+		Addr:              workerMetricsURL,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 }
 
