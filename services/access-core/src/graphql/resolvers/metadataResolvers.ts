@@ -11,6 +11,7 @@ import {
   listMetadataItems,
   searchMetadata,
   searchMetadataConnection,
+  restoreMetadata,
   updateMetadata,
 } from "../../usecase/metadataUsecase";
 import { GraphQLContext } from "../context";
@@ -67,5 +68,11 @@ export const metadataResolvers = {
       { orgId, id }: { orgId: string; id: string },
       ctx: GraphQLContext,
     ) => deleteMetadata(ctx, orgId, id),
+
+    restoreMetadata: (
+      _: unknown,
+      { orgId, id }: { orgId: string; id: string },
+      ctx: GraphQLContext,
+    ) => restoreMetadata(ctx, orgId, id),
   },
 };

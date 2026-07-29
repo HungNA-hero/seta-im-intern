@@ -14,6 +14,8 @@ import { fireAssetRequest } from "./assetBreaker";
 export const FOLDERS_PATH = "/internal/api/v1/folders";
 export const METADATA_PATH = "/internal/api/v1/metadata-items";
 export const FOLDER_DELETIONS_PATH = "/internal/api/v1/folder-deletions";
+export const RESTORE_FOLDER_FACTS_PATH = "/internal/api/v1/restore-facts/folders";
+export const RESTORE_METADATA_FACTS_PATH = "/internal/api/v1/restore-facts/metadata-items";
 
 interface SafeAssetErrorEnvelope {
   error?: {
@@ -214,6 +216,66 @@ export interface FolderMeta {
 
 export interface MetadataItemMeta {
   folderId: string;
+}
+
+export interface FolderRestoreAuthorizationFact {
+  id: string;
+  path: string;
+}
+
+export interface MetadataRestoreAuthorizationFact {
+  id: string;
+  folderId: string;
+  folderPath: string;
+}
+
+// These facts are deliberately uncached. They are requested only by a restore
+// mutation, and a fresh trusted lookup avoids accidentally authorizing against
+// an Asset lifecycle state that changed between delete and restore.
+export async function getFolderRestoreAuthorizationFact(
+  orgId: string,
+  userId: string,
+  id: string,
+): Promise<FolderRestoreAuthorizationFact | null> {
+  const res = await assetFetch(assetPath(RESTORE_FOLDER_FACTS_PATH, { orgId, id }), {
+    userId,
+    orgId,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) await throwGoError(res);
+  const data = (await res.json()) as { fact?: { id?: unknown; path?: unknown } };
+  if (typeof data.fact?.id !== "string" || typeof data.fact.path !== "string") {
+    throw internalDependencyError(getRequestCorrelation()?.traceId);
+  }
+  return { id: data.fact.id, path: data.fact.path };
+}
+
+export async function getMetadataRestoreAuthorizationFact(
+  orgId: string,
+  userId: string,
+  id: string,
+): Promise<MetadataRestoreAuthorizationFact | null> {
+  const res = await assetFetch(assetPath(RESTORE_METADATA_FACTS_PATH, { orgId, id }), {
+    userId,
+    orgId,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) await throwGoError(res);
+  const data = (await res.json()) as {
+    fact?: { id?: unknown; folder_id?: unknown; folder_path?: unknown };
+  };
+  if (
+    typeof data.fact?.id !== "string" ||
+    typeof data.fact.folder_id !== "string" ||
+    typeof data.fact.folder_path !== "string"
+  ) {
+    throw internalDependencyError(getRequestCorrelation()?.traceId);
+  }
+  return {
+    id: data.fact.id,
+    folderId: data.fact.folder_id,
+    folderPath: data.fact.folder_path,
+  };
 }
 
 /**

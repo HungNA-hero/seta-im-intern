@@ -42,6 +42,7 @@ vi.mock("../cache/epoch", () => ({
 
 import {
   canDo,
+  canDoWithKnownAncestors,
   filterAllowedResourceIds,
   resetInProcessAuthzCachesForTests,
 } from "../authz/decision";
@@ -280,6 +281,42 @@ describe("OLP path (olpEnabled = true)", () => {
     await canDo("user-1", "read", "folder", "f1", "org-1");
     expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
     expect(mockPrisma.objectPermission.findMany).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("tombstone restore authorization", () => {
+  beforeEach(() => {
+    mockPrisma.organization.findUnique.mockResolvedValue({ olpEnabled: true });
+  });
+
+  test("uses the trusted ancestor fact to honor a current inherited write grant", async () => {
+    const rootId = "11111111-1111-1111-1111-111111111111";
+    const deletedFolderId = "22222222-2222-2222-2222-222222222222";
+    mockPrisma.objectPermission.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ resourceId: rootId }]);
+
+    const result = await canDoWithKnownAncestors(
+      "user-1",
+      "write",
+      "folder",
+      deletedFolderId,
+      "org-1",
+      [rootId],
+    );
+
+    expect(result).toEqual({ allowed: true, reason: null });
+    expect(mockGetFolderMeta).not.toHaveBeenCalled();
+    expect(mockPrisma.objectPermission.findMany).toHaveBeenLastCalledWith({
+      where: {
+        orgId: "org-1",
+        resourceType: "folder",
+        actionId: "action-write",
+        resourceId: { in: [rootId] },
+        OR: [{ granteeUserId: "user-1" }, { granteeRoleId: { in: ["role-1"] } }],
+      },
+      select: { resourceId: true },
+    });
   });
 });
 

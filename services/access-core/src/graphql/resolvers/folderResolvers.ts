@@ -8,6 +8,7 @@ import {
   listFolderChildren,
   listFolderTree,
   moveFolder,
+	  restoreFolder,
   updateFolder,
 } from "../../usecase/folderUsecase";
 import {
@@ -114,6 +115,12 @@ export const folderResolvers = {
       { orgId, id }: { orgId: string; id: string },
       ctx: GraphQLContext,
     ) => deleteFolder(ctx, orgId, id),
+
+    restoreFolder: (
+      _: unknown,
+      { orgId, id }: { orgId: string; id: string },
+      ctx: GraphQLContext,
+    ) => restoreFolder(ctx, orgId, id),
 
     previewFolderDeletion: (
       _: unknown,

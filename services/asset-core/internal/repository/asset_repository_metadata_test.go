@@ -31,7 +31,7 @@ func TestMetadataRepository_GetByFolder_EmptyList(t *testing.T) {
 	repo := repository.NewAssetRepository(gormDB)
 
 	// The repository must distinguish an existing empty folder from a missing or cross-org folder.
-	mock.ExpectQuery(`SELECT "id" FROM "folders" WHERE \(id = \$1 AND org_id = \$2\) AND "folders"\."deleted_at" IS NULL ORDER BY "folders"\."id" LIMIT \$3`).
+	mock.ExpectQuery(`(?s)SELECT folders\.id FROM "folders".*deleted_ancestor.*ORDER BY "folders"\."id" LIMIT \$3`).
 		WithArgs("folder-1", "org-1", 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("folder-1"))
 	mock.ExpectQuery(`SELECT metadata_items\.\* FROM "metadata_items" JOIN folders ON folders.id = metadata_items.folder_id.*metadata_items\.folder_id = \$1.*folders\.org_id = \$2.*metadata_items\.deleted_at IS NULL.*ORDER BY metadata_items.created_at DESC, metadata_items.id ASC`).
@@ -61,7 +61,7 @@ func TestMetadataRepository_GetByFolder_MissingFolder(t *testing.T) {
 	}
 	repo := repository.NewAssetRepository(gormDB)
 
-	mock.ExpectQuery(`SELECT "id" FROM "folders" WHERE \(id = \$1 AND org_id = \$2\) AND "folders"\."deleted_at" IS NULL ORDER BY "folders"\."id" LIMIT \$3`).
+	mock.ExpectQuery(`(?s)SELECT folders\.id FROM "folders".*deleted_ancestor.*ORDER BY "folders"\."id" LIMIT \$3`).
 		WithArgs("missing-folder", "org-1", 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}))
 
@@ -166,7 +166,7 @@ func TestMetadataRepository_CreateSuccess(t *testing.T) {
 	mock.ExpectExec("INSERT INTO organization_ref").WillReturnResult(sqlmock.NewResult(1, 1))
 
 	// Mock the folder locking check
-	mock.ExpectQuery(`SELECT \* FROM "folders" WHERE \(id = \$1 AND org_id = \$2\) AND "folders"\."deleted_at" IS NULL ORDER BY "folders"."id" LIMIT \$3 FOR SHARE`).
+	mock.ExpectQuery(`(?s)SELECT \* FROM "folders".*deleted_ancestor.*ORDER BY "folders"\."id" LIMIT \$3 FOR SHARE`).
 		WithArgs("folder-1", "org-1", 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "org_id"}).AddRow("folder-1", "org-1"))
 

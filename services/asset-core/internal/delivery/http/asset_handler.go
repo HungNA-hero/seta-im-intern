@@ -130,13 +130,17 @@ func NewAssetHandler(mux *http.ServeMux, usecase domain.AssetUsecase, db *gorm.D
 	mux.HandleFunc("/healthz", handler.HandleHealth)
 	mux.HandleFunc("/internal/api/v1/folders", RequireActor(handler.HandleFolders))
 	mux.HandleFunc("/internal/api/v1/folders/move", RequireActor(handler.HandleMoveFolder))
+	mux.HandleFunc("/internal/api/v1/folders/restore", RequireActor(handler.HandleRestoreFolder))
 	mux.HandleFunc("/internal/api/v1/facts/folders", RequireActor(handler.HandleFolderFacts))
+	mux.HandleFunc("/internal/api/v1/restore-facts/folders", RequireActor(handler.HandleFolderRestoreAuthorizationFact))
 	mux.HandleFunc("/internal/api/v1/folder-deletions/preview", RequireActor(handler.HandleFolderDeletionPreview))
 	mux.HandleFunc("/internal/api/v1/folder-deletions/confirm", RequireActor(handler.HandleFolderDeletionConfirm))
 	mux.HandleFunc("/internal/api/v1/folder-deletions/jobs", RequireActor(handler.HandleFolderDeletionJob))
 	mux.HandleFunc("/internal/api/v1/folder-deletions/jobs/cancel", RequireActor(handler.HandleFolderDeletionCancel))
 	mux.HandleFunc("/internal/api/v1/folder-deletions/jobs/retry", RequireActor(handler.HandleFolderDeletionRetry))
 	mux.HandleFunc("/internal/api/v1/metadata-items", RequireActor(handler.HandleMetadataItems))
+	mux.HandleFunc("/internal/api/v1/metadata-items/restore", RequireActor(handler.HandleRestoreMetadataItem))
+	mux.HandleFunc("/internal/api/v1/restore-facts/metadata-items", RequireActor(handler.HandleMetadataRestoreAuthorizationFact))
 	mux.HandleFunc("/internal/api/v1/metadata-items/search", RequireActor(handler.HandleSearchMetadataItems))
 }
 
@@ -522,6 +526,36 @@ func (h *AssetHandler) handleDeleteFolder(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// HandleRestoreFolder restores one tombstoned folder after Access Core has
+// completed its tombstone-aware authorization check.
+func (h *AssetHandler) HandleRestoreFolder(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
+		return
+	}
+	folderID := r.URL.Query().Get("id")
+	orgID := r.URL.Query().Get("orgId")
+	if folderID == "" || orgID == "" || uuid.Validate(folderID) != nil {
+		writeError(w, r, http.StatusBadRequest, "BAD_REQUEST")
+		return
+	}
+	if orgID != actor.OrgID {
+		writeError(w, r, http.StatusNotFound, "FOLDER_NOT_FOUND")
+		return
+	}
+	folder, err := h.usecase.RestoreFolder(r.Context(), orgID, actor.UserID, folderID)
+	if err != nil {
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
+		return
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{"folder": folder})
+}
+
 // HandleMoveFolder processes PATCH requests to move a folder to a new parent or to the organization root.
 func (h *AssetHandler) HandleMoveFolder(w http.ResponseWriter, r *http.Request) {
 	actor, err := requestcontext.GetActor(r.Context())
@@ -592,10 +626,18 @@ func (h *AssetHandler) mapDomainError(w http.ResponseWriter, r *http.Request, er
 		writeError(w, r, http.StatusConflict, "FOLDER_NAME_CONFLICT")
 	case errors.Is(err, domain.ErrFolderNotEmpty):
 		writeError(w, r, http.StatusConflict, "FOLDER_NOT_EMPTY")
+	case errors.Is(err, domain.ErrFolderNotDeleted):
+		writeError(w, r, http.StatusConflict, "FOLDER_NOT_DELETED")
+	case errors.Is(err, domain.ErrFolderParentDeleted):
+		writeError(w, r, http.StatusConflict, "FOLDER_PARENT_DELETED")
 	case errors.Is(err, domain.ErrCycleDetected):
 		writeError(w, r, http.StatusConflict, "FOLDER_CYCLE_DETECTED")
 	case errors.Is(err, domain.ErrMetadataConflict):
 		writeError(w, r, http.StatusConflict, "METADATA_IDENTITY_CONFLICT")
+	case errors.Is(err, domain.ErrMetadataNotDeleted):
+		writeError(w, r, http.StatusConflict, "METADATA_NOT_DELETED")
+	case errors.Is(err, domain.ErrMetadataFolderDeleted):
+		writeError(w, r, http.StatusConflict, "METADATA_FOLDER_DELETED")
 	case errors.Is(err, domain.ErrCursorInvalid):
 		writeError(w, r, http.StatusBadRequest, "CURSOR_INVALID")
 	case errors.Is(err, domain.ErrDeletionPreviewStale):
@@ -842,6 +884,36 @@ func (h *AssetHandler) handleDeleteMetadataItem(w http.ResponseWriter, r *http.R
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// HandleRestoreMetadataItem restores one tombstoned metadata item after Access
+// Core has completed its tombstone-aware authorization check.
+func (h *AssetHandler) HandleRestoreMetadataItem(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
+		return
+	}
+	id := r.URL.Query().Get("id")
+	orgID := r.URL.Query().Get("orgId")
+	if id == "" || orgID == "" || uuid.Validate(id) != nil {
+		writeError(w, r, http.StatusBadRequest, "BAD_REQUEST")
+		return
+	}
+	if orgID != actor.OrgID {
+		writeError(w, r, http.StatusNotFound, "METADATA_NOT_FOUND")
+		return
+	}
+	item, err := h.usecase.RestoreMetadataItem(r.Context(), orgID, actor.UserID, id)
+	if err != nil {
+		h.mapDomainError(w, r, err, "METADATA_VALIDATION_ERROR")
+		return
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{"item": item})
+}
+
 // HandleSearchMetadataItems processes metadata search queries.
 func (h *AssetHandler) HandleSearchMetadataItems(w http.ResponseWriter, r *http.Request) {
 	actor, err := requestcontext.GetActor(r.Context())
@@ -1024,6 +1096,54 @@ func (h *AssetHandler) HandleFolderFacts(w http.ResponseWriter, r *http.Request)
 		"org_id":        folder.OrgID,
 		"active":        true,
 	})
+}
+
+// HandleFolderRestoreAuthorizationFact exposes the minimum tombstone-aware
+// fact to the trusted Access Core boundary. It is not a public read API.
+func (h *AssetHandler) HandleFolderRestoreAuthorizationFact(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
+		return
+	}
+	orgID, id, ok := requireDeletionOrgAndID(w, r, actor, "id")
+	if !ok {
+		return
+	}
+	fact, err := h.usecase.GetFolderRestoreAuthorizationFact(r.Context(), orgID, id)
+	if err != nil {
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
+		return
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{"fact": fact})
+}
+
+// HandleMetadataRestoreAuthorizationFact is the metadata equivalent of the
+// folder restore fact endpoint and never returns display metadata to clients.
+func (h *AssetHandler) HandleMetadataRestoreAuthorizationFact(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
+		return
+	}
+	orgID, id, ok := requireDeletionOrgAndID(w, r, actor, "id")
+	if !ok {
+		return
+	}
+	fact, err := h.usecase.GetMetadataRestoreAuthorizationFact(r.Context(), orgID, id)
+	if err != nil {
+		h.mapDomainError(w, r, err, "METADATA_VALIDATION_ERROR")
+		return
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{"fact": fact})
 }
 
 func writeJSON(w http.ResponseWriter, r *http.Request, statusCode int, payload any) {

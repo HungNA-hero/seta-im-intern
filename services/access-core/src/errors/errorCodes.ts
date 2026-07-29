@@ -28,10 +28,12 @@ export const errorDefinitions: ErrorDefinition[] = [
   { code: "FOLDER_DELETION_IN_PROGRESS", number: 3009, message: "Folder deletion is already in progress" },
   { code: "DELETION_JOB_NOT_FOUND", number: 3010, message: "Folder deletion job not found" },
   { code: "DELETION_JOB_NOT_CANCELLABLE", number: 3011, message: "Folder deletion job cannot be cancelled or retried in its current state" },
+  { code: "FOLDER_NOT_DELETED", number: 3012, message: "Folder is already active" },
   { code: "METADATA_NOT_FOUND", number: 4001, message: "Metadata item not found" },
   { code: "METADATA_IDENTITY_CONFLICT", number: 4002, message: "External identity already exists on an active item" },
   { code: "METADATA_VALIDATION_ERROR", number: 4003, message: "Metadata field validation failed" },
   { code: "METADATA_FOLDER_DELETED", number: 4004, message: "Containing folder is deleted" },
+  { code: "METADATA_NOT_DELETED", number: 4005, message: "Metadata item is already active" },
   { code: "GRANT_NOT_FOUND", number: 5001, message: "Object permission not found" },
   { code: "GRANT_INVALID_TARGET", number: 5002, message: "Grant must target exactly one of user or role" },
 ];

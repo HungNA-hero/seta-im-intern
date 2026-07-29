@@ -107,4 +107,5 @@ export const metadataMutationFields = /* GraphQL */ `
     input: UpdateMetadataInput!
   ): MetadataItem! @orgMember @sameOrg
   deleteMetadata(orgId: ID!, id: ID!): Boolean! @orgMember @sameOrg
+  restoreMetadata(orgId: ID!, id: ID!): MetadataItem! @orgMember @sameOrg
 `;

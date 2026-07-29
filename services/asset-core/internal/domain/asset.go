@@ -14,8 +14,12 @@ var (
 	ErrFolderNotFound            = errors.New("folder not found")
 	ErrFolderConflict            = errors.New("folder conflict: sibling name or path already exists")
 	ErrFolderNotEmpty            = errors.New("folder is not empty")
+	ErrFolderNotDeleted          = errors.New("folder is not deleted")
+	ErrFolderParentDeleted       = errors.New("folder parent is deleted")
 	ErrCycleDetected             = errors.New("cycle detected: cannot move folder into its own descendant")
 	ErrMetadataNotFound          = errors.New("metadata not found")
+	ErrMetadataNotDeleted        = errors.New("metadata item is not deleted")
+	ErrMetadataFolderDeleted     = errors.New("metadata item folder is deleted")
 	ErrMetadataConflict          = errors.New("metadata conflict: external identity already exists")
 	ErrCursorInvalid             = errors.New("pagination cursor is malformed or stale")
 	ErrInvalidInput              = errors.New("invalid input")
@@ -104,6 +108,21 @@ type MetadataItem struct {
 	DeletedAt      gorm.DeletedAt  `gorm:"index:idx_metadata_items_active_folder_id" json:"-"`
 }
 
+// FolderRestoreAuthorizationFact contains only the folder path required for
+// Access Core to evaluate a restore against current object grants.
+type FolderRestoreAuthorizationFact struct {
+	ID   string `json:"id"`
+	Path string `json:"path"`
+}
+
+// MetadataRestoreAuthorizationFact contains only the containing-folder
+// relationship required for Access Core to evaluate a restore.
+type MetadataRestoreAuthorizationFact struct {
+	ID         string `json:"id"`
+	FolderID   string `json:"folder_id"`
+	FolderPath string `json:"folder_path"`
+}
+
 // TableName maps MetadataItem to the Asset DB metadata_items table.
 func (MetadataItem) TableName() string {
 	return "metadata_items"
@@ -176,24 +195,28 @@ type AssetRepository interface {
 	GetFoldersByIDs(ctx context.Context, orgID string, folderIDs []string) ([]Folder, error)
 	GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]Folder, error)
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
+	GetFolderRestoreAuthorizationFact(ctx context.Context, orgID, folderID string) (FolderRestoreAuthorizationFact, error)
 	CreateFolder(ctx context.Context, orgID, userID string, input CreateFolderInput) (Folder, error)
 	UpdateFolder(ctx context.Context, orgID, userID, folderID string, input UpdateFolderInput) (Folder, error)
 	// MoveFolder updates the folder and its descendants' paths in a single transaction.
 	MoveFolder(ctx context.Context, orgID, userID, folderID string, input MoveFolderInput) (Folder, error)
-	// DeleteFolder hard-deletes an eligible folder and purges legacy tombstones in its subtree.
+	// DeleteFolder tombstones an eligible folder without physically deleting it.
 	DeleteFolder(ctx context.Context, orgID, userID, folderID string) error
+	RestoreFolder(ctx context.Context, orgID, userID, folderID string) (Folder, error)
 	EnsureRefs(ctx context.Context, userID, orgID string) error
 
 	// GetMetadataItemsByFolder returns active metadata only when the containing folder is active and org-scoped.
 	GetMetadataItemsByFolder(ctx context.Context, orgID, folderID string) ([]MetadataItem, error)
 	// GetMetadataItemByID returns one active metadata item through its org-scoped containing folder.
 	GetMetadataItemByID(ctx context.Context, orgID, id string) (MetadataItem, error)
+	GetMetadataRestoreAuthorizationFact(ctx context.Context, orgID, id string) (MetadataRestoreAuthorizationFact, error)
 	// CreateMetadataItem persists normalized metadata and audit shadow references atomically.
 	CreateMetadataItem(ctx context.Context, orgID, userID string, input CreateMetadataInput) (MetadataItem, error)
 	// UpdateMetadataItem applies sparse fields to a locked metadata row and preserves cross-field invariants.
 	UpdateMetadataItem(ctx context.Context, orgID, userID, id string, input UpdateMetadataInput) (MetadataItem, error)
-	// DeleteMetadataItem hard-deletes an active metadata item in the current organization.
+	// DeleteMetadataItem tombstones an active metadata item in the current organization.
 	DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error
+	RestoreMetadataItem(ctx context.Context, orgID, userID, id string) (MetadataItem, error)
 	// SearchMetadataItems returns active metadata items matching the filter within the organization.
 	SearchMetadataItems(ctx context.Context, orgID string, filter MetadataSearchFilter) ([]MetadataItem, error)
 
@@ -210,24 +233,28 @@ type AssetUsecase interface {
 	GetFoldersByIDs(ctx context.Context, orgID string, folderIDs []string) ([]Folder, error)
 	GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]Folder, error)
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
+	GetFolderRestoreAuthorizationFact(ctx context.Context, orgID, folderID string) (FolderRestoreAuthorizationFact, error)
 	CreateFolder(ctx context.Context, orgID, userID string, input CreateFolderInput) (Folder, error)
 	UpdateFolder(ctx context.Context, orgID, userID, folderID string, input UpdateFolderInput) (Folder, error)
 	// MoveFolder validates and applies a folder move, updating descendant paths.
 	MoveFolder(ctx context.Context, orgID, userID, folderID string, input MoveFolderInput) (Folder, error)
-	// DeleteFolder validates and hard-deletes an eligible folder.
+	// DeleteFolder validates and tombstones an eligible folder.
 	DeleteFolder(ctx context.Context, orgID, userID, folderID string) error
+	RestoreFolder(ctx context.Context, orgID, userID, folderID string) (Folder, error)
 	EnsureRefs(ctx context.Context, userID, orgID string) error
 
 	// GetMetadataItemsByFolder lists active metadata in an active org-scoped folder.
 	GetMetadataItemsByFolder(ctx context.Context, orgID, folderID string) ([]MetadataItem, error)
 	// GetMetadataItemByID loads one active org-scoped metadata item.
 	GetMetadataItemByID(ctx context.Context, orgID, id string) (MetadataItem, error)
+	GetMetadataRestoreAuthorizationFact(ctx context.Context, orgID, id string) (MetadataRestoreAuthorizationFact, error)
 	// CreateMetadataItem validates and creates text-only metadata.
 	CreateMetadataItem(ctx context.Context, orgID, userID string, input CreateMetadataInput) (MetadataItem, error)
 	// UpdateMetadataItem validates and applies a sparse metadata update.
 	UpdateMetadataItem(ctx context.Context, orgID, userID, id string, input UpdateMetadataInput) (MetadataItem, error)
-	// DeleteMetadataItem hard-deletes an org-scoped metadata item.
+	// DeleteMetadataItem tombstones an org-scoped metadata item.
 	DeleteMetadataItem(ctx context.Context, orgID, userID, id string) error
+	RestoreMetadataItem(ctx context.Context, orgID, userID, id string) (MetadataItem, error)
 	// SearchMetadataItems searches for metadata items based on the provided filter within the organization.
 	SearchMetadataItems(ctx context.Context, orgID string, filter MetadataSearchFilter) ([]MetadataItem, error)
 

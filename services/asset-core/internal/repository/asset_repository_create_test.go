@@ -88,7 +88,7 @@ func TestCreateFolder_Child_Success(t *testing.T) {
 	mock.ExpectExec("^INSERT INTO organization_ref").WillReturnResult(sqlmock.NewResult(1, 1))
 
 	// Parent load
-	mock.ExpectQuery("^SELECT \\* FROM \"folders\" WHERE \\(org_id = \\$1 AND path = \\$2\\) AND \"folders\".\"deleted_at\" IS NULL ORDER BY \"folders\".\"id\" LIMIT \\$3 FOR UPDATE$").
+	mock.ExpectQuery(`(?s)^SELECT \* FROM "folders".*deleted_ancestor.*ORDER BY "folders"."id" LIMIT \$3 FOR UPDATE$`).
 		WithArgs(orgID, parentPath, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow("parent-id", parentPath))
 
