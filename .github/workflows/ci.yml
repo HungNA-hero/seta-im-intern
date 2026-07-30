@@ -115,3 +115,7 @@ jobs:
         env:
           COMPOSE_PROJECT_NAME: seta-ci-events-${{ github.run_id }}-${{ github.run_attempt }}
         run: bash ./scripts/ci/event-model-scenario.sh
+      - name: Run event backlog recovery regression
+        env:
+          COMPOSE_PROJECT_NAME: seta-ci-event-backlog-${{ github.run_id }}-${{ github.run_attempt }}
+        run: bash ./scripts/ci/event-backlog-recovery-scenario.sh
