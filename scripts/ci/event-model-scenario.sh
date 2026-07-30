@@ -2,6 +2,28 @@
 # Exercises event-model metrics against a disposable, uniquely named Compose project.
 set -euo pipefail
 
+require_command() {
+    local command_name="$1"
+    if command -v "$command_name" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    echo "Missing required command: $command_name" >&2
+    if [[ "$command_name" == "jq" ]]; then
+        echo "On Ubuntu/Debian: sudo apt-get install -y jq" >&2
+    fi
+    exit 127
+}
+
+for command_name in docker curl jq; do
+    require_command "$command_name"
+done
+
+if ! docker compose version >/dev/null 2>&1; then
+    echo "Docker Compose v2 is required (docker compose)." >&2
+    exit 127
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PROJECT_NAME="${COMPOSE_PROJECT_NAME:-seta-event-model-$$}"
