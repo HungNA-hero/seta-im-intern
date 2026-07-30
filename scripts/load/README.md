@@ -68,8 +68,14 @@ Available scenarios:
 - `cursor-search`: cursor-based metadata search.
 - `fixed-request-count`: exactly `TOTAL_REQUESTS` HTTP requests at the requested
   arrival rate; the run fails if the observed request count differs.
-- `breaker-recovery`: validates failure containment and actual recovery; it is
-  expected to fail unless Asset Core is interrupted and restored during the run.
+- `breaker-recovery`: exploratory sustained-load recovery check; it is expected
+  to fail unless Asset Core is interrupted and restored during the run.
+
+The k6 scenario is not the regression proof for the breaker state machine.
+`bash scripts/ci/circuit-breaker-scenario.sh` uses the fault-only Toxiproxy
+fixture to deterministically exercise timeout trip, open fail-closed/no-I/O,
+one half-open probe, recovery, and reset while writing evidence under
+`.cache/ci/circuit-breaker/`.
 
 ## Exercise circuit-breaker recovery
 
@@ -94,6 +100,26 @@ docker compose -f infra/docker-compose.yml start asset-core
 The scenario passes only if it observes at least one safe `INTERNAL_ERROR` and
 then a successful response from the same virtual user. A fully healthy run and
 an all-error run both fail their thresholds, preventing false recovery claims.
+Stopping the container produces a fast connection refusal, so use the automated
+Toxiproxy scenario when validating the three-second dependency deadline or exact
+breaker state transitions.
+
+## Qualify the deterministic fault scenario
+
+The `Circuit-breaker fault candidate` CI job runs only on `main` and manual CI
+dispatches and is non-blocking. The manual `Circuit-breaker fault qualification`
+workflow runs 20 isolated copies and aggregates their JSON evidence.
+
+Promotion to the fast pull-request gate requires all of the following from one
+qualification workflow:
+
+- 20 first-attempt passes against one commit;
+- all seven named paths passing in every report;
+- no scenario timeout or retry;
+- total-runtime p95 at or below five minutes.
+
+If any condition fails, keep the check in the non-blocking main/manual tier,
+correct the fault fixture or orchestration, and restart qualification from zero.
 
 ## Stop the stack
 

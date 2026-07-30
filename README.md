@@ -61,6 +61,13 @@ and a disposable production-Compose startup with both Flyway migration sets and
 health checks. The workflow does not deploy, publish images, or use production
 secrets.
 
+The controlled Toxiproxy circuit-breaker scenario is deliberately outside the
+pull-request gate while it qualifies. It runs as a non-blocking candidate on
+`main` or manual CI dispatches; the separate manual qualification workflow
+requires 20 clean first-attempt runs with total-runtime p95 at or below five
+minutes before a later change may promote it to pull requests. See
+[scripts/load/README.md](scripts/load/README.md) for its evidence contract.
+
 The local equivalent of the service-quality jobs is still:
 
 ```bash
