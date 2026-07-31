@@ -1,0 +1,25 @@
+services:
+  access-core:
+    environment:
+      GO_ASSET_URL: http://toxiproxy:18080
+      METRICS_ENABLED: "true"
+
+  asset-core:
+    environment:
+      METRICS_ENABLED: "true"
+
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.12.0
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-toxiproxy
+    command:
+      - -host=0.0.0.0
+      - -config=/config/toxiproxy.json
+      - -proxy-metrics
+    volumes:
+      - ./toxiproxy-asset.json:/config/toxiproxy.json:ro
+    ports:
+      - "${TOXIPROXY_API_PORT:-8474}:8474"
+    depends_on:
+      asset-core:
+        condition: service_healthy
+

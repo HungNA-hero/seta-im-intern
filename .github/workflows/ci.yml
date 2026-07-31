@@ -119,3 +119,48 @@ jobs:
         env:
           COMPOSE_PROJECT_NAME: seta-ci-event-backlog-${{ github.run_id }}-${{ github.run_attempt }}
         run: bash ./scripts/ci/event-backlog-recovery-scenario.sh
+
+  circuit-breaker-candidate:
+    name: Circuit-breaker fault candidate
+    if: github.event_name != 'pull_request'
+    continue-on-error: true
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    env:
+      COMPOSE_PROJECT_NAME: seta-ci-breaker-${{ github.run_id }}-${{ github.run_attempt }}
+      CIRCUIT_BREAKER_EVIDENCE_FILE: .cache/ci/circuit-breaker/evidence.json
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run controlled circuit-breaker fault scenario
+        run: bash ./scripts/ci/circuit-breaker-scenario.sh
+      - name: Publish circuit-breaker evidence summary
+        if: always()
+        run: |
+          if [[ -f "$CIRCUIT_BREAKER_EVIDENCE_FILE" ]]; then
+            {
+              echo "## Circuit-breaker candidate"
+              echo
+              echo "- Result: $(jq --raw-output '.overall' "$CIRCUIT_BREAKER_EVIDENCE_FILE")"
+              echo "- Commit: $(jq --raw-output '.commit_sha' "$CIRCUIT_BREAKER_EVIDENCE_FILE")"
+              echo "- Runtime: $(jq --raw-output '(.duration_ms / 1000 | tostring) + " seconds"' "$CIRCUIT_BREAKER_EVIDENCE_FILE")"
+              echo
+              echo "| Path | Result | Duration (ms) |"
+              echo "|---|---:|---:|"
+              jq --raw-output \
+                '.paths | to_entries[] |
+                 "| \(.key) | \(.value.status) | \(.value.duration_ms) |"' \
+                "$CIRCUIT_BREAKER_EVIDENCE_FILE"
+            } >>"$GITHUB_STEP_SUMMARY"
+          else
+            echo "Circuit-breaker scenario produced no evidence file." >>"$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+      - name: Upload circuit-breaker evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: circuit-breaker-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cache/ci/circuit-breaker/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30

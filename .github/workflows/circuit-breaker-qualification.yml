@@ -1,0 +1,114 @@
+name: Circuit-breaker fault qualification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: circuit-breaker-qualification
+  cancel-in-progress: false
+
+jobs:
+  fault-run:
+    name: Fault run ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        shard:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          - 9
+          - 10
+          - 11
+          - 12
+          - 13
+          - 14
+          - 15
+          - 16
+          - 17
+          - 18
+          - 19
+          - 20
+    env:
+      COMPOSE_PROJECT_NAME: seta-cb-q-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+      QUALIFICATION_SHARD: ${{ matrix.shard }}
+      CIRCUIT_BREAKER_RUN_DIRECTORY: .cache/qualification/run-${{ matrix.shard }}
+      CIRCUIT_BREAKER_EVIDENCE_FILE: .cache/qualification/evidence-${{ matrix.shard }}.json
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run isolated fault scenario
+        run: bash ./scripts/ci/circuit-breaker-scenario.sh
+      - name: Upload run evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: circuit-breaker-evidence-${{ matrix.shard }}
+          path: .cache/qualification/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
+
+  qualify:
+    name: Aggregate qualification evidence
+    if: always()
+    needs: fault-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download run evidence
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: circuit-breaker-evidence-*
+          path: .cache/qualification/evidence
+      - name: Apply stability and runtime gates
+        env:
+          CIRCUIT_BREAKER_QUALIFICATION_SUMMARY: .cache/qualification/summary.json
+          EXPECTED_QUALIFICATION_RUNS: "20"
+          CIRCUIT_BREAKER_P95_BUDGET_MS: "300000"
+        run: bash ./scripts/ci/summarize-circuit-breaker-evidence.sh .cache/qualification/evidence
+      - name: Publish qualification summary
+        if: always()
+        run: |
+          if [[ -f .cache/qualification/summary.json ]]; then
+            {
+              echo "## Circuit-breaker qualification"
+              echo
+              echo "- Qualified: $(jq --raw-output '.qualified' .cache/qualification/summary.json)"
+              echo "- Tested commit: $(jq --raw-output '.tested_commit' .cache/qualification/summary.json)"
+              echo "- Clean runs: $(jq --raw-output '.report_count' .cache/qualification/summary.json)/$(jq --raw-output '.expected_runs' .cache/qualification/summary.json)"
+              echo "- Runtime p95: $(jq --raw-output '(.p95_runtime_ms / 1000 | tostring) + " seconds"' .cache/qualification/summary.json)"
+              echo "- Fast-tier budget: $(jq --raw-output '(.p95_budget_ms / 1000 | tostring) + " seconds"' .cache/qualification/summary.json)"
+              echo "- Reason: $(jq --raw-output '.reason // "all gates passed"' .cache/qualification/summary.json)"
+              echo
+              echo "| Path | Passed | Failed |"
+              echo "|---|---:|---:|"
+              jq --raw-output \
+                '.path_totals | to_entries[] |
+                 "| \(.key) | \(.value.passed) | \(.value.failed) |"' \
+                .cache/qualification/summary.json
+            } >>"$GITHUB_STEP_SUMMARY"
+          else
+            echo "Qualification produced no summary." >>"$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+      - name: Upload qualification aggregate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: circuit-breaker-qualification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cache/qualification/summary.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
