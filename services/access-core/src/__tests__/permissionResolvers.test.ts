@@ -90,22 +90,16 @@ describe("Mutation.grantObjectPermission", () => {
       makeCtx(),
     );
 
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "manage_permissions",
-      "folder",
-      "folder-1",
-      "org-1",
-    );
-    expect(mockGrant).toHaveBeenCalledWith(
-      "org-1",
-      "folder",
-      "folder-1",
-      "read",
-      "user-1",
-      "grantee-1",
-      undefined,
-    );
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "manage_permissions", "folder", "folder-1", "org-1");
+    expect(mockGrant).toHaveBeenCalledWith({
+      orgId: "org-1",
+      resourceType: "folder",
+      resourceId: "folder-1",
+      action: "read",
+      grantedBy: "user-1",
+      granteeUserId: "grantee-1",
+      granteeRoleId: undefined,
+    });
     expect(result).toMatchObject({ id: "perm-1", grantedBy: "user-1" });
   });
 
@@ -116,15 +110,15 @@ describe("Mutation.grantObjectPermission", () => {
       makeCtx(),
     );
 
-    expect(mockGrant).toHaveBeenCalledWith(
-      "org-1",
-      "folder",
-      "folder-1",
-      "read",
-      "user-1",
-      undefined,
-      "role-1",
-    );
+    expect(mockGrant).toHaveBeenCalledWith({
+      orgId: "org-1",
+      resourceType: "folder",
+      resourceId: "folder-1",
+      action: "read",
+      grantedBy: "user-1",
+      granteeUserId: undefined,
+      granteeRoleId: "role-1",
+    });
   });
 
   test("records the authenticated caller as grantor, not a client value", async () => {
@@ -134,21 +128,15 @@ describe("Mutation.grantObjectPermission", () => {
       makeCtx({ userId: "caller-9" }),
     );
 
-    expect(mockGrant.mock.calls[0][4]).toBe("caller-9");
+    expect(mockGrant.mock.calls[0][0].grantedBy).toBe("caller-9");
   });
 
   test("throws FORBIDDEN and does not grant when canDo denies", async () => {
     mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "no object permission" });
 
     await expect(
-      permissionResolvers.Mutation.grantObjectPermission(
-        undefined,
-        { ...base, granteeUserId: "grantee-1" },
-        makeCtx(),
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
-    );
+      permissionResolvers.Mutation.grantObjectPermission(undefined, { ...base, granteeUserId: "grantee-1" }, makeCtx()),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "FORBIDDEN" } }));
 
     expect(mockGrant).not.toHaveBeenCalled();
   });
@@ -160,21 +148,13 @@ describe("Mutation.grantObjectPermission", () => {
         { ...base, granteeUserId: "grantee-1", granteeRoleId: "role-1" },
         makeCtx(),
       ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "GRANT_INVALID_TARGET" } }),
-    );
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "GRANT_INVALID_TARGET" } }));
 
     expect(mockGrant).not.toHaveBeenCalled();
   });
 
   test("throws GRANT_INVALID_TARGET when neither grantee field is set", async () => {
-    await expect(
-      permissionResolvers.Mutation.grantObjectPermission(
-        undefined,
-        { ...base },
-        makeCtx(),
-      ),
-    ).rejects.toThrow(
+    await expect(permissionResolvers.Mutation.grantObjectPermission(undefined, { ...base }, makeCtx())).rejects.toThrow(
       expect.objectContaining({ extensions: { code: "GRANT_INVALID_TARGET" } }),
     );
 
@@ -189,26 +169,15 @@ describe("Mutation.grantObjectPermission", () => {
     );
 
     expect(mockIsActiveOrgMember).toHaveBeenCalledWith("org-1", "grantee-1");
-    expect(mockAssertResourceInOrg).toHaveBeenCalledWith(
-      "folder",
-      "folder-1",
-      "org-1",
-      "user-1",
-    );
+    expect(mockAssertResourceInOrg).toHaveBeenCalledWith("folder", "folder-1", "org-1", "user-1");
   });
 
   test("throws BAD_USER_INPUT and does not grant when grantee is not an active org member", async () => {
     mockIsActiveOrgMember.mockResolvedValueOnce(false);
 
     await expect(
-      permissionResolvers.Mutation.grantObjectPermission(
-        undefined,
-        { ...base, granteeUserId: "outsider" },
-        makeCtx(),
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
-    );
+      permissionResolvers.Mutation.grantObjectPermission(undefined, { ...base, granteeUserId: "outsider" }, makeCtx()),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }));
 
     expect(mockAssertResourceInOrg).toHaveBeenCalled();
     expect(mockGrant).not.toHaveBeenCalled();
@@ -223,9 +192,7 @@ describe("Mutation.grantObjectPermission", () => {
         { ...base, granteeRoleId: "role-other-org" },
         makeCtx(),
       ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
-    );
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }));
 
     expect(mockAssertResourceInOrg).toHaveBeenCalled();
     expect(mockGrant).not.toHaveBeenCalled();
@@ -250,14 +217,8 @@ describe("Mutation.grantObjectPermission", () => {
     );
 
     await expect(
-      permissionResolvers.Mutation.grantObjectPermission(
-        undefined,
-        { ...base, granteeUserId: "grantee-1" },
-        makeCtx(),
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FOLDER_NOT_FOUND" } }),
-    );
+      permissionResolvers.Mutation.grantObjectPermission(undefined, { ...base, granteeUserId: "grantee-1" }, makeCtx()),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "FOLDER_NOT_FOUND" } }));
 
     expect(mockGrant).not.toHaveBeenCalled();
   });
@@ -266,14 +227,8 @@ describe("Mutation.grantObjectPermission", () => {
     mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "denied" });
 
     await expect(
-      permissionResolvers.Mutation.grantObjectPermission(
-        undefined,
-        { ...base, granteeUserId: "grantee-1" },
-        makeCtx(),
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
-    );
+      permissionResolvers.Mutation.grantObjectPermission(undefined, { ...base, granteeUserId: "grantee-1" }, makeCtx()),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "FORBIDDEN" } }));
 
     expect(mockIsActiveOrgMember).not.toHaveBeenCalled();
     expect(mockAssertResourceInOrg).not.toHaveBeenCalled();
@@ -283,14 +238,8 @@ describe("Mutation.grantObjectPermission", () => {
     mockGrant.mockRejectedValueOnce({ code: "P2002" });
 
     await expect(
-      permissionResolvers.Mutation.grantObjectPermission(
-        undefined,
-        { ...base, granteeUserId: "grantee-1" },
-        makeCtx(),
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }),
-    );
+      permissionResolvers.Mutation.grantObjectPermission(undefined, { ...base, granteeUserId: "grantee-1" }, makeCtx()),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }));
   });
 });
 
@@ -298,19 +247,9 @@ describe("Mutation.revokeObjectPermission", () => {
   test("authorized grantor removes exactly the targeted direct grant", async () => {
     mockGetById.mockResolvedValueOnce(makeGrantRow({ id: "perm-1" }));
 
-    const result = await permissionResolvers.Mutation.revokeObjectPermission(
-      undefined,
-      { id: "perm-1" },
-      makeCtx(),
-    );
+    const result = await permissionResolvers.Mutation.revokeObjectPermission(undefined, { id: "perm-1" }, makeCtx());
 
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "manage_permissions",
-      "folder",
-      "folder-1",
-      "org-1",
-    );
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "manage_permissions", "folder", "folder-1", "org-1");
     expect(mockRevoke).toHaveBeenCalledTimes(1);
     expect(mockRevoke).toHaveBeenCalledWith("perm-1");
     expect(result).toBe(true);
@@ -320,14 +259,8 @@ describe("Mutation.revokeObjectPermission", () => {
     mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "no object permission" });
 
     await expect(
-      permissionResolvers.Mutation.revokeObjectPermission(
-        undefined,
-        { id: "perm-1" },
-        makeCtx(),
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
-    );
+      permissionResolvers.Mutation.revokeObjectPermission(undefined, { id: "perm-1" }, makeCtx()),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "FORBIDDEN" } }));
 
     expect(mockRevoke).not.toHaveBeenCalled();
   });
@@ -336,14 +269,8 @@ describe("Mutation.revokeObjectPermission", () => {
     mockGetById.mockResolvedValueOnce(null);
 
     await expect(
-      permissionResolvers.Mutation.revokeObjectPermission(
-        undefined,
-        { id: "missing" },
-        makeCtx(),
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "GRANT_NOT_FOUND" } }),
-    );
+      permissionResolvers.Mutation.revokeObjectPermission(undefined, { id: "missing" }, makeCtx()),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "GRANT_NOT_FOUND" } }));
 
     expect(mockCanDo).not.toHaveBeenCalled();
     expect(mockRevoke).not.toHaveBeenCalled();
@@ -358,9 +285,7 @@ describe("Mutation.revokeObjectPermission", () => {
         { id: "perm-1" },
         makeCtx({ currentOrgId: "org-1" }),
       ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
-    );
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "FORBIDDEN" } }));
 
     expect(mockCanDo).not.toHaveBeenCalled();
     expect(mockRevoke).not.toHaveBeenCalled();
@@ -368,14 +293,8 @@ describe("Mutation.revokeObjectPermission", () => {
 
   test("throws UNAUTHENTICATED when the caller is not authenticated", async () => {
     await expect(
-      permissionResolvers.Mutation.revokeObjectPermission(
-        undefined,
-        { id: "perm-1" },
-        makeCtx({ userId: null }),
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "UNAUTHENTICATED" } }),
-    );
+      permissionResolvers.Mutation.revokeObjectPermission(undefined, { id: "perm-1" }, makeCtx({ userId: null })),
+    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "UNAUTHENTICATED" } }));
 
     expect(mockGetById).not.toHaveBeenCalled();
     expect(mockRevoke).not.toHaveBeenCalled();
