@@ -10,15 +10,8 @@ function insertDashes(segment: string): string {
   ].join("-");
 }
 
-/**
- * Folder ltree labels are the folder's UUID with dashes stripped
- * (see asset-core's path construction). Ancestor UUIDs are recovered by
- * splitting on "." and dropping the last segment (self).
- */
 export function ancestorIdsFromPath(path: string): string[] {
   const segments = path.split(".");
   segments.pop();
-  return segments
-    .filter((segment) => segment.length === UUID_SEGMENT_LENGTH)
-    .map(insertDashes);
+  return segments.filter((segment) => segment.length === UUID_SEGMENT_LENGTH).map(insertDashes);
 }

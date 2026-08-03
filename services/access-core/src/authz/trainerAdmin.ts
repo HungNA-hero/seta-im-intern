@@ -8,13 +8,7 @@ export type TrainerAdminGateState =
 
 type TrainerAdminDecisionReason = TrainerAdminGateState["reason"] | "production";
 
-/**
- * Returns the runtime state of the temporary trainer-admin bypass.
- * The bypass is deliberately default-off and requires a future ISO-8601 expiry.
- */
-export function getTrainerAdminGateState(
-  now: Date = new Date(),
-): TrainerAdminGateState {
+export function getTrainerAdminGateState(now: Date = new Date()): TrainerAdminGateState {
   if (process.env.TRAINER_ADMIN_ENABLED !== "true") {
     return { enabled: false, reason: "disabled" };
   }
@@ -31,11 +25,7 @@ export function getTrainerAdminGateState(
   return { enabled: true, reason: "enabled" };
 }
 
-export function auditTrainerAdminDecision(
-  userId: string,
-  allowed: boolean,
-  reason: TrainerAdminDecisionReason,
-): void {
+export function auditTrainerAdminDecision(userId: string, allowed: boolean, reason: TrainerAdminDecisionReason): void {
   const correlation = getRequestCorrelation();
   process.stdout.write(
     `${JSON.stringify({

@@ -8,7 +8,7 @@ import {
   listFolderChildren,
   listFolderTree,
   moveFolder,
-	  restoreFolder,
+  restoreFolder,
   updateFolder,
 } from "../../usecase/folderUsecase";
 import {
@@ -23,44 +23,26 @@ import { selectionIncludesField } from "../selection";
 
 export const folderResolvers = {
   Query: {
-    folder: (
-      _: unknown,
-      { orgId, id }: { orgId: string; id: string },
-      ctx: GraphQLContext,
-    ) => getFolder(ctx, orgId, id),
+    folder: (_: unknown, { orgId, id }: { orgId: string; id: string }, ctx: GraphQLContext) =>
+      getFolder(ctx, orgId, id),
 
     folderTree: (
       _: unknown,
       { orgId, rootPath }: { orgId: string; rootPath?: string },
       ctx: GraphQLContext,
       info?: GraphQLResolveInfo,
-    ) =>
-      listFolderTree(
-        ctx,
-        orgId,
-        rootPath,
-        info === undefined || selectionIncludesField(info, "children"),
-      ),
+    ) => listFolderTree(ctx, orgId, rootPath, info === undefined || selectionIncludesField(info, "children")),
 
-    folderChildren: (
-      _: unknown,
-      { orgId, parentPath }: { orgId: string; parentPath: string },
-      ctx: GraphQLContext,
-    ) => listFolderChildren(ctx, orgId, parentPath),
+    folderChildren: (_: unknown, { orgId, parentPath }: { orgId: string; parentPath: string }, ctx: GraphQLContext) =>
+      listFolderChildren(ctx, orgId, parentPath),
 
-    folderDeletionJob: (
-      _: unknown,
-      { orgId, id }: { orgId: string; id: string },
-      ctx: GraphQLContext,
-    ) => getFolderDeletionJob(ctx, orgId, id),
+    folderDeletionJob: (_: unknown, { orgId, id }: { orgId: string; id: string }, ctx: GraphQLContext) =>
+      getFolderDeletionJob(ctx, orgId, id),
   },
 
   Folder: {
-    children: (
-      parent: FolderNode & { subtreeNodes?: FolderNode[] },
-      _: unknown,
-      ctx: GraphQLContext,
-    ) => childrenOf(ctx, parent),
+    children: (parent: FolderNode & { subtreeNodes?: FolderNode[] }, _: unknown, ctx: GraphQLContext) =>
+      childrenOf(ctx, parent),
   },
 
   Mutation: {
@@ -78,7 +60,7 @@ export const folderResolvers = {
         description?: string;
       },
       ctx: GraphQLContext,
-    ) => createFolder(ctx, orgId, name, parentPath, description),
+    ) => createFolder(ctx, orgId, { name, parentPath, description }),
 
     updateFolder: (
       _: unknown,
@@ -94,7 +76,7 @@ export const folderResolvers = {
         description?: string | null;
       },
       ctx: GraphQLContext,
-    ) => updateFolder(ctx, orgId, id, name, description),
+    ) => updateFolder(ctx, orgId, { id, name, description }),
 
     moveFolder: (
       _: unknown,
@@ -110,17 +92,11 @@ export const folderResolvers = {
       ctx: GraphQLContext,
     ) => moveFolder(ctx, orgId, id, destinationParentId),
 
-    deleteFolder: (
-      _: unknown,
-      { orgId, id }: { orgId: string; id: string },
-      ctx: GraphQLContext,
-    ) => deleteFolder(ctx, orgId, id),
+    deleteFolder: (_: unknown, { orgId, id }: { orgId: string; id: string }, ctx: GraphQLContext) =>
+      deleteFolder(ctx, orgId, id),
 
-    restoreFolder: (
-      _: unknown,
-      { orgId, id }: { orgId: string; id: string },
-      ctx: GraphQLContext,
-    ) => restoreFolder(ctx, orgId, id),
+    restoreFolder: (_: unknown, { orgId, id }: { orgId: string; id: string }, ctx: GraphQLContext) =>
+      restoreFolder(ctx, orgId, id),
 
     previewFolderDeletion: (
       _: unknown,
@@ -144,16 +120,10 @@ export const folderResolvers = {
       ctx: GraphQLContext,
     ) => confirmFolderDeletion(ctx, orgId, folderId, previewId, confirmationToken),
 
-    cancelFolderDeletion: (
-      _: unknown,
-      { orgId, id }: { orgId: string; id: string },
-      ctx: GraphQLContext,
-    ) => cancelFolderDeletionJob(ctx, orgId, id),
+    cancelFolderDeletion: (_: unknown, { orgId, id }: { orgId: string; id: string }, ctx: GraphQLContext) =>
+      cancelFolderDeletionJob(ctx, orgId, id),
 
-    retryFolderDeletion: (
-      _: unknown,
-      { orgId, id }: { orgId: string; id: string },
-      ctx: GraphQLContext,
-    ) => retryFolderDeletionJob(ctx, orgId, id),
+    retryFolderDeletion: (_: unknown, { orgId, id }: { orgId: string; id: string }, ctx: GraphQLContext) =>
+      retryFolderDeletionJob(ctx, orgId, id),
   },
 };

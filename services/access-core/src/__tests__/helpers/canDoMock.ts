@@ -1,21 +1,24 @@
 import type { Mock } from "vitest";
 
-export function createCanDoMock(
-  mockCanDo: Mock,
-  mockFilterAllowedResourceIds: Mock,
-) {
+export function createCanDoMock(mockCanDo: Mock, mockFilterAllowedResourceIds: Mock) {
   return {
     canDo: mockCanDo,
     canDoWithKnownAncestors: mockCanDo,
     filterAllowedResourceIds: mockFilterAllowedResourceIds,
-    filterVisible: async (
-      userId: string,
-      orgId: string,
-      action: string,
-      resourceType: string,
-      items: { id: string }[],
-      _getHierarchy?: (item: { id: string }) => unknown,
-    ) => {
+    filterVisible: async ({
+      userId,
+      orgId,
+      action,
+      resourceType,
+      items,
+    }: {
+      userId: string;
+      orgId: string;
+      action: string;
+      resourceType: string;
+      items: { id: string }[];
+      getHierarchy?: (item: { id: string }) => unknown;
+    }) => {
       const allowed = await mockFilterAllowedResourceIds(
         userId,
         orgId,
