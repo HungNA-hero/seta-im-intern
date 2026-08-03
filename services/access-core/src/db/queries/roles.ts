@@ -10,7 +10,7 @@ export type Role = {
   updatedAt: Date;
 };
 
-function toRole(r: {
+function toRole(role: {
   id: string;
   orgId: string;
   code: string;
@@ -20,13 +20,13 @@ function toRole(r: {
   updatedAt: Date;
 }): Role {
   return {
-    id: r.id,
-    orgId: r.orgId,
-    code: r.code,
-    name: r.name,
-    description: r.description,
-    createdAt: r.createdAt,
-    updatedAt: r.updatedAt,
+    id: role.id,
+    orgId: role.orgId,
+    code: role.code,
+    name: role.name,
+    description: role.description,
+    createdAt: role.createdAt,
+    updatedAt: role.updatedAt,
   };
 }
 
@@ -36,8 +36,8 @@ export async function listRolesByOrg(orgId: string): Promise<Role[]> {
 }
 
 export async function getRoleById(id: string): Promise<Role | null> {
-  const r = await prisma.role.findUnique({ where: { id } });
-  return r ? toRole(r) : null;
+  const role = await prisma.role.findUnique({ where: { id } });
+  return role ? toRole(role) : null;
 }
 
 export async function createRole(
@@ -46,8 +46,8 @@ export async function createRole(
   name: string,
   description?: string,
 ): Promise<Role> {
-  const r = await prisma.role.create({ data: { orgId, code, name, description } });
-  return toRole(r);
+  const role = await prisma.role.create({ data: { orgId, code, name, description } });
+  return toRole(role);
 }
 
 export async function updateRole(
@@ -55,9 +55,9 @@ export async function updateRole(
   name?: string,
   description?: string,
 ): Promise<Role> {
-  const r = await prisma.role.update({
+  const role = await prisma.role.update({
     where: { id },
     data: { name, description },
   });
-  return toRole(r);
+  return toRole(role);
 }
