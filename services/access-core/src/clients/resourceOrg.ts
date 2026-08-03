@@ -1,12 +1,6 @@
 import { GraphQLError } from "graphql";
 import { ResourceType } from "@prisma/client";
-import {
-  assetFetch,
-  assetPath,
-  throwGoError,
-  FOLDERS_PATH,
-  METADATA_PATH,
-} from "./assetClient";
+import { assetFetch, assetPath, throwAssetCoreError, FOLDERS_PATH, METADATA_PATH } from "./assetClient";
 
 const RESOURCE_PATHS: Record<ResourceType, string> = {
   folder: FOLDERS_PATH,
@@ -24,18 +18,18 @@ export async function assertResourceInOrg(
   orgId: string,
   userId: string,
 ): Promise<void> {
-  const resp = await assetFetch(
-    assetPath(RESOURCE_PATHS[resourceType], { orgId, id: resourceId }),
-    { userId, orgId },
-  );
+  const response = await assetFetch(assetPath(RESOURCE_PATHS[resourceType], { orgId, id: resourceId }), {
+    userId,
+    orgId,
+  });
 
-  if (resp.ok) return;
-  if (resp.status === 404) {
+  if (response.ok) return;
+  if (response.status === 404) {
     throw new GraphQLError("Resource not found in this organization", {
       extensions: {
         code: resourceType === "metadata_item" ? "METADATA_NOT_FOUND" : "FOLDER_NOT_FOUND",
       },
     });
   }
-  await throwGoError(resp);
+  await throwAssetCoreError(response);
 }

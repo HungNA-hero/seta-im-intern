@@ -1,21 +1,23 @@
-import './config';
-import { buildServer } from './server';
-import { assertRuntimeConfig, config } from './config';
-import { prisma }      from './db/prisma';
-import { registerGracefulShutdown } from './lifecycle';
-import { ServiceName } from './observability/serviceName';
-import { startCacheInvalidator } from './eventing/cacheInvalidator';
-import { closeRedisConsumerClient } from './cache/redisClient';
-import { disableAssetBreakerCapacityLog, shutdownAssetBreaker } from './clients/assetBreaker';
+import "./config";
+import { buildServer } from "./server";
+import { assertRuntimeConfig, config } from "./config";
+import { prisma } from "./db/prisma";
+import { registerGracefulShutdown } from "./lifecycle";
+import { ServiceName } from "./observability/serviceName";
+import { startCacheInvalidator } from "./eventing/cacheInvalidator";
+import { closeRedisConsumerClient } from "./cache/redisClient";
+import { disableAssetBreakerCapacityLog, shutdownAssetBreaker } from "./clients/assetBreaker";
 
 function logStartup(level: "info" | "warn" | "error", message: string, error?: unknown) {
-  process.stdout.write(`${JSON.stringify({
-    level,
-    service: ServiceName.ACCESS_CORE,
-    message,
-    error: error instanceof Error ? error.message : undefined,
-    timestamp: new Date().toISOString(),
-  })}\n`);
+  process.stdout.write(
+    `${JSON.stringify({
+      level,
+      service: ServiceName.ACCESS_CORE,
+      message,
+      error: error instanceof Error ? error.message : undefined,
+      timestamp: new Date().toISOString(),
+    })}\n`,
+  );
 }
 
 async function main() {
@@ -30,9 +32,6 @@ async function main() {
   const server = await buildServer();
   await server.listen({ port: config.port, host: config.host });
 
-  // Cross-service invalidation (folder.moved/folder.deleted -> epoch:asset
-  // bump) depends on this consumer running; without it, invalidation for
-  // those two event types falls back entirely to the ≤4s cache TTL.
   const cacheInvalidator = startCacheInvalidator();
 
   registerGracefulShutdown(

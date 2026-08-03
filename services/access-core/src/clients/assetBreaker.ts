@@ -29,6 +29,15 @@ export interface AssetBreakerHarness {
   shutdown(): void;
 }
 
+export interface AssetBreakerDependencies {
+  fetch(url: string, init: RequestInit): Promise<Response>;
+  recordMetric(name: Parameters<typeof incrementCounter>[0]): void;
+  log(level: "error" | "warn", event: string, fields?: Record<string, unknown>): void;
+  createDependencyError(): Error;
+  setTimer(callback: () => void, delayMs: number): NodeJS.Timeout;
+  clearTimer(timer: NodeJS.Timeout): void;
+}
+
 const DEFAULT_BREAKER_OPTIONS: AssetBreakerOptions = {
   enabled: true,
   errorThresholdPercentage: 50,
@@ -44,11 +53,7 @@ class AssetServerResponseError extends Error {
   }
 }
 
-function writeBreakerEvent(
-  level: "error" | "warn",
-  event: string,
-  fields: Record<string, unknown> = {},
-): void {
+function writeBreakerEvent(level: "error" | "warn", event: string, fields: Record<string, unknown> = {}): void {
   process.stderr.write(
     `${JSON.stringify({
       level,
@@ -60,68 +65,77 @@ function writeBreakerEvent(
   );
 }
 
-async function fetchWithDeadline(
+async function fetchWithDeadlineUsing(
   url: string,
   init: RequestInit,
+  dependencies: AssetBreakerDependencies,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), ASSET_FETCH_TIMEOUT_MS);
+  const timeout = dependencies.setTimer(() => controller.abort(), ASSET_FETCH_TIMEOUT_MS);
   try {
-    const response = await fetch(url, { ...init, signal: controller.signal });
+    const response = await dependencies.fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
     if (typeof (response as Response).arrayBuffer !== "function") {
       return response;
     }
     const body = await response.arrayBuffer();
-    return new Response(
-      NULL_BODY_STATUSES.has(response.status) && body.byteLength === 0
-        ? null
-        : body,
-      {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      },
-    );
+    return new Response(NULL_BODY_STATUSES.has(response.status) && body.byteLength === 0 ? null : body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
   } finally {
-    clearTimeout(timeout);
+    dependencies.clearTimer(timeout);
   }
 }
 
-function createController(options: AssetBreakerOptions): AssetBreakerHarness {
-  let inFlight = 0;
+interface CapacityRejectionReporter {
+  record(): void;
+  disable(): void;
+}
+
+function createCapacityRejectionReporter(dependencies: AssetBreakerDependencies): CapacityRejectionReporter {
   let capacityRejectedCount = 0;
   let capacityLogTimer: NodeJS.Timeout | undefined;
-  let capacityLoggingDisabled = false;
+  let disabled = false;
 
-  const recordCapacityRejection = (): void => {
-    incrementCounter("asset_breaker_capacity_rejected");
-    if (capacityLoggingDisabled) return;
-    capacityRejectedCount += 1;
-    if (capacityLogTimer) return;
-    capacityLogTimer = setTimeout(() => {
-      capacityLogTimer = undefined;
-      if (capacityLoggingDisabled) return;
-      const rejectedCount = capacityRejectedCount;
+  return {
+    record(): void {
+      dependencies.recordMetric("asset_breaker_capacity_rejected");
+      if (disabled) return;
+      capacityRejectedCount += 1;
+      if (capacityLogTimer) return;
+      capacityLogTimer = dependencies.setTimer(() => {
+        capacityLogTimer = undefined;
+        if (disabled) return;
+        const rejectedCount = capacityRejectedCount;
+        capacityRejectedCount = 0;
+        dependencies.log("warn", "asset_breaker_capacity_rejected_summary", {
+          rejectedCount,
+          windowMs: CAPACITY_LOG_WINDOW_MS,
+        });
+      }, CAPACITY_LOG_WINDOW_MS);
+      capacityLogTimer.unref();
+    },
+    disable(): void {
+      disabled = true;
+      if (capacityLogTimer) {
+        dependencies.clearTimer(capacityLogTimer);
+        capacityLogTimer = undefined;
+      }
       capacityRejectedCount = 0;
-      writeBreakerEvent("warn", "asset_breaker_capacity_rejected_summary", {
-        rejectedCount,
-        windowMs: CAPACITY_LOG_WINDOW_MS,
-      });
-    }, CAPACITY_LOG_WINDOW_MS);
-    capacityLogTimer.unref();
+    },
   };
+}
 
-  const disableCapacityLogging = (): void => {
-    capacityLoggingDisabled = true;
-    if (capacityLogTimer) {
-      clearTimeout(capacityLogTimer);
-      capacityLogTimer = undefined;
-    }
-    capacityRejectedCount = 0;
-  };
+function createController(options: AssetBreakerOptions, dependencies: AssetBreakerDependencies): AssetBreakerHarness {
+  let inFlight = 0;
+  const capacityReporter = createCapacityRejectionReporter(dependencies);
 
   const action = async (url: string, init: RequestInit): Promise<Response> => {
-    const response = await fetchWithDeadline(url, init);
+    const response = await fetchWithDeadlineUsing(url, init, dependencies);
     if (response.status >= 500) {
       throw new AssetServerResponseError(response);
     }
@@ -137,24 +151,23 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
   });
 
   breaker.on("open", () => {
-    incrementCounter("asset_breaker_open");
-    writeBreakerEvent("error", "asset_breaker_open");
+    dependencies.recordMetric("asset_breaker_open");
+    dependencies.log("error", "asset_breaker_open");
   });
   breaker.on("halfOpen", () => {
-    incrementCounter("asset_breaker_half_open");
-    writeBreakerEvent("warn", "asset_breaker_half_open");
+    dependencies.recordMetric("asset_breaker_half_open");
+    dependencies.log("warn", "asset_breaker_half_open");
   });
   breaker.on("close", () => {
-    incrementCounter("asset_breaker_close");
-    writeBreakerEvent("warn", "asset_breaker_close");
+    dependencies.recordMetric("asset_breaker_close");
+    dependencies.log("warn", "asset_breaker_close");
   });
-  breaker.on("reject", () => incrementCounter("asset_breaker_reject"));
+  breaker.on("reject", () => dependencies.recordMetric("asset_breaker_reject"));
 
-  const breakerOpenError = (): Error =>
-    internalDependencyError(getRequestCorrelation()?.traceId);
+  const breakerOpenError = (): Error => dependencies.createDependencyError();
 
   const rejectAsBreakerOpen = (): never => {
-    incrementCounter("asset_breaker_reject");
+    dependencies.recordMetric("asset_breaker_reject");
     throw breakerOpenError();
   };
 
@@ -166,8 +179,8 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
       rejectAsBreakerOpen();
     }
     if (inFlight >= options.capacity) {
-      recordCapacityRejection();
-      throw internalDependencyError(getRequestCorrelation()?.traceId);
+      capacityReporter.record();
+      throw dependencies.createDependencyError();
     }
   };
 
@@ -175,10 +188,7 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
     if (error instanceof AssetServerResponseError) {
       return error.response;
     }
-    if (
-      error instanceof Error &&
-      (error as Error & { code?: string }).code === "EOPENBREAKER"
-    ) {
+    if (error instanceof Error && (error as Error & { code?: string }).code === "EOPENBREAKER") {
       throw breakerOpenError();
     }
     throw error;
@@ -187,7 +197,7 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
   return {
     async fire(url: string, init: RequestInit): Promise<Response> {
       if (!options.enabled) {
-        return await fetchWithDeadline(url, init);
+        return await fetchWithDeadlineUsing(url, init, dependencies);
       }
 
       checkAdmission();
@@ -202,39 +212,46 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
     },
     snapshot(): AssetBreakerSnapshot {
       return {
-        state: breaker.halfOpen
-          ? "halfOpen"
-          : breaker.opened
-            ? "open"
-            : "closed",
+        state: breaker.halfOpen ? "halfOpen" : breaker.opened ? "open" : "closed",
         inFlight,
         stats: breaker.stats,
       };
     },
-    disableCapacityLogging,
+    disableCapacityLogging: () => capacityReporter.disable(),
     shutdown(): void {
-      disableCapacityLogging();
+      capacityReporter.disable();
       breaker.shutdown();
     },
   };
 }
 
+const defaultDependencies: AssetBreakerDependencies = {
+  fetch: (url, init) => fetch(url, init),
+  recordMetric: incrementCounter,
+  log: writeBreakerEvent,
+  createDependencyError: () => internalDependencyError(getRequestCorrelation()?.traceId),
+  setTimer: (callback, delayMs) => setTimeout(callback, delayMs),
+  clearTimer: (timer) => clearTimeout(timer),
+};
+
 function configuredOptions(): AssetBreakerOptions {
   return config.assetBreaker ?? DEFAULT_BREAKER_OPTIONS;
 }
 
-let assetBreaker = createController(configuredOptions());
+let assetBreaker = createController(configuredOptions(), defaultDependencies);
 
-export function createAssetBreakerForTests(
+export function createAssetBreaker(
   options: AssetBreakerOptions,
+  dependencies: AssetBreakerDependencies,
 ): AssetBreakerHarness {
-  return createController(options);
+  return createController(options, dependencies);
 }
 
-export function fireAssetRequest(
-  url: string,
-  init: RequestInit,
-): Promise<Response> {
+export function createAssetBreakerForTests(options: AssetBreakerOptions): AssetBreakerHarness {
+  return createController(options, defaultDependencies);
+}
+
+export function fireAssetRequest(url: string, init: RequestInit): Promise<Response> {
   return assetBreaker.fire(url, init);
 }
 
@@ -244,7 +261,7 @@ export function getAssetBreakerSnapshot(): AssetBreakerSnapshot {
 
 export function resetAssetBreakerForTests(): void {
   shutdownAssetBreaker();
-  assetBreaker = createController(configuredOptions());
+  assetBreaker = createController(configuredOptions(), defaultDependencies);
 }
 
 export function shutdownAssetBreaker(): void {

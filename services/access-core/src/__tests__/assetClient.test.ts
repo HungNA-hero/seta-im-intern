@@ -2,16 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { GraphQLError } from "graphql";
 
 vi.mock("../cache/factCache", () => ({
-  readFolderFactThrough: (
-    _orgId: string,
-    _id: string,
-    loader: () => Promise<unknown>,
-  ) => loader(),
-  readItemFactThrough: (
-    _orgId: string,
-    _id: string,
-    loader: () => Promise<unknown>,
-  ) => loader(),
+  readFolderFactThrough: (_orgId: string, _id: string, loader: () => Promise<unknown>) => loader(),
+  readItemFactThrough: (_orgId: string, _id: string, loader: () => Promise<unknown>) => loader(),
 }));
 
 import {
@@ -21,17 +13,14 @@ import {
   unwrapListEnvelope,
   unwrap204,
   snakeCaseKeys,
-  throwGoError,
+  throwAssetCoreError,
   getFolderMeta,
   getMetadataMeta,
   getFolderRestoreAuthorizationFact,
   getMetadataRestoreAuthorizationFact,
 } from "../clients/assetClient";
 import { config } from "../config";
-import {
-  createRequestCorrelation,
-  runWithRequestCorrelation,
-} from "../observability/requestContext";
+import { createRequestCorrelation, runWithRequestCorrelation } from "../observability/requestContext";
 
 describe("assetClient", () => {
   const mockFetch = vi.fn();
@@ -48,21 +37,15 @@ describe("assetClient", () => {
 
   describe("assetPath", () => {
     it("should format path with basic parameters", () => {
-      expect(assetPath("/test", { id: "123", active: true })).toBe(
-        "/test?id=123&active=true",
-      );
+      expect(assetPath("/test", { id: "123", active: true })).toBe("/test?id=123&active=true");
     });
 
     it("should omit undefined parameters", () => {
-      expect(
-        assetPath("/test", { id: "123", skip: undefined, active: true }),
-      ).toBe("/test?id=123&active=true");
+      expect(assetPath("/test", { id: "123", skip: undefined, active: true })).toBe("/test?id=123&active=true");
     });
 
     it("should format repeated array parameters", () => {
-      expect(assetPath("/test", { id: "123", label: ["a", "b c"] })).toBe(
-        "/test?id=123&label=a&label=b%20c",
-      );
+      expect(assetPath("/test", { id: "123", label: ["a", "b c"] })).toBe("/test?id=123&label=a&label=b%20c");
     });
   });
 
@@ -76,7 +59,7 @@ describe("assetClient", () => {
     });
   });
 
-  describe("throwGoError", () => {
+  describe("throwAssetCoreError", () => {
     it("preserves the trusted Asset Core error contract", async () => {
       const response = new Response(
         JSON.stringify({
@@ -91,7 +74,7 @@ describe("assetClient", () => {
         { status: 404 },
       );
 
-      await expect(throwGoError(response)).rejects.toMatchObject({
+      await expect(throwAssetCoreError(response)).rejects.toMatchObject({
         message: "Metadata item not found",
         extensions: {
           code: "METADATA_NOT_FOUND",
@@ -103,9 +86,7 @@ describe("assetClient", () => {
     });
 
     it("fails closed when the dependency response is malformed", async () => {
-      await expect(
-        throwGoError(new Response("gateway diagnostic", { status: 502 })),
-      ).rejects.toMatchObject({
+      await expect(throwAssetCoreError(new Response("gateway diagnostic", { status: 502 }))).rejects.toMatchObject({
         extensions: { code: "INTERNAL_ERROR", number: 1000 },
       });
     });
@@ -178,7 +159,7 @@ describe("assetClient", () => {
 
     it("fails closed when the dependency trace id is not canonical", async () => {
       await expect(
-        throwGoError(
+        throwAssetCoreError(
           new Response(
             JSON.stringify({
               error: {
@@ -203,9 +184,7 @@ describe("assetClient", () => {
         "x-request-id": "request-57",
       });
 
-      await runWithRequestCorrelation(correlation, () =>
-        assetFetch("/test", { userId: "u1", orgId: "o1" }),
-      );
+      await runWithRequestCorrelation(correlation, () => assetFetch("/test", { userId: "u1", orgId: "o1" }));
 
       expect(mockFetch).toHaveBeenCalledWith(`${config.goAssetUrl}/test`, {
         method: undefined,
@@ -223,41 +202,29 @@ describe("assetClient", () => {
 
   describe("unwrap functions", () => {
     it("should unwrap envelope successfully", async () => {
-      mockFetch.mockResolvedValue(
-        new Response(JSON.stringify({ data: { id: 1 } }), { status: 200 }),
-      );
+      mockFetch.mockResolvedValue(new Response(JSON.stringify({ data: { id: 1 } }), { status: 200 }));
       const res = await mockFetch();
       const val = await unwrapEnvelope(res, "data", (x) => x, "Err");
       expect(val).toEqual({ id: 1 });
     });
 
     it("should throw malformed envelope if key missing", async () => {
-      mockFetch.mockResolvedValue(
-        new Response(JSON.stringify({ wrong: 1 }), { status: 200 }),
-      );
+      mockFetch.mockResolvedValue(new Response(JSON.stringify({ wrong: 1 }), { status: 200 }));
       const res = await mockFetch();
-      await expect(
-        unwrapEnvelope(res, "data", (x) => x, "Err"),
-      ).rejects.toThrow("Err: unexpected response format");
+      await expect(unwrapEnvelope(res, "data", (x) => x, "Err")).rejects.toThrow("Err: unexpected response format");
     });
 
     it("should unwrap list envelope successfully", async () => {
-      mockFetch.mockResolvedValue(
-        new Response(JSON.stringify({ list: [{ id: 1 }] }), { status: 200 }),
-      );
+      mockFetch.mockResolvedValue(new Response(JSON.stringify({ list: [{ id: 1 }] }), { status: 200 }));
       const res = await mockFetch();
       const val = await unwrapListEnvelope(res, "list", (x) => x, "Err");
       expect(val).toEqual([{ id: 1 }]);
     });
 
     it("should throw malformed list envelope if not array", async () => {
-      mockFetch.mockResolvedValue(
-        new Response(JSON.stringify({ list: { id: 1 } }), { status: 200 }),
-      );
+      mockFetch.mockResolvedValue(new Response(JSON.stringify({ list: { id: 1 } }), { status: 200 }));
       const res = await mockFetch();
-      await expect(
-        unwrapListEnvelope(res, "list", (x) => x, "Err"),
-      ).rejects.toThrow("Err: unexpected response format");
+      await expect(unwrapListEnvelope(res, "list", (x) => x, "Err")).rejects.toThrow("Err: unexpected response format");
     });
 
     it("should handle 204 successfully", async () => {
@@ -292,21 +259,17 @@ describe("assetClient", () => {
     });
 
     it("fails closed for a malformed 500 response instead of resolving to null", async () => {
-      mockFetch.mockResolvedValue(
-        new Response(null, { status: 500, statusText: "Internal Error" }),
-      );
-      await expect(getFolderMeta("org-1", "user-1", "f1")).rejects.toMatchObject(
-        { extensions: { code: "INTERNAL_ERROR", number: 1000 } },
-      );
+      mockFetch.mockResolvedValue(new Response(null, { status: 500, statusText: "Internal Error" }));
+      await expect(getFolderMeta("org-1", "user-1", "f1")).rejects.toMatchObject({
+        extensions: { code: "INTERNAL_ERROR", number: 1000 },
+      });
     });
 
     it("fails closed for a malformed 403 response instead of resolving to null", async () => {
-      mockFetch.mockResolvedValue(
-        new Response(null, { status: 403, statusText: "Forbidden" }),
-      );
-      await expect(getFolderMeta("org-1", "user-1", "f1")).rejects.toMatchObject(
-        { extensions: { code: "INTERNAL_ERROR", number: 1000 } },
-      );
+      mockFetch.mockResolvedValue(new Response(null, { status: 403, statusText: "Forbidden" }));
+      await expect(getFolderMeta("org-1", "user-1", "f1")).rejects.toMatchObject({
+        extensions: { code: "INTERNAL_ERROR", number: 1000 },
+      });
     });
   });
 
@@ -328,12 +291,8 @@ describe("assetClient", () => {
     });
 
     it("fails closed for a malformed 500 response instead of resolving to null", async () => {
-      mockFetch.mockResolvedValue(
-        new Response(null, { status: 500, statusText: "Internal Error" }),
-      );
-      await expect(
-        getMetadataMeta("org-1", "user-1", "m1"),
-      ).rejects.toMatchObject({
+      mockFetch.mockResolvedValue(new Response(null, { status: 500, statusText: "Internal Error" }));
+      await expect(getMetadataMeta("org-1", "user-1", "m1")).rejects.toMatchObject({
         extensions: { code: "INTERNAL_ERROR", number: 1000 },
       });
     });
@@ -354,7 +313,9 @@ describe("assetClient", () => {
 
     it("decodes snake_case metadata restore facts without exposing them as public metadata", async () => {
       mockFetch.mockResolvedValue(
-        new Response(JSON.stringify({ fact: { id: "metadata-1", folder_id: "folder-1", folder_path: "root.child" } }), { status: 200 }),
+        new Response(JSON.stringify({ fact: { id: "metadata-1", folder_id: "folder-1", folder_path: "root.child" } }), {
+          status: 200,
+        }),
       );
 
       await expect(getMetadataRestoreAuthorizationFact("org-1", "user-1", "metadata-1")).resolves.toEqual({

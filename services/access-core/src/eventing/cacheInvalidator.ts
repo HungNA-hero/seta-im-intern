@@ -44,13 +44,6 @@ async function applyEffect(redis: Redis, event: AssetEventEnvelope): Promise<voi
   await applyLifecycleEffect(redis, CONSUMER_GROUP, PROCESSED_MARKER_TTL_SECONDS, event);
 }
 
-/**
- * Emits a structured, alert-level log line. There is no external alert
- * integration in this repo (see CLAUDE.md) — log-based alerting on this
- * `level: "error"` event is the alert surface for FR-013's dead-letter
- * requirement, matching the JSON logging convention used elsewhere
- * (see authz/trainerAdmin.ts).
- */
 function alertDlqEntry(messageId: string, event: AssetEventEnvelope | null): void {
   process.stderr.write(
     `${JSON.stringify({
@@ -81,32 +74,13 @@ async function processMessage(redis: Redis, messageId: string, fields: string[])
   await redis.xack(STREAM_KEY, CONSUMER_GROUP, messageId);
 }
 
-/**
- * Reclaims messages left pending past the visibility timeout (consumer
- * crashed mid-processing) and either retries or, past MAX_DELIVERIES,
- * dead-letters them.
- */
 export async function reclaimStalePending(redis: Redis): Promise<void> {
-  const pending = await redis.xpending(
-    STREAM_KEY,
-    CONSUMER_GROUP,
-    "IDLE",
-    CLAIM_IDLE_MS,
-    "-",
-    "+",
-    READ_COUNT,
-  );
+  const pending = await redis.xpending(STREAM_KEY, CONSUMER_GROUP, "IDLE", CLAIM_IDLE_MS, "-", "+", READ_COUNT);
   if (!Array.isArray(pending) || pending.length === 0) return;
 
   for (const entry of pending as unknown as [string, string, number, number][]) {
     const [messageId, , , deliveryCount] = entry;
-    const claimed = await redis.xclaim(
-      STREAM_KEY,
-      CONSUMER_GROUP,
-      CONSUMER_NAME,
-      CLAIM_IDLE_MS,
-      messageId,
-    );
+    const claimed = await redis.xclaim(STREAM_KEY, CONSUMER_GROUP, CONSUMER_NAME, CLAIM_IDLE_MS, messageId);
     const claimedEntry = (claimed as unknown as [string, string[]][])[0];
     if (!claimedEntry) continue;
     const [, fields] = claimedEntry;
@@ -118,10 +92,6 @@ export async function reclaimStalePending(redis: Redis): Promise<void> {
   }
 }
 
-/**
- * Reads and processes one batch from the consumer group. Exported
- * separately from the run loop so tests can drive it deterministically.
- */
 export async function processBatch(redis: Redis): Promise<number> {
   const response = await redis.xreadgroup(
     "GROUP",
@@ -145,12 +115,6 @@ export async function processBatch(redis: Redis): Promise<number> {
 
 let running = false;
 
-/**
- * Starts the cache-invalidator consumer loop. Fail-open: any error reading
- * or processing a batch is logged and the loop continues rather than
- * crashing the process — a stalled consumer is bounded by the decision/fact
- * TTL, not by keeping the service up.
- */
 const ERROR_BACKOFF_MS = 1000;
 
 function delay(ms: number): Promise<void> {
@@ -168,10 +132,6 @@ export function startCacheInvalidator(): { stop: () => void } {
         await reclaimStalePending(redis);
         await processBatch(redis);
       } catch {
-        // A rejected Redis command (e.g. the connection is down) resolves
-        // near-instantly, not after READ_BLOCK_MS — without this backoff
-        // the loop would spin as fast as the event loop allows, starving
-        // request handling for the whole outage. Bounded by cache TTL either way.
         await delay(ERROR_BACKOFF_MS);
       }
     }
