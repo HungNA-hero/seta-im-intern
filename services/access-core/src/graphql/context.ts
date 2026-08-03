@@ -4,18 +4,19 @@ import { prisma } from "../db/prisma";
 import { canDo } from "../authz/decision";
 import { setAuthzRequestContext } from "../authz/authzRequestContext";
 import { assertTemporaryTrainerAdmin } from "../authz/trainerAdmin";
+import { createRequestContextLoader, RequestContext } from "./requestContextLoader";
 
-export interface GraphQLContext {
-  userId: string | null;
-  currentOrgId: string | null;
-  isMember: boolean;
-  roles: string[];
-  olpEnabled: boolean;
+export interface GraphQLContext extends RequestContext {}
+
+export interface CanDoInput {
+  userId: string;
+  action: PermissionActionCode;
+  resourceType: ResourceType;
+  resourceId: string;
+  orgId: string | null;
 }
 
-export function assertAuthenticated(
-  ctx: GraphQLContext,
-): asserts ctx is GraphQLContext & { userId: string } {
+export function assertAuthenticated(ctx: GraphQLContext): asserts ctx is GraphQLContext & { userId: string } {
   if (!ctx.userId) {
     throw new GraphQLError("Unauthenticated", {
       extensions: { code: "UNAUTHENTICATED" },
@@ -66,20 +67,8 @@ export async function assertTrainerAdmin(ctx: GraphQLContext): Promise<void> {
  * @throws {GraphQLError} If the policy evaluation denies access.
  * Any unexpected exception from policy evaluation is propagated and masked by the server.
  */
-export async function assertCan(
-  userId: string,
-  action: PermissionActionCode,
-  resourceType: ResourceType,
-  resourceId: string,
-  orgId: string | null,
-): Promise<void> {
-  const { allowed, reason } = await canDo(
-    userId,
-    action,
-    resourceType,
-    resourceId,
-    orgId,
-  );
+export async function assertCan({ userId, action, resourceType, resourceId, orgId }: CanDoInput): Promise<void> {
+  const { allowed, reason } = await canDo(userId, action, resourceType, resourceId, orgId);
   if (!allowed) {
     throw new GraphQLError(reason ?? "Forbidden", {
       extensions: { code: "FORBIDDEN" },
@@ -89,76 +78,50 @@ export async function assertCan(
 
 export function assertOrgContext(ctx: GraphQLContext, orgId: string): void {
   if (ctx.currentOrgId !== orgId) {
-    throw new GraphQLError(
-      "Forbidden: orgId argument does not match the authenticated organization",
-      { extensions: { code: "FORBIDDEN" } },
-    );
+    throw new GraphQLError("Forbidden: orgId argument does not match the authenticated organization", {
+      extensions: { code: "FORBIDDEN" },
+    });
   }
 }
 
-function emptyContext(): GraphQLContext {
-  return {
-    userId: null,
-    currentOrgId: null,
-    isMember: false,
-    roles: [],
-    olpEnabled: false,
-  };
-}
+const requestContextLoader = createRequestContextLoader(
+  {
+    async findUser(userId, orgId) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: orgId
+          ? {
+              orgMembers: { where: { orgId } },
+              userRoles: {
+                where: { orgId },
+                include: { role: { select: { code: true } } },
+              },
+            }
+          : undefined,
+      });
+      if (!user) return null;
+      const scopedUser = user as typeof user & {
+        orgMembers?: unknown[];
+        userRoles?: Array<{ roleId: string; role: { code: string } }>;
+      };
+      return {
+        isActive: user.isActive,
+        isMember: (scopedUser.orgMembers?.length ?? 0) > 0,
+        roles: (scopedUser.userRoles ?? []).map((userRole) => ({
+          id: userRole.roleId,
+          code: userRole.role.code,
+        })),
+      };
+    },
+    async getOlpEnabled(orgId) {
+      return prisma.organization
+        .findUnique({ where: { id: orgId }, select: { olpEnabled: true } })
+        .then((organization) => organization?.olpEnabled ?? false);
+    },
+  },
+  { set: setAuthzRequestContext },
+);
 
-export async function loadRequestContext(
-  userId: string | null,
-  orgId: string | null,
-): Promise<GraphQLContext> {
-  if (!userId) return emptyContext();
-
-  if (!orgId) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.isActive) return emptyContext();
-    return {
-      userId,
-      currentOrgId: null,
-      isMember: false,
-      roles: [],
-      olpEnabled: false,
-    };
-  }
-
-  const [user, org] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        orgMembers: { where: { orgId } },
-        userRoles: {
-          where: { orgId },
-          include: { role: { select: { code: true } } },
-        },
-      },
-    }),
-    prisma.organization.findUnique({
-      where: { id: orgId },
-      select: { olpEnabled: true },
-    }),
-  ]);
-
-  if (!user || !user.isActive) return emptyContext();
-
-  const roles = user.userRoles.map((ur) => ur.role.code);
-  const olpEnabled = org?.olpEnabled ?? false;
-  setAuthzRequestContext({
-    userId,
-    orgId,
-    roleCodes: roles,
-    roleIds: user.userRoles.map((ur) => ur.roleId),
-    olpEnabled,
-    factMemo: new Map(),
-  });
-
-  return {
-    userId,
-    currentOrgId: orgId,
-    isMember: user.orgMembers.length > 0,
-    roles,
-    olpEnabled,
-  };
+export async function loadRequestContext(userId: string | null, orgId: string | null): Promise<GraphQLContext> {
+  return requestContextLoader.load(userId, orgId);
 }
