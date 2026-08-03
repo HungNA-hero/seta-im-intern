@@ -158,37 +158,44 @@ function createController(options: AssetBreakerOptions): AssetBreakerHarness {
     throw breakerOpenError();
   };
 
+  const checkAdmission = (): void => {
+    if (breaker.opened) {
+      rejectAsBreakerOpen();
+    }
+    if (breaker.halfOpen && !breaker.pendingClose) {
+      rejectAsBreakerOpen();
+    }
+    if (inFlight >= options.capacity) {
+      recordCapacityRejection();
+      throw internalDependencyError(getRequestCorrelation()?.traceId);
+    }
+  };
+
+  const normalizeBreakerError = (error: unknown): Response | never => {
+    if (error instanceof AssetServerResponseError) {
+      return error.response;
+    }
+    if (
+      error instanceof Error &&
+      (error as Error & { code?: string }).code === "EOPENBREAKER"
+    ) {
+      throw breakerOpenError();
+    }
+    throw error;
+  };
+
   return {
     async fire(url: string, init: RequestInit): Promise<Response> {
       if (!options.enabled) {
         return await fetchWithDeadline(url, init);
       }
 
-      if (breaker.opened) {
-        rejectAsBreakerOpen();
-      }
-      if (breaker.halfOpen && !breaker.pendingClose) {
-        rejectAsBreakerOpen();
-      }
-
-      if (inFlight >= options.capacity) {
-        recordCapacityRejection();
-        throw internalDependencyError(getRequestCorrelation()?.traceId);
-      }
+      checkAdmission();
       inFlight += 1;
       try {
         return await breaker.fire(url, init);
       } catch (error) {
-        if (error instanceof AssetServerResponseError) {
-          return error.response;
-        }
-        if (
-          error instanceof Error &&
-          (error as Error & { code?: string }).code === "EOPENBREAKER"
-        ) {
-          throw breakerOpenError();
-        }
-        throw error;
+        return normalizeBreakerError(error);
       } finally {
         inFlight -= 1;
       }
