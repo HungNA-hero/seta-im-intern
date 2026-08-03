@@ -1,15 +1,6 @@
 import { Client } from "pg";
 import type { FastifyInstance } from "fastify";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  test,
-  vi,
-} from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { prisma } from "../db/prisma";
 import { buildServer } from "../server";
 
@@ -90,34 +81,23 @@ async function queryGraphQL<T>(
 }
 
 /** Asserts a safe policy denial without exposing the internal decision reason. */
-function expectForbidden(
-  result: GraphQLResult<unknown>,
-  _expectedReason: string,
-): void {
+function expectForbidden(result: GraphQLResult<unknown>, _expectedReason: string): void {
   expect(result.errors?.[0]).toMatchObject({
     message: "The requested action is not permitted",
     extensions: { code: "FORBIDDEN" },
   });
-  expect(JSON.stringify(result.errors)).not.toMatch(
-    /prisma|postgres|database|sqlstate/i,
-  );
+  expect(JSON.stringify(result.errors)).not.toMatch(/prisma|postgres|database|sqlstate/i);
 }
 
 /** Returns the persisted folder name used to prove mutation or non-mutation. */
 async function readFolderName(): Promise<string> {
-  const result = await assetDb.query<{ name: string }>(
-    "SELECT name FROM folders WHERE id = $1",
-    [FOLDER_ID],
-  );
+  const result = await assetDb.query<{ name: string }>("SELECT name FROM folders WHERE id = $1", [FOLDER_ID]);
   expect(result.rows).toHaveLength(1);
   return result.rows[0].name;
 }
 
 /** Calls the protected folder mutation used by every policy matrix write case. */
-async function updateFolder(
-  userId: string,
-  name: string,
-): Promise<GraphQLResult<UpdateFolderResult>> {
+async function updateFolder(userId: string, name: string): Promise<GraphQLResult<UpdateFolderResult>> {
   return queryGraphQL<UpdateFolderResult>(
     `mutation($orgId: ID!, $id: ID!, $name: String!) {
        updateFolder(orgId: $orgId, id: $id, name: $name) { id name }
@@ -128,10 +108,7 @@ async function updateFolder(
 }
 
 /** Calls the protected metadata mutation used by the creator no-bypass case. */
-async function updateMetadata(
-  userId: string,
-  title: string,
-): Promise<GraphQLResult<UpdateMetadataResult>> {
+async function updateMetadata(userId: string, title: string): Promise<GraphQLResult<UpdateMetadataResult>> {
   return queryGraphQL<UpdateMetadataResult>(
     `mutation($orgId: ID!, $id: ID!, $input: UpdateMetadataInput!) {
        updateMetadata(orgId: $orgId, id: $id, input: $input) { id title }
@@ -217,12 +194,8 @@ async function resetAccessFixtures(): Promise<void> {
 
 /** Recreates the Asset DB target with deterministic state for each test. */
 async function resetTargetFolder(): Promise<void> {
-  await assetDb.query("DELETE FROM metadata_items WHERE id = $1", [
-    METADATA_ID,
-  ]);
-  await assetDb.query("DELETE FROM folders WHERE id = ANY($1::uuid[])", [
-    [FOLDER_ID, ANCESTOR_FOLDER_ID],
-  ]);
+  await assetDb.query("DELETE FROM metadata_items WHERE id = $1", [METADATA_ID]);
+  await assetDb.query("DELETE FROM folders WHERE id = ANY($1::uuid[])", [[FOLDER_ID, ANCESTOR_FOLDER_ID]]);
   await assetDb.query(
     `INSERT INTO folders (id, org_id, path, name, created_by, updated_by)
      VALUES
@@ -251,9 +224,7 @@ async function createTargetMetadata(): Promise<void> {
 
 beforeAll(async () => {
   assetDb = new Client({
-    connectionString:
-      process.env.ASSET_DB_URL ??
-      "postgresql://asset_user:asset_password@127.0.0.1:5433/asset_db",
+    connectionString: process.env.ASSET_DB_URL ?? "postgresql://asset_user:asset_password@127.0.0.1:5433/asset_db",
   });
   await assetDb.connect();
   app = await buildServer();
@@ -293,12 +264,8 @@ afterEach(async () => {
 afterAll(async () => {
   if (app) await app.close();
   await resetAccessFixtures();
-  await assetDb.query("DELETE FROM metadata_items WHERE id = $1", [
-    METADATA_ID,
-  ]);
-  await assetDb.query("DELETE FROM folders WHERE id = ANY($1::uuid[])", [
-    [FOLDER_ID, ANCESTOR_FOLDER_ID],
-  ]);
+  await assetDb.query("DELETE FROM metadata_items WHERE id = $1", [METADATA_ID]);
+  await assetDb.query("DELETE FROM folders WHERE id = ANY($1::uuid[])", [[FOLDER_ID, ANCESTOR_FOLDER_ID]]);
   await assetDb.end();
   await prisma.user.deleteMany({ where: { id: MISSING_MEMBERSHIP_USER } });
   await prisma.organization.deleteMany({ where: { id: OTHER_ORG_ID } });
@@ -456,9 +423,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     expect(await readFolderName()).toBe("Pre-revoke Edit");
 
     await revokePermission(permissionId);
-    expect(
-      await prisma.objectPermission.findUnique({ where: { id: permissionId } }),
-    ).toBeNull();
+    expect(await prisma.objectPermission.findUnique({ where: { id: permissionId } })).toBeNull();
 
     fetchSpy.mockClear();
     const denied = await updateFolder(USER_VIEWER, "Post-revoke Edit");
@@ -502,24 +467,15 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
 
   test("PM-10 creator status does not bypass RBAC or OLP policy", async () => {
     await createTargetMetadata();
-    await assetDb.query("UPDATE folders SET created_by = $1 WHERE id = $2", [
-      USER_VIEWER,
-      FOLDER_ID,
-    ]);
-    await assetDb.query(
-      "UPDATE metadata_items SET created_by = $1 WHERE id = $2",
-      [USER_VIEWER, METADATA_ID],
-    );
+    await assetDb.query("UPDATE folders SET created_by = $1 WHERE id = $2", [USER_VIEWER, FOLDER_ID]);
+    await assetDb.query("UPDATE metadata_items SET created_by = $1 WHERE id = $2", [USER_VIEWER, METADATA_ID]);
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
     const rbacFolder = await updateFolder(USER_VIEWER, "Creator Folder Edit");
     expectForbidden(rbacFolder, "no RBAC ceiling");
     expect(fetchSpy).not.toHaveBeenCalled();
 
-    const rbacMetadata = await updateMetadata(
-      USER_VIEWER,
-      "Creator Metadata Edit",
-    );
+    const rbacMetadata = await updateMetadata(USER_VIEWER, "Creator Metadata Edit");
     expectForbidden(rbacMetadata, "no RBAC ceiling");
     expect(fetchSpy).not.toHaveBeenCalled();
 
@@ -535,16 +491,12 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     expect(await readFolderName()).toBe(BASE_FOLDER_NAME);
 
     fetchSpy.mockClear();
-    const olpMetadata = await updateMetadata(
-      USER_VIEWER,
-      "Creator Metadata Edit",
-    );
+    const olpMetadata = await updateMetadata(USER_VIEWER, "Creator Metadata Edit");
     expectForbidden(olpMetadata, "no object permission");
     expect(fetchSpy).toHaveBeenCalledTimes(2);
-    const persisted = await assetDb.query<{ title: string }>(
-      "SELECT title FROM metadata_items WHERE id = $1",
-      [METADATA_ID],
-    );
+    const persisted = await assetDb.query<{ title: string }>("SELECT title FROM metadata_items WHERE id = $1", [
+      METADATA_ID,
+    ]);
     expect(persisted.rows[0].title).toBe(BASE_METADATA_TITLE);
   });
 
@@ -676,12 +628,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     const permissionCountBefore = await prisma.objectPermission.count();
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-    const result = await grantFolderPermission(
-      USER_VIEWER,
-      FOLDER_ID,
-      "read",
-      USER_ADMIN,
-    );
+    const result = await grantFolderPermission(USER_VIEWER, FOLDER_ID, "read", USER_ADMIN);
 
     expectForbidden(result, "no object permission");
     expect(fetchSpy).not.toHaveBeenCalled();

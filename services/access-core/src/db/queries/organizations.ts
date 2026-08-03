@@ -58,5 +58,12 @@ export async function roleBelongsToOrg(orgId: string, roleId: string): Promise<b
 
 export async function createOrganization(code: string, name: string): Promise<Organization> {
   const org = await prisma.organization.create({ data: { code, name } });
-  return { id: org.id, code: org.code, name: org.name, olpEnabled: org.olpEnabled, createdAt: org.createdAt, updatedAt: org.updatedAt };
+  return {
+    id: org.id,
+    code: org.code,
+    name: org.name,
+    olpEnabled: org.olpEnabled,
+    createdAt: org.createdAt,
+    updatedAt: org.updatedAt,
+  };
 }

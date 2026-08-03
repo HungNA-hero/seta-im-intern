@@ -40,21 +40,12 @@ export async function getRoleById(id: string): Promise<Role | null> {
   return role ? toRole(role) : null;
 }
 
-export async function createRole(
-  orgId: string,
-  code: string,
-  name: string,
-  description?: string,
-): Promise<Role> {
+export async function createRole(orgId: string, code: string, name: string, description?: string): Promise<Role> {
   const role = await prisma.role.create({ data: { orgId, code, name, description } });
   return toRole(role);
 }
 
-export async function updateRole(
-  id: string,
-  name?: string,
-  description?: string,
-): Promise<Role> {
+export async function updateRole(id: string, name?: string, description?: string): Promise<Role> {
   const role = await prisma.role.update({
     where: { id },
     data: { name, description },

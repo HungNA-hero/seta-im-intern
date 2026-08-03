@@ -1,36 +1,15 @@
 import { baseTypeDefs } from "./base";
-import {
-  folderMutationFields,
-  folderQueryFields,
-  folderTypeDefs,
-} from "./folder";
-import {
-  metadataMutationFields,
-  metadataQueryFields,
-  metadataTypeDefs,
-} from "./metadata";
+import { folderMutationFields, folderQueryFields, folderTypeDefs } from "./folder";
+import { metadataMutationFields, metadataQueryFields, metadataTypeDefs } from "./metadata";
 import {
   organizationCreateMutationFields,
   organizationMemberMutationFields,
   organizationQueryFields,
   organizationTypeDefs,
 } from "./organization";
-import {
-  permissionMutationFields,
-  permissionQueryFields,
-  permissionTypeDefs,
-} from "./permission";
-import {
-  roleAssignmentMutationFields,
-  roleDefinitionMutationFields,
-  roleQueryFields,
-  roleTypeDefs,
-} from "./role";
-import {
-  userMutationFields,
-  userQueryFields,
-  userTypeDefs,
-} from "./user";
+import { permissionMutationFields, permissionQueryFields, permissionTypeDefs } from "./permission";
+import { roleAssignmentMutationFields, roleDefinitionMutationFields, roleQueryFields, roleTypeDefs } from "./role";
+import { userMutationFields, userQueryFields, userTypeDefs } from "./user";
 
 const mutationFields = [
   userMutationFields,

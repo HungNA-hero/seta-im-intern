@@ -6,9 +6,14 @@ export const canDoResolvers = {
   Query: {
     canDo: async (
       _: unknown,
-      { action, resourceType, resourceId }: {
+      {
+        action,
+        resourceType,
+        resourceId,
+      }: {
         action: PermissionActionCode;
-        resourceType: ResourceType; resourceId: string;
+        resourceType: ResourceType;
+        resourceId: string;
       },
       ctx: GraphQLContext,
     ) => {

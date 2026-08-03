@@ -18,36 +18,23 @@ export function maskGraphQLError(error: unknown, fallbackMessage: string): Error
       cause?: unknown;
     };
     const code = candidate.extensions?.code;
-    if (
-      candidate.name === "GraphQLError" &&
-      typeof code === "string" &&
-      isKnownErrorCode(code)
-    ) {
+    if (candidate.name === "GraphQLError" && typeof code === "string" && isKnownErrorCode(code)) {
       const definition = getErrorDefinition(code);
       const service =
-        candidate.extensions?.service === ServiceName.ASSET_CORE
-          ? ServiceName.ASSET_CORE
-          : ServiceName.ACCESS_CORE;
-      const traceId =
-        candidate.extensions?.traceId ?? executionError?.extensions?.traceId;
-      const correlationTraceId =
-        isTraceId(traceId)
-          ? traceId
-          : getRequestCorrelation()?.traceId;
+        candidate.extensions?.service === ServiceName.ASSET_CORE ? ServiceName.ASSET_CORE : ServiceName.ACCESS_CORE;
+      const traceId = candidate.extensions?.traceId ?? executionError?.extensions?.traceId;
+      const correlationTraceId = isTraceId(traceId) ? traceId : getRequestCorrelation()?.traceId;
       recordRequestError(definition.code, definition.number);
-      return new GraphQLError(
-        definition.message || fallbackMessage,
-        {
-          nodes: executionError?.nodes,
-          path: executionError?.path,
-          extensions: {
-            code: definition.code,
-            number: definition.number,
-            traceId: correlationTraceId,
-            service,
-          },
+      return new GraphQLError(definition.message || fallbackMessage, {
+        nodes: executionError?.nodes,
+        path: executionError?.path,
+        extensions: {
+          code: definition.code,
+          number: definition.number,
+          traceId: correlationTraceId,
+          service,
         },
-      );
+      });
     }
     current = candidate.originalError ?? candidate.cause;
   }

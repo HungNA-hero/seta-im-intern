@@ -1,8 +1,5 @@
 import type { vi } from "vitest";
-import type {
-  AssetBreakerHarness,
-  AssetBreakerOptions,
-} from "../../clients/assetBreaker";
+import type { AssetBreakerHarness, AssetBreakerOptions } from "../../clients/assetBreaker";
 
 export function deferredResponse(): {
   promise: Promise<Response>;
@@ -15,9 +12,7 @@ export function deferredResponse(): {
   return { promise, resolve };
 }
 
-export function makeBreakerOptions(
-  overrides: Partial<AssetBreakerOptions> = {},
-): AssetBreakerOptions {
+export function makeBreakerOptions(overrides: Partial<AssetBreakerOptions> = {}): AssetBreakerOptions {
   return {
     enabled: true,
     errorThresholdPercentage: 50,
@@ -48,8 +43,7 @@ export function stalledBodyResponse(status = 200): {
   });
   return {
     response: new Response(stream, { status }),
-    push: (chunk: string) =>
-      streamController.enqueue(new TextEncoder().encode(chunk)),
+    push: (chunk: string) => streamController.enqueue(new TextEncoder().encode(chunk)),
     close: () => streamController.close(),
     fail: (error: Error) => streamController.error(error),
   };
@@ -61,9 +55,7 @@ export function stalledBodyResponse(status = 200): {
  * in-progress body read. Returns the mock implementation to hand to
  * `mockFetch.mockImplementationOnce(...)`.
  */
-export function abortableStalledBodyFetch(
-  status = 200,
-): (url: string, init: RequestInit) => Promise<Response> {
+export function abortableStalledBodyFetch(status = 200): (url: string, init: RequestInit) => Promise<Response> {
   return (_url: string, init: RequestInit) => {
     const stalled = stalledBodyResponse(status);
     init.signal?.addEventListener("abort", () => {
@@ -73,10 +65,7 @@ export function abortableStalledBodyFetch(
   };
 }
 
-export async function openBreaker(
-  harness: AssetBreakerHarness,
-  mockFetch: ReturnType<typeof vi.fn>,
-): Promise<void> {
+export async function openBreaker(harness: AssetBreakerHarness, mockFetch: ReturnType<typeof vi.fn>): Promise<void> {
   mockFetch.mockResolvedValue(new Response(null, { status: 503 }));
   await harness.fire("http://asset/failure-a", {});
   await harness.fire("http://asset/failure-b", {});

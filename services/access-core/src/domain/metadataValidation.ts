@@ -10,9 +10,7 @@ import { badUserInput } from "../errors/factories";
 
 const MAX_METADATA_PAGE_SIZE = 100;
 
-export function normalizeMetadataSearchInput(
-  input: MetadataSearchInput,
-): NormalizedMetadataSearchInput {
+export function normalizeMetadataSearchInput(input: MetadataSearchInput): NormalizedMetadataSearchInput {
   const normalized: NormalizedMetadataSearchInput = {
     limit: input.limit ?? 50,
     offset: input.offset ?? 0,
@@ -93,25 +91,16 @@ export function normalizeMetadataConnectionSearchInput(
     category: normalized.category,
     externalSource: normalized.externalSource,
     first: normalized.limit,
-    after:
-      input.after === undefined || input.after === null
-        ? undefined
-        : decodeMetadataCursor(input.after),
+    after: input.after === undefined || input.after === null ? undefined : decodeMetadataCursor(input.after),
   };
 }
 
-export function validateAndParseJsonString(
-  jsonString?: string | null,
-): Record<string, unknown> | null | undefined {
+export function validateAndParseJsonString(jsonString?: string | null): Record<string, unknown> | null | undefined {
   if (jsonString === undefined) return undefined;
   if (jsonString === null) return null;
   try {
     const parsed = JSON.parse(jsonString);
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      Array.isArray(parsed)
-    ) {
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
       throw badUserInput("metadataJson must be a JSON object string");
     }
     return parsed as Record<string, unknown>;

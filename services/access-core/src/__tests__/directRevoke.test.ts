@@ -27,9 +27,7 @@ describe.skipIf(!liveRedis)("direct revoke invalidates a cached decision (live R
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    mockPrisma.permissionAction.findMany.mockResolvedValue([
-      { code: "read", id: "action-read" },
-    ]);
+    mockPrisma.permissionAction.findMany.mockResolvedValue([{ code: "read", id: "action-read" }]);
     mockPrisma.user.findUnique.mockResolvedValue({
       id: userId,
       isActive: true,

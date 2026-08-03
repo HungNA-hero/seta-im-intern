@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAssetBreakerForTests } from "../clients/assetBreaker";
-import {
-  getMetricsSnapshotForTests,
-  resetMetricsForTests,
-} from "../cache/metrics";
+import { getMetricsSnapshotForTests, resetMetricsForTests } from "../cache/metrics";
 import {
   abortableStalledBodyFetch,
   deferredResponse,
@@ -41,9 +38,7 @@ describe("asset dependency breaker recovery", () => {
       const probe = harness.fire("http://asset/probe", {});
       await Promise.resolve();
 
-      await expect(
-        harness.fire("http://asset/concurrent", {}),
-      ).rejects.toMatchObject({
+      await expect(harness.fire("http://asset/concurrent", {})).rejects.toMatchObject({
         extensions: { code: "INTERNAL_ERROR", service: "access-core" },
       });
       expect(mockFetch).toHaveBeenCalledTimes(3);
@@ -69,9 +64,7 @@ describe("asset dependency breaker recovery", () => {
       mockFetch.mockClear();
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 503 }));
 
-      await expect(
-        harness.fire("http://asset/probe", {}),
-      ).resolves.toMatchObject({ status: 503 });
+      await expect(harness.fire("http://asset/probe", {})).resolves.toMatchObject({ status: 503 });
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(harness.snapshot().state).toBe("open");
     } finally {
@@ -100,9 +93,7 @@ describe("asset dependency breaker recovery", () => {
     // resetTimeoutMs matches config.ts's validated floor: strictly greater
     // than the fetch deadline (3000ms) plus its safety margin (500ms).
     const resetTimeoutMs = 3600;
-    const harness = createAssetBreakerForTests(
-      makeBreakerOptions({ volumeThreshold: 2, resetTimeoutMs }),
-    );
+    const harness = createAssetBreakerForTests(makeBreakerOptions({ volumeThreshold: 2, resetTimeoutMs }));
     try {
       // Admitted while closed. Left unresolved by the mock itself — it only
       // ever settles when the real fetch deadline aborts it, exactly like a
@@ -110,9 +101,11 @@ describe("asset dependency breaker recovery", () => {
       mockFetch.mockImplementationOnce(abortableStalledBodyFetch(200));
       const preOpenCall = harness.fire("http://asset/slow-legit", {});
       let preOpenSettled = false;
-      preOpenCall.catch(() => {}).finally(() => {
-        preOpenSettled = true;
-      });
+      preOpenCall
+        .catch(() => {})
+        .finally(() => {
+          preOpenSettled = true;
+        });
       await Promise.resolve();
 
       // Two concurrent failures open the breaker while the pre-open call is

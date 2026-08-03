@@ -51,9 +51,7 @@ describe("assertOrgMember", () => {
 
   test("throws FORBIDDEN when authenticated but not a member", () => {
     const ctx: GraphQLContext = { ...authedCtx, isMember: false };
-    expect(() => assertOrgMember(ctx)).toThrow(
-      expect.objectContaining({ extensions: { code: "FORBIDDEN" } }),
-    );
+    expect(() => assertOrgMember(ctx)).toThrow(expect.objectContaining({ extensions: { code: "FORBIDDEN" } }));
   });
 
   test("does not throw when authenticated and a member", () => {
@@ -112,7 +110,8 @@ describe("loadRequestContext", () => {
 
   test("returns full context for active org member", async () => {
     mockPrisma.user.findUnique.mockResolvedValue({
-      id: "u1", isActive: true,
+      id: "u1",
+      isActive: true,
       orgMembers: [{ id: "mem-1" }],
       userRoles: [{ role: { code: "org_admin" } }, { role: { code: "viewer" } }],
     });
@@ -126,7 +125,12 @@ describe("loadRequestContext", () => {
   });
 
   test("olpEnabled defaults to false when org not found", async () => {
-    mockPrisma.user.findUnique.mockResolvedValue({ id: "u1", isActive: true, orgMembers: [{ id: "mem-1" }], userRoles: [] });
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: "u1",
+      isActive: true,
+      orgMembers: [{ id: "mem-1" }],
+      userRoles: [],
+    });
     mockPrisma.organization.findUnique.mockResolvedValue(null);
     const ctx = await loadRequestContext("u1", "o1");
     expect(ctx.olpEnabled).toBe(false);
@@ -136,10 +140,22 @@ describe("loadRequestContext", () => {
     let userResolved = false;
     let orgResolved = false;
     mockPrisma.user.findUnique.mockImplementation(
-      () => new Promise((res) => setTimeout(() => { userResolved = true; res({ id: "u1", isActive: true, orgMembers: [], userRoles: [] }); }, 10)),
+      () =>
+        new Promise((res) =>
+          setTimeout(() => {
+            userResolved = true;
+            res({ id: "u1", isActive: true, orgMembers: [], userRoles: [] });
+          }, 10),
+        ),
     );
     mockPrisma.organization.findUnique.mockImplementation(
-      () => new Promise((res) => setTimeout(() => { orgResolved = true; res({ olpEnabled: false }); }, 10)),
+      () =>
+        new Promise((res) =>
+          setTimeout(() => {
+            orgResolved = true;
+            res({ olpEnabled: false });
+          }, 10),
+        ),
     );
     await loadRequestContext("u1", "o1");
     expect(userResolved).toBe(true);

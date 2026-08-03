@@ -33,9 +33,7 @@ describe.skipIf(!liveRedis)("folder move-out invalidates inherited decisions (li
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    mockPrisma.permissionAction.findMany.mockResolvedValue([
-      { code: "read", id: "action-read" },
-    ]);
+    mockPrisma.permissionAction.findMany.mockResolvedValue([{ code: "read", id: "action-read" }]);
     mockPrisma.user.findUnique.mockResolvedValue({
       id: userId,
       isActive: true,

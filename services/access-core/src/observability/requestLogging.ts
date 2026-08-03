@@ -2,11 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { ServiceName } from "./serviceName";
 import { recordHttpRequest } from "./prometheus";
 
-export function logRequestCompletion(
-  request: FastifyRequest,
-  reply: FastifyReply,
-  metricsEnabled: boolean,
-): void {
+export function logRequestCompletion(request: FastifyRequest, reply: FastifyReply, metricsEnabled: boolean): void {
   const correlation = request.correlation;
   const result =
     correlation.errorCode !== undefined

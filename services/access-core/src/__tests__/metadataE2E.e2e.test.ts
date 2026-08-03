@@ -1,14 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { Client } from "pg";
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  test,
-  vi,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { createCanDoMock } from "./helpers/canDoMock";
 import { prisma } from "../db/prisma";
 import { buildServer } from "../server";
@@ -19,9 +11,7 @@ const { mockCanDo, mockFilterAllowedResourceIds } = vi.hoisted(() => ({
 }));
 
 // Policy is the only injected boundary; authentication and org membership use Access DB.
-vi.mock("../authz/decision", () =>
-  createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
-);
+vi.mock("../authz/decision", () => createCanDoMock(mockCanDo, mockFilterAllowedResourceIds));
 
 const ORG_ID = "00000000-0000-0000-0000-000000000010";
 const OTHER_ORG_ID = "00000000-0000-0000-0000-000000000099";
@@ -99,9 +89,7 @@ function firstErrorCode(result: GraphQLResult<unknown>): string | undefined {
 
 beforeAll(async () => {
   assetDb = new Client({
-    connectionString:
-      process.env.ASSET_DB_URL ??
-      "postgresql://asset_user:asset_password@127.0.0.1:5433/asset_db",
+    connectionString: process.env.ASSET_DB_URL ?? "postgresql://asset_user:asset_password@127.0.0.1:5433/asset_db",
   });
   await assetDb.connect();
 
@@ -109,10 +97,9 @@ beforeAll(async () => {
   await assetDb.query("DELETE FROM metadata_items WHERE title LIKE 'E2E:%'");
   await assetDb.query("DELETE FROM folders WHERE name LIKE 'E2E:%'");
 
-  await assetDb.query(
-    "INSERT INTO organization_ref (org_id) VALUES ($1) ON CONFLICT (org_id) DO NOTHING",
-    [OTHER_ORG_ID],
-  );
+  await assetDb.query("INSERT INTO organization_ref (org_id) VALUES ($1) ON CONFLICT (org_id) DO NOTHING", [
+    OTHER_ORG_ID,
+  ]);
   await assetDb.query(
     `INSERT INTO folders (id, org_id, path, name, created_by, deleted_at)
      VALUES
@@ -140,8 +127,7 @@ beforeEach(() => {
   mockCanDo.mockResolvedValue({ allowed: true, reason: null });
   mockFilterAllowedResourceIds.mockReset();
   mockFilterAllowedResourceIds.mockImplementation(
-    async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) =>
-      new Set(ids),
+    async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) => new Set(ids),
   );
 });
 
@@ -168,9 +154,7 @@ describe("Folder tree regression", () => {
       }`,
       { orgId: ORG_ID },
     );
-    const root = result.data?.folderTree.find(
-      (folder) => folder.name === "Root",
-    );
+    const root = result.data?.folderTree.find((folder) => folder.name === "Root");
 
     expect(result.errors).toBeUndefined();
     expect(root?.children[0].name).toBe("Animals");
@@ -194,10 +178,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
   });
 
   test("2. creates metadata and persists fields plus audit values", async () => {
-    const before = await assetDb.query(
-      "SELECT COUNT(*) FROM metadata_items WHERE folder_id = $1",
-      [ROOT_FOLDER_ID],
-    );
+    const before = await assetDb.query("SELECT COUNT(*) FROM metadata_items WHERE folder_id = $1", [ROOT_FOLDER_ID]);
     const result = await queryGraphQL<{
       createMetadata: MetadataSummary & {
         description: string;
@@ -250,12 +231,8 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     });
     expect(
       Number(
-        (
-          await assetDb.query(
-            "SELECT COUNT(*) FROM metadata_items WHERE folder_id = $1",
-            [ROOT_FOLDER_ID],
-          )
-        ).rows[0].count,
+        (await assetDb.query("SELECT COUNT(*) FROM metadata_items WHERE folder_id = $1", [ROOT_FOLDER_ID])).rows[0]
+          .count,
       ),
     ).toBe(Number(before.rows[0].count) + 1);
   });
@@ -300,10 +277,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
   });
 
   test("5. updates metadata and persists audit values", async () => {
-    const before = await assetDb.query(
-      "SELECT updated_at FROM metadata_items WHERE id = $1",
-      [createdItemId],
-    );
+    const before = await assetDb.query("SELECT updated_at FROM metadata_items WHERE id = $1", [createdItemId]);
     const result = await queryGraphQL<{
       updateMetadata: MetadataSummary & {
         metadataJson: string;
@@ -343,9 +317,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       metadata_json: { updated: true },
       updated_by: USER_ID,
     });
-    expect(persisted.rows[0].updated_at.getTime()).toBeGreaterThanOrEqual(
-      before.rows[0].updated_at.getTime(),
-    );
+    expect(persisted.rows[0].updated_at.getTime()).toBeGreaterThanOrEqual(before.rows[0].updated_at.getTime());
   });
 
   test("6. clears explicitly-null nullable fields", async () => {
@@ -367,10 +339,9 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       description: null,
       category: null,
     });
-    const persisted = await assetDb.query(
-      "SELECT description, category FROM metadata_items WHERE id = $1",
-      [createdItemId],
-    );
+    const persisted = await assetDb.query("SELECT description, category FROM metadata_items WHERE id = $1", [
+      createdItemId,
+    ]);
     expect(persisted.rows[0]).toEqual({ description: null, category: null });
   });
 
@@ -431,10 +402,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     );
     expect(firstErrorCode(wrongOrg)).toBe("FORBIDDEN");
 
-    await assetDb.query(
-      "UPDATE metadata_items SET deleted_at = now() WHERE id = $1",
-      [createdItemId],
-    );
+    await assetDb.query("UPDATE metadata_items SET deleted_at = now() WHERE id = $1", [createdItemId]);
     try {
       const softDeleted = await queryGraphQL<{ metadataItem: null }>(
         `query($orgId: ID!, $id: ID!) { metadataItem(orgId: $orgId, id: $id) { id } }`,
@@ -443,10 +411,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       expect(softDeleted.errors).toBeUndefined();
       expect(softDeleted.data?.metadataItem).toBeNull();
     } finally {
-      await assetDb.query(
-        "UPDATE metadata_items SET deleted_at = NULL WHERE id = $1",
-        [createdItemId],
-      );
+      await assetDb.query("UPDATE metadata_items SET deleted_at = NULL WHERE id = $1", [createdItemId]);
     }
   });
 
@@ -522,13 +487,10 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
 
   test("12. policy denial performs no Go request and leaves DB unchanged", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
-    const countBefore = await assetDb.query(
-      "SELECT COUNT(*) FROM metadata_items",
-    );
-    const rowBefore = await assetDb.query(
-      "SELECT title, updated_at FROM metadata_items WHERE id = $1",
-      [createdItemId],
-    );
+    const countBefore = await assetDb.query("SELECT COUNT(*) FROM metadata_items");
+    const rowBefore = await assetDb.query("SELECT title, updated_at FROM metadata_items WHERE id = $1", [
+      createdItemId,
+    ]);
 
     mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "deny read" });
     const deniedRead = await queryGraphQL<unknown>(
@@ -572,20 +534,13 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       { orgId: ORG_ID, id: createdItemId },
     );
     expect(firstErrorCode(policyFailure)).toBe("INTERNAL_ERROR");
-    expect(policyFailure.errors?.[0]?.message).toBe(
-      "Internal server error, please try again",
-    );
+    expect(policyFailure.errors?.[0]?.message).toBe("Internal server error, please try again");
 
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(
-      await assetDb.query("SELECT COUNT(*) FROM metadata_items"),
-    ).toMatchObject({
+    expect(await assetDb.query("SELECT COUNT(*) FROM metadata_items")).toMatchObject({
       rows: [{ count: countBefore.rows[0].count }],
     });
-    const rowAfter = await assetDb.query(
-      "SELECT title, updated_at FROM metadata_items WHERE id = $1",
-      [createdItemId],
-    );
+    const rowAfter = await assetDb.query("SELECT title, updated_at FROM metadata_items WHERE id = $1", [createdItemId]);
     expect(rowAfter.rows[0]).toEqual(rowBefore.rows[0]);
   });
 
@@ -613,18 +568,11 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
         stableTime,
       ],
     );
-    await assetDb.query("UPDATE folders SET deleted_at = now() WHERE id = $1", [
-      DELETED_FOLDER_ID,
-    ]);
+    await assetDb.query("UPDATE folders SET deleted_at = now() WHERE id = $1", [DELETED_FOLDER_ID]);
 
     mockFilterAllowedResourceIds.mockImplementation(
-      async (
-        _userId: string,
-        _orgId: string,
-        _action: string,
-        _type: string,
-        ids: string[],
-      ) => new Set(ids.filter((id) => id !== SEARCH_DENIED_ID)),
+      async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) =>
+        new Set(ids.filter((id) => id !== SEARCH_DENIED_ID)),
     );
 
     const result = await queryGraphQL<{ searchMetadata: MetadataSummary[] }>(
@@ -674,13 +622,8 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     );
 
     mockFilterAllowedResourceIds.mockImplementation(
-      async (
-        _userId: string,
-        _orgId: string,
-        _action: string,
-        _type: string,
-        ids: string[],
-      ) => new Set(ids.filter((id) => id !== CURSOR_DENIED_ID)),
+      async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) =>
+        new Set(ids.filter((id) => id !== CURSOR_DENIED_ID)),
     );
 
     const searchConnection = (after?: string, extraHeaders: Record<string, string> = {}) =>
@@ -743,9 +686,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
   });
 
   test("15. aborts search without partial data on a policy exception", async () => {
-    mockFilterAllowedResourceIds.mockRejectedValueOnce(
-      new Error("policy unavailable"),
-    );
+    mockFilterAllowedResourceIds.mockRejectedValueOnce(new Error("policy unavailable"));
 
     const result = await queryGraphQL<{ searchMetadata: MetadataSummary[] }>(
       `query($orgId: ID!, $input: MetadataSearchInput!) {
@@ -801,10 +742,9 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       },
     );
     const deniedID = created.data?.createMetadata.id ?? "";
-    const before = await assetDb.query(
-      "SELECT deleted_at, updated_by, updated_at FROM metadata_items WHERE id = $1",
-      [deniedID],
-    );
+    const before = await assetDb.query("SELECT deleted_at, updated_by, updated_at FROM metadata_items WHERE id = $1", [
+      deniedID,
+    ]);
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     mockCanDo.mockResolvedValue({ allowed: false, reason: "denied" });
 
@@ -818,10 +758,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     expect(firstErrorCode(denied)).toBe("FORBIDDEN");
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(
-      await assetDb.query(
-        "SELECT deleted_at, updated_by, updated_at FROM metadata_items WHERE id = $1",
-        [deniedID],
-      ),
+      await assetDb.query("SELECT deleted_at, updated_by, updated_at FROM metadata_items WHERE id = $1", [deniedID]),
     ).toMatchObject({ rows: [before.rows[0]] });
   });
 });

@@ -10,9 +10,7 @@ const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({
   mockFilterAllowedResourceIds: vi.fn(),
 }));
 
-vi.mock("../authz/decision", () =>
-  createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
-);
+vi.mock("../authz/decision", () => createCanDoMock(mockCanDo, mockFilterAllowedResourceIds));
 vi.mock("../config", () => ({
   config: { goAssetUrl: "http://go-mock" },
   ASSET_FETCH_TIMEOUT_MS: 3000,
@@ -116,22 +114,14 @@ describe("Mutation.createFolder", () => {
     const raw = makeGoFolder({ name: "Photos" });
     fetchOk(raw);
 
-    const result = await folderResolvers.Mutation.createFolder(
-      undefined,
-      { orgId: org, name: "Photos" },
-      ctx,
-    );
+    const result = await folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Photos" }, ctx);
 
     expect(result).toMatchObject({ id: raw.id, name: "Photos", orgId: org });
   });
 
   test("posts to Go with correct URL and headers", async () => {
     fetchOk(makeGoFolder());
-    await folderResolvers.Mutation.createFolder(
-      undefined,
-      { orgId: org, name: "Test" },
-      ctx,
-    );
+    await folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Test" }, ctx);
 
     const [url, init] = mockFetch.mock.calls[0];
     expect(url).toBe(`http://go-mock/internal/api/v1/folders?orgId=${org}`);
@@ -143,11 +133,7 @@ describe("Mutation.createFolder", () => {
 
   test("includes parent_path in body when parentPath is provided", async () => {
     fetchOk(makeGoFolder());
-    await folderResolvers.Mutation.createFolder(
-      undefined,
-      { orgId: org, name: "Child", parentPath: "abc123" },
-      ctx,
-    );
+    await folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Child", parentPath: "abc123" }, ctx);
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body).toEqual({ name: "Child", parent_path: "abc123" });
@@ -155,11 +141,7 @@ describe("Mutation.createFolder", () => {
 
   test("omits parent_path from body when parentPath is undefined", async () => {
     fetchOk(makeGoFolder());
-    await folderResolvers.Mutation.createFolder(
-      undefined,
-      { orgId: org, name: "Root" },
-      ctx,
-    );
+    await folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Root" }, ctx);
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body).not.toHaveProperty("parent_path");
@@ -167,11 +149,7 @@ describe("Mutation.createFolder", () => {
 
   test("includes description in body when provided", async () => {
     fetchOk(makeGoFolder({ description: "A desc" }));
-    await folderResolvers.Mutation.createFolder(
-      undefined,
-      { orgId: org, name: "Root", description: "A desc" },
-      ctx,
-    );
+    await folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Root", description: "A desc" }, ctx);
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body.description).toBe("A desc");
@@ -179,11 +157,7 @@ describe("Mutation.createFolder", () => {
 
   test("omits description from body when undefined", async () => {
     fetchOk(makeGoFolder());
-    await folderResolvers.Mutation.createFolder(
-      undefined,
-      { orgId: org, name: "Root" },
-      ctx,
-    );
+    await folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Root" }, ctx);
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body).not.toHaveProperty("description");
@@ -191,19 +165,9 @@ describe("Mutation.createFolder", () => {
 
   test("uses org-scoped permission check (resourceId === orgId)", async () => {
     fetchOk(makeGoFolder());
-    await folderResolvers.Mutation.createFolder(
-      undefined,
-      { orgId: org, name: "Test" },
-      ctx,
-    );
+    await folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Test" }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "write",
-      "folder",
-      org,
-      org,
-    );
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", org, org);
   });
 
   test("throws FORBIDDEN when canDo denies", async () => {
@@ -212,13 +176,7 @@ describe("Mutation.createFolder", () => {
       reason: "no RBAC ceiling",
     });
 
-    await expect(
-      folderResolvers.Mutation.createFolder(
-        undefined,
-        { orgId: org, name: "Test" },
-        ctx,
-      ),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Test" }, ctx)).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
@@ -226,27 +184,15 @@ describe("Mutation.createFolder", () => {
 
   test("throws UNAUTHENTICATED when userId is null", async () => {
     await expect(
-      folderResolvers.Mutation.createFolder(
-        undefined,
-        { orgId: org, name: "Test" },
-        makeCtx({ userId: null }),
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }),
-    );
+      folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Test" }, makeCtx({ userId: null })),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }));
     expect(mockCanDo).not.toHaveBeenCalled();
   });
 
   test("throws FOLDER_NAME_CONFLICT when Go returns its safe 409 envelope", async () => {
     fetchError(409);
 
-    await expect(
-      folderResolvers.Mutation.createFolder(
-        undefined,
-        { orgId: org, name: "Dupe" },
-        ctx,
-      ),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Dupe" }, ctx)).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "FOLDER_NAME_CONFLICT" }) }),
     );
   });
@@ -254,13 +200,7 @@ describe("Mutation.createFolder", () => {
   test("throws BAD_REQUEST when Go returns its safe 400 envelope", async () => {
     fetchError(400);
 
-    await expect(
-      folderResolvers.Mutation.createFolder(
-        undefined,
-        { orgId: org, name: "  " },
-        ctx,
-      ),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "  " }, ctx)).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_REQUEST" }) }),
     );
   });
@@ -271,13 +211,7 @@ describe("Mutation.createFolder", () => {
       json: async () => ({ status: "success" }),
     });
 
-    await expect(
-      folderResolvers.Mutation.createFolder(
-        undefined,
-        { orgId: org, name: "Test" },
-        ctx,
-      ),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Test" }, ctx)).rejects.toThrow(
       expect.objectContaining({
         extensions: expect.objectContaining({ code: "INTERNAL_ERROR" }),
       }),
@@ -307,16 +241,10 @@ describe("Mutation.updateFolder", () => {
 
   test("patches Go with correct URL and headers", async () => {
     fetchOk(makeGoFolder());
-    await folderResolvers.Mutation.updateFolder(
-      undefined,
-      { orgId: org, id: folderId, name: "New" },
-      ctx,
-    );
+    await folderResolvers.Mutation.updateFolder(undefined, { orgId: org, id: folderId, name: "New" }, ctx);
 
     const [url, init] = mockFetch.mock.calls[0];
-    expect(url).toBe(
-      `http://go-mock/internal/api/v1/folders?orgId=${org}&id=${folderId}`,
-    );
+    expect(url).toBe(`http://go-mock/internal/api/v1/folders?orgId=${org}&id=${folderId}`);
     expect(init.method).toBe("PATCH");
     expect(init.headers["X-User-Id"]).toBe("user-1");
     expect(init.headers["X-Org-Id"]).toBe(org);
@@ -324,28 +252,14 @@ describe("Mutation.updateFolder", () => {
 
   test("uses resource-scoped permission check (resourceId === folderId)", async () => {
     fetchOk(makeGoFolder());
-    await folderResolvers.Mutation.updateFolder(
-      undefined,
-      { orgId: org, id: folderId, name: "New" },
-      ctx,
-    );
+    await folderResolvers.Mutation.updateFolder(undefined, { orgId: org, id: folderId, name: "New" }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "write",
-      "folder",
-      folderId,
-      org,
-    );
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", folderId, org);
   });
 
   test("forwards null description to Go (clears it)", async () => {
     fetchOk(makeGoFolder({ description: null }));
-    await folderResolvers.Mutation.updateFolder(
-      undefined,
-      { orgId: org, id: folderId, description: null },
-      ctx,
-    );
+    await folderResolvers.Mutation.updateFolder(undefined, { orgId: org, id: folderId, description: null }, ctx);
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body).toHaveProperty("description", null);
@@ -353,11 +267,7 @@ describe("Mutation.updateFolder", () => {
 
   test("omits name from body when not provided", async () => {
     fetchOk(makeGoFolder());
-    await folderResolvers.Mutation.updateFolder(
-      undefined,
-      { orgId: org, id: folderId, description: "New desc" },
-      ctx,
-    );
+    await folderResolvers.Mutation.updateFolder(undefined, { orgId: org, id: folderId, description: "New desc" }, ctx);
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body).not.toHaveProperty("name");
@@ -365,13 +275,7 @@ describe("Mutation.updateFolder", () => {
   });
 
   test("throws BAD_USER_INPUT when neither name nor description is provided - before auth check", async () => {
-    await expect(
-      folderResolvers.Mutation.updateFolder(
-        undefined,
-        { orgId: org, id: folderId },
-        ctx,
-      ),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Mutation.updateFolder(undefined, { orgId: org, id: folderId }, ctx)).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }) }),
     );
     expect(mockCanDo).not.toHaveBeenCalled();
@@ -379,14 +283,8 @@ describe("Mutation.updateFolder", () => {
 
   test("throws BAD_USER_INPUT when name is null - before auth check", async () => {
     await expect(
-      folderResolvers.Mutation.updateFolder(
-        undefined,
-        { orgId: org, id: folderId, name: null },
-        ctx,
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }) }),
-    );
+      folderResolvers.Mutation.updateFolder(undefined, { orgId: org, id: folderId, name: null }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }) }));
     expect(mockCanDo).not.toHaveBeenCalled();
   });
 
@@ -397,14 +295,8 @@ describe("Mutation.updateFolder", () => {
     });
 
     await expect(
-      folderResolvers.Mutation.updateFolder(
-        undefined,
-        { orgId: org, id: folderId, name: "New" },
-        ctx,
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
-    );
+      folderResolvers.Mutation.updateFolder(undefined, { orgId: org, id: folderId, name: "New" }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }));
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
@@ -415,20 +307,14 @@ describe("Mutation.updateFolder", () => {
         { orgId: org, id: folderId, name: "New" },
         makeCtx({ userId: null }),
       ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }),
-    );
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }));
   });
 
   test("throws FOLDER_NAME_CONFLICT when Go returns its safe 409 envelope", async () => {
     fetchError(409);
 
     await expect(
-      folderResolvers.Mutation.updateFolder(
-        undefined,
-        { orgId: org, id: folderId, name: "Dupe" },
-        ctx,
-      ),
+      folderResolvers.Mutation.updateFolder(undefined, { orgId: org, id: folderId, name: "Dupe" }, ctx),
     ).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "FOLDER_NAME_CONFLICT" }) }),
     );
@@ -438,14 +324,8 @@ describe("Mutation.updateFolder", () => {
     fetchError(404);
 
     await expect(
-      folderResolvers.Mutation.updateFolder(
-        undefined,
-        { orgId: org, id: "nonexistent", name: "X" },
-        ctx,
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "FOLDER_NOT_FOUND" }) }),
-    );
+      folderResolvers.Mutation.updateFolder(undefined, { orgId: org, id: "nonexistent", name: "X" }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "FOLDER_NOT_FOUND" }) }));
   });
 });
 
@@ -469,11 +349,7 @@ describe("Query.folderTree", () => {
     ];
     fetchListOk(raw);
 
-    const result = await folderResolvers.Query.folderTree(
-      undefined,
-      { orgId: org },
-      ctx,
-    );
+    const result = await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx);
 
     expect(result).toHaveLength(2);
     expect(result[0]).toMatchObject({ id: "f1", name: "Root", path: "root" });
@@ -485,16 +361,9 @@ describe("Query.folderTree", () => {
   });
 
   test("attaches subtreeNodes (same reference) to every folder when rootPath is given", async () => {
-    fetchListOk([
-      makeGoFolder({ id: "f1", path: "root" }),
-      makeGoFolder({ id: "f2", path: "root.child" }),
-    ]);
+    fetchListOk([makeGoFolder({ id: "f1", path: "root" }), makeGoFolder({ id: "f2", path: "root.child" })]);
 
-    const result = (await folderResolvers.Query.folderTree(
-      undefined,
-      { orgId: org, rootPath: "root" },
-      ctx,
-    )) as any[];
+    const result = (await folderResolvers.Query.folderTree(undefined, { orgId: org, rootPath: "root" }, ctx)) as any[];
 
     expect(result[0].subtreeNodes).toHaveLength(2);
     expect(result[0].subtreeNodes).toBe(result[1].subtreeNodes);
@@ -503,11 +372,7 @@ describe("Query.folderTree", () => {
   test("loads and attaches the full forest cache without rootPath", async () => {
     fetchListOk([makeGoFolder({ id: "f1", path: "root" })]);
 
-    const result = (await folderResolvers.Query.folderTree(
-      undefined,
-      { orgId: org },
-      ctx,
-    )) as any[];
+    const result = (await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx)) as any[];
 
     expect(result[0].subtreeNodes).toBe(result);
     expect(mockFetch.mock.calls[0][0]).toContain("tree=true");
@@ -520,10 +385,7 @@ describe("Query.folderTree", () => {
   });
 
   test("filters folders through filterAllowedResourceIds", async () => {
-    const raw = [
-      makeGoFolder({ id: "f1", name: "Root" }),
-      makeGoFolder({ id: "f2", name: "Child" }),
-    ];
+    const raw = [makeGoFolder({ id: "f1", name: "Root" }), makeGoFolder({ id: "f2", name: "Child" })];
     fetchListOk(raw);
     mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set(["f1"]));
     const result = await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx);
@@ -549,11 +411,7 @@ describe("Query.folderTree", () => {
     ]);
     mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set(["dogs"]));
 
-    const result = (await folderResolvers.Query.folderTree(
-      undefined,
-      { orgId: org },
-      ctx,
-    )) as any[];
+    const result = (await folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx)) as any[];
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
@@ -561,9 +419,7 @@ describe("Query.folderTree", () => {
       name: "Dogs",
       path: "root.animals.dogs",
     });
-    expect(result.some((f) => f.id === "root" || f.id === "animals")).toBe(
-      false,
-    );
+    expect(result.some((f) => f.id === "root" || f.id === "animals")).toBe(false);
   });
 
   test("does not call canDo for folderTree", async () => {
@@ -574,34 +430,22 @@ describe("Query.folderTree", () => {
 
   test("appends rootPath to URL when provided", async () => {
     fetchListOk([]);
-    await folderResolvers.Query.folderTree(
-      undefined,
-      { orgId: org, rootPath: "docs" },
-      ctx,
-    );
+    await folderResolvers.Query.folderTree(undefined, { orgId: org, rootPath: "docs" }, ctx);
     const [url] = mockFetch.mock.calls[0];
     expect(url).toContain("rootPath=docs");
   });
 
   test("maps Go error codes (403 -> FORBIDDEN, not INTERNAL_SERVER_ERROR)", async () => {
     fetchError(403);
-    await expect(
-      folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Query.folderTree(undefined, { orgId: org }, ctx)).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
   });
 
   test("throws UNAUTHENTICATED when userId is null", async () => {
     await expect(
-      folderResolvers.Query.folderTree(
-        undefined,
-        { orgId: org },
-        makeCtx({ userId: null }),
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }),
-    );
+      folderResolvers.Query.folderTree(undefined, { orgId: org }, makeCtx({ userId: null })),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }));
     expect(mockFetch).not.toHaveBeenCalled();
   });
 });
@@ -616,11 +460,7 @@ describe("Query.folderChildren", () => {
     const raw = [makeGoFolder({ id: "c1", path: "root.child1" })];
     fetchListOk(raw);
 
-    const result = await folderResolvers.Query.folderChildren(
-      undefined,
-      { orgId: org, parentPath: "root" },
-      ctx,
-    );
+    const result = await folderResolvers.Query.folderChildren(undefined, { orgId: org, parentPath: "root" }, ctx);
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({ id: "c1", path: "root.child1" });
@@ -628,27 +468,16 @@ describe("Query.folderChildren", () => {
 
   test("sends children=true and parentPath in URL", async () => {
     fetchListOk([]);
-    await folderResolvers.Query.folderChildren(
-      undefined,
-      { orgId: org, parentPath: "root" },
-      ctx,
-    );
+    await folderResolvers.Query.folderChildren(undefined, { orgId: org, parentPath: "root" }, ctx);
     const [url] = mockFetch.mock.calls[0];
     expect(url).toContain("children=true");
     expect(url).toContain("rootPath=root");
   });
 
   test("filters children through filterAllowedResourceIds", async () => {
-    fetchListOk([
-      makeGoFolder({ id: "c1", path: "root.child1" }),
-      makeGoFolder({ id: "c2", path: "root.child2" }),
-    ]);
+    fetchListOk([makeGoFolder({ id: "c1", path: "root.child1" }), makeGoFolder({ id: "c2", path: "root.child2" })]);
     mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set(["c2"]));
-    const result = await folderResolvers.Query.folderChildren(
-      undefined,
-      { orgId: org, parentPath: "root" },
-      ctx,
-    );
+    const result = await folderResolvers.Query.folderChildren(undefined, { orgId: org, parentPath: "root" }, ctx);
     expect(result).toHaveLength(1);
     expect((result as any[])[0].id).toBe("c2");
   });
@@ -656,11 +485,7 @@ describe("Query.folderChildren", () => {
   test("org member with zero grants gets empty list, not FORBIDDEN", async () => {
     fetchListOk([makeGoFolder({ id: "c1" })]);
     mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set());
-    const result = await folderResolvers.Query.folderChildren(
-      undefined,
-      { orgId: org, parentPath: "root" },
-      ctx,
-    );
+    const result = await folderResolvers.Query.folderChildren(undefined, { orgId: org, parentPath: "root" }, ctx);
     expect(result).toHaveLength(0);
   });
 
@@ -673,14 +498,8 @@ describe("Query.folderChildren", () => {
   test("maps Go error codes (403 -> FORBIDDEN)", async () => {
     fetchError(403);
     await expect(
-      folderResolvers.Query.folderChildren(
-        undefined,
-        { orgId: org, parentPath: "root" },
-        ctx,
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
-    );
+      folderResolvers.Query.folderChildren(undefined, { orgId: org, parentPath: "root" }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }));
   });
 });
 
@@ -713,27 +532,17 @@ describe("Folder.children", () => {
   test("resolves direct children from cache without any HTTP call", async () => {
     const parent = { ...allNodes[0], subtreeNodes: allNodes };
 
-    const result = await folderResolvers.Folder.children(
-      parent,
-      undefined,
-      ctx,
-    );
+    const result = await folderResolvers.Folder.children(parent, undefined, ctx);
 
     expect(mockFetch).not.toHaveBeenCalled();
     expect(result).toHaveLength(2);
-    expect((result as any[]).map((r) => r.id)).toEqual(
-      expect.arrayContaining(["child1", "child2"]),
-    );
+    expect((result as any[]).map((r) => r.id)).toEqual(expect.arrayContaining(["child1", "child2"]));
   });
 
   test("excludes grandchildren when resolving direct children", async () => {
     const parent = { ...allNodes[0], subtreeNodes: allNodes };
 
-    const result = await folderResolvers.Folder.children(
-      parent,
-      undefined,
-      ctx,
-    );
+    const result = await folderResolvers.Folder.children(parent, undefined, ctx);
 
     expect((result as any[]).map((r) => r.id)).not.toContain("grandchild");
   });
@@ -741,11 +550,7 @@ describe("Folder.children", () => {
   test("propagates subtreeNodes to resolved children for deeper nesting", async () => {
     const parent = { ...allNodes[0], subtreeNodes: allNodes };
 
-    const children = (await folderResolvers.Folder.children(
-      parent,
-      undefined,
-      ctx,
-    )) as any[];
+    const children = (await folderResolvers.Folder.children(parent, undefined, ctx)) as any[];
 
     expect(children[0].subtreeNodes).toBe(allNodes);
     expect(children[1].subtreeNodes).toBe(allNodes);
@@ -753,18 +558,10 @@ describe("Folder.children", () => {
 
   test("resolves grandchildren correctly from nested cache (no HTTP)", async () => {
     const parent = { ...allNodes[0], subtreeNodes: allNodes };
-    const children = (await folderResolvers.Folder.children(
-      parent,
-      undefined,
-      ctx,
-    )) as any[];
+    const children = (await folderResolvers.Folder.children(parent, undefined, ctx)) as any[];
     const child1 = children.find((c: any) => c.id === "child1");
 
-    const grandchildren = (await folderResolvers.Folder.children(
-      child1,
-      undefined,
-      ctx,
-    )) as any[];
+    const grandchildren = (await folderResolvers.Folder.children(child1, undefined, ctx)) as any[];
 
     expect(mockFetch).not.toHaveBeenCalled();
     expect(grandchildren).toHaveLength(1);
@@ -776,11 +573,7 @@ describe("Folder.children", () => {
     mockFilterAllowedResourceIds.mockResolvedValueOnce(new Set(["c1"]));
     const parent = node("root", "root");
 
-    const result = await folderResolvers.Folder.children(
-      parent,
-      undefined,
-      ctx,
-    );
+    const result = await folderResolvers.Folder.children(parent, undefined, ctx);
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect((result as any[])[0].id).toBe("c1");
@@ -810,11 +603,7 @@ describe("Query.folder", () => {
       json: async () => ({ folder: raw }),
     });
 
-    const result = await folderResolvers.Query.folder(
-      undefined,
-      { orgId: org, id: folderId },
-      ctx,
-    );
+    const result = await folderResolvers.Query.folder(undefined, { orgId: org, id: folderId }, ctx);
 
     expect(result).toMatchObject({ id: raw.id, name: raw.name, orgId: org });
   });
@@ -822,11 +611,7 @@ describe("Query.folder", () => {
   test("returns null on 404", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
 
-    const result = await folderResolvers.Query.folder(
-      undefined,
-      { orgId: org, id: "missing" },
-      ctx,
-    );
+    const result = await folderResolvers.Query.folder(undefined, { orgId: org, id: "missing" }, ctx);
 
     expect(result).toBeNull();
   });
@@ -838,11 +623,7 @@ describe("Query.folder", () => {
       json: async () => ({ folder: makeGoFolder() }),
     });
 
-    await folderResolvers.Query.folder(
-      undefined,
-      { orgId: org, id: folderId },
-      ctx,
-    );
+    await folderResolvers.Query.folder(undefined, { orgId: org, id: folderId }, ctx);
 
     const [url, init] = mockFetch.mock.calls[0];
     expect(url).toContain(`orgId=${org}`);
@@ -857,31 +638,15 @@ describe("Query.folder", () => {
       json: async () => ({ folder: makeGoFolder() }),
     });
 
-    await folderResolvers.Query.folder(
-      undefined,
-      { orgId: org, id: folderId },
-      ctx,
-    );
+    await folderResolvers.Query.folder(undefined, { orgId: org, id: folderId }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "read",
-      "folder",
-      folderId,
-      org,
-    );
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "read", "folder", folderId, org);
   });
 
   test("throws FORBIDDEN when canDo denies", async () => {
     mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "denied" });
 
-    await expect(
-      folderResolvers.Query.folder(
-        undefined,
-        { orgId: org, id: folderId },
-        ctx,
-      ),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Query.folder(undefined, { orgId: org, id: folderId }, ctx)).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
@@ -889,13 +654,7 @@ describe("Query.folder", () => {
 
   test("maps non-404 Go errors via GO_ERROR_CODES (403 -> FORBIDDEN)", async () => {
     fetchError(403);
-    await expect(
-      folderResolvers.Query.folder(
-        undefined,
-        { orgId: org, id: folderId },
-        ctx,
-      ),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Query.folder(undefined, { orgId: org, id: folderId }, ctx)).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
   });
@@ -924,43 +683,17 @@ describe("Mutation.moveFolder", () => {
 
   test("checks write permission on source and destination", async () => {
     fetchOk(makeGoFolder());
-    await folderResolvers.Mutation.moveFolder(
-      undefined,
-      { orgId: org, id, destinationParentId: destId },
-      ctx,
-    );
+    await folderResolvers.Mutation.moveFolder(undefined, { orgId: org, id, destinationParentId: destId }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "write",
-      "folder",
-      id,
-      org,
-    );
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "write",
-      "folder",
-      destId,
-      org,
-    );
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", id, org);
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", destId, org);
   });
 
   test("uses orgId as destination if destinationParentId is null", async () => {
     fetchOk(makeGoFolder());
-    await folderResolvers.Mutation.moveFolder(
-      undefined,
-      { orgId: org, id, destinationParentId: null },
-      ctx,
-    );
+    await folderResolvers.Mutation.moveFolder(undefined, { orgId: org, id, destinationParentId: null }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "write",
-      "folder",
-      org,
-      org,
-    );
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", org, org);
   });
 
   test("throws FORBIDDEN when canDo denies on source", async () => {
@@ -970,14 +703,8 @@ describe("Mutation.moveFolder", () => {
     });
 
     await expect(
-      folderResolvers.Mutation.moveFolder(
-        undefined,
-        { orgId: org, id, destinationParentId: destId },
-        ctx,
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
-    );
+      folderResolvers.Mutation.moveFolder(undefined, { orgId: org, id, destinationParentId: destId }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }));
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
@@ -988,14 +715,8 @@ describe("Mutation.moveFolder", () => {
     });
 
     await expect(
-      folderResolvers.Mutation.moveFolder(
-        undefined,
-        { orgId: org, id, destinationParentId: destId },
-        ctx,
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
-    );
+      folderResolvers.Mutation.moveFolder(undefined, { orgId: org, id, destinationParentId: destId }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }));
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
@@ -1003,39 +724,23 @@ describe("Mutation.moveFolder", () => {
     mockCanDo.mockRejectedValueOnce(new Error("policy unavailable"));
 
     await expect(
-      folderResolvers.Mutation.moveFolder(
-        undefined,
-        { orgId: org, id, destinationParentId: destId },
-        ctx,
-      ),
+      folderResolvers.Mutation.moveFolder(undefined, { orgId: org, id, destinationParentId: destId }, ctx),
     ).rejects.toThrow("policy unavailable");
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test("throws FORBIDDEN if trying to move root sentinel", async () => {
     await expect(
-      folderResolvers.Mutation.moveFolder(
-        undefined,
-        { orgId: org, id: org, destinationParentId: destId },
-        ctx,
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
-    );
+      folderResolvers.Mutation.moveFolder(undefined, { orgId: org, id: org, destinationParentId: destId }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }));
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test("throws UNAUTHENTICATED if context lacks userId", async () => {
     const badCtx = { ...ctx, userId: "" };
     await expect(
-      folderResolvers.Mutation.moveFolder(
-        undefined,
-        { orgId: org, id, destinationParentId: destId },
-        badCtx,
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }),
-    );
+      folderResolvers.Mutation.moveFolder(undefined, { orgId: org, id, destinationParentId: destId }, badCtx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }));
   });
 
   test("preserves BAD_REQUEST from the Asset Core validation contract", async () => {
@@ -1046,9 +751,7 @@ describe("Mutation.moveFolder", () => {
         { orgId: org, id: "invalid-uuid", destinationParentId: destId },
         ctx,
       ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_REQUEST" }) }),
-    );
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_REQUEST" }) }));
   });
 
   test("maps trusted Asset Core error envelopes correctly", async () => {
@@ -1064,11 +767,7 @@ describe("Mutation.moveFolder", () => {
     for (const { status, expectedCode } of errorMap) {
       fetchError(status);
       await expect(
-        folderResolvers.Mutation.moveFolder(
-          undefined,
-          { orgId: org, id, destinationParentId: destId },
-          ctx,
-        ),
+        folderResolvers.Mutation.moveFolder(undefined, { orgId: org, id, destinationParentId: destId }, ctx),
       ).rejects.toThrow(
         expect.objectContaining({
           extensions: expect.objectContaining({ code: expectedCode }),
@@ -1085,11 +784,7 @@ describe("Mutation.moveFolder", () => {
     });
 
     await expect(
-      folderResolvers.Mutation.moveFolder(
-        undefined,
-        { orgId: org, id, destinationParentId: destId },
-        ctx,
-      ),
+      folderResolvers.Mutation.moveFolder(undefined, { orgId: org, id, destinationParentId: destId }, ctx),
     ).rejects.toThrow(
       expect.objectContaining({
         extensions: expect.objectContaining({ code: "INTERNAL_ERROR" }),
@@ -1108,11 +803,7 @@ describe("Mutation.deleteFolder", () => {
   test("returns true on 204 No Content", async () => {
     mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
 
-    const result = await folderResolvers.Mutation.deleteFolder(
-      undefined,
-      { orgId: org, id },
-      ctx,
-    );
+    const result = await folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx);
 
     expect(result).toBe(true);
   });
@@ -1120,38 +811,22 @@ describe("Mutation.deleteFolder", () => {
   test("preserves object permission grants on the deleted folder", async () => {
     mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
 
-    await folderResolvers.Mutation.deleteFolder(
-      undefined,
-      { orgId: org, id },
-      ctx,
-    );
+    await folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx);
 
     expect(mockObjectPermissionDeleteMany).not.toHaveBeenCalled();
   });
 
   test("checks delete permission", async () => {
     mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
-    await folderResolvers.Mutation.deleteFolder(
-      undefined,
-      { orgId: org, id },
-      ctx,
-    );
+    await folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "delete",
-      "folder",
-      id,
-      org,
-    );
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "delete", "folder", id, org);
   });
 
   test("throws FORBIDDEN when canDo denies", async () => {
     mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "denied" });
 
-    await expect(
-      folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx)).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
@@ -1160,20 +835,14 @@ describe("Mutation.deleteFolder", () => {
   test("fails closed when the policy check throws", async () => {
     mockCanDo.mockRejectedValueOnce(new Error("policy unavailable"));
 
-    await expect(
-      folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx),
-    ).rejects.toThrow("policy unavailable");
+    await expect(folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx)).rejects.toThrow(
+      "policy unavailable",
+    );
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test("throws FORBIDDEN if trying to delete root sentinel", async () => {
-    await expect(
-      folderResolvers.Mutation.deleteFolder(
-        undefined,
-        { orgId: org, id: org },
-        ctx,
-      ),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id: org }, ctx)).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();
@@ -1181,13 +850,7 @@ describe("Mutation.deleteFolder", () => {
 
   test("throws UNAUTHENTICATED if context lacks userId", async () => {
     const badCtx = { ...ctx, userId: "" };
-    await expect(
-      folderResolvers.Mutation.deleteFolder(
-        undefined,
-        { orgId: org, id },
-        badCtx,
-      ),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, badCtx)).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "UNAUTHENTICATED" }) }),
     );
   });
@@ -1195,14 +858,8 @@ describe("Mutation.deleteFolder", () => {
   test("preserves BAD_REQUEST from the Asset Core validation contract", async () => {
     fetchError(400);
     await expect(
-      folderResolvers.Mutation.deleteFolder(
-        undefined,
-        { orgId: org, id: "invalid-uuid" },
-        ctx,
-      ),
-    ).rejects.toThrow(
-      expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_REQUEST" }) }),
-    );
+      folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id: "invalid-uuid" }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_REQUEST" }) }));
   });
 
   test("maps trusted Asset Core error envelopes correctly", async () => {
@@ -1217,13 +874,7 @@ describe("Mutation.deleteFolder", () => {
 
     for (const { status, expectedCode } of errorMap) {
       fetchError(status);
-      await expect(
-        folderResolvers.Mutation.deleteFolder(
-          undefined,
-          { orgId: org, id },
-          ctx,
-        ),
-      ).rejects.toThrow(
+      await expect(folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx)).rejects.toThrow(
         expect.objectContaining({
           extensions: expect.objectContaining({ code: expectedCode }),
         }),
@@ -1238,9 +889,7 @@ describe("Mutation.deleteFolder", () => {
       statusText: "OK",
     });
 
-    await expect(
-      folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx)).rejects.toThrow(
       expect.objectContaining({
         extensions: expect.objectContaining({ code: "INTERNAL_ERROR" }),
       }),
@@ -1263,27 +912,14 @@ describe("Mutation.restoreFolder", () => {
     });
     fetchOk(makeGoFolder({ id, name: "Restored Folder" }));
 
-    const result = await folderResolvers.Mutation.restoreFolder(
-      undefined,
-      { orgId: org, id },
-      ctx,
-    );
+    const result = await folderResolvers.Mutation.restoreFolder(undefined, { orgId: org, id }, ctx);
 
     expect(result).toMatchObject({ id, name: "Restored Folder" });
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "write",
-      "folder",
-      id,
-      org,
-      [],
-    );
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", id, org, []);
     expect(mockFetch.mock.calls[0][0]).toBe(
       `http://go-mock/internal/api/v1/restore-facts/folders?orgId=${org}&id=${id}`,
     );
-    expect(mockFetch.mock.calls[1][0]).toBe(
-      `http://go-mock/internal/api/v1/folders/restore?orgId=${org}&id=${id}`,
-    );
+    expect(mockFetch.mock.calls[1][0]).toBe(`http://go-mock/internal/api/v1/folders/restore?orgId=${org}&id=${id}`);
     expect(mockFetch.mock.calls[1][1].method).toBe("POST");
   });
 
@@ -1298,20 +934,14 @@ describe("Mutation.restoreFolder", () => {
       .mockResolvedValueOnce({ allowed: true, reason: null });
     fetchOk(makeGoFolder({ id }));
 
-    await expect(
-      folderResolvers.Mutation.restoreFolder(undefined, { orgId: org, id }, ctx),
-    ).resolves.toMatchObject({ id });
+    await expect(folderResolvers.Mutation.restoreFolder(undefined, { orgId: org, id }, ctx)).resolves.toMatchObject({
+      id,
+    });
     expect(mockCanDo).toHaveBeenNthCalledWith(2, "user-1", "delete", "folder", id, org, []);
   });
 
   test("rejects restoring the organization root before any private lookup", async () => {
-    await expect(
-      folderResolvers.Mutation.restoreFolder(
-        undefined,
-        { orgId: org, id: org },
-        ctx,
-      ),
-    ).rejects.toThrow(
+    await expect(folderResolvers.Mutation.restoreFolder(undefined, { orgId: org, id: org }, ctx)).rejects.toThrow(
       expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
     );
     expect(mockFetch).not.toHaveBeenCalled();

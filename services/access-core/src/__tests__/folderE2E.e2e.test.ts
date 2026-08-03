@@ -1,15 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { Client } from "pg";
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  test,
-  vi,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { prisma } from "../db/prisma";
 import { buildServer } from "../server";
 
@@ -49,10 +41,7 @@ let app: FastifyInstance;
 let assetDb: Client;
 
 /** Executes GraphQL through Fastify/Yoga with production identity headers. */
-async function queryGraphQL<T>(
-  query: string,
-  variables: Record<string, unknown>,
-): Promise<GraphQLResult<T>> {
+async function queryGraphQL<T>(query: string, variables: Record<string, unknown>): Promise<GraphQLResult<T>> {
   const response = await app.inject({
     method: "POST",
     url: "/graphql",
@@ -68,13 +57,8 @@ async function queryGraphQL<T>(
 }
 
 /** Creates a uniquely named folder and returns its persisted identity and path. */
-async function createFolder(
-  label: string,
-  parentPath?: string,
-  nameOverride?: string,
-): Promise<FolderSummary> {
-  const name =
-    nameOverride ?? `KAN36 E2E: ${label} ${randomUUID().slice(0, 8)}`;
+async function createFolder(label: string, parentPath?: string, nameOverride?: string): Promise<FolderSummary> {
+  const name = nameOverride ?? `KAN36 E2E: ${label} ${randomUUID().slice(0, 8)}`;
   const result = await queryGraphQL<{ createFolder: FolderSummary }>(
     `mutation($orgId: ID!, $name: String!, $parentPath: String) {
       createFolder(orgId: $orgId, name: $name, parentPath: $parentPath) {
@@ -109,9 +93,7 @@ async function moveFolder(
 }
 
 /** Deletes a folder through the public GraphQL mutation. */
-async function deleteFolder(
-  id: string,
-): Promise<GraphQLResult<{ deleteFolder: boolean }>> {
+async function deleteFolder(id: string): Promise<GraphQLResult<{ deleteFolder: boolean }>> {
   return queryGraphQL<{ deleteFolder: boolean }>(
     `mutation($orgId: ID!, $id: ID!) {
       deleteFolder(orgId: $orgId, id: $id)
@@ -158,10 +140,12 @@ describe("KAN-36 folder GraphQL to PostgreSQL E2E", () => {
     const animals = await createFolder("Animals");
     const dogs = await createFolder("Dogs", animals.path);
     const metadataId = randomUUID();
-    await assetDb.query(
-      "INSERT INTO metadata_items (id, folder_id, title, created_by) VALUES ($1, $2, $3, $4)",
-      [metadataId, dogs.id, `KAN36 E2E: metadata ${randomUUID()}`, USER_ID],
-    );
+    await assetDb.query("INSERT INTO metadata_items (id, folder_id, title, created_by) VALUES ($1, $2, $3, $4)", [
+      metadataId,
+      dogs.id,
+      `KAN36 E2E: metadata ${randomUUID()}`,
+      USER_ID,
+    ]);
 
     const result = await moveFolder(animals.id, archive.id);
     expect(result.errors).toBeUndefined();

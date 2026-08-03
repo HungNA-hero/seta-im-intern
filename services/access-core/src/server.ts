@@ -40,8 +40,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     logging: false,
     maskedErrors: { maskError: maskGraphQLError },
     context: (ctx) => {
-      const header = (name: string) =>
-        (ctx.fastifyRequest.headers[name] as string | undefined) ?? null;
+      const header = (name: string) => (ctx.fastifyRequest.headers[name] as string | undefined) ?? null;
       return loadRequestContext(header("x-user-id"), header("x-org-id"));
     },
   });
@@ -56,10 +55,7 @@ export async function buildServer(): Promise<FastifyInstance> {
           {
             method: req.method,
             headers: req.headers as HeadersInit,
-            body:
-              req.method !== "GET" && req.method !== "HEAD"
-                ? JSON.stringify(req.body)
-                : undefined,
+            body: req.method !== "GET" && req.method !== "HEAD" ? JSON.stringify(req.body) : undefined,
           },
           { fastifyRequest: req },
         ),

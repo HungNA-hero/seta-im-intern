@@ -1,9 +1,4 @@
-export type FolderDeletionStatus =
-  | "queued"
-  | "running"
-  | "succeeded"
-  | "failed"
-  | "cancelled";
+export type FolderDeletionStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
 
 export interface GoFolderDeletionPreview {
   id: string;

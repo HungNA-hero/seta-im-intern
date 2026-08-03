@@ -81,14 +81,7 @@ describe("cache-invalidator idempotency, retry, and DLQ", () => {
     await reclaimStalePending(redis);
 
     expect(redis.eval).not.toHaveBeenCalled();
-    expect(redis.xadd).toHaveBeenCalledWith(
-      DLQ_KEY,
-      "*",
-      "payload",
-      payload,
-      "originalId",
-      messageId,
-    );
+    expect(redis.xadd).toHaveBeenCalledWith(DLQ_KEY, "*", "payload", payload, "originalId", messageId);
     expect(redis.xack).toHaveBeenCalledWith("stream:asset-events", "cache-invalidator", messageId);
 
     expect(stderrSpy).toHaveBeenCalledTimes(1);
@@ -111,9 +104,7 @@ describe("cache-invalidator idempotency, retry, and DLQ", () => {
     });
     const redis = fakeRedis({
       eval: vi.fn().mockRejectedValue(new Error("effect failed")),
-      xreadgroup: vi.fn().mockResolvedValue([
-        ["stream:asset-events", [[messageId, ["payload", payload]]]],
-      ]),
+      xreadgroup: vi.fn().mockResolvedValue([["stream:asset-events", [[messageId, ["payload", payload]]]]]),
     });
 
     await expect(processBatch(redis)).rejects.toThrow("effect failed");
@@ -126,20 +117,14 @@ describe("cache-invalidator idempotency, retry, and DLQ", () => {
     const { processBatch } = await import("../eventing/cacheInvalidator");
     const messageId = "4-0";
     const redis = fakeRedis({
-      xreadgroup: vi.fn().mockResolvedValue([
-        ["stream:asset-events", [[messageId, ["payload", "{not-json"]]]],
-      ]),
+      xreadgroup: vi.fn().mockResolvedValue([["stream:asset-events", [[messageId, ["payload", "{not-json"]]]]]),
     });
 
     await expect(processBatch(redis)).resolves.toBe(1);
 
     expect(redis.eval).not.toHaveBeenCalled();
     expect(redis.xadd).not.toHaveBeenCalled();
-    expect(redis.xack).toHaveBeenCalledWith(
-      "stream:asset-events",
-      "cache-invalidator",
-      messageId,
-    );
+    expect(redis.xack).toHaveBeenCalledWith("stream:asset-events", "cache-invalidator", messageId);
   });
 
   test("an unsupported event type is acknowledged without an effect or DLQ entry", async () => {
@@ -151,19 +136,13 @@ describe("cache-invalidator idempotency, retry, and DLQ", () => {
       orgId: randomUUID(),
     });
     const redis = fakeRedis({
-      xreadgroup: vi.fn().mockResolvedValue([
-        ["stream:asset-events", [[messageId, ["payload", payload]]]],
-      ]),
+      xreadgroup: vi.fn().mockResolvedValue([["stream:asset-events", [[messageId, ["payload", payload]]]]]),
     });
 
     await expect(processBatch(redis)).resolves.toBe(1);
 
     expect(redis.eval).not.toHaveBeenCalled();
     expect(redis.xadd).not.toHaveBeenCalled();
-    expect(redis.xack).toHaveBeenCalledWith(
-      "stream:asset-events",
-      "cache-invalidator",
-      messageId,
-    );
+    expect(redis.xack).toHaveBeenCalledWith("stream:asset-events", "cache-invalidator", messageId);
   });
 });

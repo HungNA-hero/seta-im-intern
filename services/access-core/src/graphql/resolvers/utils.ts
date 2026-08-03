@@ -13,10 +13,7 @@ export function serializePermission<T extends { grantedAt: Date }>(p: T) {
   return { ...p, grantedAt: p.grantedAt.toISOString() };
 }
 
-export function rethrowPrismaError(
-  err: unknown,
-  map: Partial<Record<"P2002" | "P2025", PrismaErrorMapping>>,
-): never {
+export function rethrowPrismaError(err: unknown, map: Partial<Record<"P2002" | "P2025", PrismaErrorMapping>>): never {
   const code = (err as any)?.code as string | undefined;
   if (code === "P2002" && map.P2002)
     throw new GraphQLError(map.P2002.message, { extensions: { code: map.P2002.errorCode } });

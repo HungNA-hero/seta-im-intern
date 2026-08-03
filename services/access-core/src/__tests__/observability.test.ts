@@ -18,9 +18,7 @@ describe("request correlation", () => {
 
     expect(correlation.traceId).toBe(traceId);
     expect(correlation.requestId).toBe("KAN-57:request-1");
-    expect(correlation.traceparent).toMatch(
-      new RegExp(`^00-${traceId}-[a-f0-9]{16}-01$`),
-    );
+    expect(correlation.traceparent).toMatch(new RegExp(`^00-${traceId}-[a-f0-9]{16}-01$`));
   });
 
   it("regenerates correlation for invalid trace input", () => {
@@ -32,23 +30,15 @@ describe("request correlation", () => {
     expect(parseTraceparent(`00-${"0".repeat(32)}-${"b".repeat(16)}-01`)).toBeNull();
     expect(correlation.traceId).toMatch(/^[a-f0-9]{32}$/);
     expect(correlation.traceId).not.toBe("0".repeat(32));
-    expect(correlation.requestId).toMatch(
-      /^[a-f0-9-]{36}$/,
-    );
+    expect(correlation.requestId).toMatch(/^[a-f0-9-]{36}$/);
   });
 
   it("accepts future traceparent versions with non-empty extension fields", () => {
     const traceId = "c".repeat(32);
 
-    expect(
-      parseTraceparent(`01-${traceId}-${"d".repeat(16)}-01-future-field`),
-    ).toBe(traceId);
-    expect(
-      parseTraceparent(`00-${traceId}-${"d".repeat(16)}-01-future-field`),
-    ).toBeNull();
-    expect(
-      parseTraceparent(`01-${traceId}-${"d".repeat(16)}-01-`),
-    ).toBeNull();
+    expect(parseTraceparent(`01-${traceId}-${"d".repeat(16)}-01-future-field`)).toBe(traceId);
+    expect(parseTraceparent(`00-${traceId}-${"d".repeat(16)}-01-future-field`)).toBeNull();
+    expect(parseTraceparent(`01-${traceId}-${"d".repeat(16)}-01-`)).toBeNull();
   });
 
   it("masks known errors with the stable registry and active trace", () => {

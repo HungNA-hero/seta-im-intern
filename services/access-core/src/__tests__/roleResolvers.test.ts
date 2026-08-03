@@ -35,12 +35,9 @@ describe("createRole", () => {
   test.each(["trainer_admin", "org_admin", " TRAINER_ADMIN ", "Org_Admin"])(
     "rejects reserved role code %s",
     async (code) => {
-      await expect(
-        roleResolvers.Mutation.createRole(
-          {},
-          { orgId: "org-1", code, name: "x" },
-        ),
-      ).rejects.toMatchObject({ extensions: { code: "RESERVED_ROLE_CODE" } });
+      await expect(roleResolvers.Mutation.createRole({}, { orgId: "org-1", code, name: "x" })).rejects.toMatchObject({
+        extensions: { code: "RESERVED_ROLE_CODE" },
+      });
       expect(mockCreateRole).not.toHaveBeenCalled();
     },
   );
@@ -56,10 +53,7 @@ describe("createRole", () => {
       updatedAt: new Date(),
     });
 
-    await roleResolvers.Mutation.createRole(
-      {},
-      { orgId: "org-1", code: "viewer2", name: "Viewer2" },
-    );
+    await roleResolvers.Mutation.createRole({}, { orgId: "org-1", code: "viewer2", name: "Viewer2" });
 
     expect(mockCreateRole).toHaveBeenCalledWith("org-1", "viewer2", "Viewer2", undefined);
   });
@@ -95,11 +89,7 @@ describe("updateRole", () => {
     });
 
     await expect(
-      roleResolvers.Mutation.updateRole(
-        {},
-        { id: "role-1", name: "New name" },
-        ctx({ currentOrgId: "org-1" }),
-      ),
+      roleResolvers.Mutation.updateRole({}, { id: "role-1", name: "New name" }, ctx({ currentOrgId: "org-1" })),
     ).rejects.toMatchObject({ extensions: { code: "BAD_USER_INPUT" } });
     expect(mockUpdateRole).not.toHaveBeenCalled();
   });
@@ -108,11 +98,7 @@ describe("updateRole", () => {
     mockGetRoleById.mockResolvedValueOnce(null);
 
     await expect(
-      roleResolvers.Mutation.updateRole(
-        {},
-        { id: "role-1", name: "New name" },
-        ctx(),
-      ),
+      roleResolvers.Mutation.updateRole({}, { id: "role-1", name: "New name" }, ctx()),
     ).rejects.toMatchObject({ extensions: { code: "BAD_USER_INPUT" } });
     expect(mockUpdateRole).not.toHaveBeenCalled();
   });
@@ -137,11 +123,7 @@ describe("updateRole", () => {
       updatedAt: new Date(),
     });
 
-    await roleResolvers.Mutation.updateRole(
-      {},
-      { id: "role-1", name: "New name" },
-      ctx({ currentOrgId: "org-1" }),
-    );
+    await roleResolvers.Mutation.updateRole({}, { id: "role-1", name: "New name" }, ctx({ currentOrgId: "org-1" }));
 
     expect(mockUpdateRole).toHaveBeenCalledWith("role-1", "New name", undefined);
   });
