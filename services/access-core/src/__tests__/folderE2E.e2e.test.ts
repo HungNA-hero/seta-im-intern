@@ -217,16 +217,14 @@ describe("KAN-36 folder GraphQL to PostgreSQL E2E", () => {
     expect(await readFolder(source.id)).toEqual(beforeSource);
   });
 
-  test("hard-deletes an empty folder", async () => {
+  test("soft-deletes an empty folder", async () => {
     const emptyFolder = await createFolder("Empty folder");
     const result = await deleteFolder(emptyFolder.id);
-    const persisted = await assetDb.query<{ count: number }>(
-      "SELECT COUNT(*)::int AS count FROM folders WHERE id = $1",
-      [emptyFolder.id],
-    );
+    const persisted = await readFolder(emptyFolder.id);
 
     expect(result.errors).toBeUndefined();
     expect(result.data?.deleteFolder).toBe(true);
-    expect(persisted.rows[0].count).toBe(0);
+    expect(persisted.deleted_at).toBeInstanceOf(Date);
+    expect(persisted.updated_by).toBe(USER_ID);
   });
 });

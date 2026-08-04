@@ -501,7 +501,7 @@ func (h *AssetHandler) handleUpdateFolder(w http.ResponseWriter, r *http.Request
 	})
 }
 
-// handleDeleteFolder processes DELETE requests to hard-delete an eligible folder.
+// handleDeleteFolder processes DELETE requests to tombstone an eligible folder.
 func (h *AssetHandler) handleDeleteFolder(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor) {
 	folderID := r.URL.Query().Get("id")
 	orgID := r.URL.Query().Get("orgId")
@@ -859,7 +859,7 @@ func (h *AssetHandler) handleUpdateMetadataItem(w http.ResponseWriter, r *http.R
 	})
 }
 
-// handleDeleteMetadataItem processes DELETE requests to hard-delete a specific metadata item.
+// handleDeleteMetadataItem processes DELETE requests to tombstone a specific metadata item.
 func (h *AssetHandler) handleDeleteMetadataItem(w http.ResponseWriter, r *http.Request, actor requestcontext.Actor) {
 	id := r.URL.Query().Get("id")
 	orgID := r.URL.Query().Get("orgId")

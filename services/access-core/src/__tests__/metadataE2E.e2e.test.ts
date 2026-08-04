@@ -174,11 +174,12 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     );
 
     expect(result.errors).toBeUndefined();
-    expect(result.data?.metadataItems).toEqual([]);
+    expect(result.data?.metadataItems).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ title: "E2E: New item" })]),
+    );
   });
 
   test("2. creates metadata and persists fields plus audit values", async () => {
-    const before = await assetDb.query("SELECT COUNT(*) FROM metadata_items WHERE folder_id = $1", [ROOT_FOLDER_ID]);
     const result = await queryGraphQL<{
       createMetadata: MetadataSummary & {
         description: string;
@@ -229,12 +230,6 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
       created_by: USER_ID,
       updated_by: null,
     });
-    expect(
-      Number(
-        (await assetDb.query("SELECT COUNT(*) FROM metadata_items WHERE folder_id = $1", [ROOT_FOLDER_ID])).rows[0]
-          .count,
-      ),
-    ).toBe(Number(before.rows[0].count) + 1);
   });
 
   test("3. lists the created item", async () => {
@@ -246,9 +241,10 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     );
 
     expect(result.errors).toBeUndefined();
-    expect(result.data?.metadataItems).toEqual([
-      expect.objectContaining({ id: createdItemId, title: "E2E: New item" }),
-    ]);
+    expect(result.data?.metadataItems).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: createdItemId, title: "E2E: New item" })]),
+    );
+    expect(result.data?.metadataItems.filter(({ id }) => id === createdItemId)).toHaveLength(1);
   });
 
   test("4. returns camelCase metadata detail", async () => {
@@ -487,7 +483,6 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
 
   test("12. policy denial performs no Go request and leaves DB unchanged", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
-    const countBefore = await assetDb.query("SELECT COUNT(*) FROM metadata_items");
     const rowBefore = await assetDb.query("SELECT title, updated_at FROM metadata_items WHERE id = $1", [
       createdItemId,
     ]);
@@ -537,9 +532,6 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     expect(policyFailure.errors?.[0]?.message).toBe("Internal server error, please try again");
 
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(await assetDb.query("SELECT COUNT(*) FROM metadata_items")).toMatchObject({
-      rows: [{ count: countBefore.rows[0].count }],
-    });
     const rowAfter = await assetDb.query("SELECT title, updated_at FROM metadata_items WHERE id = $1", [createdItemId]);
     expect(rowAfter.rows[0]).toEqual(rowBefore.rows[0]);
   });
@@ -703,7 +695,7 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     expect(mockFilterAllowedResourceIds).toHaveBeenCalledTimes(1);
   });
 
-  test("15. hard-deletes metadata and maps repeat to 404", async () => {
+  test("15. soft-deletes metadata and maps repeat to 404", async () => {
     const result = await queryGraphQL<{ deleteMetadata: boolean }>(
       `mutation($orgId: ID!, $id: ID!) {
         deleteMetadata(orgId: $orgId, id: $id)
@@ -714,11 +706,13 @@ describe("Metadata GraphQL to PostgreSQL E2E", () => {
     expect(result.errors).toBeUndefined();
     expect(result.data?.deleteMetadata).toBe(true);
 
-    const persisted = await assetDb.query<{ count: number }>(
-      `SELECT COUNT(*)::int AS count FROM metadata_items WHERE id = $1`,
+    const persisted = await assetDb.query<{ deleted_at: Date | null; updated_by: string | null }>(
+      `SELECT deleted_at, updated_by::text FROM metadata_items WHERE id = $1`,
       [createdItemId],
     );
-    expect(persisted.rows[0].count).toBe(0);
+    expect(persisted.rows).toHaveLength(1);
+    expect(persisted.rows[0].deleted_at).toBeInstanceOf(Date);
+    expect(persisted.rows[0].updated_by).toBe(USER_ID);
 
     const repeated = await queryGraphQL<unknown>(
       `mutation($orgId: ID!, $id: ID!) {

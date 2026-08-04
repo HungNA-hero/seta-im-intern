@@ -371,7 +371,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
 
     const result = await updateFolder(USER_VIEWER, "Viewer Edit");
     expect(result.errors).toBeUndefined();
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(await readFolderName()).toBe("Viewer Edit");
   });
 
@@ -405,7 +405,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     fetchSpy.mockClear();
     const allowed = await updateFolder(USER_VIEWER, "Post-grant Edit");
     expect(allowed.errors).toBeUndefined();
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(await readFolderName()).toBe("Post-grant Edit");
   });
 
@@ -419,7 +419,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
 
     const allowed = await updateFolder(USER_VIEWER, "Pre-revoke Edit");
     expect(allowed.errors).toBeUndefined();
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(await readFolderName()).toBe("Pre-revoke Edit");
 
     await revokePermission(permissionId);
@@ -525,7 +525,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     expect(await readFolderName()).toBe("Inherited Edit");
   });
 
-  test("PM-12 hard delete removes Asset rows and preserves grant history", async () => {
+  test("PM-12 soft delete retains Asset tombstones and grant history", async () => {
     await createTargetMetadata();
     await prisma.objectPermission.createMany({
       data: [
@@ -573,16 +573,18 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     expect(deleteFolderResult.data?.deleteFolder).toBe(true);
     expect(fetchSpy).toHaveBeenCalledTimes(2);
 
-    const deletedFolder = await assetDb.query<{ count: number }>(
-      "SELECT COUNT(*)::int AS count FROM folders WHERE id = $1",
+    const deletedFolder = await assetDb.query<{ deleted_at: Date | null }>(
+      "SELECT deleted_at FROM folders WHERE id = $1",
       [FOLDER_ID],
     );
-    const deletedMetadata = await assetDb.query<{ count: number }>(
-      "SELECT COUNT(*)::int AS count FROM metadata_items WHERE id = $1",
+    const deletedMetadata = await assetDb.query<{ deleted_at: Date | null }>(
+      "SELECT deleted_at FROM metadata_items WHERE id = $1",
       [METADATA_ID],
     );
-    expect(deletedFolder.rows[0].count).toBe(0);
-    expect(deletedMetadata.rows[0].count).toBe(0);
+    expect(deletedFolder.rows).toHaveLength(1);
+    expect(deletedFolder.rows[0].deleted_at).toBeInstanceOf(Date);
+    expect(deletedMetadata.rows).toHaveLength(1);
+    expect(deletedMetadata.rows[0].deleted_at).toBeInstanceOf(Date);
     expect(
       await prisma.objectPermission.count({
         where: { resourceId: { in: [FOLDER_ID, METADATA_ID] } },

@@ -46,10 +46,7 @@ let app: FastifyInstance;
 let assetDb: Client;
 
 /** Sends a public GraphQL operation through the production request context. */
-async function queryGraphQL<T>(
-  query: string,
-  variables: Record<string, unknown>,
-): Promise<GraphQLResult<T>> {
+async function queryGraphQL<T>(query: string, variables: Record<string, unknown>): Promise<GraphQLResult<T>> {
   const response = await app.inject({
     method: "POST",
     url: "/graphql",
@@ -78,32 +75,24 @@ function expectAssetError(
     traceId: TRACE_ID,
     service: "asset-core",
   });
-  expect(JSON.stringify(error)).not.toMatch(
-    /postgres|prisma|sqlstate|gorm|stack|localhost|internal\/api/i,
-  );
+  expect(JSON.stringify(error)).not.toMatch(/postgres|prisma|sqlstate|gorm|stack|localhost|internal\/api/i);
 }
 
 async function removeCursorFixture(): Promise<void> {
-  await assetDb.query("DELETE FROM metadata_items WHERE id = $1", [
-    CURSOR_ITEM_ID,
-  ]);
+  await assetDb.query("DELETE FROM metadata_items WHERE id = $1", [CURSOR_ITEM_ID]);
 }
 
 async function removeMetadataFixtures(): Promise<void> {
   await assetDb.query("DELETE FROM metadata_items WHERE id = ANY($1::uuid[])", [
-    [
-      IDENTITY_METADATA_ID,
-      ACTIVE_RESTORE_METADATA_ID,
-      DELETED_RESTORE_METADATA_ID,
-    ],
+    [IDENTITY_METADATA_ID, ACTIVE_RESTORE_METADATA_ID, DELETED_RESTORE_METADATA_ID],
   ]);
 }
 
 async function removeFolderFixtures(): Promise<void> {
-  await assetDb.query(
-    "DELETE FROM folder_deletion_jobs WHERE id = ANY($1::uuid[]) OR root_folder_id = $2",
-    [[QUEUED_DELETION_JOB_ID, RUNNING_DELETION_JOB_ID], DELETION_JOB_FOLDER_ID],
-  );
+  await assetDb.query("DELETE FROM folder_deletion_jobs WHERE id = ANY($1::uuid[]) OR root_folder_id = $2", [
+    [QUEUED_DELETION_JOB_ID, RUNNING_DELETION_JOB_ID],
+    DELETION_JOB_FOLDER_ID,
+  ]);
   await assetDb.query("DELETE FROM folders WHERE id = ANY($1::uuid[])", [
     [
       NON_EMPTY_CHILD_ID,
@@ -123,9 +112,7 @@ async function removeFolderFixtures(): Promise<void> {
 
 beforeAll(async () => {
   assetDb = new Client({
-    connectionString:
-      process.env.ASSET_DB_URL ??
-      "postgresql://asset_user:asset_password@127.0.0.1:5433/asset_db",
+    connectionString: process.env.ASSET_DB_URL ?? "postgresql://asset_user:asset_password@127.0.0.1:5433/asset_db",
   });
   await assetDb.connect();
   app = await buildServer();
@@ -195,10 +182,7 @@ describe("KAN-74 public Asset error contract E2E", () => {
     const cursor = first.data?.searchMetadataConnection.pageInfo.endCursor;
     expect(cursor).toEqual(expect.any(String));
 
-    await assetDb.query(
-      "UPDATE metadata_items SET deleted_at = now() WHERE id = $1",
-      [CURSOR_ITEM_ID],
-    );
+    await assetDb.query("UPDATE metadata_items SET deleted_at = now() WHERE id = $1", [CURSOR_ITEM_ID]);
     const stale = await queryGraphQL<unknown>(operation, {
       ...variables,
       input: { ...variables.input, after: cursor },
@@ -408,8 +392,7 @@ describe("KAN-74 public Asset error contract E2E", () => {
     expect(preview.errors).toBeUndefined();
     const previewResult = preview.data?.previewFolderDeletion;
     expect(previewResult).toBeDefined();
-    if (!previewResult)
-      throw new Error("Missing KAN-74 deletion preview fixture");
+    if (!previewResult) throw new Error("Missing KAN-74 deletion preview fixture");
 
     await assetDb.query(
       `INSERT INTO folders (id, org_id, path, name, created_by, updated_by)
@@ -484,9 +467,7 @@ describe("KAN-74 public Asset error contract E2E", () => {
       number: 3010,
       message: "Folder deletion job not found",
     });
-    expect(JSON.stringify(result.errors)).not.toContain(
-      MISSING_DELETION_JOB_ID,
-    );
+    expect(JSON.stringify(result.errors)).not.toContain(MISSING_DELETION_JOB_ID);
   });
 
   test("forwards the Asset non-cancellable-deletion-job envelope", async () => {
@@ -508,8 +489,7 @@ describe("KAN-74 public Asset error contract E2E", () => {
     expectAssetError(result, {
       code: "DELETION_JOB_NOT_CANCELLABLE",
       number: 3011,
-      message:
-        "Folder deletion job cannot be cancelled or retried in its current state",
+      message: "Folder deletion job cannot be cancelled or retried in its current state",
     });
   });
 
@@ -518,13 +498,7 @@ describe("KAN-74 public Asset error contract E2E", () => {
       `INSERT INTO metadata_items
          (id, folder_id, title, labels, metadata_json, external_source, external_id, created_by, updated_by)
        VALUES ($1, $2, 'KAN-74 existing identity', ARRAY['kan74-e2e'], '{}'::jsonb, $3, $4, $5, $5)`,
-      [
-        IDENTITY_METADATA_ID,
-        ROOT_FOLDER_ID,
-        IDENTITY_EXTERNAL_SOURCE,
-        IDENTITY_EXTERNAL_ID,
-        USER_ADMIN,
-      ],
+      [IDENTITY_METADATA_ID, ROOT_FOLDER_ID, IDENTITY_EXTERNAL_SOURCE, IDENTITY_EXTERNAL_ID, USER_ADMIN],
     );
 
     const result = await queryGraphQL<unknown>(
@@ -583,9 +557,7 @@ describe("KAN-74 public Asset error contract E2E", () => {
        VALUES ($1, $2, 'KAN-74 deleted metadata', ARRAY['kan74-e2e'], '{}'::jsonb, $3, $3, now())`,
       [DELETED_RESTORE_METADATA_ID, DELETED_METADATA_FOLDER_ID, USER_ADMIN],
     );
-    await assetDb.query("UPDATE folders SET deleted_at = now() WHERE id = $1", [
-      DELETED_METADATA_FOLDER_ID,
-    ]);
+    await assetDb.query("UPDATE folders SET deleted_at = now() WHERE id = $1", [DELETED_METADATA_FOLDER_ID]);
 
     const result = await queryGraphQL<unknown>(
       `mutation($orgId: ID!, $id: ID!) {

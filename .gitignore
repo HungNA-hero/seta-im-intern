@@ -53,6 +53,7 @@ docs/
 
 # Claude Code and tooling
 .claude/
+.agents/skills/
 .specify/
 CLAUDE.md
 
