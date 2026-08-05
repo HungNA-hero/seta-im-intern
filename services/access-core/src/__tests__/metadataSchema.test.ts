@@ -5,9 +5,7 @@ import { createCanDoMock } from "./helpers/canDoMock";
 const { mockCanDo } = vi.hoisted(() => ({ mockCanDo: vi.fn() }));
 const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({ mockFilterAllowedResourceIds: vi.fn() }));
 
-vi.mock("../authz/decision", () =>
-  createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
-);
+vi.mock("../authz/decision", () => createCanDoMock(mockCanDo, mockFilterAllowedResourceIds));
 vi.mock("../config", () => ({
   config: { goAssetUrl: "http://go-mock" },
   ASSET_FETCH_TIMEOUT_MS: 3000,
@@ -28,9 +26,7 @@ const yoga = createYoga({
 });
 
 /** Builds a request context for assembled metadata schema tests. */
-function metadataContext(
-  overrides: Partial<GraphQLContext> = {},
-): GraphQLContext {
+function metadataContext(overrides: Partial<GraphQLContext> = {}): GraphQLContext {
   return {
     userId: "user-1",
     currentOrgId: "org-1",
@@ -42,10 +38,7 @@ function metadataContext(
 }
 
 /** Executes a GraphQL operation through Yoga so auth and org directives run before resolvers. */
-async function executeMetadataOperation(
-  query: string,
-  context: GraphQLContext,
-) {
+async function executeMetadataOperation(query: string, context: GraphQLContext) {
   const response = await yoga.fetch(
     "http://test/graphql",
     {
@@ -64,7 +57,9 @@ async function executeMetadataOperation(
 beforeEach(() => {
   vi.resetAllMocks();
   mockCanDo.mockResolvedValue({ allowed: true, reason: null });
-  mockFilterAllowedResourceIds.mockImplementation(async (_u: string, _o: string, _a: string, _r: string, ids: string[]) => new Set(ids));
+  mockFilterAllowedResourceIds.mockImplementation(
+    async (_u: string, _o: string, _a: string, _r: string, ids: string[]) => new Set(ids),
+  );
 });
 
 describe("metadata schema directives", () => {

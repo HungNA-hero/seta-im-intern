@@ -46,11 +46,7 @@ export function parseTraceparent(value: string | undefined): string | null {
 }
 
 export function isTraceId(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    /^[a-f0-9]{32}$/.test(value) &&
-    nonZeroHex(value)
-  );
+  return typeof value === "string" && /^[a-f0-9]{32}$/.test(value) && nonZeroHex(value);
 }
 
 export function createTraceparent(traceId: string): string {
@@ -58,7 +54,8 @@ export function createTraceparent(traceId: string): string {
 }
 
 export function createRequestCorrelation(headers: Record<string, unknown>): RequestCorrelation {
-  const traceId = parseTraceparent(typeof headers.traceparent === "string" ? headers.traceparent : undefined) ?? randomHex(16);
+  const traceId =
+    parseTraceparent(typeof headers.traceparent === "string" ? headers.traceparent : undefined) ?? randomHex(16);
   const suppliedRequestId = typeof headers["x-request-id"] === "string" ? headers["x-request-id"].trim() : "";
   return {
     traceId,
@@ -68,10 +65,7 @@ export function createRequestCorrelation(headers: Record<string, unknown>): Requ
   };
 }
 
-export function runWithRequestCorrelation<T>(
-  correlation: RequestCorrelation,
-  callback: () => T,
-): T {
+export function runWithRequestCorrelation<T>(correlation: RequestCorrelation, callback: () => T): T {
   return storage.run(correlation, callback);
 }
 

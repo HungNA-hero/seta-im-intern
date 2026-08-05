@@ -6,9 +6,7 @@ const { mockCanDo } = vi.hoisted(() => ({ mockCanDo: vi.fn() }));
 const { mockFilterAllowedResourceIds } = vi.hoisted(() => ({ mockFilterAllowedResourceIds: vi.fn() }));
 const { mockTrainerFindFirst } = vi.hoisted(() => ({ mockTrainerFindFirst: vi.fn() }));
 
-vi.mock("../authz/decision", () =>
-  createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
-);
+vi.mock("../authz/decision", () => createCanDoMock(mockCanDo, mockFilterAllowedResourceIds));
 vi.mock("../config", () => ({
   config: { goAssetUrl: "http://go-mock", assetInternalApiToken: "test-internal-token" },
   ASSET_FETCH_TIMEOUT_MS: 3000,
@@ -63,15 +61,14 @@ beforeEach(() => {
   vi.resetAllMocks();
   mockTrainerFindFirst.mockResolvedValue(null);
   mockCanDo.mockResolvedValue({ allowed: true, reason: null });
-  mockFilterAllowedResourceIds.mockImplementation(async (_u: string, _o: string, _a: string, _r: string, ids: string[]) => new Set(ids));
+  mockFilterAllowedResourceIds.mockImplementation(
+    async (_u: string, _o: string, _a: string, _r: string, ids: string[]) => new Set(ids),
+  );
 });
 
 describe("@sameOrg directive", () => {
   test("rejects a query when orgId arg != authenticated org, before the resolver runs", async () => {
-    const result = await run(
-      `query { folderTree(orgId: "org-2") { id } }`,
-      ctx({ currentOrgId: "org-1" }),
-    );
+    const result = await run(`query { folderTree(orgId: "org-2") { id } }`, ctx({ currentOrgId: "org-1" }));
 
     expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
     expect(mockCanDo).not.toHaveBeenCalled();
@@ -84,10 +81,7 @@ describe("@sameOrg directive", () => {
       json: async () => ({ folders: [] }),
     });
 
-    const result = await run(
-      `query { folderTree(orgId: "org-1") { id } }`,
-      ctx({ currentOrgId: "org-1" }),
-    );
+    const result = await run(`query { folderTree(orgId: "org-1") { id } }`, ctx({ currentOrgId: "org-1" }));
 
     expect(result.errors).toBeUndefined();
   });
@@ -163,10 +157,7 @@ describe("@sameOrg directive", () => {
   });
 
   test("rejects when the request has no authenticated org (currentOrgId null)", async () => {
-    const result = await run(
-      `query { folderTree(orgId: "org-1") { id } }`,
-      ctx({ currentOrgId: null }),
-    );
+    const result = await run(`query { folderTree(orgId: "org-1") { id } }`, ctx({ currentOrgId: null }));
 
     expect(result.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
     expect(mockCanDo).not.toHaveBeenCalled();
@@ -258,8 +249,6 @@ describe("@sameOrg directive", () => {
       ctx({ userId: "current-user" }),
     );
     expect(result.errors).toBeUndefined();
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "current-user", "read", "folder", "folder-1", "org-1",
-    );
+    expect(mockCanDo).toHaveBeenCalledWith("current-user", "read", "folder", "folder-1", "org-1");
   });
 });

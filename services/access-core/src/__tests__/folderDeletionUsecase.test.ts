@@ -6,16 +6,11 @@ const { mockCanDo, mockFilterAllowedResourceIds } = vi.hoisted(() => ({
   mockFilterAllowedResourceIds: vi.fn(),
 }));
 
-vi.mock("../authz/decision", () =>
-  createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
-);
+vi.mock("../authz/decision", () => createCanDoMock(mockCanDo, mockFilterAllowedResourceIds));
 
 import { config } from "../config";
 import type { GraphQLContext } from "../graphql/context";
-import {
-  getFolderDeletionJob,
-  previewFolderDeletion,
-} from "../usecase/folderDeletionUsecase";
+import { getFolderDeletionJob, previewFolderDeletion } from "../usecase/folderDeletionUsecase";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -77,13 +72,7 @@ describe("folder deletion usecase", () => {
 
     const preview = await previewFolderDeletion(context(), "org-1", "folder-1");
 
-    expect(mockCanDo).toHaveBeenCalledWith(
-      "user-1",
-      "delete",
-      "folder",
-      "folder-1",
-      "org-1",
-    );
+    expect(mockCanDo).toHaveBeenCalledWith("user-1", "delete", "folder", "folder-1", "org-1");
     expect(preview.totalRows).toBe(6);
     expect(mockFetch).toHaveBeenCalledWith(
       `${config.goAssetUrl}/internal/api/v1/folder-deletions/preview?orgId=org-1&folderId=folder-1`,
@@ -100,9 +89,7 @@ describe("folder deletion usecase", () => {
   });
 
   test("forwards the trusted org-admin signal only for job administration", async () => {
-    mockFetch.mockResolvedValue(
-      new Response(JSON.stringify({ job: job() }), { status: 200 }),
-    );
+    mockFetch.mockResolvedValue(new Response(JSON.stringify({ job: job() }), { status: 200 }));
 
     const result = await getFolderDeletionJob(context(), "org-1", "job-1");
 

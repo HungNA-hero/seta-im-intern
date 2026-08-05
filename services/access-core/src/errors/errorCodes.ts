@@ -27,7 +27,11 @@ export const errorDefinitions: ErrorDefinition[] = [
   { code: "DELETION_PREVIEW_STALE", number: 3008, message: "Folder deletion preview is stale; request a new preview" },
   { code: "FOLDER_DELETION_IN_PROGRESS", number: 3009, message: "Folder deletion is already in progress" },
   { code: "DELETION_JOB_NOT_FOUND", number: 3010, message: "Folder deletion job not found" },
-  { code: "DELETION_JOB_NOT_CANCELLABLE", number: 3011, message: "Folder deletion job cannot be cancelled or retried in its current state" },
+  {
+    code: "DELETION_JOB_NOT_CANCELLABLE",
+    number: 3011,
+    message: "Folder deletion job cannot be cancelled or retried in its current state",
+  },
   { code: "FOLDER_NOT_DELETED", number: 3012, message: "Folder is already active" },
   { code: "METADATA_NOT_FOUND", number: 4001, message: "Metadata item not found" },
   { code: "METADATA_IDENTITY_CONFLICT", number: 4002, message: "External identity already exists on an active item" },

@@ -11,8 +11,7 @@ function isReservedRoleCode(code: string): boolean {
 
 export const roleResolvers = {
   Query: {
-    roles: async (_: unknown, { orgId }: { orgId: string }) =>
-      (await listRolesByOrg(orgId)).map(serializeDates),
+    roles: async (_: unknown, { orgId }: { orgId: string }) => (await listRolesByOrg(orgId)).map(serializeDates),
     role: async (_: unknown, { id }: { id: string }, ctx: GraphQLContext) => {
       const r = await getRoleById(id);
       if (!r || r.orgId !== ctx.currentOrgId)

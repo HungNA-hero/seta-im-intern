@@ -18,17 +18,11 @@ import { GraphQLContext } from "../context";
 
 export const metadataResolvers = {
   Query: {
-    metadataItems: (
-      _: unknown,
-      { orgId, folderId }: { orgId: string; folderId: string },
-      ctx: GraphQLContext,
-    ) => listMetadataItems(ctx, orgId, folderId),
+    metadataItems: (_: unknown, { orgId, folderId }: { orgId: string; folderId: string }, ctx: GraphQLContext) =>
+      listMetadataItems(ctx, orgId, folderId),
 
-    metadataItem: (
-      _: unknown,
-      { orgId, id }: { orgId: string; id: string },
-      ctx: GraphQLContext,
-    ) => getMetadataItem(ctx, orgId, id),
+    metadataItem: (_: unknown, { orgId, id }: { orgId: string; id: string }, ctx: GraphQLContext) =>
+      getMetadataItem(ctx, orgId, id),
 
     searchMetadata: (
       _: unknown,
@@ -38,10 +32,7 @@ export const metadataResolvers = {
 
     searchMetadataConnection: (
       _: unknown,
-      {
-        orgId,
-        input,
-      }: { orgId: string; input: MetadataConnectionSearchInput },
+      { orgId, input }: { orgId: string; input: MetadataConnectionSearchInput },
       ctx: GraphQLContext,
     ) => searchMetadataConnection(ctx, orgId, input),
   },
@@ -55,24 +46,14 @@ export const metadataResolvers = {
 
     updateMetadata: (
       _: unknown,
-      {
-        orgId,
-        id,
-        input,
-      }: { orgId: string; id: string; input: UpdateMetadataInput },
+      { orgId, id, input }: { orgId: string; id: string; input: UpdateMetadataInput },
       ctx: GraphQLContext,
     ) => updateMetadata(ctx, orgId, id, input),
 
-    deleteMetadata: (
-      _: unknown,
-      { orgId, id }: { orgId: string; id: string },
-      ctx: GraphQLContext,
-    ) => deleteMetadata(ctx, orgId, id),
+    deleteMetadata: (_: unknown, { orgId, id }: { orgId: string; id: string }, ctx: GraphQLContext) =>
+      deleteMetadata(ctx, orgId, id),
 
-    restoreMetadata: (
-      _: unknown,
-      { orgId, id }: { orgId: string; id: string },
-      ctx: GraphQLContext,
-    ) => restoreMetadata(ctx, orgId, id),
+    restoreMetadata: (_: unknown, { orgId, id }: { orgId: string; id: string }, ctx: GraphQLContext) =>
+      restoreMetadata(ctx, orgId, id),
   },
 };

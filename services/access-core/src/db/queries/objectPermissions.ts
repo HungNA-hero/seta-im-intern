@@ -13,6 +13,16 @@ export type ObjectPermission = {
   grantedAt: Date;
 };
 
+export interface GrantObjectPermissionInput {
+  orgId: string;
+  resourceType: ResourceType;
+  resourceId: string;
+  action: PermissionActionCode;
+  grantedBy: string;
+  granteeUserId?: string | null;
+  granteeRoleId?: string | null;
+}
+
 export async function listObjectPermissions(
   orgId: string,
   resourceType: ResourceType,
@@ -23,15 +33,15 @@ export async function listObjectPermissions(
   });
 }
 
-export async function grantObjectPermission(
-  orgId: string,
-  resourceType: ResourceType,
-  resourceId: string,
-  action: PermissionActionCode,
-  grantedBy: string,
-  granteeUserId?: string | null,
-  granteeRoleId?: string | null,
-): Promise<ObjectPermission> {
+export async function grantObjectPermission({
+  orgId,
+  resourceType,
+  resourceId,
+  action,
+  grantedBy,
+  granteeUserId,
+  granteeRoleId,
+}: GrantObjectPermissionInput): Promise<ObjectPermission> {
   const permAction = await prisma.permissionAction.findUniqueOrThrow({
     where: { code: action },
   });
@@ -48,9 +58,7 @@ export async function grantObjectPermission(
   });
 }
 
-export async function getObjectPermissionById(
-  id: string,
-): Promise<ObjectPermission | null> {
+export async function getObjectPermissionById(id: string): Promise<ObjectPermission | null> {
   return prisma.objectPermission.findUnique({ where: { id } });
 }
 

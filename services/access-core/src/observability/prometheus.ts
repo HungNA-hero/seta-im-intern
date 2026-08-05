@@ -1,16 +1,7 @@
 import { getAssetBreakerSnapshot } from "../clients/assetBreaker";
 import { getMetricsSnapshotForTests } from "../cache/metrics";
 
-const HTTP_DURATION_BUCKETS_SECONDS = [
-  0.05,
-  0.1,
-  0.25,
-  0.5,
-  1,
-  2,
-  3,
-  5,
-];
+const HTTP_DURATION_BUCKETS_SECONDS = [0.05, 0.1, 0.25, 0.5, 1, 2, 3, 5];
 
 interface HttpRequestStats {
   count: number;
@@ -19,17 +10,7 @@ interface HttpRequestStats {
 }
 
 const httpRequests = new Map<string, HttpRequestStats>();
-const KNOWN_HTTP_METHODS = new Set([
-  "CONNECT",
-  "DELETE",
-  "GET",
-  "HEAD",
-  "OPTIONS",
-  "PATCH",
-  "POST",
-  "PUT",
-  "TRACE",
-]);
+const KNOWN_HTTP_METHODS = new Set(["CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT", "TRACE"]);
 
 function escapeLabel(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/"/g, '\\"');
@@ -41,12 +22,7 @@ function labels(values: Record<string, string>): string {
     .join(",")}}`;
 }
 
-function requestKey(
-  method: string,
-  route: string,
-  status: number,
-  result: string,
-): string {
+function requestKey(method: string, route: string, status: number, result: string): string {
   return [method, route, String(status), result].join("\u0000");
 }
 
@@ -57,9 +33,7 @@ export function recordHttpRequest(
   result: string,
   durationMs: number,
 ): void {
-  const normalizedMethod = KNOWN_HTTP_METHODS.has(method.toUpperCase())
-    ? method.toUpperCase()
-    : "OTHER";
+  const normalizedMethod = KNOWN_HTTP_METHODS.has(method.toUpperCase()) ? method.toUpperCase() : "OTHER";
   const key = requestKey(normalizedMethod, route, status, result);
   const current = httpRequests.get(key) ?? {
     count: 0,

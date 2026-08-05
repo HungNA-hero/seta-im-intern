@@ -3,6 +3,4 @@ import { typeDefs } from "./typeDefs";
 import { resolvers } from "./resolvers";
 import { applyAuthDirectives } from "./directives";
 
-export const schema = applyAuthDirectives(
-  createSchema({ typeDefs, resolvers }),
-);
+export const schema = applyAuthDirectives(createSchema({ typeDefs, resolvers }));

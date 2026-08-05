@@ -1,7 +1,4 @@
-import {
-  isValidMetadataCursorPosition,
-  MetadataCursorPosition,
-} from "./metadataCursor";
+import { isValidMetadataCursorPosition, MetadataCursorPosition } from "./metadataCursor";
 
 export interface GoMetadataItem {
   id: string;
@@ -51,10 +48,7 @@ export function metadataHierarchy(
   folderAncestorsByFolderId: Map<string, string[]>,
 ): (m: GoMetadataItem) => { ancestorIds: string[] } {
   return (m) => ({
-    ancestorIds: [
-      m.folder_id,
-      ...(folderAncestorsByFolderId.get(m.folder_id) ?? []),
-    ],
+    ancestorIds: [m.folder_id, ...(folderAncestorsByFolderId.get(m.folder_id) ?? [])],
   });
 }
 
@@ -74,10 +68,7 @@ export interface CreateMetadataInput {
   notes?: string | null;
 }
 
-export type UpdateMetadataInput = Omit<
-  Partial<CreateMetadataInput>,
-  "folderId"
->;
+export type UpdateMetadataInput = Omit<Partial<CreateMetadataInput>, "folderId">;
 
 export interface MetadataSearchInput {
   folderId?: string | null;
@@ -109,8 +100,10 @@ export interface MetadataConnectionSearchInput {
   after?: string | null;
 }
 
-export interface NormalizedMetadataConnectionSearchInput
-  extends Omit<NormalizedMetadataSearchInput, "limit" | "offset"> {
+export interface NormalizedMetadataConnectionSearchInput extends Omit<
+  NormalizedMetadataSearchInput,
+  "limit" | "offset"
+> {
   folderId: string;
   first: number;
   after?: MetadataCursorPosition;

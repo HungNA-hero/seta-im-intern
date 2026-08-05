@@ -1,16 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("../cache/factCache", () => ({
-  readFolderFactThrough: (
-    _orgId: string,
-    _id: string,
-    loader: () => Promise<unknown>,
-  ) => loader(),
-  readItemFactThrough: (
-    _orgId: string,
-    _id: string,
-    loader: () => Promise<unknown>,
-  ) => loader(),
+  readFolderFactThrough: (_orgId: string, _id: string, loader: () => Promise<unknown>) => loader(),
+  readItemFactThrough: (_orgId: string, _id: string, loader: () => Promise<unknown>) => loader(),
 }));
 
 import { getFolderMetaBatch } from "../clients/assetClient";

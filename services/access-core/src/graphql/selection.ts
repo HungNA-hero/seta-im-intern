@@ -1,9 +1,6 @@
 import { GraphQLResolveInfo, SelectionSetNode } from "graphql";
 
-export function selectionIncludesField(
-  info: GraphQLResolveInfo,
-  fieldName: string,
-): boolean {
+export function selectionIncludesField(info: GraphQLResolveInfo, fieldName: string): boolean {
   const visitedFragments = new Set<string>();
 
   function includes(selectionSet: SelectionSetNode | undefined): boolean {

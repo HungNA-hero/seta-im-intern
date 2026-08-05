@@ -44,11 +44,7 @@ describe("registerGracefulShutdown", () => {
     // is registered after "slow" — before "slow"'s close is even allowed to
     // finish. This is what guarantees a capacity-log kill switch fires ahead
     // of a slow, blocking close such as server.close()'s request drain.
-    expect(order).toEqual([
-      "slow:immediate",
-      "fast:immediate",
-      "slow:close:start",
-    ]);
+    expect(order).toEqual(["slow:immediate", "fast:immediate", "slow:close:start"]);
 
     resolveClose();
     await closeGate;

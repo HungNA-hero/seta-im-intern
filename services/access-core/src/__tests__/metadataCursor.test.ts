@@ -1,8 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-  decodeMetadataCursor,
-  encodeMetadataCursor,
-} from "../domain/metadataCursor";
+import { decodeMetadataCursor, encodeMetadataCursor } from "../domain/metadataCursor";
 
 const position = {
   updatedAt: "2026-07-17T10:11:12.123456789Z",
@@ -26,9 +23,7 @@ describe("metadata cursor codec", () => {
       id: "20000000-0000-0000-0000-000000000108",
     };
 
-    expect(decodeMetadataCursor(encodeMetadataCursor(deterministicPosition))).toEqual(
-      deterministicPosition,
-    );
+    expect(decodeMetadataCursor(encodeMetadataCursor(deterministicPosition))).toEqual(deterministicPosition);
   });
 
   test.each([

@@ -11,24 +11,15 @@ const dbPassword = process.env.ACCESS_DB_PASSWORD ?? "access_password";
 const redisHost = process.env.ACCESS_REDIS_HOST ?? "localhost";
 const redisPort = process.env.ACCESS_REDIS_PORT ?? "6379";
 
-function intInRange(
-  name: string,
-  fallback: number,
-  min: number,
-  max: number,
-): number {
+function intInRange(name: string, fallback: number, min: number, max: number): number {
   const raw = process.env[name];
   if (raw === undefined) return fallback;
   if (!/^\d+$/.test(raw)) {
-    throw new Error(
-      `${name} must be a whole integer between ${min} and ${max}`,
-    );
+    throw new Error(`${name} must be a whole integer between ${min} and ${max}`);
   }
   const value = Number(raw);
   if (!Number.isSafeInteger(value) || value < min || value > max) {
-    throw new Error(
-      `${name} must be a whole integer between ${min} and ${max}`,
-    );
+    throw new Error(`${name} must be a whole integer between ${min} and ${max}`);
   }
   return value;
 }
@@ -71,21 +62,9 @@ export const config = {
   metricsEnabled: boolEnv("METRICS_ENABLED", false),
   assetBreaker: {
     enabled: boolEnv("ACCESS_ASSET_BREAKER_ENABLED", true),
-    errorThresholdPercentage: intInRange(
-      "ACCESS_ASSET_BREAKER_ERROR_THRESHOLD_PCT",
-      50,
-      1,
-      99,
-    ),
-    volumeThreshold: intInRange(
-      "ACCESS_ASSET_BREAKER_VOLUME_THRESHOLD",
-      10,
-      1,
-      1000,
-    ),
-    resetTimeoutMs: validateResetTimeoutMs(
-      intInRange("ACCESS_ASSET_BREAKER_RESET_MS", 5000, 500, 120000),
-    ),
+    errorThresholdPercentage: intInRange("ACCESS_ASSET_BREAKER_ERROR_THRESHOLD_PCT", 50, 1, 99),
+    volumeThreshold: intInRange("ACCESS_ASSET_BREAKER_VOLUME_THRESHOLD", 10, 1, 1000),
+    resetTimeoutMs: validateResetTimeoutMs(intInRange("ACCESS_ASSET_BREAKER_RESET_MS", 5000, 500, 120000)),
     capacity: intInRange("ACCESS_ASSET_BREAKER_CAPACITY", 50, 1, 10000),
   },
   db: {
@@ -100,21 +79,13 @@ export const config = {
     port: parseInt(redisPort, 10),
     password: process.env.ACCESS_REDIS_PASSWORD || undefined,
     db: parseInt(process.env.ACCESS_REDIS_DB ?? "0", 10),
-    connectTimeoutMs: parseInt(
-      process.env.ACCESS_REDIS_CONNECT_TIMEOUT_MS ?? "250",
-      10,
-    ),
-    commandTimeoutMs: parseInt(
-      process.env.ACCESS_REDIS_COMMAND_TIMEOUT_MS ?? "75",
-      10,
-    ),
+    connectTimeoutMs: parseInt(process.env.ACCESS_REDIS_CONNECT_TIMEOUT_MS ?? "250", 10),
+    commandTimeoutMs: parseInt(process.env.ACCESS_REDIS_COMMAND_TIMEOUT_MS ?? "75", 10),
   },
 } as const;
 
 export function assertRuntimeConfig(): void {
   if (!config.assetInternalApiToken.trim()) {
-    throw new Error(
-      "ASSET_INTERNAL_API_TOKEN must be configured before Access Core starts",
-    );
+    throw new Error("ASSET_INTERNAL_API_TOKEN must be configured before Access Core starts");
   }
 }

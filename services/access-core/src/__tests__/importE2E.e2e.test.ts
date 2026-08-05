@@ -3,15 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { FastifyInstance } from "fastify";
 import { Client } from "pg";
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  test,
-  vi,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { createCanDoMock } from "./helpers/canDoMock";
 import { prisma } from "../db/prisma";
 import { buildServer } from "../server";
@@ -21,9 +13,7 @@ const { mockCanDo, mockFilterAllowedResourceIds } = vi.hoisted(() => ({
   mockFilterAllowedResourceIds: vi.fn(),
 }));
 
-vi.mock("../authz/decision", () =>
-  createCanDoMock(mockCanDo, mockFilterAllowedResourceIds),
-);
+vi.mock("../authz/decision", () => createCanDoMock(mockCanDo, mockFilterAllowedResourceIds));
 
 const ORG_ID = "00000000-0000-0000-0000-000000000010"; // Test Org
 const ORG_ID_OTHER = "00000000-0000-0000-0000-000000000011"; // Other Org
@@ -81,18 +71,9 @@ describe("CLI Import Visibility Policy E2E", () => {
     });
 
     // Shadow refs
-    await pgClient.query(
-      "INSERT INTO user_ref (user_id) VALUES ($1) ON CONFLICT DO NOTHING",
-      [USER_ID],
-    );
-    await pgClient.query(
-      "INSERT INTO organization_ref (org_id) VALUES ($1) ON CONFLICT DO NOTHING",
-      [ORG_ID],
-    );
-    await pgClient.query(
-      "INSERT INTO organization_ref (org_id) VALUES ($1) ON CONFLICT DO NOTHING",
-      [ORG_ID_OTHER],
-    );
+    await pgClient.query("INSERT INTO user_ref (user_id) VALUES ($1) ON CONFLICT DO NOTHING", [USER_ID]);
+    await pgClient.query("INSERT INTO organization_ref (org_id) VALUES ($1) ON CONFLICT DO NOTHING", [ORG_ID]);
+    await pgClient.query("INSERT INTO organization_ref (org_id) VALUES ($1) ON CONFLICT DO NOTHING", [ORG_ID_OTHER]);
 
     // Create payload
     const dataset = {
@@ -139,9 +120,7 @@ describe("CLI Import Visibility Policy E2E", () => {
       [ORG_ID],
     );
     if (importedRows.rows.length !== 1) {
-      throw new Error(
-        "CLI import did not create exactly one visible metadata item",
-      );
+      throw new Error("CLI import did not create exactly one visible metadata item");
     }
     importedFolderId = importedRows.rows[0].folder_id;
     importedItemId = importedRows.rows[0].item_id;
@@ -160,12 +139,7 @@ describe("CLI Import Visibility Policy E2E", () => {
   });
 
   /** Executes GraphQL with the same identity headers used by production requests. */
-  const queryGraphQL = async (
-    query: string,
-    variables: any,
-    userAuth: string,
-    orgAuth: string,
-  ) => {
+  const queryGraphQL = async (query: string, variables: any, userAuth: string, orgAuth: string) => {
     return app.inject({
       method: "POST",
       url: "/graphql",
@@ -179,8 +153,7 @@ describe("CLI Import Visibility Policy E2E", () => {
 
   test("imported items are visible through SearchMetadataItems with read policy", async () => {
     mockFilterAllowedResourceIds.mockImplementation(
-      async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) =>
-        new Set(ids),
+      async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) => new Set(ids),
     ); // authorized
 
     const query = `
@@ -198,9 +171,7 @@ describe("CLI Import Visibility Policy E2E", () => {
     expect(res.statusCode).toBe(200);
     expect(body.errors).toBeUndefined();
     expect(body.data.searchMetadata.length).toBeGreaterThanOrEqual(1);
-    expect(
-      body.data.searchMetadata.some((i: any) => i.title === "Imported Item"),
-    ).toBe(true);
+    expect(body.data.searchMetadata.some((i: any) => i.title === "Imported Item")).toBe(true);
 
     expect(mockFilterAllowedResourceIds).toHaveBeenCalledWith(
       USER_ID,
@@ -214,8 +185,7 @@ describe("CLI Import Visibility Policy E2E", () => {
   test("imported items are visible through metadata list with folder read policy", async () => {
     mockCanDo.mockResolvedValue({ allowed: true, reason: null });
     mockFilterAllowedResourceIds.mockImplementation(
-      async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) =>
-        new Set(ids),
+      async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) => new Set(ids),
     );
 
     const res = await queryGraphQL(
@@ -229,9 +199,7 @@ describe("CLI Import Visibility Policy E2E", () => {
     const body = res.json();
 
     expect(body.errors).toBeUndefined();
-    expect(body.data.metadataItems).toEqual([
-      expect.objectContaining({ id: importedItemId, title: "Imported Item" }),
-    ]);
+    expect(body.data.metadataItems).toEqual([expect.objectContaining({ id: importedItemId, title: "Imported Item" })]);
     expect(mockFilterAllowedResourceIds).toHaveBeenCalledWith(
       USER_ID,
       ORG_ID,
@@ -261,13 +229,7 @@ describe("CLI Import Visibility Policy E2E", () => {
       externalSource: "open_images_v7",
       externalId: "ext1",
     });
-    expect(mockCanDo).toHaveBeenCalledWith(
-      USER_ID,
-      "read",
-      "metadata_item",
-      importedItemId,
-      ORG_ID,
-    );
+    expect(mockCanDo).toHaveBeenCalledWith(USER_ID, "read", "metadata_item", importedItemId, ORG_ID);
   });
 
   test("denied requester cannot read imported item through detail", async () => {
@@ -326,8 +288,7 @@ describe("CLI Import Visibility Policy E2E", () => {
 
   test("imported items are not visible in cross-org search", async () => {
     mockFilterAllowedResourceIds.mockImplementation(
-      async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) =>
-        new Set(ids),
+      async (_userId: string, _orgId: string, _action: string, _type: string, ids: string[]) => new Set(ids),
     );
 
     const query = `

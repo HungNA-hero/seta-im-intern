@@ -1,4 +1,10 @@
-import { listOrganizations, getOrganizationById, addOrgMember, createOrganization, Organization } from "../../db/queries/organizations";
+import {
+  listOrganizations,
+  getOrganizationById,
+  addOrgMember,
+  createOrganization,
+  Organization,
+} from "../../db/queries/organizations";
 import { assignRole, revokeRole } from "../../db/queries/userRoles";
 import { serializeDates, rethrowPrismaError } from "./utils";
 import { GraphQLContext } from "../context";
@@ -8,10 +14,7 @@ import { bumpUserEpoch } from "../../cache/epoch";
 
 const RESERVED_ROLE_CODES = new Set(["trainer_admin", "org_admin"]);
 
-function assertAssignableRole(
-  role: { orgId: string; code: string } | null,
-  orgId: string,
-): void {
+function assertAssignableRole(role: { orgId: string; code: string } | null, orgId: string): void {
   if (!role || role.orgId !== orgId) {
     throw new GraphQLError("Role not found", { extensions: { code: "BAD_USER_INPUT" } });
   }
@@ -22,17 +25,21 @@ function assertAssignableRole(
   }
 }
 
-function toOrganization(o: Organization) {
-  return serializeDates(o);
+function toOrganization(organization: Organization) {
+  return serializeDates(organization);
 }
 
 export const organizationResolvers = {
   Query: {
     organizations: async () => (await listOrganizations()).map(toOrganization),
     organization: async (_: unknown, { id }: { id: string }) => {
-      const o = await getOrganizationById(id);
-      if (!o) throw new GraphQLError("Organization not found", { extensions: { code: "BAD_USER_INPUT" } });
-      return toOrganization(o);
+      const organization = await getOrganizationById(id);
+      if (!organization) {
+        throw new GraphQLError("Organization not found", {
+          extensions: { code: "BAD_USER_INPUT" },
+        });
+      }
+      return toOrganization(organization);
     },
   },
   Mutation: {

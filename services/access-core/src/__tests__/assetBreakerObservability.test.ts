@@ -1,21 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAssetBreakerForTests } from "../clients/assetBreaker";
-import {
-  deferredResponse,
-  makeBreakerOptions,
-  openBreaker,
-} from "./helpers/assetBreakerTestFixtures";
+import { deferredResponse, makeBreakerOptions, openBreaker } from "./helpers/assetBreakerTestFixtures";
 
 const originalFetch = global.fetch;
 const mockFetch = vi.fn();
 const options = makeBreakerOptions({ capacity: 1 });
 
-function parsedLines(
-  stderrSpy: ReturnType<typeof vi.spyOn>,
-): Array<Record<string, unknown>> {
-  return stderrSpy.mock.calls.map(([line]: [unknown]) =>
-    JSON.parse(String(line)),
-  ) as Array<Record<string, unknown>>;
+function parsedLines(stderrSpy: ReturnType<typeof vi.spyOn>): Array<Record<string, unknown>> {
+  return stderrSpy.mock.calls.map(([line]: [unknown]) => JSON.parse(String(line))) as Array<Record<string, unknown>>;
 }
 
 beforeEach(() => {
@@ -33,9 +25,7 @@ afterEach(() => {
 
 describe("asset breaker observability", () => {
   it("emits one contract-shaped line for every state transition", async () => {
-    const stderrSpy = vi
-      .spyOn(process.stderr, "write")
-      .mockImplementation(() => true);
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const harness = createAssetBreakerForTests(options);
     try {
       await openBreaker(harness, mockFetch);
@@ -50,11 +40,7 @@ describe("asset breaker observability", () => {
         "asset_breaker_half_open",
         "asset_breaker_close",
       ]);
-      expect(lines.map(({ level }) => level)).toEqual([
-        "error",
-        "warn",
-        "warn",
-      ]);
+      expect(lines.map(({ level }) => level)).toEqual(["error", "warn", "warn"]);
       for (const line of lines) {
         expect(line).toMatchObject({ service: "access-core" });
         expect(line.timestamp).toEqual(expect.any(String));
@@ -66,9 +52,7 @@ describe("asset breaker observability", () => {
   });
 
   it("aggregates every rejection in a window into one summary", async () => {
-    const stderrSpy = vi
-      .spyOn(process.stderr, "write")
-      .mockImplementation(() => true);
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const harness = createAssetBreakerForTests(options);
     const slow = deferredResponse();
     mockFetch.mockImplementationOnce(() => slow.promise);
@@ -76,9 +60,7 @@ describe("asset breaker observability", () => {
     try {
       const admitted = harness.fire("http://asset/slow", {});
       await Promise.resolve();
-      const rejected = Array.from({ length: 25 }, (_, index) =>
-        harness.fire(`http://asset/rejected-${index}`, {}),
-      );
+      const rejected = Array.from({ length: 25 }, (_, index) => harness.fire(`http://asset/rejected-${index}`, {}));
       await Promise.allSettled(rejected);
 
       await vi.advanceTimersByTimeAsync(4999);
@@ -95,9 +77,7 @@ describe("asset breaker observability", () => {
         }),
       ]);
 
-      await expect(
-        harness.fire("http://asset/next-window", {}),
-      ).rejects.toBeDefined();
+      await expect(harness.fire("http://asset/next-window", {})).rejects.toBeDefined();
       await vi.advanceTimersByTimeAsync(5000);
       expect(parsedLines(stderrSpy)).toHaveLength(2);
       expect(parsedLines(stderrSpy)[1]).toMatchObject({ rejectedCount: 1 });
@@ -110,18 +90,14 @@ describe("asset breaker observability", () => {
   });
 
   it("cancels an unflushed summary when shutdown begins", async () => {
-    const stderrSpy = vi
-      .spyOn(process.stderr, "write")
-      .mockImplementation(() => true);
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const harness = createAssetBreakerForTests(options);
     const slow = deferredResponse();
     mockFetch.mockImplementationOnce(() => slow.promise);
 
     const admitted = harness.fire("http://asset/slow", {});
     await Promise.resolve();
-    await expect(
-      harness.fire("http://asset/rejected", {}),
-    ).rejects.toBeDefined();
+    await expect(harness.fire("http://asset/rejected", {})).rejects.toBeDefined();
     harness.shutdown();
     await vi.advanceTimersByTimeAsync(5000);
     expect(stderrSpy).not.toHaveBeenCalled();
@@ -131,9 +107,7 @@ describe("asset breaker observability", () => {
   });
 
   it("blocks a summary from a capacity rejection that happens after logging is disabled", async () => {
-    const stderrSpy = vi
-      .spyOn(process.stderr, "write")
-      .mockImplementation(() => true);
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const harness = createAssetBreakerForTests(options);
     const slow = deferredResponse();
     mockFetch.mockImplementationOnce(() => slow.promise);
@@ -142,9 +116,7 @@ describe("asset breaker observability", () => {
       const admitted = harness.fire("http://asset/slow", {});
       await Promise.resolve();
       // First rejection arms a pending summary timer.
-      await expect(
-        harness.fire("http://asset/rejected-1", {}),
-      ).rejects.toBeDefined();
+      await expect(harness.fire("http://asset/rejected-1", {})).rejects.toBeDefined();
 
       // Simulates the shutdown-immediate hook running before server.close()'s
       // request drain: logging is permanently disabled while the breaker
@@ -153,9 +125,7 @@ describe("asset breaker observability", () => {
 
       // A request still draining hits the capacity gate again after logging
       // was disabled — this must not re-arm a new timer.
-      await expect(
-        harness.fire("http://asset/rejected-2", {}),
-      ).rejects.toBeDefined();
+      await expect(harness.fire("http://asset/rejected-2", {})).rejects.toBeDefined();
 
       await vi.advanceTimersByTimeAsync(10_000);
       expect(stderrSpy).not.toHaveBeenCalled();
@@ -168,18 +138,14 @@ describe("asset breaker observability", () => {
   });
 
   it("treats disableCapacityLogging and shutdown as idempotent", async () => {
-    const stderrSpy = vi
-      .spyOn(process.stderr, "write")
-      .mockImplementation(() => true);
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const harness = createAssetBreakerForTests(options);
     const slow = deferredResponse();
     mockFetch.mockImplementationOnce(() => slow.promise);
 
     const admitted = harness.fire("http://asset/slow", {});
     await Promise.resolve();
-    await expect(
-      harness.fire("http://asset/rejected", {}),
-    ).rejects.toBeDefined();
+    await expect(harness.fire("http://asset/rejected", {})).rejects.toBeDefined();
 
     expect(() => {
       harness.disableCapacityLogging();
@@ -198,14 +164,9 @@ describe("asset breaker observability", () => {
   it("bypasses both breaker and capacity when disabled by environment", async () => {
     vi.stubEnv("ACCESS_ASSET_BREAKER_ENABLED", "false");
     vi.resetModules();
-    const stderrSpy = vi
-      .spyOn(process.stderr, "write")
-      .mockImplementation(() => true);
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     mockFetch.mockResolvedValue(new Response(null, { status: 503 }));
-    const {
-      fireAssetRequest,
-      shutdownAssetBreaker,
-    } = await import("../clients/assetBreaker");
+    const { fireAssetRequest, shutdownAssetBreaker } = await import("../clients/assetBreaker");
 
     try {
       for (let index = 0; index < 20; index += 1) {

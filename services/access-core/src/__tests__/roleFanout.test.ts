@@ -36,9 +36,7 @@ describe.skipIf(!liveRedis)("role-directed revoke fans out to every holder (live
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    mockPrisma.permissionAction.findMany.mockResolvedValue([
-      { code: "read", id: "action-read" },
-    ]);
+    mockPrisma.permissionAction.findMany.mockResolvedValue([{ code: "read", id: "action-read" }]);
     mockPrisma.organization.findUnique.mockResolvedValue({ olpEnabled: true });
     mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: folderId }]);
 

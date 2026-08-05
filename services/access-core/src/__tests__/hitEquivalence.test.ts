@@ -27,9 +27,7 @@ describe.skipIf(!liveRedis)("canDo warm-hit outcome equivalence (live Redis)", (
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    mockPrisma.permissionAction.findMany.mockResolvedValue([
-      { code: "read", id: "action-read" },
-    ]);
+    mockPrisma.permissionAction.findMany.mockResolvedValue([{ code: "read", id: "action-read" }]);
     mockPrisma.user.findUnique.mockResolvedValue({
       id: userId,
       isActive: true,

@@ -42,9 +42,7 @@ describe("Prometheus metrics", () => {
 
     logRequestCompletion(request, reply, false);
 
-    expect(renderPrometheusMetrics()).not.toContain(
-      "seta_access_http_requests_total{",
-    );
+    expect(renderPrometheusMetrics()).not.toContain("seta_access_http_requests_total{");
   });
 
   it("uses one stable label for all unmatched routes", () => {

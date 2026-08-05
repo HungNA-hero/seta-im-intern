@@ -9,7 +9,7 @@ export type User = {
   updatedAt: Date;
 };
 
-function toUser(u: {
+function toUser(user: {
   id: string;
   email: string;
   displayName: string;
@@ -18,12 +18,12 @@ function toUser(u: {
   updatedAt: Date;
 }): User {
   return {
-    id: u.id,
-    email: u.email,
-    displayName: u.displayName,
-    isActive: u.isActive,
-    createdAt: u.createdAt,
-    updatedAt: u.updatedAt,
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    isActive: user.isActive,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 }
 
@@ -33,8 +33,8 @@ export async function listUsers(): Promise<User[]> {
 }
 
 export async function getUserById(id: string): Promise<User | null> {
-  const u = await prisma.user.findUnique({ where: { id } });
-  return u ? toUser(u) : null;
+  const user = await prisma.user.findUnique({ where: { id } });
+  return user ? toUser(user) : null;
 }
 
 export async function createUser(email: string, displayName: string): Promise<User> {
@@ -46,12 +46,12 @@ export async function updateUser(id: string, displayName: string): Promise<User>
 }
 
 export async function deactivateUser(id: string): Promise<User> {
-  const u = await prisma.$transaction(async (tx) => {
+  const deactivatedUser = await prisma.$transaction(async (tx) => {
     await Promise.all([
       tx.userRole.deleteMany({ where: { userId: id } }),
       tx.objectPermission.deleteMany({ where: { granteeUserId: id } }),
     ]);
     return tx.user.update({ where: { id }, data: { isActive: false } });
   });
-  return toUser(u);
+  return toUser(deactivatedUser);
 }

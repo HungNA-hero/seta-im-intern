@@ -1,14 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAssetBreakerForTests } from "../clients/assetBreaker";
-import {
-  getMetricsSnapshotForTests,
-  resetMetricsForTests,
-} from "../cache/metrics";
-import {
-  deferredResponse,
-  makeBreakerOptions,
-  openBreaker,
-} from "./helpers/assetBreakerTestFixtures";
+import { getMetricsSnapshotForTests, resetMetricsForTests } from "../cache/metrics";
+import { deferredResponse, makeBreakerOptions, openBreaker } from "./helpers/assetBreakerTestFixtures";
 
 const originalFetch = global.fetch;
 const mockFetch = vi.fn();
@@ -43,9 +36,7 @@ describe("asset dependency concurrency capacity", () => {
       expect(harness.snapshot().inFlight).toBe(2);
 
       const startedAt = performance.now();
-      await expect(
-        harness.fire("http://asset/overflow", {}),
-      ).rejects.toMatchObject({
+      await expect(harness.fire("http://asset/overflow", {})).rejects.toMatchObject({
         extensions: { code: "INTERNAL_ERROR", service: "access-core" },
       });
       expect(performance.now() - startedAt).toBeLessThan(50);
@@ -72,19 +63,12 @@ describe("asset dependency concurrency capacity", () => {
   it("keeps a healthy saturated burst out of breaker failure accounting", async () => {
     const harness = createAssetBreakerForTests(options);
     const slow = [deferredResponse(), deferredResponse()];
-    mockFetch
-      .mockImplementationOnce(() => slow[0].promise)
-      .mockImplementationOnce(() => slow[1].promise);
+    mockFetch.mockImplementationOnce(() => slow[0].promise).mockImplementationOnce(() => slow[1].promise);
 
     try {
-      const admitted = [
-        harness.fire("http://asset/one", {}),
-        harness.fire("http://asset/two", {}),
-      ];
+      const admitted = [harness.fire("http://asset/one", {}), harness.fire("http://asset/two", {})];
       await Promise.resolve();
-      const overflow = Array.from({ length: 20 }, (_, index) =>
-        harness.fire(`http://asset/overflow-${index}`, {}),
-      );
+      const overflow = Array.from({ length: 20 }, (_, index) => harness.fire(`http://asset/overflow-${index}`, {}));
 
       const results = await Promise.allSettled(overflow);
       expect(results.every((result) => result.status === "rejected")).toBe(true);
@@ -99,9 +83,7 @@ describe("asset dependency concurrency capacity", () => {
         asset_breaker_reject: 0,
       });
 
-      slow.forEach(({ resolve }) =>
-        resolve(new Response(null, { status: 200 })),
-      );
+      slow.forEach(({ resolve }) => resolve(new Response(null, { status: 200 })));
       await Promise.all(admitted);
     } finally {
       harness.shutdown();
@@ -127,9 +109,7 @@ describe("asset dependency concurrency capacity", () => {
       // breaker-open-overflow rejection, not a capacity rejection — it must
       // never consume a capacity slot, since it was never going to reach the
       // network regardless of how much capacity was free.
-      await expect(
-        harness.fire("http://asset/second-caller", {}),
-      ).rejects.toMatchObject({
+      await expect(harness.fire("http://asset/second-caller", {})).rejects.toMatchObject({
         extensions: { code: "INTERNAL_ERROR" },
       });
       expect(harness.snapshot()).toMatchObject({
@@ -159,14 +139,10 @@ describe("asset dependency concurrency capacity", () => {
       // Fired synchronously, back-to-back, with no await between them —
       // exactly the batch shape that could inflate `inFlight` if the
       // capacity gate ran before the breaker-state check.
-      const batch = Array.from({ length: 10 }, (_, index) =>
-        harness.fire(`http://asset/batch-${index}`, {}),
-      );
+      const batch = Array.from({ length: 10 }, (_, index) => harness.fire(`http://asset/batch-${index}`, {}));
       const results = await Promise.allSettled(batch);
 
-      expect(results.every((result) => result.status === "rejected")).toBe(
-        true,
-      );
+      expect(results.every((result) => result.status === "rejected")).toBe(true);
       expect(harness.snapshot().inFlight).toBe(0);
       expect(mockFetch).not.toHaveBeenCalled();
       expect(getMetricsSnapshotForTests().counters).toMatchObject({

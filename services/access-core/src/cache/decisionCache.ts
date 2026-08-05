@@ -4,10 +4,7 @@ import { incrementCounter } from "./metrics";
 import { cacheTtlConfig, jitteredTtlMs as sharedJitteredTtlMs } from "./config";
 
 function jitteredTtlMs(): number {
-  return sharedJitteredTtlMs(
-    cacheTtlConfig.decisionMaxTtlMs,
-    cacheTtlConfig.decisionMaxDownwardJitterMs,
-  );
+  return sharedJitteredTtlMs(cacheTtlConfig.decisionMaxTtlMs, cacheTtlConfig.decisionMaxDownwardJitterMs);
 }
 
 export interface CachedDecision {
@@ -29,12 +26,6 @@ export async function readDecision(key: string): Promise<CachedDecision | undefi
   return undefined;
 }
 
-/**
- * Writes a decisive outcome only. Callers must not invoke this for a
- * decision that resulted from a transient dependency failure (INV-6) —
- * decision.ts satisfies this by only reaching the write path when
- * decideAllowedResources resolves without throwing.
- */
 export async function writeDecision(key: string, decision: CachedDecision): Promise<void> {
   await withFailOpen(async (redis) => {
     await redis.set(key, serializeValue(decision), "PX", jitteredTtlMs());

@@ -36,9 +36,7 @@ describe("Redis-down fail-open behavior", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.resetModules();
-    mockPrisma.permissionAction.findMany.mockResolvedValue([
-      { code: "read", id: "action-read" },
-    ]);
+    mockPrisma.permissionAction.findMany.mockResolvedValue([{ code: "read", id: "action-read" }]);
     mockPrisma.user.findUnique.mockResolvedValue({
       id: userId,
       isActive: true,

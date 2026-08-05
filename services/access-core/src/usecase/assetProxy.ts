@@ -1,16 +1,9 @@
-import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { assetFetch } from "../clients/assetClient";
-import {
-  assertAuthenticated,
-  assertCan,
-  GraphQLContext,
-} from "../graphql/context";
+import { GraphQLError } from "graphql";
+import { assertCan, GraphQLContext } from "../graphql/context";
+import { AssetAuthorizationPrecondition, createAuthorizedAssetGateway } from "./authorizedAssetGateway";
 
-export interface Precondition {
-  action: PermissionActionCode;
-  resourceType: ResourceType;
-  resourceId: string;
-}
+export type Precondition = AssetAuthorizationPrecondition;
 
 export interface AuthorizedFetchInit {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
@@ -18,36 +11,32 @@ export interface AuthorizedFetchInit {
   includeOrgAdmin?: boolean;
 }
 
-export async function assertPreconditions(
-  ctx: GraphQLContext,
-  orgId: string,
-  require: Precondition[],
-): Promise<void> {
-  assertAuthenticated(ctx);
-  for (const precondition of require) {
-    await assertCan(
-      ctx.userId,
-      precondition.action,
-      precondition.resourceType,
-      precondition.resourceId,
-      orgId,
-    );
-  }
+const authorizedAssetGateway = createAuthorizedAssetGateway({
+  authorization: { assertAllowed: assertCan },
+  transport: { request: assetFetch },
+  createError: (code, message) => new GraphQLError(message, { extensions: { code } }),
+});
+
+export function assertPreconditions(ctx: GraphQLContext, orgId: string, preconditions: Precondition[]): Promise<void> {
+  return authorizedAssetGateway.assertPreconditions({
+    context: ctx,
+    orgId,
+    preconditions,
+  });
 }
 
-export async function authorizedFetch(
+export function authorizedFetch(
   ctx: GraphQLContext,
   orgId: string,
-  require: Precondition[],
+  preconditions: Precondition[],
   path: string,
   init: AuthorizedFetchInit = {},
 ): Promise<Response> {
-  assertAuthenticated(ctx);
-  await assertPreconditions(ctx, orgId, require);
-  return assetFetch(path, {
-    userId: ctx.userId,
+  return authorizedAssetGateway.fetch({
+    context: ctx,
     orgId,
-    orgAdmin: init.includeOrgAdmin && ctx.roles.includes("org_admin"),
-    ...init,
+    preconditions,
+    path,
+    init,
   });
 }

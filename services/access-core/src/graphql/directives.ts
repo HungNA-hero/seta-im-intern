@@ -9,16 +9,9 @@ import {
   GraphQLContext,
 } from "./context";
 
-type FieldGuard = (
-  ctx: GraphQLContext,
-  args: Record<string, unknown>,
-) => void | Promise<void>;
+type FieldGuard = (ctx: GraphQLContext, args: Record<string, unknown>) => void | Promise<void>;
 
-function wrapField(
-  schema: GraphQLSchema,
-  directiveName: string,
-  guard: FieldGuard,
-): GraphQLSchema {
+function wrapField(schema: GraphQLSchema, directiveName: string, guard: FieldGuard): GraphQLSchema {
   return mapSchema(schema, {
     [MapperKind.OBJECT_FIELD](fieldConfig) {
       if (!getDirective(schema, fieldConfig, directiveName)?.[0]) {
@@ -34,10 +27,7 @@ function wrapField(
   });
 }
 
-function assertSameOrg(
-  ctx: GraphQLContext,
-  args: Record<string, unknown>,
-): void {
+function assertSameOrg(ctx: GraphQLContext, args: Record<string, unknown>): void {
   assertOrgContext(ctx, args.orgId as string);
 }
 

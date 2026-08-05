@@ -1,14 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAssetBreakerForTests } from "../clients/assetBreaker";
-import {
-  getMetricsSnapshotForTests,
-  resetMetricsForTests,
-} from "../cache/metrics";
-import {
-  abortableStalledBodyFetch,
-  makeBreakerOptions,
-  stalledBodyResponse,
-} from "./helpers/assetBreakerTestFixtures";
+import { getMetricsSnapshotForTests, resetMetricsForTests } from "../cache/metrics";
+import { abortableStalledBodyFetch, makeBreakerOptions, stalledBodyResponse } from "./helpers/assetBreakerTestFixtures";
 
 const originalFetch = global.fetch;
 const mockFetch = vi.fn();
@@ -117,9 +110,7 @@ describe("asset breaker response-body lifetime", () => {
 
     // Body-failure path.
     const failStalled = stalledBodyResponse(200);
-    mockFetch.mockImplementationOnce(() =>
-      Promise.resolve(failStalled.response),
-    );
+    mockFetch.mockImplementationOnce(() => Promise.resolve(failStalled.response));
     const failCall = harness.fire("http://asset/fail", {});
     await Promise.resolve();
     await Promise.resolve();
@@ -181,9 +172,7 @@ describe("asset breaker response-body lifetime", () => {
         inFlight: 0,
         stats: { successes: 0, failures: 1 },
       });
-      expect(getMetricsSnapshotForTests().counters.asset_breaker_reject).toBe(
-        0,
-      );
+      expect(getMetricsSnapshotForTests().counters.asset_breaker_reject).toBe(0);
     } finally {
       harness.shutdown();
     }

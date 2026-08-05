@@ -24,23 +24,11 @@ vi.mock("../db/prisma", () => ({ prisma: mockPrisma }));
 vi.mock("../cache/decisionCache", () => decisionCacheMock);
 vi.mock("../cache/epoch", () => epochMock);
 vi.mock("../cache/factCache", () => ({
-  readFolderFactThrough: (
-    _orgId: string,
-    _id: string,
-    loader: () => Promise<unknown>,
-  ) => loader(),
-  readItemFactThrough: (
-    _orgId: string,
-    _id: string,
-    loader: () => Promise<unknown>,
-  ) => loader(),
+  readFolderFactThrough: (_orgId: string, _id: string, loader: () => Promise<unknown>) => loader(),
+  readItemFactThrough: (_orgId: string, _id: string, loader: () => Promise<unknown>) => loader(),
 }));
 
-import {
-  createAssetBreakerForTests,
-  fireAssetRequest,
-  resetAssetBreakerForTests,
-} from "../clients/assetBreaker";
+import { createAssetBreakerForTests, fireAssetRequest, resetAssetBreakerForTests } from "../clients/assetBreaker";
 import { canDo, resetInProcessAuthzCachesForTests } from "../authz/decision";
 import { setAuthzRequestContext } from "../authz/authzRequestContext";
 import { createMetadata } from "../usecase/metadataUsecase";
@@ -151,9 +139,7 @@ describe("asset dependency breaker", () => {
     mockFetch.mockRejectedValue(new Error("ECONNREFUSED"));
 
     try {
-      await expect(harness.fire("http://asset/test", {})).rejects.toThrow(
-        "ECONNREFUSED",
-      );
+      await expect(harness.fire("http://asset/test", {})).rejects.toThrow("ECONNREFUSED");
       expect(mockFetch).toHaveBeenCalledTimes(1);
     } finally {
       harness.shutdown();
@@ -166,9 +152,7 @@ describe("asset dependency breaker", () => {
     mockFetch.mockImplementation(
       (_url: string, init: RequestInit) =>
         new Promise((_resolve, reject) => {
-          init.signal?.addEventListener("abort", () =>
-            reject(new DOMException("aborted", "AbortError")),
-          );
+          init.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
         }),
     );
 
@@ -229,9 +213,7 @@ describe("asset dependency breaker", () => {
     const userId = randomUUID();
     const folderId = randomUUID();
     const roleId = randomUUID();
-    mockPrisma.permissionAction.findMany.mockResolvedValue([
-      { code: "read", id: "action-read" },
-    ]);
+    mockPrisma.permissionAction.findMany.mockResolvedValue([{ code: "read", id: "action-read" }]);
     mockPrisma.user.findUnique.mockResolvedValue({
       id: userId,
       isActive: true,

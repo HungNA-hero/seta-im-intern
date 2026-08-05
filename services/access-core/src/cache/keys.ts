@@ -26,8 +26,7 @@ export interface DecisionKeyParams {
 }
 
 export function decisionKey(params: DecisionKeyParams): string {
-  const { orgId, userId, assetEpoch, userEpoch, roleEpochsHash, action, resourceType, resourceId } =
-    params;
+  const { orgId, userId, assetEpoch, userEpoch, roleEpochsHash, action, resourceType, resourceId } = params;
   return `authz:${orgId}:u${userId}:av${assetEpoch}:uv${userEpoch}:rv${roleEpochsHash}:${action}:${resourceType}:${resourceId}`;
 }
 
@@ -55,18 +54,10 @@ export function processedEventKey(consumerName: string, eventId: string): string
   return `processed:${consumerName}:${eventId}`;
 }
 
-/**
- * Serializes a cache value to a JSON string, safe to store in Redis.
- */
 export function serializeValue<T>(value: T): string {
   return JSON.stringify(value);
 }
 
-/**
- * Deserializes a cache value written by `serializeValue`. Returns `null` on
- * malformed input instead of throwing, so a corrupted/foreign entry is
- * treated as a miss rather than crashing the read path.
- */
 export function deserializeValue<T>(raw: string | null | undefined): T | null {
   if (raw == null) return null;
   try {

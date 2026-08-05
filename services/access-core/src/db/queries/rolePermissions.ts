@@ -7,9 +7,7 @@ export type RolePermission = {
   resourceType: string;
 };
 
-export async function listRolePermissions(
-  roleId: string,
-): Promise<RolePermission[]> {
+export async function listRolePermissions(roleId: string): Promise<RolePermission[]> {
   const perms = await prisma.rolePermission.findMany({ where: { roleId } });
   return perms.map((p) => ({
     id: p.id,

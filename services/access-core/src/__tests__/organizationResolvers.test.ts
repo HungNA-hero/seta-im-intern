@@ -23,25 +23,32 @@ import { organizationResolvers } from "../graphql/resolvers/organizationResolver
 beforeEach(() => vi.resetAllMocks());
 
 describe("reserved role assignment protection", () => {
-  test.each(["org_admin", "trainer_admin", " ORG_ADMIN "])(
-    "rejects assigning reserved role code %s",
-    async (code) => {
-      mockGetRoleById.mockResolvedValue({ id: "role-1", orgId: "org-1", code });
-      await expect(
-        organizationResolvers.Mutation.assignRole({}, {
-          orgId: "org-1", userId: "user-2", roleId: "role-1",
-        }),
-      ).rejects.toMatchObject({ extensions: { code: "RESERVED_ROLE_CODE" } });
-      expect(mockAssignRole).not.toHaveBeenCalled();
-    },
-  );
+  test.each(["org_admin", "trainer_admin", " ORG_ADMIN "])("rejects assigning reserved role code %s", async (code) => {
+    mockGetRoleById.mockResolvedValue({ id: "role-1", orgId: "org-1", code });
+    await expect(
+      organizationResolvers.Mutation.assignRole(
+        {},
+        {
+          orgId: "org-1",
+          userId: "user-2",
+          roleId: "role-1",
+        },
+      ),
+    ).rejects.toMatchObject({ extensions: { code: "RESERVED_ROLE_CODE" } });
+    expect(mockAssignRole).not.toHaveBeenCalled();
+  });
 
   test("rejects assigning a role from a different organization", async () => {
     mockGetRoleById.mockResolvedValue({ id: "role-1", orgId: "org-2", code: "viewer" });
     await expect(
-      organizationResolvers.Mutation.assignRole({}, {
-        orgId: "org-1", userId: "user-2", roleId: "role-1",
-      }),
+      organizationResolvers.Mutation.assignRole(
+        {},
+        {
+          orgId: "org-1",
+          userId: "user-2",
+          roleId: "role-1",
+        },
+      ),
     ).rejects.toMatchObject({ extensions: { code: "BAD_USER_INPUT" } });
     expect(mockAssignRole).not.toHaveBeenCalled();
   });
@@ -49,9 +56,14 @@ describe("reserved role assignment protection", () => {
   test("rejects revoking a reserved role", async () => {
     mockGetRoleById.mockResolvedValue({ id: "role-1", orgId: "org-1", code: "org_admin" });
     await expect(
-      organizationResolvers.Mutation.revokeRole({}, {
-        orgId: "org-1", userId: "user-2", roleId: "role-1",
-      }),
+      organizationResolvers.Mutation.revokeRole(
+        {},
+        {
+          orgId: "org-1",
+          userId: "user-2",
+          roleId: "role-1",
+        },
+      ),
     ).rejects.toMatchObject({ extensions: { code: "RESERVED_ROLE_CODE" } });
     expect(mockRevokeRole).not.toHaveBeenCalled();
   });
