@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { GraphQLError } from "graphql";
+import { badUserInput } from "../errors/factories";
 
 const {
   mockCanDo,
@@ -154,14 +155,16 @@ describe("Mutation.grantObjectPermission", () => {
         { ...base, granteeUserId: "grantee-1", granteeRoleId: "role-1" },
         makeCtx(),
       ),
-    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "GRANT_INVALID_TARGET" } }));
+    ).rejects.toThrow(
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "GRANT_INVALID_TARGET" }) }),
+    );
 
     expect(mockGrant).not.toHaveBeenCalled();
   });
 
   test("throws GRANT_INVALID_TARGET when neither grantee field is set", async () => {
     await expect(permissionResolvers.Mutation.grantObjectPermission(undefined, { ...base }, makeCtx())).rejects.toThrow(
-      expect.objectContaining({ extensions: { code: "GRANT_INVALID_TARGET" } }),
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "GRANT_INVALID_TARGET" }) }),
     );
 
     expect(mockGrant).not.toHaveBeenCalled();
@@ -240,12 +243,12 @@ describe("Mutation.grantObjectPermission", () => {
     expect(mockAssertResourceInOrg).not.toHaveBeenCalled();
   });
 
-  test("maps a duplicate grant to BAD_USER_INPUT", async () => {
-    mockGrant.mockRejectedValueOnce({ code: "P2002" });
+  test("surfaces a persistence error from the query layer without reinterpreting it", async () => {
+    mockGrant.mockRejectedValueOnce(badUserInput("Object permission already exists"));
 
     await expect(
       permissionResolvers.Mutation.grantObjectPermission(undefined, { ...base, granteeUserId: "grantee-1" }, makeCtx()),
-    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "BAD_USER_INPUT" } }));
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }) }));
   });
 });
 
@@ -282,7 +285,7 @@ describe("Mutation.revokeObjectPermission", () => {
 
     await expect(
       permissionResolvers.Mutation.revokeObjectPermission(undefined, { id: "missing" }, makeCtx()),
-    ).rejects.toThrow(expect.objectContaining({ extensions: { code: "GRANT_NOT_FOUND" } }));
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "GRANT_NOT_FOUND" }) }));
 
     expect(mockCanDo).not.toHaveBeenCalled();
     expect(mockRevoke).not.toHaveBeenCalled();

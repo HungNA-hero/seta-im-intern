@@ -43,6 +43,18 @@ export function internalDependencyError(traceId: string | undefined): GraphQLErr
   });
 }
 
+export function unknownAction(): GraphQLError {
+  return fromDefinition("UNKNOWN_ACTION");
+}
+
+export function grantNotFound(): GraphQLError {
+  return fromDefinition("GRANT_NOT_FOUND");
+}
+
+export function grantInvalidTarget(): GraphQLError {
+  return fromDefinition("GRANT_INVALID_TARGET");
+}
+
 export function cursorInvalid(): GraphQLError {
   return fromDefinition("CURSOR_INVALID");
 }

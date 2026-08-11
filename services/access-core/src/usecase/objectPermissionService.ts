@@ -1,5 +1,16 @@
 import { PermissionActionCode, ResourceType } from "@prisma/client";
-import { GrantObjectPermissionInput, ObjectPermission } from "../db/queries/objectPermissions";
+import { bumpRoleEpoch, bumpUserEpoch } from "../cache/epoch";
+import { assertResourceInOrg } from "../clients/resourceOrg";
+import {
+  getObjectPermissionById,
+  grantObjectPermission,
+  GrantObjectPermissionInput,
+  ObjectPermission,
+  revokeObjectPermission,
+} from "../db/queries/objectPermissions";
+import { isActiveOrgMember, roleBelongsToOrg } from "../db/queries/organizations";
+import { badUserInput, forbidden, grantInvalidTarget, grantNotFound, unauthenticated } from "../errors/factories";
+import { assertCan, GraphQLContext } from "../graphql/context";
 
 export interface PermissionActorContext {
   userId: string | null;
@@ -55,7 +66,6 @@ export interface ObjectPermissionServiceDependencies {
   authorization: PermissionAuthorization;
   resources: PermissionResourceOwnership;
   epochs: PermissionEpochInvalidator;
-  createError(code: string, message: string): Error;
 }
 
 export interface ObjectPermissionService {
@@ -63,37 +73,17 @@ export interface ObjectPermissionService {
   revoke(actor: PermissionActorContext, permissionId: string): Promise<void>;
 }
 
-function authenticatedUserId(
-  actor: PermissionActorContext,
-  createError: ObjectPermissionServiceDependencies["createError"],
-): string {
+function authenticatedUserId(actor: PermissionActorContext): string {
   if (!actor.userId) {
-    throw createError("UNAUTHENTICATED", "Unauthenticated");
+    throw unauthenticated();
   }
   return actor.userId;
 }
 
-function assertSingleGrantee(
-  input: GrantPermissionInput,
-  createError: ObjectPermissionServiceDependencies["createError"],
-): void {
+function assertSingleGrantee(input: GrantPermissionInput): void {
   if (!!input.granteeUserId === !!input.granteeRoleId) {
-    throw createError("GRANT_INVALID_TARGET", "Exactly one of granteeUserId or granteeRoleId must be set");
+    throw grantInvalidTarget();
   }
-}
-
-function rethrowGrantPersistenceError(
-  error: unknown,
-  createError: ObjectPermissionServiceDependencies["createError"],
-): never {
-  const code = (error as { code?: unknown })?.code;
-  if (code === "P2002") {
-    throw createError("BAD_USER_INPUT", "Object permission already exists");
-  }
-  if (code === "P2025") {
-    throw createError("UNKNOWN_ACTION", "Permission action not found");
-  }
-  throw error;
 }
 
 export function createObjectPermissionService(
@@ -104,8 +94,7 @@ export function createObjectPermissionService(
       ? await dependencies.grantees.isActiveOrganizationMember(input.orgId, input.granteeUserId)
       : await dependencies.grantees.roleBelongsToOrganization(input.orgId, input.granteeRoleId!);
     if (!valid) {
-      throw dependencies.createError(
-        "BAD_USER_INPUT",
+      throw badUserInput(
         input.granteeUserId
           ? "Grantee is not an active member of this organization"
           : "Grantee role does not belong to this organization",
@@ -125,8 +114,8 @@ export function createObjectPermissionService(
 
   return {
     async grant(actor, input): Promise<ObjectPermission> {
-      const userId = authenticatedUserId(actor, dependencies.createError);
-      assertSingleGrantee(input, dependencies.createError);
+      const userId = authenticatedUserId(actor);
+      assertSingleGrantee(input);
       await dependencies.authorization.assertCanManage({
         userId,
         orgId: input.orgId,
@@ -143,37 +132,61 @@ export function createObjectPermissionService(
         }),
       ]);
 
-      let permission: ObjectPermission;
-      try {
-        permission = await dependencies.permissions.grant({
-          ...input,
-          grantedBy: userId,
-        });
-      } catch (error) {
-        rethrowGrantPersistenceError(error, dependencies.createError);
-      }
+      const permission = await dependencies.permissions.grant({ ...input, grantedBy: userId });
       await bumpEpoch(permission);
       return permission;
     },
 
     async revoke(actor, permissionId): Promise<void> {
-      const userId = authenticatedUserId(actor, dependencies.createError);
+      const userId = authenticatedUserId(actor);
       const permission = await dependencies.permissions.findById(permissionId);
       if (!permission) {
-        throw dependencies.createError("GRANT_NOT_FOUND", "Object permission not found");
+        throw grantNotFound();
       }
       if (actor.currentOrgId !== permission.orgId) {
-        throw dependencies.createError("FORBIDDEN", "Forbidden");
+        throw forbidden("Forbidden");
       }
 
       await dependencies.authorization.assertCanManage({
         userId,
         orgId: permission.orgId,
-        resourceType: permission.resourceType as ResourceType,
+        resourceType: permission.resourceType,
         resourceId: permission.resourceId,
       });
       await dependencies.permissions.revoke(permissionId);
       await bumpEpoch(permission);
     },
   };
+}
+
+const objectPermissionService = createObjectPermissionService({
+  permissions: {
+    grant: grantObjectPermission,
+    findById: getObjectPermissionById,
+    revoke: revokeObjectPermission,
+  },
+  grantees: {
+    isActiveOrganizationMember: isActiveOrgMember,
+    roleBelongsToOrganization: roleBelongsToOrg,
+  },
+  authorization: {
+    assertCanManage: ({ userId, orgId, resourceType, resourceId }) =>
+      assertCan({ userId, action: "manage_permissions", resourceType, resourceId, orgId }),
+  },
+  resources: {
+    assertInOrganization: ({ resourceType, resourceId, orgId, userId }) =>
+      assertResourceInOrg(resourceType, resourceId, orgId, userId),
+  },
+  epochs: {
+    bumpUser: bumpUserEpoch,
+    bumpRole: bumpRoleEpoch,
+  },
+});
+
+export function grantPermission(ctx: GraphQLContext, input: GrantPermissionInput) {
+  return objectPermissionService.grant(ctx, input);
+}
+
+export function revokePermission(ctx: GraphQLContext, permissionId: string) {
+  return objectPermissionService.revoke(ctx, permissionId);
 }

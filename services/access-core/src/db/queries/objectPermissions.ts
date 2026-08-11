@@ -1,10 +1,11 @@
 import { prisma } from "../prisma";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
+import { badUserInput, unknownAction } from "../../errors/factories";
 
 export type ObjectPermission = {
   id: string;
   orgId: string;
-  resourceType: string;
+  resourceType: ResourceType;
   resourceId: string;
   granteeUserId: string | null;
   granteeRoleId: string | null;
@@ -42,20 +43,27 @@ export async function grantObjectPermission({
   granteeUserId,
   granteeRoleId,
 }: GrantObjectPermissionInput): Promise<ObjectPermission> {
-  const permAction = await prisma.permissionAction.findUniqueOrThrow({
-    where: { code: action },
-  });
-  return prisma.objectPermission.create({
-    data: {
-      orgId,
-      resourceType,
-      resourceId,
-      actionId: permAction.id,
-      grantedBy,
-      granteeUserId: granteeUserId ?? null,
-      granteeRoleId: granteeRoleId ?? null,
-    },
-  });
+  const permissionAction = await prisma.permissionAction.findUnique({ where: { code: action } });
+  if (!permissionAction) throw unknownAction();
+
+  try {
+    return await prisma.objectPermission.create({
+      data: {
+        orgId,
+        resourceType,
+        resourceId,
+        actionId: permissionAction.id,
+        grantedBy,
+        granteeUserId: granteeUserId ?? null,
+        granteeRoleId: granteeRoleId ?? null,
+      },
+    });
+  } catch (error) {
+    if ((error as { code?: unknown })?.code === "P2002") {
+      throw badUserInput("Object permission already exists");
+    }
+    throw error;
+  }
 }
 
 export async function getObjectPermissionById(id: string): Promise<ObjectPermission | null> {
