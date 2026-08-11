@@ -9,7 +9,7 @@ import {
 import { MetadataCursorPosition } from "../domain/metadataCursor";
 import { internalError } from "../errors/factories";
 import { GraphQLContext } from "../graphql/context";
-import { authorizedFetch } from "./assetProxy";
+import { authorizedFetch } from "./authorizedAssetFetch";
 
 const INTERNAL_CURSOR_MODE = "true";
 
@@ -39,7 +39,11 @@ export async function fetchMetadataCandidatePage({
     queryParams.afterId = after.id;
   }
 
-  const response = await authorizedFetch(ctx, orgId, [], assetPath(`${METADATA_PATH}/search`, queryParams));
+  const response = await authorizedFetch({
+    ctx,
+    orgId,
+    path: assetPath(`${METADATA_PATH}/search`, queryParams),
+  });
   return decodeCursorSearchEnvelope(response);
 }
 

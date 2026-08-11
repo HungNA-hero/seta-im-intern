@@ -498,6 +498,19 @@ describe("metadata transport and failure gates", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
+  test("denied update reports FORBIDDEN before validating the payload", async () => {
+    mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "denied" });
+
+    await expect(
+      metadataResolvers.Mutation.updateMetadata(
+        undefined,
+        { orgId, id: metadataId, input: { metadataJson: "{not json" } },
+        ctx,
+      ),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }));
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   test("policy exception fails closed before returning items", async () => {
     fetchListOk([makeGoMetadataItem()]);
     mockFilterAllowedResourceIds.mockRejectedValueOnce(new Error("policy unavailable"));

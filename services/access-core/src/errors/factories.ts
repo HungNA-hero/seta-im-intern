@@ -8,6 +8,12 @@ export function badUserInput(message: string): GraphQLError {
   });
 }
 
+export function unauthenticated(): GraphQLError {
+  return new GraphQLError("Unauthenticated", {
+    extensions: { code: "UNAUTHENTICATED" },
+  });
+}
+
 export function forbidden(message: string): GraphQLError {
   return new GraphQLError(message, {
     extensions: { code: "FORBIDDEN" },

@@ -24,7 +24,7 @@ import {
   normalizeMetadataSearchInput,
   validateAndParseJsonString,
 } from "../domain/metadataValidation";
-import { assertPreconditions, authorizedFetch } from "./assetProxy";
+import { assertPreconditions, authorizedFetch } from "./authorizedAssetFetch";
 import { loadFolderAncestorMap, loadFolderAncestors } from "./folderAncestors";
 import { fetchMetadataCandidatePage } from "./metadataCandidatePage";
 import { createVisibleMetadataPageReader } from "./visibleMetadataPage";
@@ -38,12 +38,12 @@ const visibleMetadataPageReader = createVisibleMetadataPageReader({
 
 export async function listMetadataItems(ctx: GraphQLContext, orgId: string, folderId: string) {
   assertAuthenticated(ctx);
-  const response = await authorizedFetch(
+  const response = await authorizedFetch({
     ctx,
     orgId,
-    [{ action: "read", resourceType: "folder", resourceId: folderId }],
-    assetPath(METADATA_PATH, { orgId, folderId }),
-  );
+    preconditions: [{ action: "read", resourceType: "folder", resourceId: folderId }],
+    path: assetPath(METADATA_PATH, { orgId, folderId }),
+  });
   const items = await unwrapListEnvelope(
     response,
     "items",
@@ -67,12 +67,12 @@ export async function listMetadataItems(ctx: GraphQLContext, orgId: string, fold
 }
 
 export async function getMetadataItem(ctx: GraphQLContext, orgId: string, id: string) {
-  const response = await authorizedFetch(
+  const response = await authorizedFetch({
     ctx,
     orgId,
-    [{ action: "read", resourceType: "metadata_item", resourceId: id }],
-    assetPath(METADATA_PATH, { orgId, id }),
-  );
+    preconditions: [{ action: "read", resourceType: "metadata_item", resourceId: id }],
+    path: assetPath(METADATA_PATH, { orgId, id }),
+  });
   if (response.status === 404) return null;
   return unwrapEnvelope(response, "item", toMetadataItem, "Failed to fetch metadata item");
 }
@@ -86,7 +86,11 @@ export async function searchMetadata(ctx: GraphQLContext, orgId: string, input: 
     limit: filters.limit.toString(),
     offset: filters.offset.toString(),
   };
-  const response = await authorizedFetch(ctx, orgId, [], assetPath(`${METADATA_PATH}/search`, queryParams));
+  const response = await authorizedFetch({
+    ctx,
+    orgId,
+    path: assetPath(`${METADATA_PATH}/search`, queryParams),
+  });
   const items = await unwrapListEnvelope(
     response,
     "items",
@@ -120,12 +124,21 @@ export async function searchMetadataConnection(
 }
 
 export async function createMetadata(ctx: GraphQLContext, orgId: string, input: CreateMetadataInput) {
-  await assertPreconditions(ctx, orgId, [{ action: "write", resourceType: "folder", resourceId: input.folderId }]);
-  const response = await authorizedFetch(ctx, orgId, [], assetPath(METADATA_PATH, { orgId }), {
-    method: "POST",
-    body: {
-      ...snakeCaseKeys(input),
-      metadata_json: validateAndParseJsonString(input.metadataJson) ?? {},
+  await assertPreconditions({
+    ctx,
+    orgId,
+    preconditions: [{ action: "write", resourceType: "folder", resourceId: input.folderId }],
+  });
+  const response = await authorizedFetch({
+    ctx,
+    orgId,
+    path: assetPath(METADATA_PATH, { orgId }),
+    init: {
+      method: "POST",
+      body: {
+        ...snakeCaseKeys(input),
+        metadata_json: validateAndParseJsonString(input.metadataJson) ?? {},
+      },
     },
   });
   return unwrapEnvelope(response, "item", toMetadataItem, "Failed to create metadata item");
@@ -137,33 +150,47 @@ export async function updateMetadata(ctx: GraphQLContext, orgId: string, id: str
     throw badUserInput("At least one field must be provided");
   }
 
-  await assertPreconditions(ctx, orgId, [{ action: "write", resourceType: "metadata_item", resourceId: id }]);
+  await assertPreconditions({
+    ctx,
+    orgId,
+    preconditions: [{ action: "write", resourceType: "metadata_item", resourceId: id }],
+  });
   const body = snakeCaseKeys(input);
   if (input.metadataJson !== undefined) {
     body.metadata_json = validateAndParseJsonString(input.metadataJson);
   }
-  const response = await authorizedFetch(ctx, orgId, [], assetPath(METADATA_PATH, { orgId, id }), {
-    method: "PATCH",
-    body,
+  const response = await authorizedFetch({
+    ctx,
+    orgId,
+    path: assetPath(METADATA_PATH, { orgId, id }),
+    init: {
+      method: "PATCH",
+      body,
+    },
   });
   return unwrapEnvelope(response, "item", toMetadataItem, "Failed to update metadata item");
 }
 
 export async function deleteMetadata(ctx: GraphQLContext, orgId: string, id: string) {
-  const response = await authorizedFetch(
+  const response = await authorizedFetch({
     ctx,
     orgId,
-    [{ action: "delete", resourceType: "metadata_item", resourceId: id }],
-    assetPath(METADATA_PATH, { orgId, id }),
-    { method: "DELETE" },
-  );
+    preconditions: [{ action: "delete", resourceType: "metadata_item", resourceId: id }],
+    path: assetPath(METADATA_PATH, { orgId, id }),
+    init: { method: "DELETE" },
+  });
   return unwrap204(response, "Failed to delete metadata item");
 }
 
 export async function restoreMetadata(ctx: GraphQLContext, orgId: string, id: string) {
   await authorizeMetadataRestore(ctx, orgId, id);
-  const response = await authorizedFetch(ctx, orgId, [], assetPath(`${METADATA_PATH}/restore`, { orgId, id }), {
-    method: "POST",
+  const response = await authorizedFetch({
+    ctx,
+    orgId,
+    path: assetPath(`${METADATA_PATH}/restore`, { orgId, id }),
+    init: {
+      method: "POST",
+    },
   });
   return unwrapEnvelope(response, "item", toMetadataItem, "Failed to restore metadata item");
 }
