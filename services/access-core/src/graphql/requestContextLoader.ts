@@ -9,7 +9,7 @@ export interface RequestContext {
 export interface RequestContextUser {
   isActive: boolean;
   isMember: boolean;
-  roles: Array<{ id: string; code: string }>;
+  roles: Array<{ id: string; code: string; orgId: string }>;
 }
 
 export interface RequestContextDataSource {
@@ -17,14 +17,14 @@ export interface RequestContextDataSource {
   getOlpEnabled(orgId: string): Promise<boolean>;
 }
 
-export interface RequestAuthorizationSnapshotWriter {
-  set(snapshot: {
+export interface AuthorizationRequestBeginner {
+  begin(facts: {
     userId: string;
     orgId: string;
-    roleCodes: string[];
+    globalRoleCodes: string[];
+    orgRoleCodes: string[];
     roleIds: string[];
     olpEnabled: boolean;
-    factMemo: Map<string, Promise<unknown>>;
   }): void;
 }
 
@@ -44,7 +44,7 @@ function emptyContext(): RequestContext {
 
 export function createRequestContextLoader(
   dataSource: RequestContextDataSource,
-  snapshotWriter: RequestAuthorizationSnapshotWriter,
+  authorizationRequest: AuthorizationRequestBeginner,
 ): RequestContextLoader {
   return {
     async load(userId, orgId): Promise<RequestContext> {
@@ -68,20 +68,21 @@ export function createRequestContextLoader(
       ]);
       if (!user?.isActive) return emptyContext();
 
-      const roleCodes = user.roles.map((role) => role.code);
-      snapshotWriter.set({
+      const orgRoles = user.roles.filter((role) => role.orgId === orgId);
+      const orgRoleCodes = orgRoles.map((role) => role.code);
+      authorizationRequest.begin({
         userId,
         orgId,
-        roleCodes,
-        roleIds: user.roles.map((role) => role.id),
+        globalRoleCodes: user.roles.map((role) => role.code),
+        orgRoleCodes,
+        roleIds: orgRoles.map((role) => role.id),
         olpEnabled,
-        factMemo: new Map(),
       });
       return {
         userId,
         currentOrgId: orgId,
         isMember: user.isMember,
-        roles: roleCodes,
+        roles: orgRoleCodes,
         olpEnabled,
       };
     },

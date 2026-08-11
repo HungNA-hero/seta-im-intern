@@ -31,7 +31,7 @@ vi.mock("../cache/factCache", () => ({
 import { createAssetBreakerForTests, fireAssetRequest, resetAssetBreakerForTests } from "../clients/assetBreaker";
 import { canDo } from "../authz/decision";
 import { resetInProcessAuthzCachesForTests } from "../authz/authorizationRoot";
-import { setAuthzRequestContext } from "../authz/authzRequestContext";
+import { beginAuthorizationRequest } from "../authz/authzRequestContext";
 import { createMetadata } from "../usecase/metadataUsecase";
 import { makeBreakerOptions } from "./helpers/assetBreakerTestFixtures";
 
@@ -176,13 +176,13 @@ describe("asset dependency breaker", () => {
       await fireAssetRequest("http://asset/folders", {});
     }
 
-    setAuthzRequestContext({
+    beginAuthorizationRequest({
       userId: "user-1",
       orgId: "org-1",
-      roleCodes: ["org_admin"],
+      globalRoleCodes: ["org_admin"],
+      orgRoleCodes: ["org_admin"],
       roleIds: ["role-admin"],
       olpEnabled: true,
-      factMemo: new Map(),
     });
     mockFetch.mockClear();
 

@@ -1,20 +1,12 @@
 import { AsyncLocalStorage } from "node:async_hooks";
+import { AuthorizationRequestFacts, AuthorizationRequestSnapshot } from "./contracts";
 
-export interface AuthzRequestContext {
-  userId: string;
-  orgId: string;
-  roleCodes: string[];
-  roleIds: string[];
-  olpEnabled: boolean;
-  factMemo: Map<string, Promise<unknown>>;
+const storage = new AsyncLocalStorage<AuthorizationRequestSnapshot>();
+
+export function beginAuthorizationRequest(facts: AuthorizationRequestFacts): void {
+  storage.enterWith({ ...facts, factMemo: new Map() });
 }
 
-const storage = new AsyncLocalStorage<AuthzRequestContext>();
-
-export function setAuthzRequestContext(ctx: AuthzRequestContext): void {
-  storage.enterWith(ctx);
-}
-
-export function getAuthzRequestContext(): AuthzRequestContext | undefined {
+export function getAuthzRequestContext(): AuthorizationRequestSnapshot | undefined {
   return storage.getStore();
 }

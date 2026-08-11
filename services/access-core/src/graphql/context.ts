@@ -1,8 +1,9 @@
 import { GraphQLError } from "graphql";
 import { PermissionActionCode, ResourceType } from "@prisma/client";
 import { prisma } from "../db/prisma";
+import { isOlpEnabled } from "../db/queries/authorization";
 import { canDo } from "../authz/decision";
-import { setAuthzRequestContext } from "../authz/authzRequestContext";
+import { beginAuthorizationRequest } from "../authz/authzRequestContext";
 import { assertTemporaryTrainerAdmin } from "../authz/trainerAdmin";
 import { createRequestContextLoader, RequestContext } from "./requestContextLoader";
 
@@ -93,7 +94,6 @@ const requestContextLoader = createRequestContextLoader(
           ? {
               orgMembers: { where: { orgId } },
               userRoles: {
-                where: { orgId },
                 include: { role: { select: { code: true } } },
               },
             }
@@ -102,7 +102,7 @@ const requestContextLoader = createRequestContextLoader(
       if (!user) return null;
       const scopedUser = user as typeof user & {
         orgMembers?: unknown[];
-        userRoles?: Array<{ roleId: string; role: { code: string } }>;
+        userRoles?: Array<{ roleId: string; orgId: string; role: { code: string } }>;
       };
       return {
         isActive: user.isActive,
@@ -110,16 +110,13 @@ const requestContextLoader = createRequestContextLoader(
         roles: (scopedUser.userRoles ?? []).map((userRole) => ({
           id: userRole.roleId,
           code: userRole.role.code,
+          orgId: userRole.orgId,
         })),
       };
     },
-    async getOlpEnabled(orgId) {
-      return prisma.organization
-        .findUnique({ where: { id: orgId }, select: { olpEnabled: true } })
-        .then((organization) => organization?.olpEnabled ?? false);
-    },
+    getOlpEnabled: isOlpEnabled,
   },
-  { set: setAuthzRequestContext },
+  { begin: beginAuthorizationRequest },
 );
 
 export async function loadRequestContext(userId: string | null, orgId: string | null): Promise<GraphQLContext> {

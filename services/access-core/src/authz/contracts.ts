@@ -55,12 +55,16 @@ export interface AssetHierarchyReader {
   getMetadataFolderId(orgId: string, userId: string, metadataId: string): Promise<string | null>;
 }
 
-export interface AuthorizationRequestSnapshot {
+export interface AuthorizationRequestFacts {
   userId: string;
   orgId: string;
-  roleCodes: string[];
+  globalRoleCodes: string[];
+  orgRoleCodes: string[];
   roleIds: string[];
   olpEnabled: boolean;
+}
+
+export interface AuthorizationRequestSnapshot extends AuthorizationRequestFacts {
   factMemo: Map<string, Promise<unknown>>;
 }
 
