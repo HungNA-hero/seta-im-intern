@@ -49,7 +49,13 @@ describe.skipIf(!liveRedis)("direct revoke invalidates a cached decision (live R
     const { bumpUserEpoch } = await import("../cache/epoch");
 
     mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: folderId }]);
-    const granted = await canDo(userId, "read", "folder", folderId, orgId);
+    const granted = await canDo({
+      userId: userId,
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: orgId,
+    });
     expect(granted).toEqual({ allowed: true, reason: null });
 
     // Simulate the revoke: DB row removed, epoch bumped the way
@@ -57,7 +63,13 @@ describe.skipIf(!liveRedis)("direct revoke invalidates a cached decision (live R
     mockPrisma.objectPermission.findMany.mockResolvedValue([]);
     await bumpUserEpoch(orgId, userId);
 
-    const denied = await canDo(userId, "read", "folder", folderId, orgId);
+    const denied = await canDo({
+      userId: userId,
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: orgId,
+    });
     expect(denied).toEqual({ allowed: false, reason: "no object permission" });
   });
 });

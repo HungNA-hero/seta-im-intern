@@ -90,7 +90,13 @@ describe("Mutation.grantObjectPermission", () => {
       makeCtx(),
     );
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "manage_permissions", "folder", "folder-1", "org-1");
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "manage_permissions",
+      resourceType: "folder",
+      resourceId: "folder-1",
+      orgId: "org-1",
+    });
     expect(mockGrant).toHaveBeenCalledWith({
       orgId: "org-1",
       resourceType: "folder",
@@ -249,7 +255,13 @@ describe("Mutation.revokeObjectPermission", () => {
 
     const result = await permissionResolvers.Mutation.revokeObjectPermission(undefined, { id: "perm-1" }, makeCtx());
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "manage_permissions", "folder", "folder-1", "org-1");
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "manage_permissions",
+      resourceType: "folder",
+      resourceId: "folder-1",
+      orgId: "org-1",
+    });
     expect(mockRevoke).toHaveBeenCalledTimes(1);
     expect(mockRevoke).toHaveBeenCalledWith("perm-1");
     expect(result).toBe(true);

@@ -229,7 +229,13 @@ describe("CLI Import Visibility Policy E2E", () => {
       externalSource: "open_images_v7",
       externalId: "ext1",
     });
-    expect(mockCanDo).toHaveBeenCalledWith(USER_ID, "read", "metadata_item", importedItemId, ORG_ID);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: USER_ID,
+      action: "read",
+      resourceType: "metadata_item",
+      resourceId: importedItemId,
+      orgId: ORG_ID,
+    });
   });
 
   test("denied requester cannot read imported item through detail", async () => {

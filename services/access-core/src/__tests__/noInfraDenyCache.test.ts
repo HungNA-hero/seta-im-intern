@@ -55,7 +55,9 @@ describe("a transient asset-core failure is never written to the decision cache"
   test("canDo propagates the dependency failure instead of caching a deny", async () => {
     const { canDo } = await import("../authz/decision");
 
-    await expect(canDo(userId, "read", "folder", folderId, orgId)).rejects.toThrow("asset-core 503");
+    await expect(
+      canDo({ userId: userId, action: "read", resourceType: "folder", resourceId: folderId, orgId: orgId }),
+    ).rejects.toThrow("asset-core 503");
     expect(decisionCacheMock.writeDecision).not.toHaveBeenCalled();
   });
 });

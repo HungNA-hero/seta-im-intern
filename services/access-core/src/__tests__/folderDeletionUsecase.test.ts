@@ -72,7 +72,13 @@ describe("folder deletion usecase", () => {
 
     const preview = await previewFolderDeletion(context(), "org-1", "folder-1");
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "delete", "folder", "folder-1", "org-1");
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "delete",
+      resourceType: "folder",
+      resourceId: "folder-1",
+      orgId: "org-1",
+    });
     expect(preview.totalRows).toBe(6);
     expect(mockFetch).toHaveBeenCalledWith(
       `${config.goAssetUrl}/internal/api/v1/folder-deletions/preview?orgId=org-1&folderId=folder-1`,

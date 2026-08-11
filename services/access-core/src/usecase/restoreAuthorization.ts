@@ -16,7 +16,14 @@ async function assertCurrentRestorePermission(
 ): Promise<void> {
   assertOrgMember(ctx);
   for (const action of RESTORE_ACTIONS) {
-    const decision = await canDoWithKnownAncestors(ctx.userId, action, resourceType, resourceId, orgId, ancestorIds);
+    const decision = await canDoWithKnownAncestors({
+      userId: ctx.userId,
+      action,
+      resourceType,
+      resourceId,
+      orgId,
+      ancestorIds,
+    });
     if (decision.allowed) return;
   }
   throw forbidden("The requested restore is not permitted");

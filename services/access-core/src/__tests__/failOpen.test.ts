@@ -58,7 +58,13 @@ describe("Redis-down fail-open behavior", () => {
     resetCircuitBreakerForTests();
 
     const { canDo } = await import("../authz/decision");
-    const result = await canDo(userId, "read", "folder", folderId, orgId);
+    const result = await canDo({
+      userId: userId,
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: orgId,
+    });
 
     expect(result).toEqual({ allowed: true, reason: null });
   });
@@ -72,7 +78,13 @@ describe("Redis-down fail-open behavior", () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue(null);
 
     const { canDo } = await import("../authz/decision");
-    const result = await canDo(userId, "read", "folder", folderId, orgId);
+    const result = await canDo({
+      userId: userId,
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: orgId,
+    });
 
     expect(result).toEqual({ allowed: false, reason: "no RBAC ceiling" });
   });

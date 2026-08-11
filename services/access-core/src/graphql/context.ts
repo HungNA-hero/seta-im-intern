@@ -67,8 +67,8 @@ export async function assertTrainerAdmin(ctx: GraphQLContext): Promise<void> {
  * @throws {GraphQLError} If the policy evaluation denies access.
  * Any unexpected exception from policy evaluation is propagated and masked by the server.
  */
-export async function assertCan({ userId, action, resourceType, resourceId, orgId }: CanDoInput): Promise<void> {
-  const { allowed, reason } = await canDo(userId, action, resourceType, resourceId, orgId);
+export async function assertCan(request: CanDoInput): Promise<void> {
+  const { allowed, reason } = await canDo(request);
   if (!allowed) {
     throw new GraphQLError(reason ?? "Forbidden", {
       extensions: { code: "FORBIDDEN" },
