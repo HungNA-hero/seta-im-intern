@@ -1,4 +1,12 @@
 import { AssetTransport } from "./assetTransport";
+import {
+  assetPath,
+  FOLDERS_PATH,
+  METADATA_PATH,
+  RESTORE_FOLDER_FACTS_PATH,
+  RESTORE_METADATA_FACTS_PATH,
+} from "./assetPaths";
+import { invalidAssetFact, throwAssetCoreError, unwrapListEnvelope } from "./assetErrors";
 
 export interface FolderMeta {
   path: string;
@@ -37,16 +45,6 @@ export interface AssetFactReader {
 
 export interface AssetFactReaderDependencies {
   transport: AssetTransport;
-  paths: {
-    folders: string;
-    metadata: string;
-    restoreFolders: string;
-    restoreMetadata: string;
-  };
-  buildPath(base: string, params: Record<string, string | string[] | undefined>): string;
-  throwResponseError(response: Response): Promise<never>;
-  invalidFact(): never;
-  decodeFolderList(response: Response): Promise<Array<{ id: string; path: string }>>;
   readFolderCache(orgId: string, id: string, loader: () => Promise<FolderMeta | null>): Promise<FolderMeta | null>;
   readMetadataCache(
     orgId: string,
@@ -56,23 +54,32 @@ export interface AssetFactReaderDependencies {
   runSingleFlight<T>(key: string, loader: () => Promise<T>): Promise<T>;
 }
 
+function decodeFolderList(response: Response): Promise<Array<{ id: string; path: string }>> {
+  return unwrapListEnvelope(
+    response,
+    "folders",
+    (raw: any) => ({ id: raw.id as string, path: raw.path as string }),
+    "Failed to fetch folder facts",
+  );
+}
+
 export function createAssetFactReader(dependencies: AssetFactReaderDependencies): AssetFactReader {
   async function request(path: string, orgId: string, userId: string): Promise<Response> {
     return dependencies.transport.request(path, { orgId, userId });
   }
 
   async function fetchFolderMeta(orgId: string, userId: string, id: string): Promise<FolderMeta | null> {
-    const response = await request(dependencies.buildPath(dependencies.paths.folders, { orgId, id }), orgId, userId);
+    const response = await request(assetPath(FOLDERS_PATH, { orgId, id }), orgId, userId);
     if (response.status === 404) return null;
-    if (!response.ok) await dependencies.throwResponseError(response);
+    if (!response.ok) await throwAssetCoreError(response);
     const data = (await response.json()) as { folder?: { path: string } };
     return data.folder ? { path: data.folder.path } : null;
   }
 
   async function fetchMetadataMeta(orgId: string, userId: string, id: string): Promise<MetadataItemMeta | null> {
-    const response = await request(dependencies.buildPath(dependencies.paths.metadata, { orgId, id }), orgId, userId);
+    const response = await request(assetPath(METADATA_PATH, { orgId, id }), orgId, userId);
     if (response.status === 404) return null;
-    if (!response.ok) await dependencies.throwResponseError(response);
+    if (!response.ok) await throwAssetCoreError(response);
     const data = (await response.json()) as {
       item?: { folder_id: string };
     };
@@ -82,7 +89,7 @@ export function createAssetFactReader(dependencies: AssetFactReaderDependencies)
   const reader: AssetFactReader = {
     async getFolderRestoreAuthorizationFact(orgId, userId, id) {
       const response = await request(
-        dependencies.buildPath(dependencies.paths.restoreFolders, {
+        assetPath(RESTORE_FOLDER_FACTS_PATH, {
           orgId,
           id,
         }),
@@ -90,19 +97,19 @@ export function createAssetFactReader(dependencies: AssetFactReaderDependencies)
         userId,
       );
       if (response.status === 404) return null;
-      if (!response.ok) await dependencies.throwResponseError(response);
+      if (!response.ok) await throwAssetCoreError(response);
       const data = (await response.json()) as {
         fact?: { id?: unknown; path?: unknown };
       };
       if (typeof data.fact?.id !== "string" || typeof data.fact.path !== "string") {
-        dependencies.invalidFact();
+        invalidAssetFact();
       }
       return { id: data.fact.id, path: data.fact.path };
     },
 
     async getMetadataRestoreAuthorizationFact(orgId, userId, id) {
       const response = await request(
-        dependencies.buildPath(dependencies.paths.restoreMetadata, {
+        assetPath(RESTORE_METADATA_FACTS_PATH, {
           orgId,
           id,
         }),
@@ -110,7 +117,7 @@ export function createAssetFactReader(dependencies: AssetFactReaderDependencies)
         userId,
       );
       if (response.status === 404) return null;
-      if (!response.ok) await dependencies.throwResponseError(response);
+      if (!response.ok) await throwAssetCoreError(response);
       const data = (await response.json()) as {
         fact?: {
           id?: unknown;
@@ -123,7 +130,7 @@ export function createAssetFactReader(dependencies: AssetFactReaderDependencies)
         typeof data.fact.folder_id !== "string" ||
         typeof data.fact.folder_path !== "string"
       ) {
-        dependencies.invalidFact();
+        invalidAssetFact();
       }
       return {
         id: data.fact.id,
@@ -147,14 +154,14 @@ export function createAssetFactReader(dependencies: AssetFactReaderDependencies)
       }
 
       const response = await request(
-        dependencies.buildPath(dependencies.paths.folders, {
+        assetPath(FOLDERS_PATH, {
           orgId,
           id: uniqueIds,
         }),
         orgId,
         userId,
       );
-      const folders = await dependencies.decodeFolderList(response);
+      const folders = await decodeFolderList(response);
       return new Map(folders.map((folder) => [folder.id, { path: folder.path }]));
     },
 
