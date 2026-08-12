@@ -10,7 +10,7 @@ import { filterVisible } from "../authz/decision";
 import { FolderNode, folderHierarchy, GoFolder, toFolder } from "../domain/folder";
 import { badUserInput, forbidden } from "../errors/factories";
 import { assertAuthenticated, assertOrgContext, assertOrgMember, GraphQLContext } from "../graphql/context";
-import { authorizedFetch, Precondition } from "./assetProxy";
+import { authorizedFetch, AssetAuthorizationPrecondition } from "./authorizedAssetFetch";
 import { authorizeFolderRestore } from "./restoreAuthorization";
 
 type FolderWithSubtree = FolderNode & { subtreeNodes?: FolderNode[] };
@@ -34,7 +34,7 @@ function assertNotRootFolder(id: string, orgId: string, action: string): void {
 }
 
 async function fetchFolderList(ctx: GraphQLContext, orgId: string, path: string): Promise<FolderNode[]> {
-  const response = await authorizedFetch(ctx, orgId, [], path);
+  const response = await authorizedFetch({ ctx, orgId, path: path });
   return unwrapListEnvelope(response, "folders", toFolder, "Failed to fetch folders");
 }
 
@@ -47,12 +47,12 @@ function attachSubtreeCache(visible: FolderNode[]): FolderWithSubtree[] {
 }
 
 export async function getFolder(ctx: GraphQLContext, orgId: string, id: string) {
-  const response = await authorizedFetch(
+  const response = await authorizedFetch({
     ctx,
     orgId,
-    [{ action: "read", resourceType: "folder", resourceId: id }],
-    assetPath(FOLDERS_PATH, { orgId, id }),
-  );
+    preconditions: [{ action: "read", resourceType: "folder", resourceId: id }],
+    path: assetPath(FOLDERS_PATH, { orgId, id }),
+  });
 
   if (response.status === 404) return null;
   if (!response.ok) await throwAssetCoreError(response);
@@ -136,13 +136,13 @@ export async function createFolder(
     ...(parentPath !== undefined && { parent_path: parentPath }),
     ...(description !== undefined && { description }),
   };
-  const response = await authorizedFetch(
+  const response = await authorizedFetch({
     ctx,
     orgId,
-    [{ action: "write", resourceType: "folder", resourceId: orgId }],
-    assetPath(FOLDERS_PATH, { orgId }),
-    { method: "POST", body },
-  );
+    preconditions: [{ action: "write", resourceType: "folder", resourceId: orgId }],
+    path: assetPath(FOLDERS_PATH, { orgId }),
+    init: { method: "POST", body },
+  });
   return unwrapEnvelope(response, "folder", toFolder, "Failed to create folder");
 }
 
@@ -159,13 +159,13 @@ export async function updateFolder(ctx: GraphQLContext, orgId: string, { id, nam
     ...(name !== undefined && { name }),
     ...(description !== undefined && { description }),
   };
-  const response = await authorizedFetch(
+  const response = await authorizedFetch({
     ctx,
     orgId,
-    [{ action: "write", resourceType: "folder", resourceId: id }],
-    assetPath(FOLDERS_PATH, { orgId, id }),
-    { method: "PATCH", body },
-  );
+    preconditions: [{ action: "write", resourceType: "folder", resourceId: id }],
+    path: assetPath(FOLDERS_PATH, { orgId, id }),
+    init: { method: "PATCH", body },
+  });
   return unwrapEnvelope(response, "folder", toFolder, "Failed to update folder");
 }
 
@@ -173,7 +173,7 @@ export async function moveFolder(ctx: GraphQLContext, orgId: string, id: string,
   assertAuthenticated(ctx);
   assertNotRootFolder(id, orgId, "move");
   const destinationId = destinationParentId ?? orgId;
-  const preconditions: Precondition[] = [
+  const preconditions: AssetAuthorizationPrecondition[] = [
     { action: "write", resourceType: "folder", resourceId: id },
     {
       action: "write",
@@ -181,9 +181,15 @@ export async function moveFolder(ctx: GraphQLContext, orgId: string, id: string,
       resourceId: destinationId,
     },
   ];
-  const response = await authorizedFetch(ctx, orgId, preconditions, assetPath(`${FOLDERS_PATH}/move`, { orgId, id }), {
-    method: "PATCH",
-    body: { destination_parent_id: destinationParentId ?? null },
+  const response = await authorizedFetch({
+    ctx,
+    orgId,
+    preconditions,
+    path: assetPath(`${FOLDERS_PATH}/move`, { orgId, id }),
+    init: {
+      method: "PATCH",
+      body: { destination_parent_id: destinationParentId ?? null },
+    },
   });
   return unwrapEnvelope(response, "folder", toFolder, "Failed to move folder");
 }
@@ -191,21 +197,26 @@ export async function moveFolder(ctx: GraphQLContext, orgId: string, id: string,
 export async function deleteFolder(ctx: GraphQLContext, orgId: string, id: string) {
   assertAuthenticated(ctx);
   assertNotRootFolder(id, orgId, "delete");
-  const response = await authorizedFetch(
+  const response = await authorizedFetch({
     ctx,
     orgId,
-    [{ action: "delete", resourceType: "folder", resourceId: id }],
-    assetPath(FOLDERS_PATH, { orgId, id }),
-    { method: "DELETE" },
-  );
+    preconditions: [{ action: "delete", resourceType: "folder", resourceId: id }],
+    path: assetPath(FOLDERS_PATH, { orgId, id }),
+    init: { method: "DELETE" },
+  });
   return unwrap204(response, "Failed to delete folder");
 }
 
 export async function restoreFolder(ctx: GraphQLContext, orgId: string, id: string) {
   assertNotRootFolder(id, orgId, "restore");
   await authorizeFolderRestore(ctx, orgId, id);
-  const response = await authorizedFetch(ctx, orgId, [], assetPath(`${FOLDERS_PATH}/restore`, { orgId, id }), {
-    method: "POST",
+  const response = await authorizedFetch({
+    ctx,
+    orgId,
+    path: assetPath(`${FOLDERS_PATH}/restore`, { orgId, id }),
+    init: {
+      method: "POST",
+    },
   });
   return unwrapEnvelope(response, "folder", toFolder, "Failed to restore folder");
 }

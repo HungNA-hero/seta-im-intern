@@ -109,6 +109,23 @@ export interface NormalizedMetadataConnectionSearchInput extends Omit<
   after?: MetadataCursorPosition;
 }
 
+export type MetadataSearchFilters = Pick<
+  NormalizedMetadataSearchInput,
+  "folderId" | "query" | "labels" | "category" | "externalSource"
+>;
+
+export function buildSearchQueryParams(filters: MetadataSearchFilters): Record<string, string | string[]> {
+  const queryParams: Record<string, string | string[]> = {};
+  if (filters.folderId) queryParams.folderId = filters.folderId;
+  if (filters.query) queryParams.query = filters.query;
+  if (filters.labels) queryParams.label = filters.labels;
+  if (filters.category) queryParams.category = filters.category;
+  if (filters.externalSource) {
+    queryParams.externalSource = filters.externalSource;
+  }
+  return queryParams;
+}
+
 export interface GoCursorSearchEnvelope {
   items: GoMetadataItem[];
   hasMore: boolean;

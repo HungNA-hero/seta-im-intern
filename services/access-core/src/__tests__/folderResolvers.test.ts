@@ -167,7 +167,13 @@ describe("Mutation.createFolder", () => {
     fetchOk(makeGoFolder());
     await folderResolvers.Mutation.createFolder(undefined, { orgId: org, name: "Test" }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", org, org);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "write",
+      resourceType: "folder",
+      resourceId: org,
+      orgId: org,
+    });
   });
 
   test("throws FORBIDDEN when canDo denies", async () => {
@@ -254,7 +260,13 @@ describe("Mutation.updateFolder", () => {
     fetchOk(makeGoFolder());
     await folderResolvers.Mutation.updateFolder(undefined, { orgId: org, id: folderId, name: "New" }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", folderId, org);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "write",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: org,
+    });
   });
 
   test("forwards null description to Go (clears it)", async () => {
@@ -640,7 +652,13 @@ describe("Query.folder", () => {
 
     await folderResolvers.Query.folder(undefined, { orgId: org, id: folderId }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "read", "folder", folderId, org);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: org,
+    });
   });
 
   test("throws FORBIDDEN when canDo denies", async () => {
@@ -685,20 +703,38 @@ describe("Mutation.moveFolder", () => {
     fetchOk(makeGoFolder());
     await folderResolvers.Mutation.moveFolder(undefined, { orgId: org, id, destinationParentId: destId }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", id, org);
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", destId, org);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "write",
+      resourceType: "folder",
+      resourceId: id,
+      orgId: org,
+    });
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "write",
+      resourceType: "folder",
+      resourceId: destId,
+      orgId: org,
+    });
   });
 
   test("uses orgId as destination if destinationParentId is null", async () => {
     fetchOk(makeGoFolder());
     await folderResolvers.Mutation.moveFolder(undefined, { orgId: org, id, destinationParentId: null }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", org, org);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "write",
+      resourceType: "folder",
+      resourceId: org,
+      orgId: org,
+    });
   });
 
   test("throws FORBIDDEN when canDo denies on source", async () => {
-    mockCanDo.mockImplementation(async (userId, action, resType, resId) => {
-      if (resId === id) return { allowed: false, reason: "denied" };
+    mockCanDo.mockImplementation(async ({ resourceId }) => {
+      if (resourceId === id) return { allowed: false, reason: "denied" };
       return { allowed: true, reason: null };
     });
 
@@ -709,8 +745,8 @@ describe("Mutation.moveFolder", () => {
   });
 
   test("throws FORBIDDEN when canDo denies on destination", async () => {
-    mockCanDo.mockImplementation(async (userId, action, resType, resId) => {
-      if (resId === destId) return { allowed: false, reason: "denied" };
+    mockCanDo.mockImplementation(async ({ resourceId }) => {
+      if (resourceId === destId) return { allowed: false, reason: "denied" };
       return { allowed: true, reason: null };
     });
 
@@ -820,7 +856,13 @@ describe("Mutation.deleteFolder", () => {
     mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
     await folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "delete", "folder", id, org);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "delete",
+      resourceType: "folder",
+      resourceId: id,
+      orgId: org,
+    });
   });
 
   test("throws FORBIDDEN when canDo denies", async () => {
@@ -915,7 +957,14 @@ describe("Mutation.restoreFolder", () => {
     const result = await folderResolvers.Mutation.restoreFolder(undefined, { orgId: org, id }, ctx);
 
     expect(result).toMatchObject({ id, name: "Restored Folder" });
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", id, org, []);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "write",
+      resourceType: "folder",
+      resourceId: id,
+      orgId: org,
+      ancestorIds: [],
+    });
     expect(mockFetch.mock.calls[0][0]).toBe(
       `http://go-mock/internal/api/v1/restore-facts/folders?orgId=${org}&id=${id}`,
     );
@@ -937,7 +986,14 @@ describe("Mutation.restoreFolder", () => {
     await expect(folderResolvers.Mutation.restoreFolder(undefined, { orgId: org, id }, ctx)).resolves.toMatchObject({
       id,
     });
-    expect(mockCanDo).toHaveBeenNthCalledWith(2, "user-1", "delete", "folder", id, org, []);
+    expect(mockCanDo).toHaveBeenNthCalledWith(2, {
+      userId: "user-1",
+      action: "delete",
+      resourceType: "folder",
+      resourceId: id,
+      orgId: org,
+      ancestorIds: [],
+    });
   });
 
   test("rejects restoring the organization root before any private lookup", async () => {

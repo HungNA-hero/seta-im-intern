@@ -249,6 +249,12 @@ describe("@sameOrg directive", () => {
       ctx({ userId: "current-user" }),
     );
     expect(result.errors).toBeUndefined();
-    expect(mockCanDo).toHaveBeenCalledWith("current-user", "read", "folder", "folder-1", "org-1");
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "current-user",
+      action: "read",
+      resourceType: "folder",
+      resourceId: "folder-1",
+      orgId: "org-1",
+    });
   });
 });

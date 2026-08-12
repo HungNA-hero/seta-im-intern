@@ -8,6 +8,12 @@ export function badUserInput(message: string): GraphQLError {
   });
 }
 
+export function unauthenticated(): GraphQLError {
+  return new GraphQLError("Unauthenticated", {
+    extensions: { code: "UNAUTHENTICATED" },
+  });
+}
+
 export function forbidden(message: string): GraphQLError {
   return new GraphQLError(message, {
     extensions: { code: "FORBIDDEN" },
@@ -35,6 +41,18 @@ export function internalDependencyError(traceId: string | undefined): GraphQLErr
       service: ServiceName.ACCESS_CORE,
     },
   });
+}
+
+export function unknownAction(): GraphQLError {
+  return fromDefinition("UNKNOWN_ACTION");
+}
+
+export function grantNotFound(): GraphQLError {
+  return fromDefinition("GRANT_NOT_FOUND");
+}
+
+export function grantInvalidTarget(): GraphQLError {
+  return fromDefinition("GRANT_INVALID_TARGET");
 }
 
 export function cursorInvalid(): GraphQLError {

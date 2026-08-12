@@ -49,12 +49,24 @@ describe.skipIf(!liveRedis)("canDo warm-hit outcome equivalence (live Redis)", (
     const { canDo } = await import("../authz/decision");
     const { getMetricsSnapshotForTests } = await import("../cache/metrics");
 
-    const first = await canDo(userId, "read", "folder", folderId, orgId);
+    const first = await canDo({
+      userId: userId,
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: orgId,
+    });
     expect(first).toEqual({ allowed: true, reason: null });
     expect(mockPrisma.rolePermission.findFirst).toHaveBeenCalledTimes(1);
 
     const before = getMetricsSnapshotForTests().counters.decision_hit;
-    const second = await canDo(userId, "read", "folder", folderId, orgId);
+    const second = await canDo({
+      userId: userId,
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: orgId,
+    });
     const after = getMetricsSnapshotForTests().counters.decision_hit;
 
     expect(second).toEqual(first);

@@ -54,11 +54,23 @@ describe.skipIf(!liveRedis)("role-directed revoke fans out to every holder (live
     const { bumpRoleEpoch } = await import("../cache/epoch");
 
     mockUser(userA);
-    const grantedA = await canDo(userA, "read", "folder", folderId, orgId);
+    const grantedA = await canDo({
+      userId: userA,
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: orgId,
+    });
     expect(grantedA).toEqual({ allowed: true, reason: null });
 
     mockUser(userB);
-    const grantedB = await canDo(userB, "read", "folder", folderId, orgId);
+    const grantedB = await canDo({
+      userId: userB,
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: orgId,
+    });
     expect(grantedB).toEqual({ allowed: true, reason: null });
 
     // Simulate a role-directed revoke: the grant row for the role is gone,
@@ -67,11 +79,23 @@ describe.skipIf(!liveRedis)("role-directed revoke fans out to every holder (live
     await bumpRoleEpoch(orgId, roleId);
 
     mockUser(userA);
-    const deniedA = await canDo(userA, "read", "folder", folderId, orgId);
+    const deniedA = await canDo({
+      userId: userA,
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: orgId,
+    });
     expect(deniedA).toEqual({ allowed: false, reason: "no object permission" });
 
     mockUser(userB);
-    const deniedB = await canDo(userB, "read", "folder", folderId, orgId);
+    const deniedB = await canDo({
+      userId: userB,
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: orgId,
+    });
     expect(deniedB).toEqual({ allowed: false, reason: "no object permission" });
   });
 });

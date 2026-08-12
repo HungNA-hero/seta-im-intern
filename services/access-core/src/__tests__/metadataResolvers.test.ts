@@ -196,7 +196,13 @@ describe("Query.metadataItems", () => {
     await metadataResolvers.Query.metadataItems(undefined, { orgId: org, folderId: folder }, ctx);
 
     expect(mockCanDo).toHaveBeenCalledTimes(1);
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "read", "folder", folder, org);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "read",
+      resourceType: "folder",
+      resourceId: folder,
+      orgId: org,
+    });
   });
 
   test("denies before any Go request when folder read policy denies", async () => {
@@ -255,7 +261,13 @@ describe("Query.metadataItem", () => {
     fetchOk(makeGoMetadataItem());
     await metadataResolvers.Query.metadataItem(undefined, { orgId: org, id }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "read", "metadata_item", id, org);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "read",
+      resourceType: "metadata_item",
+      resourceId: id,
+      orgId: org,
+    });
   });
 });
 
@@ -285,7 +297,13 @@ describe("Mutation.createMetadata", () => {
       ctx,
     );
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "folder", "folder-1", org);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "write",
+      resourceType: "folder",
+      resourceId: "folder-1",
+      orgId: org,
+    });
   });
 
   test("parses metadataJson and passes object to Go", async () => {
@@ -363,7 +381,13 @@ describe("Mutation.updateMetadata", () => {
       ctx,
     );
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "metadata_item", id, org);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "write",
+      resourceType: "metadata_item",
+      resourceId: id,
+      orgId: org,
+    });
   });
 
   test("handles explicit null for metadataJson", async () => {
@@ -470,6 +494,19 @@ describe("metadata transport and failure gates", () => {
 
     await expect(
       metadataResolvers.Mutation.updateMetadata(undefined, { orgId, id: metadataId, input: { title: "Updated" } }, ctx),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }));
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  test("denied update reports FORBIDDEN before validating the payload", async () => {
+    mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "denied" });
+
+    await expect(
+      metadataResolvers.Mutation.updateMetadata(
+        undefined,
+        { orgId, id: metadataId, input: { metadataJson: "{not json" } },
+        ctx,
+      ),
     ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }));
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -812,7 +849,13 @@ describe("Mutation.deleteMetadata", () => {
     mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
     await metadataResolvers.Mutation.deleteMetadata(undefined, { orgId: org, id }, ctx);
 
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "delete", "metadata_item", id, org);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "delete",
+      resourceType: "metadata_item",
+      resourceId: id,
+      orgId: org,
+    });
   });
 
   test("denied delete stops before Go", async () => {
@@ -854,7 +897,14 @@ describe("Mutation.restoreMetadata", () => {
     const result = await metadataResolvers.Mutation.restoreMetadata(undefined, { orgId: org, id }, ctx);
 
     expect(result).toMatchObject({ id, title: "Restored item" });
-    expect(mockCanDo).toHaveBeenCalledWith("user-1", "write", "metadata_item", id, org, ["folder-1"]);
+    expect(mockCanDo).toHaveBeenCalledWith({
+      userId: "user-1",
+      action: "write",
+      resourceType: "metadata_item",
+      resourceId: id,
+      orgId: org,
+      ancestorIds: ["folder-1"],
+    });
     expect(mockFetch.mock.calls[0][0]).toBe(
       `http://go-mock/internal/api/v1/restore-facts/metadata-items?orgId=${org}&id=${id}`,
     );

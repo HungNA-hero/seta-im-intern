@@ -43,8 +43,8 @@ export function createAuthorizationService(dependencies: AuthorizationServiceDep
     if (snapshot?.userId === userId && snapshot.orgId === orgId) {
       return decideRoleResolution({
         userId,
-        trainerAdminRoleCodes: snapshot.roleCodes,
-        orgAdminRoleCodes: snapshot.roleCodes,
+        trainerAdminRoleCodes: snapshot.globalRoleCodes,
+        orgAdminRoleCodes: snapshot.orgRoleCodes,
         roleIds: snapshot.roleIds,
         loadOlpEnabled: () => Promise.resolve(snapshot.olpEnabled),
         action,

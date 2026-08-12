@@ -113,7 +113,10 @@ describe("loadRequestContext", () => {
       id: "u1",
       isActive: true,
       orgMembers: [{ id: "mem-1" }],
-      userRoles: [{ role: { code: "org_admin" } }, { role: { code: "viewer" } }],
+      userRoles: [
+        { roleId: "r1", orgId: "o1", role: { code: "org_admin" } },
+        { roleId: "r2", orgId: "o1", role: { code: "viewer" } },
+      ],
     });
     mockPrisma.organization.findUnique.mockResolvedValue({ olpEnabled: true });
     const ctx = await loadRequestContext("u1", "o1");
@@ -122,6 +125,21 @@ describe("loadRequestContext", () => {
     expect(ctx.isMember).toBe(true);
     expect(ctx.roles).toEqual(["org_admin", "viewer"]);
     expect(ctx.olpEnabled).toBe(true);
+  });
+
+  test("keeps roles from other organizations out of the request context", async () => {
+    mockPrisma.user.findUnique.mockResolvedValue({
+      id: "u1",
+      isActive: true,
+      orgMembers: [{ id: "mem-1" }],
+      userRoles: [
+        { roleId: "r1", orgId: "o1", role: { code: "viewer" } },
+        { roleId: "r2", orgId: "o2", role: { code: "org_admin" } },
+      ],
+    });
+    mockPrisma.organization.findUnique.mockResolvedValue({ olpEnabled: true });
+    const ctx = await loadRequestContext("u1", "o1");
+    expect(ctx.roles).toEqual(["viewer"]);
   });
 
   test("olpEnabled defaults to false when org not found", async () => {

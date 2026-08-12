@@ -2,7 +2,7 @@ import { assetPath, FOLDER_DELETIONS_PATH, unwrapEnvelope } from "../clients/ass
 import { toFolderDeletionJob, toFolderDeletionPreview } from "../domain/folderDeletion";
 import { forbidden } from "../errors/factories";
 import { assertAuthenticated, GraphQLContext } from "../graphql/context";
-import { authorizedFetch } from "./assetProxy";
+import { authorizedFetch } from "./authorizedAssetFetch";
 
 function assertNotRootFolder(id: string, orgId: string): void {
   if (id === orgId) {
@@ -13,13 +13,13 @@ function assertNotRootFolder(id: string, orgId: string): void {
 export async function previewFolderDeletion(ctx: GraphQLContext, orgId: string, folderId: string) {
   assertAuthenticated(ctx);
   assertNotRootFolder(folderId, orgId);
-  const response = await authorizedFetch(
+  const response = await authorizedFetch({
     ctx,
     orgId,
-    [{ action: "delete", resourceType: "folder", resourceId: folderId }],
-    assetPath(`${FOLDER_DELETIONS_PATH}/preview`, { orgId, folderId }),
-    { method: "POST" },
-  );
+    preconditions: [{ action: "delete", resourceType: "folder", resourceId: folderId }],
+    path: assetPath(`${FOLDER_DELETIONS_PATH}/preview`, { orgId, folderId }),
+    init: { method: "POST" },
+  });
   return unwrapEnvelope(response, "preview", toFolderDeletionPreview, "Failed to preview folder deletion");
 }
 
@@ -32,31 +32,30 @@ export async function confirmFolderDeletion(
 ) {
   assertAuthenticated(ctx);
   assertNotRootFolder(folderId, orgId);
-  const response = await authorizedFetch(
+  const response = await authorizedFetch({
     ctx,
     orgId,
-    [{ action: "delete", resourceType: "folder", resourceId: folderId }],
-    assetPath(`${FOLDER_DELETIONS_PATH}/confirm`, { orgId, folderId }),
-    {
+    preconditions: [{ action: "delete", resourceType: "folder", resourceId: folderId }],
+    path: assetPath(`${FOLDER_DELETIONS_PATH}/confirm`, { orgId, folderId }),
+    init: {
       method: "POST",
       body: {
         preview_id: previewId,
         confirmation_token: confirmationToken,
       },
     },
-  );
+  });
   return unwrapEnvelope(response, "job", toFolderDeletionJob, "Failed to confirm folder deletion");
 }
 
 async function folderDeletionJobRequest(ctx: GraphQLContext, orgId: string, id: string, action?: "cancel" | "retry") {
   const path = action ? `${FOLDER_DELETIONS_PATH}/jobs/${action}` : `${FOLDER_DELETIONS_PATH}/jobs`;
-  const response = await authorizedFetch(
+  const response = await authorizedFetch({
     ctx,
     orgId,
-    [],
-    assetPath(path, { orgId, id }),
-    action ? { method: "POST", includeOrgAdmin: true } : { method: "GET", includeOrgAdmin: true },
-  );
+    path: assetPath(path, { orgId, id }),
+    init: action ? { method: "POST", includeOrgAdmin: true } : { method: "GET", includeOrgAdmin: true },
+  });
   return unwrapEnvelope(response, "job", toFolderDeletionJob, "Failed to load folder deletion job");
 }
 

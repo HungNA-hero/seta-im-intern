@@ -7,12 +7,12 @@ describe("createRequestContextLoader", () => {
       findUser: vi.fn().mockResolvedValue({
         isActive: true,
         isMember: true,
-        roles: [{ id: "role-1", code: "member" }],
+        roles: [{ id: "role-1", code: "member", orgId: "org-1" }],
       }),
       getOlpEnabled: vi.fn().mockResolvedValue(true),
     };
-    const snapshotWriter = { set: vi.fn() };
-    const loader = createRequestContextLoader(dataSource, snapshotWriter);
+    const authorizationRequest = { begin: vi.fn() };
+    const loader = createRequestContextLoader(dataSource, authorizationRequest);
 
     await expect(loader.load("user-1", "org-1")).resolves.toEqual({
       userId: "user-1",
@@ -21,7 +21,7 @@ describe("createRequestContextLoader", () => {
       roles: ["member"],
       olpEnabled: true,
     });
-    expect(snapshotWriter.set).toHaveBeenCalledWith(
+    expect(authorizationRequest.begin).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "user-1",
         orgId: "org-1",
@@ -35,7 +35,7 @@ describe("createRequestContextLoader", () => {
       findUser: vi.fn(),
       getOlpEnabled: vi.fn(),
     };
-    const loader = createRequestContextLoader(dataSource, { set: vi.fn() });
+    const loader = createRequestContextLoader(dataSource, { begin: vi.fn() });
 
     await expect(loader.load(null, null)).resolves.toEqual({
       userId: null,

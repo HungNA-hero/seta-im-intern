@@ -64,7 +64,13 @@ describe.skipIf(!liveRedis)("folder move-out invalidates inherited decisions (li
     getFolderMeta.mockResolvedValue({
       path: `${noDash(grantedAncestorId)}.${noDash(childFolderId)}`,
     });
-    const grantedBeforeMove = await canDo(userId, "read", "folder", childFolderId, orgId);
+    const grantedBeforeMove = await canDo({
+      userId: userId,
+      action: "read",
+      resourceType: "folder",
+      resourceId: childFolderId,
+      orgId: orgId,
+    });
     expect(grantedBeforeMove).toEqual({ allowed: true, reason: null });
 
     // Simulate the move: the child's path no longer descends from the
@@ -72,7 +78,13 @@ describe.skipIf(!liveRedis)("folder move-out invalidates inherited decisions (li
     getFolderMeta.mockResolvedValue({ path: noDash(childFolderId) });
     await bumpAssetEpoch(orgId);
 
-    const deniedAfterMove = await canDo(userId, "read", "folder", childFolderId, orgId);
+    const deniedAfterMove = await canDo({
+      userId: userId,
+      action: "read",
+      resourceType: "folder",
+      resourceId: childFolderId,
+      orgId: orgId,
+    });
     expect(deniedAfterMove).toEqual({ allowed: false, reason: "no object permission" });
   });
 });

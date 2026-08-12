@@ -5,7 +5,7 @@ import { GraphQLError } from "graphql";
 import { GraphQLContext } from "../context";
 import { serializePermission } from "./utils";
 import { getRoleById } from "../../db/queries/roles";
-import { grantPermission, revokePermission } from "../../usecase/objectPermissionUsecase";
+import { grantPermission, revokePermission } from "../../usecase/objectPermissionService";
 
 export const permissionResolvers = {
   Query: {

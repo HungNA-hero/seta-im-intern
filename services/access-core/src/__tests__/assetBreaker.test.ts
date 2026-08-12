@@ -29,8 +29,9 @@ vi.mock("../cache/factCache", () => ({
 }));
 
 import { createAssetBreakerForTests, fireAssetRequest, resetAssetBreakerForTests } from "../clients/assetBreaker";
-import { canDo, resetInProcessAuthzCachesForTests } from "../authz/decision";
-import { setAuthzRequestContext } from "../authz/authzRequestContext";
+import { canDo } from "../authz/decision";
+import { resetInProcessAuthzCachesForTests } from "../authz/authorizationRoot";
+import { beginAuthorizationRequest } from "../authz/authzRequestContext";
 import { createMetadata } from "../usecase/metadataUsecase";
 import { makeBreakerOptions } from "./helpers/assetBreakerTestFixtures";
 
@@ -175,13 +176,13 @@ describe("asset dependency breaker", () => {
       await fireAssetRequest("http://asset/folders", {});
     }
 
-    setAuthzRequestContext({
+    beginAuthorizationRequest({
       userId: "user-1",
       orgId: "org-1",
-      roleCodes: ["org_admin"],
+      globalRoleCodes: ["org_admin"],
+      orgRoleCodes: ["org_admin"],
       roleIds: ["role-admin"],
       olpEnabled: true,
-      factMemo: new Map(),
     });
     mockFetch.mockClear();
 
@@ -223,7 +224,13 @@ describe("asset dependency breaker", () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "ceiling" });
     mockPrisma.objectPermission.findMany.mockResolvedValue([]);
 
-    const result = canDo(userId, "read", "folder", folderId, orgId);
+    const result = canDo({
+      userId: userId,
+      action: "read",
+      resourceType: "folder",
+      resourceId: folderId,
+      orgId: orgId,
+    });
 
     await expect(result).rejects.toMatchObject({
       extensions: { code: "INTERNAL_ERROR", service: "access-core" },
