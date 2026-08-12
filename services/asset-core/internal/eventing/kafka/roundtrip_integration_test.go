@@ -32,23 +32,26 @@ type singleRecordStore struct {
 	published bool
 }
 
-func (store *singleRecordStore) Claim(_ context.Context, _ string, _ int) (outbox.Claimed, error) {
+func (store *singleRecordStore) Claim(_ context.Context, owner string, _ int) (outbox.Claimed, error) {
 	if store.published {
 		return outbox.Claimed{}, nil
 	}
 	return outbox.Claimed{
-		Records:        []outbox.Record{store.record},
-		LeaseExpiresAt: time.Now().Add(5 * time.Minute),
+		Records: []outbox.Record{store.record},
+		Lease: outbox.Lease{
+			Owner:     owner,
+			ExpiresAt: time.Now().Add(5 * time.Minute),
+		},
 	}, nil
 }
 
-func (store *singleRecordStore) MarkPublished(_ context.Context, _ uuid.UUID, _ time.Time) error {
+func (store *singleRecordStore) MarkPublished(_ context.Context, _ uuid.UUID, _ outbox.Lease, _ time.Time) (bool, error) {
 	store.published = true
-	return nil
+	return true, nil
 }
 
-func (store *singleRecordStore) Reschedule(_ context.Context, _ uuid.UUID, _ time.Time, _ int, _ string) error {
-	return nil
+func (store *singleRecordStore) Reschedule(_ context.Context, _ uuid.UUID, _ outbox.Lease, _ time.Time, _ int, _ string) (bool, error) {
+	return true, nil
 }
 
 type collectingEffect struct {

@@ -20,36 +20,31 @@ type Record struct {
 	EnqueuedAt   time.Time
 }
 
-// Store is implemented once per feature, against that feature's own outbox table.
-// Claim must return only rows whose business transaction has committed, selecting
-// them under FOR UPDATE SKIP LOCKED, stamping a lease owned by owner, and returning
-// that lease's expiry. An expired lease must be reclaimable by a different owner.
-// MarkPublished must be called only after a broker acknowledgement.
-//
-// Reschedule must persist attemptCount as the row's TRANSPORT attempt counter and
-// surface it again in Record.AttemptCount, which is what drives exponential backoff.
-// It must not touch any DOMAIN attempt counter — a broker retry is not a processing
-// attempt, and conflating the two burns a user's processing budget on a broker hiccup.
-// Claimed is one batch plus the lease expiry the database stamped for it. Using
-// that expiry prevents a slow Claim call from silently extending the lease.
-type Claimed struct {
-	Records        []Record
-	LeaseExpiresAt time.Time
+// Lease identifies the exact database claim that authorizes settlement. Stores
+// must match both Owner and ExpiresAt, and must additionally require that the
+// lease is still unexpired according to the database clock.
+type Lease struct {
+	Owner     string
+	ExpiresAt time.Time
 }
 
+type Claimed struct {
+	Records []Record
+	Lease   Lease
+}
+
+// Store is implemented once per feature, against that feature's own outbox
+// table. Claim must lease only the earliest unpublished row for each (topic,
+// key), ordered by EnqueuedAt then EventID. An earlier row that is leased by
+// another owner blocks later rows with that key; SKIP LOCKED must never skip to
+// a later same-key row.
 type Store interface {
 	Claim(ctx context.Context, owner string, limit int) (Claimed, error)
-	MarkPublished(ctx context.Context, eventID uuid.UUID, at time.Time) error
-	Reschedule(ctx context.Context, eventID uuid.UUID, nextAttemptAt time.Time, attemptCount int, errorCode string) error
+	MarkPublished(ctx context.Context, eventID uuid.UUID, lease Lease, at time.Time) (bool, error)
+	Reschedule(ctx context.Context, eventID uuid.UUID, lease Lease, nextAttemptAt time.Time, attemptCount int, errorCode string) (bool, error)
 }
 
-// Publisher returns only after the broker durably acknowledges the record.
-// Implementations must use acks=all. Duplicate records are tolerated, so
-// enabling Kafka's idempotent producer protocol is optional.
 type Publisher interface {
-	// Publish must not return while a broker write remains queued in the
-	// background. In particular, cancellation must stop and join any in-flight
-	// work before returning so the relay can safely release its lease.
 	Publish(ctx context.Context, topic, key string, payload []byte) error
 }
 
@@ -67,6 +62,8 @@ type RelayOptions struct {
 var (
 	ErrOutboxNotUpdated   = errors.New("outbox row not updated after broker acknowledgement")
 	ErrMissingLeaseExpiry = errors.New("claimed outbox batch has no lease expiry")
+	ErrLeaseOwnerMismatch = errors.New("claimed outbox batch belongs to a different lease owner")
+	ErrLeaseLost          = errors.New("outbox lease was lost before settlement")
 )
 
 const (
@@ -116,36 +113,51 @@ func (relay *Relay) DrainOnce(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	leaseExpiresAt := claimed.LeaseExpiresAt
-	if len(claimed.Records) > 0 && leaseExpiresAt.IsZero() {
+	lease := claimed.Lease
+	if len(claimed.Records) > 0 && lease.ExpiresAt.IsZero() {
 		return 0, ErrMissingLeaseExpiry
+	}
+	if len(claimed.Records) > 0 && lease.Owner != relay.options.Owner {
+		return 0, fmt.Errorf("%w: claimed by %q, relay is %q", ErrLeaseOwnerMismatch, lease.Owner, relay.options.Owner)
 	}
 
 	settled := 0
 	var unsettled error
 	for _, outboxRecord := range claimed.Records {
-		if relay.leaseTooShort(leaseExpiresAt) {
+		if relay.leaseTooShort(lease.ExpiresAt) {
 			leaseExhaustedTotal.Add(1)
 			break
 		}
 
-		publishErr := relay.publishWithinLease(ctx, outboxRecord, leaseExpiresAt)
+		publishErr := relay.publishWithinLease(ctx, outboxRecord, lease.ExpiresAt)
 		if publishErr != nil {
 			publishFailureTotal.Add(1)
 			nextAttempt := outboxRecord.AttemptCount + 1
 			nextAttemptAt := relay.now().Add(relay.backoffFor(outboxRecord.AttemptCount))
-			if rescheduleErr := relay.store.Reschedule(ctx, outboxRecord.EventID, nextAttemptAt, nextAttempt, transportErrorCode(publishErr)); rescheduleErr != nil {
+			updated, rescheduleErr := relay.store.Reschedule(ctx, outboxRecord.EventID, lease, nextAttemptAt, nextAttempt, transportErrorCode(publishErr))
+			if rescheduleErr != nil {
 				unsettled = errors.Join(unsettled, rescheduleErr)
+				break
+			}
+			if !updated {
+				unsettled = errors.Join(unsettled, fmt.Errorf("%w: rescheduling event %s", ErrLeaseLost, outboxRecord.EventID))
+				break
 			}
 			continue
 		}
 		publishedTotal.Add(1)
 		relay.recordDeliveryLag(outboxRecord)
 
-		if markErr := relay.store.MarkPublished(ctx, outboxRecord.EventID, relay.now()); markErr != nil {
+		updated, markErr := relay.store.MarkPublished(ctx, outboxRecord.EventID, lease, relay.now())
+		if markErr != nil {
 			outboxUpdateFailureTotal.Add(1)
 			unsettled = errors.Join(unsettled, fmt.Errorf("%w: event %s reached the broker but its outbox row was not updated: %w", ErrOutboxNotUpdated, outboxRecord.EventID, markErr))
-			continue
+			break
+		}
+		if !updated {
+			outboxUpdateFailureTotal.Add(1)
+			unsettled = errors.Join(unsettled, fmt.Errorf("%w: marking event %s published", ErrLeaseLost, outboxRecord.EventID))
+			break
 		}
 		settled++
 	}
@@ -160,8 +172,6 @@ func (relay *Relay) publishWithinLease(ctx context.Context, outboxRecord Record,
 		return relay.publisher.Publish(ctx, outboxRecord.Topic, outboxRecord.Key, outboxRecord.Payload)
 	}
 
-	// Reserve LeaseMargin for recording the acknowledgement. The publisher's
-	// stricter contract guarantees no queued write survives this deadline.
 	publishDeadline := leaseExpiresAt.Add(-relay.options.LeaseMargin)
 	publishCtx, cancel := context.WithDeadline(ctx, publishDeadline)
 	defer cancel()

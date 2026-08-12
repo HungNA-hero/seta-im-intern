@@ -8,30 +8,24 @@ import (
 	"github.com/google/uuid"
 )
 
-type ReplaySubject struct {
-	AggregateID string
-	Topic       string
-	Key         string
-	Payload     []byte
-	Isolated    bool
-}
-
 type ReplayRequest struct {
 	QuarantineID string
 	Operator     string
 }
 
-// ReplayStore rebuilds a replay subject from current database state. There is
-// deliberately no parameter carrying a dead-letter payload: a replayed event is
-// reconstructed from database truth, never from the stored quarantine record.
+// ReplayStore owns the complete replay transaction. RebuildAndEnqueue must lock
+// the quarantine subject, verify it is still isolated, load current database
+// truth, generate the event ID, build a current-schema payload containing that
+// same ID, clear isolation, and insert the outbox row atomically. It must return
+// ErrNotIsolated when the locked subject is no longer isolated.
 type ReplayStore interface {
-	LoadIsolated(ctx context.Context, quarantineID string) (ReplaySubject, error)
-	ClearIsolationAndEnqueue(ctx context.Context, subject ReplaySubject, eventID uuid.UUID, operator string) error
+	RebuildAndEnqueue(ctx context.Context, request ReplayRequest) (uuid.UUID, error)
 }
 
 var (
 	ErrOperatorRequired = errors.New("replay requires an operator identity")
 	ErrNotIsolated      = errors.New("replay subject is not isolated")
+	ErrMissingReplayID  = errors.New("replay transaction returned no event ID")
 )
 
 // Replay is the only path back onto the main topic for a quarantined event, and
@@ -41,17 +35,12 @@ func Replay(ctx context.Context, store ReplayStore, request ReplayRequest) (uuid
 		return uuid.Nil, ErrOperatorRequired
 	}
 
-	subject, err := store.LoadIsolated(ctx, request.QuarantineID)
+	eventID, err := store.RebuildAndEnqueue(ctx, request)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("loading replay subject %s: %w", request.QuarantineID, err)
-	}
-	if !subject.Isolated {
-		return uuid.Nil, fmt.Errorf("%w: %s", ErrNotIsolated, request.QuarantineID)
-	}
-
-	eventID := uuid.New()
-	if err := store.ClearIsolationAndEnqueue(ctx, subject, eventID, request.Operator); err != nil {
 		return uuid.Nil, fmt.Errorf("enqueueing replay of %s: %w", request.QuarantineID, err)
+	}
+	if eventID == uuid.Nil {
+		return uuid.Nil, ErrMissingReplayID
 	}
 	return eventID, nil
 }

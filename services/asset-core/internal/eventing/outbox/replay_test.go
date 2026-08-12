@@ -2,106 +2,157 @@ package outbox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
 )
 
+type replayPayload struct {
+	EventID     string `json:"eventId"`
+	AggregateID string `json:"aggregateId"`
+}
+
 type fakeReplayStore struct {
-	subject    ReplaySubject
-	loadErr    error
-	enqueued   []ReplaySubject
-	eventIDs   []uuid.UUID
-	operators  []string
-	loadedFrom []string
+	mu          sync.Mutex
+	aggregateID string
+	isolated    bool
+	err         error
+	requests    []ReplayRequest
+	eventIDs    []uuid.UUID
+	payloads    [][]byte
 }
 
-func (fake *fakeReplayStore) LoadIsolated(_ context.Context, quarantineID string) (ReplaySubject, error) {
-	fake.loadedFrom = append(fake.loadedFrom, quarantineID)
-	if fake.loadErr != nil {
-		return ReplaySubject{}, fake.loadErr
+// RebuildAndEnqueue models the adapter's required single transaction: it checks
+// isolation, generates the ID, and constructs the payload from current state
+// with that same ID before clearing isolation.
+func (fake *fakeReplayStore) RebuildAndEnqueue(_ context.Context, request ReplayRequest) (uuid.UUID, error) {
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	if fake.err != nil {
+		return uuid.Nil, fake.err
 	}
-	return fake.subject, nil
-}
-
-func (fake *fakeReplayStore) ClearIsolationAndEnqueue(_ context.Context, subject ReplaySubject, eventID uuid.UUID, operator string) error {
-	fake.enqueued = append(fake.enqueued, subject)
+	if !fake.isolated {
+		return uuid.Nil, ErrNotIsolated
+	}
+	eventID := uuid.New()
+	payload, err := json.Marshal(replayPayload{EventID: eventID.String(), AggregateID: fake.aggregateID})
+	if err != nil {
+		return uuid.Nil, err
+	}
+	fake.requests = append(fake.requests, request)
 	fake.eventIDs = append(fake.eventIDs, eventID)
-	fake.operators = append(fake.operators, operator)
-	return nil
+	fake.payloads = append(fake.payloads, payload)
+	fake.isolated = false
+	return eventID, nil
 }
 
-func databaseTruth() ReplaySubject {
-	return ReplaySubject{
-		AggregateID: "a74e1124-b5c0-47b4-b73f-4ce7c7031d77",
-		Topic:       "media-processing.v1",
-		Key:         "a74e1124-b5c0-47b4-b73f-4ce7c7031d77",
-		Payload:     []byte(`{"eventId":"rebuilt-from-database","schemaVersion":1}`),
-		Isolated:    true,
+func TestReplayAtomicallyRebuildsCurrentStateWithTheFreshEventID(t *testing.T) {
+	store := &fakeReplayStore{
+		aggregateID: "a74e1124-b5c0-47b4-b73f-4ce7c7031d77",
+		isolated:    true,
 	}
-}
 
-func TestReplayRebuildsTheEventFromDatabaseTruthUnderAFreshEventID(t *testing.T) {
-	store := &fakeReplayStore{subject: databaseTruth()}
-
-	firstEventID, err := Replay(context.Background(), store, ReplayRequest{
+	eventID, err := Replay(context.Background(), store, ReplayRequest{
 		QuarantineID: "deadbeef",
 		Operator:     "ops-alice",
 	})
 	if err != nil {
 		t.Fatalf("Replay returned error: %v", err)
 	}
-
-	if len(store.loadedFrom) != 1 || store.loadedFrom[0] != "deadbeef" {
-		t.Fatalf("loaded from %v, want the quarantine identity [deadbeef]", store.loadedFrom)
+	if eventID == uuid.Nil || len(store.eventIDs) != 1 || store.eventIDs[0] != eventID {
+		t.Fatalf("returned event ID = %s, stored IDs = %v; replay row and result must share one fresh ID", eventID, store.eventIDs)
 	}
-	if len(store.enqueued) != 1 {
-		t.Fatalf("enqueued %d events, want 1", len(store.enqueued))
-	}
-	if string(store.enqueued[0].Payload) != string(databaseTruth().Payload) {
-		t.Fatalf("enqueued payload = %s, want the payload rebuilt from database truth", store.enqueued[0].Payload)
-	}
-	if store.operators[0] != "ops-alice" {
-		t.Fatalf("operator = %q, want the auditable operator identity", store.operators[0])
-	}
-	if firstEventID == uuid.Nil {
-		t.Fatal("replay produced no event ID")
+	if len(store.requests) != 1 || store.requests[0].QuarantineID != "deadbeef" || store.requests[0].Operator != "ops-alice" {
+		t.Fatalf("requests = %+v, want the quarantine and auditable operator passed into the transaction", store.requests)
 	}
 
-	secondEventID, err := Replay(context.Background(), store, ReplayRequest{QuarantineID: "deadbeef", Operator: "ops-alice"})
-	if err != nil {
-		t.Fatalf("second Replay returned error: %v", err)
+	var payload replayPayload
+	if err := json.Unmarshal(store.payloads[0], &payload); err != nil {
+		t.Fatalf("decoding rebuilt payload: %v", err)
 	}
-	if secondEventID == firstEventID {
-		t.Fatal("a second replay reused the first event ID, so the two replays are indistinguishable")
+	if payload.EventID != eventID.String() {
+		t.Fatalf("payload eventId = %q, want outbox event ID %q", payload.EventID, eventID)
+	}
+	if payload.AggregateID != store.aggregateID {
+		t.Fatalf("payload aggregateId = %q, want current database value %q", payload.AggregateID, store.aggregateID)
 	}
 }
 
 func TestReplayRefusesWithoutAnOperatorIdentity(t *testing.T) {
-	store := &fakeReplayStore{subject: databaseTruth()}
+	store := &fakeReplayStore{isolated: true}
 
 	_, err := Replay(context.Background(), store, ReplayRequest{QuarantineID: "deadbeef"})
 
 	if !errors.Is(err, ErrOperatorRequired) {
 		t.Fatalf("err = %v, want ErrOperatorRequired — replay is never automatic", err)
 	}
-	if len(store.enqueued) != 0 {
-		t.Fatalf("an unattributed replay enqueued %d events, want 0", len(store.enqueued))
+	if len(store.eventIDs) != 0 {
+		t.Fatalf("an unattributed replay enqueued %d events, want 0", len(store.eventIDs))
 	}
 }
 
-func TestReplayRefusesASubjectThatIsNotIsolated(t *testing.T) {
-	subject := databaseTruth()
-	subject.Isolated = false
-	store := &fakeReplayStore{subject: subject}
-
-	_, err := Replay(context.Background(), store, ReplayRequest{QuarantineID: "deadbeef", Operator: "ops-alice"})
-
-	if !errors.Is(err, ErrNotIsolated) {
-		t.Fatalf("err = %v, want ErrNotIsolated", err)
+func TestConcurrentReplayCannotClearIsolationTwice(t *testing.T) {
+	store := &fakeReplayStore{isolated: true}
+	errorsByOperator := make(chan error, 2)
+	for _, operator := range []string{"ops-alice", "ops-bob"} {
+		go func() {
+			_, err := Replay(context.Background(), store, ReplayRequest{QuarantineID: "deadbeef", Operator: operator})
+			errorsByOperator <- err
+		}()
 	}
-	if len(store.enqueued) != 0 {
-		t.Fatalf("replay enqueued %d events for a healthy subject, want 0", len(store.enqueued))
+
+	var successes, notIsolated int
+	for range 2 {
+		err := <-errorsByOperator
+		switch {
+		case err == nil:
+			successes++
+		case errors.Is(err, ErrNotIsolated):
+			notIsolated++
+		default:
+			t.Fatalf("concurrent Replay returned unexpected error: %v", err)
+		}
+	}
+	if successes != 1 || notIsolated != 1 {
+		t.Fatalf("successes = %d, not-isolated = %d; want exactly one atomic replay winner", successes, notIsolated)
+	}
+	if len(store.eventIDs) != 1 {
+		t.Fatalf("enqueued %d events, want exactly one", len(store.eventIDs))
+	}
+}
+
+func TestReplayPropagatesAtomicStoreFailure(t *testing.T) {
+	store := &fakeReplayStore{isolated: true, err: errors.New("transaction failed")}
+
+	eventID, err := Replay(context.Background(), store, ReplayRequest{QuarantineID: "deadbeef", Operator: "ops-alice"})
+
+	if err == nil {
+		t.Fatal("Replay returned no error when the atomic store transaction failed")
+	}
+	if eventID != uuid.Nil {
+		t.Fatalf("event ID = %s, want nil because no outbox row committed", eventID)
+	}
+}
+
+type missingIDReplayStore struct{}
+
+func (missingIDReplayStore) RebuildAndEnqueue(context.Context, ReplayRequest) (uuid.UUID, error) {
+	return uuid.Nil, nil
+}
+
+func TestReplayRejectsACommittedTransactionWithoutAnEventID(t *testing.T) {
+	eventID, err := Replay(context.Background(), missingIDReplayStore{}, ReplayRequest{
+		QuarantineID: "deadbeef",
+		Operator:     "ops-alice",
+	})
+
+	if !errors.Is(err, ErrMissingReplayID) {
+		t.Fatalf("err = %v, want ErrMissingReplayID", err)
+	}
+	if eventID != uuid.Nil {
+		t.Fatalf("event ID = %s, want nil", eventID)
 	}
 }

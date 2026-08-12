@@ -3,6 +3,7 @@ package outbox
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -10,16 +11,19 @@ import (
 )
 
 type fakeStore struct {
-	uncommitted    []Record
-	claimable      []Record
-	claimedBy      []string
-	claimLimits    []int
-	published      []uuid.UUID
-	rescheduled    []uuid.UUID
-	claimErr       error
-	markErr        error
-	calls          *[]string
-	leaseExpiresAt time.Time
+	uncommitted      []Record
+	claimable        []Record
+	claimedBy        []string
+	claimLimits      []int
+	published        []uuid.UUID
+	rescheduled      []uuid.UUID
+	claimErr         error
+	markErr          error
+	loseMark         bool
+	loseReschedule   bool
+	calls            *[]string
+	leaseExpiresAt   time.Time
+	settlementLeases []Lease
 }
 
 func record(calls *[]string, call string) {
@@ -48,22 +52,30 @@ func (fake *fakeStore) Claim(_ context.Context, owner string, limit int) (Claime
 	if leaseExpiresAt.IsZero() {
 		leaseExpiresAt = time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)
 	}
-	return Claimed{Records: claimed, LeaseExpiresAt: leaseExpiresAt}, nil
+	return Claimed{Records: claimed, Lease: Lease{Owner: owner, ExpiresAt: leaseExpiresAt}}, nil
 }
 
-func (fake *fakeStore) MarkPublished(_ context.Context, eventID uuid.UUID, _ time.Time) error {
+func (fake *fakeStore) MarkPublished(_ context.Context, eventID uuid.UUID, lease Lease, _ time.Time) (bool, error) {
 	record(fake.calls, "mark:"+eventID.String())
+	fake.settlementLeases = append(fake.settlementLeases, lease)
 	if fake.markErr != nil {
-		return fake.markErr
+		return false, fake.markErr
+	}
+	if fake.loseMark {
+		return false, nil
 	}
 	fake.published = append(fake.published, eventID)
-	return nil
+	return true, nil
 }
 
-func (fake *fakeStore) Reschedule(_ context.Context, eventID uuid.UUID, _ time.Time, _ int, _ string) error {
+func (fake *fakeStore) Reschedule(_ context.Context, eventID uuid.UUID, lease Lease, _ time.Time, _ int, _ string) (bool, error) {
 	record(fake.calls, "reschedule:"+eventID.String())
+	fake.settlementLeases = append(fake.settlementLeases, lease)
+	if fake.loseReschedule {
+		return false, nil
+	}
 	fake.rescheduled = append(fake.rescheduled, eventID)
-	return nil
+	return true, nil
 }
 
 type fakePublisher struct {
@@ -227,21 +239,24 @@ func (fake *leasedStore) Claim(_ context.Context, owner string, _ int) (Claimed,
 		return Claimed{}, nil
 	}
 	return Claimed{
-		Records:        []Record{fake.record},
-		LeaseExpiresAt: time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+		Records: []Record{fake.record},
+		Lease: Lease{
+			Owner:     owner,
+			ExpiresAt: time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
 	}, nil
 }
 
-func (fake *leasedStore) MarkPublished(_ context.Context, _ uuid.UUID, _ time.Time) error {
+func (fake *leasedStore) MarkPublished(_ context.Context, _ uuid.UUID, _ Lease, _ time.Time) (bool, error) {
 	if fake.markErr != nil {
-		return fake.markErr
+		return false, fake.markErr
 	}
 	fake.marked = true
-	return nil
+	return true, nil
 }
 
-func (fake *leasedStore) Reschedule(_ context.Context, _ uuid.UUID, _ time.Time, _ int, _ string) error {
-	return nil
+func (fake *leasedStore) Reschedule(_ context.Context, _ uuid.UUID, _ Lease, _ time.Time, _ int, _ string) (bool, error) {
+	return true, nil
 }
 
 type eventIDRecordingPublisher struct {
@@ -351,7 +366,7 @@ type attemptRecordingStore struct {
 	nextAttempts   []time.Time
 }
 
-func (fake *attemptRecordingStore) Claim(_ context.Context, _ string, limit int) (Claimed, error) {
+func (fake *attemptRecordingStore) Claim(_ context.Context, owner string, limit int) (Claimed, error) {
 	claimed := fake.claimable
 	if len(claimed) > limit {
 		claimed = claimed[:limit]
@@ -361,17 +376,17 @@ func (fake *attemptRecordingStore) Claim(_ context.Context, _ string, limit int)
 	if leaseExpiresAt.IsZero() && !fake.omitLease {
 		leaseExpiresAt = time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)
 	}
-	return Claimed{Records: claimed, LeaseExpiresAt: leaseExpiresAt}, nil
+	return Claimed{Records: claimed, Lease: Lease{Owner: owner, ExpiresAt: leaseExpiresAt}}, nil
 }
 
-func (fake *attemptRecordingStore) MarkPublished(_ context.Context, _ uuid.UUID, _ time.Time) error {
-	return nil
+func (fake *attemptRecordingStore) MarkPublished(_ context.Context, _ uuid.UUID, _ Lease, _ time.Time) (bool, error) {
+	return true, nil
 }
 
-func (fake *attemptRecordingStore) Reschedule(_ context.Context, _ uuid.UUID, nextAttemptAt time.Time, attemptCount int, _ string) error {
+func (fake *attemptRecordingStore) Reschedule(_ context.Context, _ uuid.UUID, _ Lease, nextAttemptAt time.Time, attemptCount int, _ string) (bool, error) {
 	fake.attemptCounts = append(fake.attemptCounts, attemptCount)
 	fake.nextAttempts = append(fake.nextAttempts, nextAttemptAt)
-	return nil
+	return true, nil
 }
 
 func TestRelayFailsClosedWhenAClaimHasNoLeaseExpiry(t *testing.T) {
@@ -391,5 +406,230 @@ func TestRelayFailsClosedWhenAClaimHasNoLeaseExpiry(t *testing.T) {
 	}
 	if settled != 0 || len(publisher.publishedKeys) != 0 {
 		t.Fatalf("settled = %d, published = %v; a lease-less claim must never be published", settled, publisher.publishedKeys)
+	}
+}
+
+func TestRelayBindsSuccessfulSettlementToTheExactClaimLease(t *testing.T) {
+	expiresAt := time.Date(2026, 8, 12, 10, 1, 0, 0, time.UTC)
+	store := &fakeStore{
+		claimable:      []Record{testRecord("job-1")},
+		leaseExpiresAt: expiresAt,
+	}
+
+	_, err := NewRelay(store, &fakePublisher{}, RelayOptions{
+		Owner:     "relay-1",
+		BatchSize: 10,
+		Now:       fixedClock(expiresAt.Add(-time.Minute)),
+	}).DrainOnce(context.Background())
+	if err != nil {
+		t.Fatalf("DrainOnce returned error: %v", err)
+	}
+
+	want := Lease{Owner: "relay-1", ExpiresAt: expiresAt}
+	if len(store.settlementLeases) != 1 || store.settlementLeases[0] != want {
+		t.Fatalf("settlement leases = %+v, want exact claim lease %+v", store.settlementLeases, want)
+	}
+}
+
+func TestRelayRejectsAStaleSettlementThatUpdatesNoRow(t *testing.T) {
+	for name, testCase := range map[string]struct {
+		publisher Publisher
+		store     *fakeStore
+	}{
+		"mark published": {
+			publisher: &fakePublisher{},
+			store:     &fakeStore{claimable: []Record{testRecord("job-1"), testRecord("job-2")}, loseMark: true},
+		},
+		"reschedule": {
+			publisher: &fakePublisher{err: errPublishFailed},
+			store:     &fakeStore{claimable: []Record{testRecord("job-1"), testRecord("job-2")}, loseReschedule: true},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			settled, err := testRelay(testCase.store, testCase.publisher).DrainOnce(context.Background())
+			if !errors.Is(err, ErrLeaseLost) {
+				t.Fatalf("err = %v, want ErrLeaseLost when the conditional settlement matched no row", err)
+			}
+			if settled != 0 {
+				t.Fatalf("settled = %d, want 0 after losing the lease", settled)
+			}
+			if len(testCase.store.settlementLeases) != 1 {
+				t.Fatalf("settlement attempts = %d, want 1; losing a batch lease must stop before the next row", len(testCase.store.settlementLeases))
+			}
+		})
+	}
+}
+
+func TestRelayRejectsAClaimOwnedByAnotherRelay(t *testing.T) {
+	record := testRecord("job-1")
+	store := &wrongOwnerStore{record: record}
+	publisher := &fakePublisher{}
+
+	settled, err := NewRelay(store, publisher, RelayOptions{
+		Owner:     "relay-1",
+		BatchSize: 10,
+	}).DrainOnce(context.Background())
+
+	if !errors.Is(err, ErrLeaseOwnerMismatch) {
+		t.Fatalf("err = %v, want ErrLeaseOwnerMismatch", err)
+	}
+	if settled != 0 || len(publisher.publishedKeys) != 0 {
+		t.Fatalf("settled = %d, published = %v; a foreign lease must never authorize publication", settled, publisher.publishedKeys)
+	}
+}
+
+type wrongOwnerStore struct {
+	record Record
+}
+
+func (store *wrongOwnerStore) Claim(_ context.Context, _ string, _ int) (Claimed, error) {
+	return Claimed{
+		Records: []Record{store.record},
+		Lease: Lease{
+			Owner:     "relay-2",
+			ExpiresAt: time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+	}, nil
+}
+
+func (*wrongOwnerStore) MarkPublished(context.Context, uuid.UUID, Lease, time.Time) (bool, error) {
+	return true, nil
+}
+
+func (*wrongOwnerStore) Reschedule(context.Context, uuid.UUID, Lease, time.Time, int, string) (bool, error) {
+	return true, nil
+}
+
+type keyedRow struct {
+	record    Record
+	published bool
+	lease     Lease
+}
+
+// keySerialStore models the Store contract that SQL adapters must implement:
+// an earlier unpublished row blocks every later row for the same topic/key,
+// including while that earlier row is locked or leased by another relay.
+type keySerialStore struct {
+	mu   sync.Mutex
+	rows []keyedRow
+	now  time.Time
+}
+
+func (store *keySerialStore) Claim(_ context.Context, owner string, limit int) (Claimed, error) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	expiresAt := store.now.Add(time.Minute)
+	claimed := Claimed{Lease: Lease{Owner: owner, ExpiresAt: expiresAt}}
+	for index := range store.rows {
+		row := &store.rows[index]
+		if row.published || store.hasEarlierUnpublished(index) {
+			continue
+		}
+		if !row.lease.ExpiresAt.IsZero() && store.now.Before(row.lease.ExpiresAt) {
+			continue
+		}
+		row.lease = claimed.Lease
+		claimed.Records = append(claimed.Records, row.record)
+		if len(claimed.Records) == limit {
+			break
+		}
+	}
+	return claimed, nil
+}
+
+func (store *keySerialStore) hasEarlierUnpublished(index int) bool {
+	row := store.rows[index]
+	for earlier := 0; earlier < index; earlier++ {
+		candidate := store.rows[earlier]
+		if !candidate.published && candidate.record.Topic == row.record.Topic && candidate.record.Key == row.record.Key {
+			return true
+		}
+	}
+	return false
+}
+
+func (store *keySerialStore) MarkPublished(_ context.Context, eventID uuid.UUID, lease Lease, _ time.Time) (bool, error) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	for index := range store.rows {
+		row := &store.rows[index]
+		if row.record.EventID == eventID && row.lease == lease && store.now.Before(row.lease.ExpiresAt) {
+			row.published = true
+			row.lease = Lease{}
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (store *keySerialStore) Reschedule(_ context.Context, eventID uuid.UUID, lease Lease, _ time.Time, _ int, _ string) (bool, error) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	for index := range store.rows {
+		row := &store.rows[index]
+		if row.record.EventID == eventID && row.lease == lease && store.now.Before(row.lease.ExpiresAt) {
+			row.lease = Lease{}
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+type gatePublisher struct {
+	started chan string
+	release chan struct{}
+	keys    []string
+}
+
+func (publisher *gatePublisher) Publish(_ context.Context, _ string, key string, _ []byte) error {
+	publisher.started <- key
+	<-publisher.release
+	publisher.keys = append(publisher.keys, key)
+	return nil
+}
+
+func TestConcurrentRelaysCannotClaimANewerUnpublishedRowForTheSameKey(t *testing.T) {
+	older := testRecord("job-1")
+	older.EnqueuedAt = time.Date(2026, 8, 12, 10, 0, 0, 0, time.UTC)
+	newer := testRecord("job-1")
+	newer.EnqueuedAt = older.EnqueuedAt.Add(time.Second)
+	store := &keySerialStore{
+		rows: []keyedRow{{record: older}, {record: newer}},
+		now:  older.EnqueuedAt,
+	}
+	firstPublisher := &gatePublisher{started: make(chan string, 1), release: make(chan struct{})}
+	firstDone := make(chan error, 1)
+	go func() {
+		_, err := NewRelay(store, firstPublisher, RelayOptions{Owner: "relay-1", BatchSize: 1, Now: fixedClock(store.now)}).DrainOnce(context.Background())
+		firstDone <- err
+	}()
+
+	select {
+	case <-firstPublisher.started:
+	case <-time.After(time.Second):
+		t.Fatal("first relay did not start publishing the head row")
+	}
+
+	secondPublisher := &fakePublisher{}
+	settled, err := NewRelay(store, secondPublisher, RelayOptions{Owner: "relay-2", BatchSize: 1, Now: fixedClock(store.now)}).DrainOnce(context.Background())
+	if err != nil {
+		t.Fatalf("second relay returned error while the key head was leased: %v", err)
+	}
+	if settled != 0 || len(secondPublisher.publishedKeys) != 0 {
+		t.Fatalf("second relay settled %d and published %v; the leased head must block the newer same-key row", settled, secondPublisher.publishedKeys)
+	}
+
+	close(firstPublisher.release)
+	if err := <-firstDone; err != nil {
+		t.Fatalf("first relay returned error: %v", err)
+	}
+
+	settled, err = NewRelay(store, secondPublisher, RelayOptions{Owner: "relay-2", BatchSize: 1, Now: fixedClock(store.now)}).DrainOnce(context.Background())
+	if err != nil || settled != 1 {
+		t.Fatalf("second relay after head settlement: settled = %d, err = %v; want the newer row", settled, err)
+	}
+	if len(secondPublisher.publishedKeys) != 1 || secondPublisher.publishedKeys[0] != "job-1" {
+		t.Fatalf("published keys = %v, want the unblocked newer row", secondPublisher.publishedKeys)
 	}
 }
