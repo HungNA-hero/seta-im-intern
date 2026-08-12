@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/segmentio/kafka-go"
@@ -32,12 +33,35 @@ type ReaderOptions struct {
 var ErrDeliveryStalled = errors.New("record could not be delivered within its attempt budget")
 
 type Reader struct {
-	reader   *kafka.Reader
+	reader   readerClient
 	consumer *consume.Consumer
 	options  ReaderOptions
 }
 
+type readerClient interface {
+	FetchMessage(context.Context) (kafka.Message, error)
+	CommitMessages(context.Context, ...kafka.Message) error
+	Close() error
+}
+
 func NewReader(consumer *consume.Consumer, options ReaderOptions) (*Reader, error) {
+	if consumer == nil {
+		return nil, errors.New("Kafka consumer effect is required")
+	}
+	if len(options.Brokers) == 0 {
+		return nil, errors.New("at least one Kafka broker is required")
+	}
+	for _, broker := range options.Brokers {
+		if strings.TrimSpace(broker) == "" {
+			return nil, errors.New("Kafka broker address must not be empty")
+		}
+	}
+	if strings.TrimSpace(options.Topic) == "" {
+		return nil, errors.New("Kafka topic is required")
+	}
+	if strings.TrimSpace(options.GroupID) == "" {
+		return nil, errors.New("Kafka consumer group ID is required")
+	}
 	if options.MinBytes <= 0 {
 		options.MinBytes = 1
 	}
@@ -62,17 +86,22 @@ func NewReader(consumer *consume.Consumer, options ReaderOptions) (*Reader, erro
 		return nil, fmt.Errorf("configuring Kafka consumer security: %w", err)
 	}
 
+	config := kafka.ReaderConfig{
+		Brokers:     options.Brokers,
+		Topic:       options.Topic,
+		GroupID:     options.GroupID,
+		MinBytes:    options.MinBytes,
+		MaxBytes:    options.MaxBytes,
+		MaxWait:     options.MaxWait,
+		StartOffset: kafka.FirstOffset,
+		Dialer:      dialer,
+	}
+	if err := config.Validate(); err != nil {
+		return nil, fmt.Errorf("configuring Kafka reader: %w", err)
+	}
+
 	return &Reader{
-		reader: kafka.NewReader(kafka.ReaderConfig{
-			Brokers:     options.Brokers,
-			Topic:       options.Topic,
-			GroupID:     options.GroupID,
-			MinBytes:    options.MinBytes,
-			MaxBytes:    options.MaxBytes,
-			MaxWait:     options.MaxWait,
-			StartOffset: kafka.FirstOffset,
-			Dialer:      dialer,
-		}),
+		reader:   kafka.NewReader(config),
 		consumer: consumer,
 		options:  options,
 	}, nil
@@ -82,17 +111,23 @@ func (reader *Reader) Run(ctx context.Context) error {
 	for {
 		message, err := reader.reader.FetchMessage(ctx)
 		if err != nil {
-			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			if ctx.Err() != nil {
 				return nil
 			}
 			return err
 		}
 
 		if err := reader.deliverUntilCommittable(ctx, message); err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
 			return err
 		}
 
 		if err := reader.reader.CommitMessages(ctx, message); err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
 			return fmt.Errorf("committing %s/%d/%d: %w", message.Topic, message.Partition, message.Offset, err)
 		}
 	}

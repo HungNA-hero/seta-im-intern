@@ -26,6 +26,11 @@ type Producer struct {
 	closed    bool
 }
 
+var (
+	ErrTopicRequired = errors.New("Kafka topic is required")
+	ErrKeyRequired   = errors.New("Kafka record key is required")
+)
+
 func NewProducer(options ProducerOptions) (*Producer, error) {
 	if options.WriteTimeout <= 0 {
 		options.WriteTimeout = 10 * time.Second
@@ -53,6 +58,12 @@ func NewProducer(options ProducerOptions) (*Producer, error) {
 func (producer *Producer) Publish(ctx context.Context, topic, key string, payload []byte) error {
 	if err := ctx.Err(); err != nil {
 		return err
+	}
+	if topic == "" {
+		return ErrTopicRequired
+	}
+	if key == "" {
+		return ErrKeyRequired
 	}
 
 	producer.mu.RLock()

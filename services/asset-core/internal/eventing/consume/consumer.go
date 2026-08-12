@@ -161,16 +161,21 @@ func isUUID(value string) bool {
 // an unparseable record, and only when each is individually a valid UUID. Any
 // other value is attacker-controlled payload text and is dropped.
 func (consumer *Consumer) salvageIdentity(record Record) event.Envelope {
-	var fields struct {
-		EventID string `json:"eventId"`
-	}
+	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(record.Value, &fields); err != nil {
 		return event.Envelope{}
 	}
-	if !isUUID(fields.EventID) {
-		return event.Envelope{Raw: record.Value}
+
+	identity := event.Envelope{Raw: record.Value}
+	rawEventID, present := fields["eventId"]
+	if !present {
+		return identity
 	}
-	return event.Envelope{EventID: fields.EventID, Raw: record.Value}
+	var eventID string
+	if err := json.Unmarshal(rawEventID, &eventID); err == nil && isUUID(eventID) {
+		identity.EventID = eventID
+	}
+	return identity
 }
 
 func reasonFor(err error) string {

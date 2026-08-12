@@ -1,8 +1,11 @@
 package outbox
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"log/slog"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -24,6 +27,7 @@ type fakeStore struct {
 	calls            *[]string
 	leaseExpiresAt   time.Time
 	settlementLeases []Lease
+	errorCodes       []string
 }
 
 func record(calls *[]string, call string) {
@@ -68,14 +72,49 @@ func (fake *fakeStore) MarkPublished(_ context.Context, eventID uuid.UUID, lease
 	return true, nil
 }
 
-func (fake *fakeStore) Reschedule(_ context.Context, eventID uuid.UUID, lease Lease, _ time.Time, _ int, _ string) (bool, error) {
+func (fake *fakeStore) Reschedule(_ context.Context, eventID uuid.UUID, lease Lease, _ time.Time, _ int, errorCode string) (bool, error) {
 	record(fake.calls, "reschedule:"+eventID.String())
 	fake.settlementLeases = append(fake.settlementLeases, lease)
+	fake.errorCodes = append(fake.errorCodes, errorCode)
 	if fake.loseReschedule {
 		return false, nil
 	}
 	fake.rescheduled = append(fake.rescheduled, eventID)
 	return true, nil
+}
+
+func TestRelayClassifiesAndLogsPublishFailures(t *testing.T) {
+	for name, testCase := range map[string]struct {
+		publishErr error
+		wantCode   string
+	}{
+		"deadline":     {publishErr: context.DeadlineExceeded, wantCode: "PUBLISH_TIMEOUT"},
+		"cancellation": {publishErr: context.Canceled, wantCode: "PUBLISH_CANCELED"},
+		"broker":       {publishErr: errPublishFailed, wantCode: "PUBLISH_FAILED"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var logs bytes.Buffer
+			logger := slog.New(slog.NewJSONHandler(&logs, nil))
+			outboxRecord := testRecord("job-1")
+			store := &fakeStore{claimable: []Record{outboxRecord}}
+
+			_, err := NewRelay(store, &fakePublisher{err: testCase.publishErr}, RelayOptions{
+				Owner:  "relay-1",
+				Logger: logger,
+			}).DrainOnce(context.Background())
+			if err != nil {
+				t.Fatalf("DrainOnce returned error: %v", err)
+			}
+			if len(store.errorCodes) != 1 || store.errorCodes[0] != testCase.wantCode {
+				t.Fatalf("error codes = %v, want [%s]", store.errorCodes, testCase.wantCode)
+			}
+			for _, field := range []string{outboxRecord.EventID.String(), outboxRecord.Topic, testCase.wantCode, testCase.publishErr.Error()} {
+				if !strings.Contains(logs.String(), field) {
+					t.Fatalf("log %q does not contain %q", logs.String(), field)
+				}
+			}
+		})
+	}
 }
 
 type fakePublisher struct {

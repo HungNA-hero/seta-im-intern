@@ -354,6 +354,36 @@ func TestQuarantineCarriesEventAndAggregateIdentityWhenTheyParsed(t *testing.T) 
 	}
 }
 
+func TestQuarantineSalvagesIdentifiersIndependently(t *testing.T) {
+	validEventID := "6e2f14ea-d7c7-4f1c-8f17-274c51d9bcb9"
+	validJobID := "a74e1124-b5c0-47b4-b73f-4ce7c7031d77"
+	for name, testCase := range map[string]struct {
+		payload       string
+		wantEventID   string
+		wantAggregate string
+	}{
+		"invalid event ID keeps aggregate": {
+			payload:       `{"eventId":42,"eventType":"media.processing.requested","schemaVersion":9,"source":"asset-core","occurredAt":"2026-08-06T10:00:00Z","orgId":"10000000-0000-0000-0000-000000000001","jobId":"` + validJobID + `"}`,
+			wantAggregate: validJobID,
+		},
+		"invalid aggregate keeps event ID": {
+			payload:     `{"eventId":"` + validEventID + `","eventType":"media.processing.requested","schemaVersion":9,"source":"asset-core","occurredAt":"2026-08-06T10:00:00Z","orgId":"10000000-0000-0000-0000-000000000001","jobId":42}`,
+			wantEventID: validEventID,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			quarantine := &fakeQuarantine{}
+			if _, err := testConsumer(&fakeEffect{}, quarantine).Deliver(context.Background(), testRecord(testCase.payload)); err != nil {
+				t.Fatalf("Deliver returned error: %v", err)
+			}
+			isolated := quarantine.isolated[0]
+			if isolated.EventID != testCase.wantEventID || isolated.AggregateID != testCase.wantAggregate {
+				t.Fatalf("isolated identity = %q/%q, want %q/%q", isolated.EventID, isolated.AggregateID, testCase.wantEventID, testCase.wantAggregate)
+			}
+		})
+	}
+}
+
 func TestQuarantineOmitsIdentityItCouldNotParse(t *testing.T) {
 	quarantine := &fakeQuarantine{}
 	consumer := testConsumer(&fakeEffect{}, quarantine)

@@ -2,12 +2,37 @@ package kafka
 
 import (
 	"context"
+	"errors"
 	"net"
 	"testing"
 	"time"
 
 	kafkago "github.com/segmentio/kafka-go"
 )
+
+func TestProducerRejectsAnEmptyTopicOrKeyBeforeBrokerIO(t *testing.T) {
+	producer, err := NewProducer(ProducerOptions{Brokers: []string{"127.0.0.1:1"}})
+	if err != nil {
+		t.Fatalf("NewProducer returned error: %v", err)
+	}
+	defer producer.Close()
+
+	for name, testCase := range map[string]struct {
+		topic   string
+		key     string
+		wantErr error
+	}{
+		"topic": {topic: "", key: "job-1", wantErr: ErrTopicRequired},
+		"key":   {topic: "media-processing.v1", key: "", wantErr: ErrKeyRequired},
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := producer.Publish(context.Background(), testCase.topic, testCase.key, []byte(`{}`))
+			if !errors.Is(err, testCase.wantErr) {
+				t.Fatalf("Publish error = %v, want %v", err, testCase.wantErr)
+			}
+		})
+	}
+}
 
 type blockingRoundTripper struct {
 	started chan struct{}

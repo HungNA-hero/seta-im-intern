@@ -144,3 +144,24 @@ func TestRelayGivesEachPublishADeadlineBeforeTheLeaseMargin(t *testing.T) {
 		t.Fatalf("publish deadline = %v, want %v so acknowledgement marking retains the lease margin", publisher.deadlines[0], wantDeadline)
 	}
 }
+
+func TestRelayUsesASafeLeaseMarginByDefault(t *testing.T) {
+	claimedAt := time.Date(2026, 8, 12, 10, 0, 0, 0, time.UTC)
+	leaseExpiresAt := claimedAt.Add(30 * time.Second)
+	store := &attemptRecordingStore{claimable: []Record{testRecord("job-1")}, leaseExpiresAt: leaseExpiresAt}
+	publisher := &deadlineRecordingPublisher{}
+
+	relay := NewRelay(store, publisher, RelayOptions{
+		Owner:     "relay-1",
+		BatchSize: 10,
+		Now:       fixedClock(claimedAt),
+	})
+	if _, err := relay.DrainOnce(context.Background()); err != nil {
+		t.Fatalf("DrainOnce returned error: %v", err)
+	}
+
+	wantDeadline := leaseExpiresAt.Add(-5 * time.Second)
+	if len(publisher.deadlines) != 1 || !publisher.hadDeadline[0] || !publisher.deadlines[0].Equal(wantDeadline) {
+		t.Fatalf("publish deadlines = %v, want [%v] from the default five-second settlement margin", publisher.deadlines, wantDeadline)
+	}
+}

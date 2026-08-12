@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math/rand/v2"
 	"time"
 
@@ -57,6 +58,7 @@ type RelayOptions struct {
 	Now         func() time.Time
 	Jitter      func(time.Duration) time.Duration
 	LeaseMargin time.Duration
+	Logger      *slog.Logger
 }
 
 var (
@@ -70,6 +72,7 @@ const (
 	defaultBatchSize   = 50
 	defaultBaseBackoff = 250 * time.Millisecond
 	defaultMaxBackoff  = 30 * time.Second
+	defaultLeaseMargin = 5 * time.Second
 )
 
 func (options RelayOptions) withDefaults() RelayOptions {
@@ -82,6 +85,9 @@ func (options RelayOptions) withDefaults() RelayOptions {
 	if options.MaxBackoff <= 0 {
 		options.MaxBackoff = defaultMaxBackoff
 	}
+	if options.LeaseMargin <= 0 {
+		options.LeaseMargin = defaultLeaseMargin
+	}
 	if options.Now == nil {
 		options.Now = func() time.Time { return time.Now().UTC() }
 	}
@@ -89,6 +95,9 @@ func (options RelayOptions) withDefaults() RelayOptions {
 		options.Jitter = func(backoff time.Duration) time.Duration {
 			return backoff/2 + time.Duration(rand.Int64N(int64(backoff/2)+1))
 		}
+	}
+	if options.Logger == nil {
+		options.Logger = slog.Default()
 	}
 	return options
 }
@@ -134,7 +143,15 @@ func (relay *Relay) DrainOnce(ctx context.Context) (int, error) {
 			publishFailureTotal.Add(1)
 			nextAttempt := outboxRecord.AttemptCount + 1
 			nextAttemptAt := relay.now().Add(relay.backoffFor(outboxRecord.AttemptCount))
-			updated, rescheduleErr := relay.store.Reschedule(ctx, outboxRecord.EventID, lease, nextAttemptAt, nextAttempt, transportErrorCode(publishErr))
+			errorCode := transportErrorCode(publishErr)
+			relay.options.Logger.Warn(
+				"outbox publication failed; rescheduling under the active lease",
+				"error", publishErr,
+				"errorCode", errorCode,
+				"eventId", outboxRecord.EventID,
+				"topic", outboxRecord.Topic,
+			)
+			updated, rescheduleErr := relay.store.Reschedule(ctx, outboxRecord.EventID, lease, nextAttemptAt, nextAttempt, errorCode)
 			if rescheduleErr != nil {
 				unsettled = errors.Join(unsettled, rescheduleErr)
 				break
@@ -211,8 +228,11 @@ func (relay *Relay) now() time.Time {
 }
 
 func transportErrorCode(err error) string {
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+	if errors.Is(err, context.DeadlineExceeded) {
 		return "PUBLISH_TIMEOUT"
+	}
+	if errors.Is(err, context.Canceled) {
+		return "PUBLISH_CANCELED"
 	}
 	return "PUBLISH_FAILED"
 }
