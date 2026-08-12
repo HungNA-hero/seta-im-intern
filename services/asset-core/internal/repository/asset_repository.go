@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -57,6 +58,50 @@ func createDeletedLifecycleUnit(
 		return "", err
 	}
 	return unit.ID, nil
+}
+
+// createDeletingLifecycleUnit records the root as soon as the asynchronous
+// worker hides its subtree. The entry remains non-visible in the Recycle Bin
+// until the worker has tombstoned every active member and marks it DELETED.
+func createDeletingLifecycleUnit(
+	tx *gorm.DB,
+	orgID string,
+	userID string,
+	resourceID string,
+	rootFolderPath string,
+	originalParentPath *string,
+) (string, error) {
+	unit := domain.LifecycleUnit{
+		OrgID:              orgID,
+		RootResourceType:   domain.LifecycleResourceFolder,
+		RootResourceID:     resourceID,
+		RootFolderPath:     rootFolderPath,
+		OriginalParentPath: originalParentPath,
+		State:              domain.LifecycleDeleting,
+		RequestedBy:        userID,
+	}
+	if err := tx.Create(&unit).Error; err != nil {
+		return "", err
+	}
+	return unit.ID, nil
+}
+
+func completeDeletingLifecycleUnit(tx *gorm.DB, orgID, resourceID string, now time.Time) error {
+	retentionUntil := now.AddDate(0, 0, lifecycleRetentionDays)
+	result := tx.Model(&domain.LifecycleUnit{}).
+		Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ? AND state = ?", orgID, domain.LifecycleResourceFolder, resourceID, domain.LifecycleDeleting).
+		Updates(map[string]any{
+			"state":               domain.LifecycleDeleted,
+			"delete_completed_at": now,
+			"retention_until":     retentionUntil,
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return fmt.Errorf("missing deleting lifecycle unit for folder %s", resourceID)
+	}
+	return nil
 }
 
 func lifecycleParentPath(path string) *string {
@@ -195,7 +240,7 @@ func (r *assetRepository) recycleBinCandidateQuery(ctx context.Context, orgID st
 			lifecycle_units.root_resource_type AS resource_type,
 			lifecycle_units.root_resource_id AS resource_id,
 			COALESCE(root_folder.name, root_metadata.title, '') AS display_name,
-			lifecycle_units.root_folder_path::text AS root_folder_path,
+			COALESCE(root_folder.path, metadata_folder.path)::text AS root_folder_path,
 			lifecycle_units.delete_completed_at AS deleted_at
 		`).
 		Joins(`LEFT JOIN folders AS root_folder

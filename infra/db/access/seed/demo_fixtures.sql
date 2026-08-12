@@ -45,7 +45,7 @@ INSERT INTO access.user_roles (id, org_id, user_id, role_id) VALUES
 ON CONFLICT (org_id, user_id, role_id) DO NOTHING;
 
 -- RBAC ceilings:
---   org_admin → all 4 actions on folder + metadata_item (8 rows)
+--   org_admin → all current actions on folder + metadata_item (6 rows)
 --   viewer    → read only on folder + metadata_item     (2 rows)
 INSERT INTO access.role_permissions (id, role_id, action_id, resource_type)
 SELECT

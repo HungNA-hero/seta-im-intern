@@ -38,6 +38,7 @@ func TestFolderDeletionRepository_PostgresIntegration(t *testing.T) {
 
 	t.Cleanup(func() {
 		_ = database.Exec("DELETE FROM folder_deletion_jobs WHERE org_id = ?", orgID).Error
+		_ = database.Exec("DELETE FROM asset_lifecycle_units WHERE org_id = ?", orgID).Error
 		_ = database.Unscoped().Exec("DELETE FROM metadata_items USING folders WHERE metadata_items.folder_id = folders.id AND folders.org_id = ?", orgID).Error
 		_ = database.Unscoped().Exec("DELETE FROM folders WHERE org_id = ?", orgID).Error
 		_ = database.Exec("DELETE FROM user_ref WHERE user_id = ?", userID).Error
@@ -121,6 +122,44 @@ func TestFolderDeletionRepository_PostgresIntegration(t *testing.T) {
 	}
 	if job.DeletedFolderCount != 2 || job.DeletedMetadataCount != 2 {
 		t.Fatalf("unexpected tombstone progress: %#v", job)
+	}
+
+	var lifecycleUnits []domain.LifecycleUnit
+	if err := database.Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ?", orgID, domain.LifecycleResourceFolder, rootID).
+		Find(&lifecycleUnits).Error; err != nil {
+		t.Fatalf("load recursive deletion lifecycle root: %v", err)
+	}
+	if len(lifecycleUnits) != 1 {
+		t.Fatalf("expected exactly one lifecycle root for the deleted tree, got %#v", lifecycleUnits)
+	}
+	unit := lifecycleUnits[0]
+	if unit.State != domain.LifecycleDeleted || unit.RootFolderPath != rootPath || unit.DeleteCompletedAt == nil || unit.RetentionUntil == nil {
+		t.Fatalf("expected completed Recycle Bin root with retention, got %#v", unit)
+	}
+	var linkedRootCount int64
+	if err := database.Raw("SELECT COUNT(*) FROM folders WHERE id = ? AND lifecycle_unit_id = ?", rootID, unit.ID).Scan(&linkedRootCount).Error; err != nil {
+		t.Fatalf("count root lifecycle link: %v", err)
+	}
+	if linkedRootCount != 1 {
+		t.Fatalf("expected the deletion root to link to its unit, got %d rows", linkedRootCount)
+	}
+	var linkedMemberCount int64
+	if err := database.Raw(`
+		SELECT
+			(SELECT COUNT(*) FROM folders WHERE org_id = ? AND id != ? AND lifecycle_unit_id IS NOT NULL) +
+			(SELECT COUNT(*) FROM metadata_items WHERE folder_id IN (?, ?, ?) AND lifecycle_unit_id IS NOT NULL)
+	`, orgID, rootID, rootID, childID, legacyFolderID).Scan(&linkedMemberCount).Error; err != nil {
+		t.Fatalf("count descendant lifecycle links: %v", err)
+	}
+	if linkedMemberCount != 0 {
+		t.Fatalf("expected descendants to remain members rather than Recycle Bin roots, got %d links", linkedMemberCount)
+	}
+	entries, err := assets.ListRecycleBinEntries(ctx, orgID, domain.RecycleBinFilter{Limit: 10})
+	if err != nil {
+		t.Fatalf("list Recycle Bin entries: %v", err)
+	}
+	if len(entries) != 1 || entries[0].LifecycleUnitID != unit.ID || entries[0].ResourceID != rootID {
+		t.Fatalf("expected the tree to appear as exactly one Recycle Bin root, got %#v", entries)
 	}
 
 	var activeRows int64

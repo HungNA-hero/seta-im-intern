@@ -192,3 +192,95 @@ func TestRecycleBinRepository_PostgresIntegration(t *testing.T) {
 		t.Fatalf("expected stale Recycle Bin cursor to fail closed, got %v", err)
 	}
 }
+
+func TestRecycleBinRepository_PostgresIntegration_UsesCurrentPathForAuthorization(t *testing.T) {
+	dsn := os.Getenv("ASSET_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("ASSET_TEST_DATABASE_URL is not set")
+	}
+
+	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open PostgreSQL: %v", err)
+	}
+	tx := database.Begin()
+	if tx.Error != nil {
+		t.Fatalf("begin rollback-only transaction: %v", tx.Error)
+	}
+	t.Cleanup(func() {
+		if err := tx.Rollback().Error; err != nil && !errors.Is(err, gorm.ErrInvalidTransaction) {
+			t.Errorf("rollback integration transaction: %v", err)
+		}
+	})
+
+	ctx := context.Background()
+	orgID := uuid.NewString()
+	userID := uuid.NewString()
+	currentParentID := uuid.NewString()
+	deletedFolderID := uuid.NewString()
+	metadataID := uuid.NewString()
+	currentParentPath := strings.ReplaceAll(currentParentID, "-", "")
+	currentFolderPath := currentParentPath + "." + strings.ReplaceAll(deletedFolderID, "-", "")
+	staleParentPath := strings.ReplaceAll(uuid.NewString(), "-", "")
+	staleFolderPath := staleParentPath + "." + strings.ReplaceAll(deletedFolderID, "-", "")
+	deletedAt := time.Date(2026, time.August, 12, 4, 0, 0, 0, time.UTC)
+
+	if err := tx.Exec("INSERT INTO organization_ref (org_id) VALUES (?)", orgID).Error; err != nil {
+		t.Fatalf("seed organization: %v", err)
+	}
+	if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?)", userID).Error; err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+	if err := tx.Exec(`
+		INSERT INTO folders (id, org_id, path, name, created_by, deleted_at)
+		VALUES (?, ?, ?::ltree, ?, ?, NULL), (?, ?, ?::ltree, ?, ?, ?)
+	`,
+		currentParentID, orgID, currentParentPath, "Current parent", userID,
+		deletedFolderID, orgID, currentFolderPath, "Moved deleted folder", userID, deletedAt,
+	).Error; err != nil {
+		t.Fatalf("seed moved folder: %v", err)
+	}
+	if err := tx.Exec("INSERT INTO metadata_items (id, folder_id, title, created_by, deleted_at) VALUES (?, ?, ?, ?, ?)", metadataID, currentParentID, "Moved deleted metadata", userID, deletedAt).Error; err != nil {
+		t.Fatalf("seed moved metadata: %v", err)
+	}
+	for _, unit := range []domain.LifecycleUnit{
+		{
+			OrgID:             orgID,
+			RootResourceType:  domain.LifecycleResourceFolder,
+			RootResourceID:    deletedFolderID,
+			RootFolderPath:    staleFolderPath,
+			State:             domain.LifecycleDeleted,
+			RequestedBy:       userID,
+			DeleteCompletedAt: &deletedAt,
+		},
+		{
+			OrgID:             orgID,
+			RootResourceType:  domain.LifecycleResourceMetadata,
+			RootResourceID:    metadataID,
+			RootFolderPath:    staleParentPath,
+			OriginalFolderID:  &currentParentID,
+			State:             domain.LifecycleDeleted,
+			RequestedBy:       userID,
+			DeleteCompletedAt: &deletedAt,
+		},
+	} {
+		if err := tx.Create(&unit).Error; err != nil {
+			t.Fatalf("seed stale-path lifecycle unit: %v", err)
+		}
+	}
+
+	entries, err := repository.NewAssetRepository(tx).ListRecycleBinEntries(ctx, orgID, domain.RecycleBinFilter{Limit: 10})
+	if err != nil {
+		t.Fatalf("list Recycle Bin entries: %v", err)
+	}
+	paths := map[string]string{}
+	for _, entry := range entries {
+		paths[entry.ResourceID] = entry.RootFolderPath
+	}
+	if paths[deletedFolderID] != currentFolderPath {
+		t.Fatalf("expected deleted folder authorization path %q, got %q", currentFolderPath, paths[deletedFolderID])
+	}
+	if paths[metadataID] != currentParentPath {
+		t.Fatalf("expected deleted metadata authorization path %q, got %q", currentParentPath, paths[metadataID])
+	}
+}

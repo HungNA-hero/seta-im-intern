@@ -30,19 +30,22 @@ const (
 // LifecycleUnit is one Recycle Bin root. It owns neither a copied tree nor a
 // background job; folders and metadata keep their current source-of-truth rows.
 type LifecycleUnit struct {
-	ID                 string                `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	OrgID              string                `gorm:"type:uuid;not null;index" json:"org_id"`
-	RootResourceType   LifecycleResourceType `gorm:"type:varchar(16);not null" json:"root_resource_type"`
-	RootResourceID     string                `gorm:"type:uuid;not null" json:"root_resource_id"`
-	RootFolderPath     string                `gorm:"type:ltree;not null" json:"root_folder_path"`
-	OriginalParentPath *string               `gorm:"type:ltree" json:"original_parent_path,omitempty"`
-	OriginalFolderID   *string               `gorm:"type:uuid" json:"original_folder_id,omitempty"`
-	State              LifecycleUnitState    `gorm:"type:varchar(24);not null" json:"state"`
-	RequestedBy        string                `gorm:"type:uuid;not null" json:"requested_by"`
-	DeleteCompletedAt  *time.Time            `json:"delete_completed_at,omitempty"`
-	RetentionUntil     *time.Time            `gorm:"index" json:"retention_until,omitempty"`
-	CreatedAt          time.Time             `gorm:"not null;default:now()" json:"created_at"`
-	UpdatedAt          time.Time             `gorm:"not null;default:now()" json:"updated_at"`
+	ID               string                `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	OrgID            string                `gorm:"type:uuid;not null;index" json:"org_id"`
+	RootResourceType LifecycleResourceType `gorm:"type:varchar(16);not null" json:"root_resource_type"`
+	RootResourceID   string                `gorm:"type:uuid;not null" json:"root_resource_id"`
+	// RootFolderPath is the path snapshot captured when the lifecycle unit was
+	// created. Recycle Bin authorization reads the current path from source rows
+	// so a later ancestor move cannot keep using this historical location.
+	RootFolderPath     string             `gorm:"type:ltree;not null" json:"root_folder_path"`
+	OriginalParentPath *string            `gorm:"type:ltree" json:"original_parent_path,omitempty"`
+	OriginalFolderID   *string            `gorm:"type:uuid" json:"original_folder_id,omitempty"`
+	State              LifecycleUnitState `gorm:"type:varchar(24);not null" json:"state"`
+	RequestedBy        string             `gorm:"type:uuid;not null" json:"requested_by"`
+	DeleteCompletedAt  *time.Time         `json:"delete_completed_at,omitempty"`
+	RetentionUntil     *time.Time         `gorm:"index" json:"retention_until,omitempty"`
+	CreatedAt          time.Time          `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt          time.Time          `gorm:"not null;default:now()" json:"updated_at"`
 }
 
 func (LifecycleUnit) TableName() string {
@@ -50,7 +53,9 @@ func (LifecycleUnit) TableName() string {
 }
 
 // RecycleBinEntry is an internal candidate root. Access Core applies its own
-// object-level read policy before any entry becomes a public GraphQL node.
+// object-level read policy before any entry becomes a public GraphQL node. Its
+// RootFolderPath is resolved from the source row's current hierarchy, not from
+// the lifecycle unit's historical path snapshot.
 type RecycleBinEntry struct {
 	LifecycleUnitID string                `json:"lifecycle_unit_id"`
 	ResourceType    LifecycleResourceType `json:"resource_type"`

@@ -122,7 +122,7 @@ async function updateMetadata(userId: string, title: string): Promise<GraphQLRes
 async function grantFolderPermission(
   userId: string,
   resourceId: string,
-  action: "read" | "write" | "delete" | "manage_permissions",
+  action: "read" | "write" | "manage_permissions",
   granteeUserId: string,
 ): Promise<GraphQLResult<GrantResult>> {
   return queryGraphQL<GrantResult>(

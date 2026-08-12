@@ -50,7 +50,6 @@ const filterAllowedResourceIds = authorizationService.filterAllowedResourceIds;
 const ACTIONS = [
   { code: "read", id: "action-read" },
   { code: "write", id: "action-write" },
-  { code: "delete", id: "action-delete" },
   { code: "manage_permissions", id: "action-manage" },
 ];
 
@@ -297,7 +296,7 @@ describe("RBAC path (olpEnabled = false)", () => {
     expect(mockGetFolderMeta).not.toHaveBeenCalled();
   });
 
-  test("a role-level manage permission implies write, read, and deletion through write", async () => {
+  test("a role-level manage permission implies write and read", async () => {
     mockPrisma.rolePermission.findFirst.mockImplementation(
       async ({ where }: { where: { actionId: { in: string[] } } }) =>
         where.actionId.in.includes("action-manage") ? { id: "rp-manage" } : null,
@@ -308,9 +307,6 @@ describe("RBAC path (olpEnabled = false)", () => {
     ).resolves.toEqual({ allowed: true, reason: null });
     await expect(
       canDo({ userId: "user-1", action: "read", resourceType: "folder", resourceId: "f1", orgId: "org-1" }),
-    ).resolves.toEqual({ allowed: true, reason: null });
-    await expect(
-      canDo({ userId: "user-1", action: "delete", resourceType: "folder", resourceId: "f1", orgId: "org-1" }),
     ).resolves.toEqual({ allowed: true, reason: null });
   });
 });
@@ -400,7 +396,7 @@ describe("OLP path (olpEnabled = true)", () => {
     expect(mockPrisma.objectPermission.findMany).toHaveBeenCalledTimes(1);
   });
 
-  test("a direct manage grant implies write, read, and deletion through write on the same root only", async () => {
+  test("a direct manage grant implies write and read on the same root only", async () => {
     const rootId = "f1";
     mockPrisma.objectPermission.findMany.mockImplementation(
       async ({ where }: { where: { actionId: { in: string[] }; resourceId: { in: string[] } } }) =>
@@ -415,23 +411,6 @@ describe("OLP path (olpEnabled = true)", () => {
     await expect(
       canDo({ userId: "user-1", action: "read", resourceType: "folder", resourceId: rootId, orgId: "org-1" }),
     ).resolves.toEqual({ allowed: true, reason: null });
-    await expect(
-      canDo({ userId: "user-1", action: "delete", resourceType: "folder", resourceId: rootId, orgId: "org-1" }),
-    ).resolves.toEqual({ allowed: true, reason: null });
-  });
-
-  test("a legacy delete-only object grant is not treated as write or deletion permission", async () => {
-    mockPrisma.objectPermission.findMany.mockImplementation(
-      async ({ where }: { where: { actionId: { in: string[] } } }) =>
-        where.actionId.in.includes("action-delete") ? [{ resourceId: "f1" }] : [],
-    );
-
-    await expect(
-      canDo({ userId: "user-1", action: "write", resourceType: "folder", resourceId: "f1", orgId: "org-1" }),
-    ).resolves.toEqual({ allowed: false, reason: "no object permission" });
-    await expect(
-      canDo({ userId: "user-1", action: "delete", resourceType: "folder", resourceId: "f1", orgId: "org-1" }),
-    ).resolves.toEqual({ allowed: false, reason: "no object permission" });
   });
 });
 
@@ -724,7 +703,7 @@ describe("metadata inherits from folder (OLP mode)", () => {
 });
 
 // ── manage_permissions never inherits (OLP mode) ──────────────────────────────
-// Unlike read/write/delete, a manage_permissions grant lets the grantee
+// Unlike read/write, a manage_permissions grant lets the grantee
 // create further grants — letting it cascade down a tree would silently hand
 // out permission-management authority over content the grantor never
 // explicitly covered. It must only ever apply to the exact resource granted.

@@ -158,6 +158,16 @@ func TestImportSampleTransaction_Integration(t *testing.T) {
 		assert.Equal(t, items[0].CreatedBy, itemsAfter[0].CreatedBy)
 		require.NotNil(t, itemsAfter[0].UpdatedBy)
 		assert.Equal(t, userID, *itemsAfter[0].UpdatedBy)
+
+		var lifecycleUnit domain.LifecycleUnit
+		require.NoError(t, db.Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ?", orgID1, domain.LifecycleResourceMetadata, items[0].ID).
+			First(&lifecycleUnit).Error)
+		assert.Equal(t, domain.LifecycleRestored, lifecycleUnit.State)
+
+		var lifecycleLinkCount int64
+		require.NoError(t, db.Raw("SELECT COUNT(*) FROM metadata_items WHERE id = ? AND lifecycle_unit_id IS NOT NULL", items[0].ID).
+			Scan(&lifecycleLinkCount).Error)
+		assert.Zero(t, lifecycleLinkCount, "a re-imported active row must no longer point at a Recycle Bin unit")
 	})
 
 	t.Run("Import Prefers Active Identity Over Older Tombstone", func(t *testing.T) {

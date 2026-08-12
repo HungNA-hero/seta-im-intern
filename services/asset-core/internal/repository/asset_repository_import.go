@@ -165,11 +165,22 @@ func (r *assetRepository) ImportSampleTransaction(ctx context.Context, orgID, us
 					"updated_by":    userID,
 					"deleted_at":    nil, // reactivate soft-deleted
 				}
+				if reactivating {
+					// A re-import restores the same source row. It must therefore close
+					// the old live Recycle Bin root before a later delete can create a
+					// new lifecycle unit for this metadata item.
+					updates["lifecycle_unit_id"] = nil
+				}
 
 				summary.MetadataUpdated++
 
 				if err := tx.Unscoped().Model(&existing.MetadataItem).Updates(updates).Error; err != nil {
 					return fmt.Errorf("failed to update metadata %s: %w", m.ExternalID, err)
+				}
+				if reactivating {
+					if err := completeLifecycleRestore(tx, orgID, domain.LifecycleResourceMetadata, existing.ID); err != nil {
+						return fmt.Errorf("failed to close lifecycle unit for metadata %s: %w", m.ExternalID, err)
+					}
 				}
 			} else if errors.Is(err, gorm.ErrRecordNotFound) {
 				// Create new

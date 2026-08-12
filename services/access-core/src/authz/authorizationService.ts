@@ -17,9 +17,6 @@ type RoleResolution = AuthorizationDecision | { roleIds: string[]; olpEnabled: b
 const DIRECT_ACTION_CODES: Record<PermissionActionCode, PermissionActionCode[]> = {
   read: ["read", "write", "manage_permissions"],
   write: ["write", "manage_permissions"],
-  // `delete` is retained only for internal compatibility with the historical
-  // enum. The public model authorizes deletion through write.
-  delete: ["write", "manage_permissions"],
   manage_permissions: ["manage_permissions"],
 };
 
@@ -29,7 +26,6 @@ const DIRECT_ACTION_CODES: Record<PermissionActionCode, PermissionActionCode[]> 
 const INHERITED_ACTION_CODES: Record<PermissionActionCode, PermissionActionCode[]> = {
   read: ["read", "write"],
   write: ["write"],
-  delete: ["write"],
   manage_permissions: [],
 };
 
