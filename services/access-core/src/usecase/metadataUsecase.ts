@@ -175,7 +175,7 @@ export async function deleteMetadata(ctx: GraphQLContext, orgId: string, id: str
   const response = await authorizedFetch({
     ctx,
     orgId,
-    preconditions: [{ action: "delete", resourceType: "metadata_item", resourceId: id }],
+    preconditions: [{ action: "write", resourceType: "metadata_item", resourceId: id }],
     path: assetPath(METADATA_PATH, { orgId, id }),
     init: { method: "DELETE" },
   });

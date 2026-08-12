@@ -35,13 +35,13 @@ export async function listPermissionActions(): Promise<Array<{ code: string; id:
 
 export async function hasRbacCeiling({
   roleIds,
-  permissionActionId,
+  permissionActionIds,
   resourceType,
 }: RbacCeilingQuery): Promise<boolean> {
   const rolePermission = await prisma.rolePermission.findFirst({
     where: {
       roleId: { in: roleIds },
-      actionId: permissionActionId,
+      actionId: { in: permissionActionIds },
       resourceType,
     },
   });
@@ -53,14 +53,14 @@ export async function findGrantedResourceIds({
   orgId,
   resourceType,
   resourceIds,
-  permissionActionId,
+  permissionActionIds,
   roleIds,
 }: GrantedResourceQuery): Promise<string[]> {
   const rows = await prisma.objectPermission.findMany({
     where: {
       orgId,
       resourceType,
-      actionId: permissionActionId,
+      actionId: { in: permissionActionIds },
       resourceId: { in: resourceIds },
       OR: [{ granteeUserId: userId }, { granteeRoleId: { in: roleIds } }],
     },

@@ -50,7 +50,7 @@ describe("folder deletion usecase", () => {
     mockCanDo.mockResolvedValue({ allowed: true, reason: null });
   });
 
-  test("requires delete authorization before returning a confirmation preview", async () => {
+  test("requires write authorization before returning a confirmation preview", async () => {
     mockFetch.mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -74,7 +74,7 @@ describe("folder deletion usecase", () => {
 
     expect(mockCanDo).toHaveBeenCalledWith({
       userId: "user-1",
-      action: "delete",
+      action: "write",
       resourceType: "folder",
       resourceId: "folder-1",
       orgId: "org-1",

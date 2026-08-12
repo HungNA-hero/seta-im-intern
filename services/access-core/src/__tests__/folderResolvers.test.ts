@@ -852,13 +852,13 @@ describe("Mutation.deleteFolder", () => {
     expect(mockObjectPermissionDeleteMany).not.toHaveBeenCalled();
   });
 
-  test("checks delete permission", async () => {
+  test("checks write permission", async () => {
     mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
     await folderResolvers.Mutation.deleteFolder(undefined, { orgId: org, id }, ctx);
 
     expect(mockCanDo).toHaveBeenCalledWith({
       userId: "user-1",
-      action: "delete",
+      action: "write",
       resourceType: "folder",
       resourceId: id,
       orgId: org,
@@ -972,23 +972,21 @@ describe("Mutation.restoreFolder", () => {
     expect(mockFetch.mock.calls[1][1].method).toBe("POST");
   });
 
-  test("allows current delete permission when current write is denied", async () => {
+  test("does not fall back to the legacy delete permission when write is denied", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
       json: async () => ({ fact: { id, path: "deleted-folder" } }),
     });
-    mockCanDo
-      .mockResolvedValueOnce({ allowed: false, reason: "no write" })
-      .mockResolvedValueOnce({ allowed: true, reason: null });
-    fetchOk(makeGoFolder({ id }));
+    mockCanDo.mockResolvedValueOnce({ allowed: false, reason: "no write" });
 
-    await expect(folderResolvers.Mutation.restoreFolder(undefined, { orgId: org, id }, ctx)).resolves.toMatchObject({
-      id,
-    });
-    expect(mockCanDo).toHaveBeenNthCalledWith(2, {
+    await expect(folderResolvers.Mutation.restoreFolder(undefined, { orgId: org, id }, ctx)).rejects.toThrow(
+      expect.objectContaining({ extensions: expect.objectContaining({ code: "FORBIDDEN" }) }),
+    );
+    expect(mockCanDo).toHaveBeenCalledTimes(1);
+    expect(mockCanDo).toHaveBeenCalledWith({
       userId: "user-1",
-      action: "delete",
+      action: "write",
       resourceType: "folder",
       resourceId: id,
       orgId: org,

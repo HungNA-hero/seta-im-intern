@@ -128,6 +128,17 @@ describe("Mutation.grantObjectPermission", () => {
     });
   });
 
+  test("rejects the legacy delete action instead of creating another delete-only grant", async () => {
+    await expect(
+      permissionResolvers.Mutation.grantObjectPermission(
+        undefined,
+        { ...base, action: "delete", granteeUserId: "grantee-1" },
+        makeCtx(),
+      ),
+    ).rejects.toThrow(expect.objectContaining({ extensions: expect.objectContaining({ code: "BAD_USER_INPUT" }) }));
+    expect(mockGrant).not.toHaveBeenCalled();
+  });
+
   test("records the authenticated caller as grantor, not a client value", async () => {
     await permissionResolvers.Mutation.grantObjectPermission(
       undefined,

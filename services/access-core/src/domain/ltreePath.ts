@@ -15,3 +15,12 @@ export function ancestorIdsFromPath(path: string): string[] {
   segments.pop();
   return segments.filter((segment) => segment.length === UUID_SEGMENT_LENGTH).map(insertDashes);
 }
+
+// A Metadata candidate stores the path of its parent folder. Unlike a Folder
+// candidate, the parent itself is an authorization ancestor and must be kept.
+export function folderIdsFromPath(path: string): string[] {
+  return path
+    .split(".")
+    .filter((segment) => segment.length === UUID_SEGMENT_LENGTH)
+    .map(insertDashes);
+}

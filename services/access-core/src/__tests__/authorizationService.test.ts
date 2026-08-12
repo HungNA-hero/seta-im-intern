@@ -55,7 +55,7 @@ describe("createAuthorizationService", () => {
 
     expect(deps.repository.hasRbacCeiling).toHaveBeenCalledWith({
       roleIds: ["role-1"],
-      permissionActionId: "action-read",
+      permissionActionIds: ["action-read"],
       resourceType: "folder",
     });
     expect(deps.decisions.write).toHaveBeenCalledTimes(1);

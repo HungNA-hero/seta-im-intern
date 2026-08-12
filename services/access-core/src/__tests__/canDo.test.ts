@@ -277,13 +277,13 @@ describe("RBAC path (olpEnabled = false)", () => {
     expect(mockPrisma.objectPermission.findMany).not.toHaveBeenCalled();
   });
 
-  test("queries rolePermission with correct actionId and resourceType", async () => {
+  test("queries rolePermission with the direct-action hierarchy and resource type", async () => {
     mockPrisma.rolePermission.findFirst.mockResolvedValue({ id: "rp-1" });
     await canDo({ userId: "user-1", action: "write", resourceType: "folder", resourceId: "f1", orgId: "org-1" });
     expect(mockPrisma.rolePermission.findFirst).toHaveBeenCalledWith({
       where: {
         roleId: { in: ["role-1"] },
-        actionId: "action-write",
+        actionId: { in: ["action-write", "action-manage"] },
         resourceType: "folder",
       },
     });
@@ -295,6 +295,23 @@ describe("RBAC path (olpEnabled = false)", () => {
     expect(mockPrisma.rolePermission.findFirst).toHaveBeenCalledTimes(1);
     expect(mockPrisma.objectPermission.findMany).not.toHaveBeenCalled();
     expect(mockGetFolderMeta).not.toHaveBeenCalled();
+  });
+
+  test("a role-level manage permission implies write, read, and deletion through write", async () => {
+    mockPrisma.rolePermission.findFirst.mockImplementation(
+      async ({ where }: { where: { actionId: { in: string[] } } }) =>
+        where.actionId.in.includes("action-manage") ? { id: "rp-manage" } : null,
+    );
+
+    await expect(
+      canDo({ userId: "user-1", action: "write", resourceType: "folder", resourceId: "f1", orgId: "org-1" }),
+    ).resolves.toEqual({ allowed: true, reason: null });
+    await expect(
+      canDo({ userId: "user-1", action: "read", resourceType: "folder", resourceId: "f1", orgId: "org-1" }),
+    ).resolves.toEqual({ allowed: true, reason: null });
+    await expect(
+      canDo({ userId: "user-1", action: "delete", resourceType: "folder", resourceId: "f1", orgId: "org-1" }),
+    ).resolves.toEqual({ allowed: true, reason: null });
   });
 });
 
@@ -355,7 +372,7 @@ describe("OLP path (olpEnabled = true)", () => {
     expect(result).toEqual({ allowed: false, reason: "no object permission" });
   });
 
-  test("queries objectPermission with correct orgId, resourceType, resourceId, and actionId", async () => {
+  test("queries objectPermission with the direct-action hierarchy", async () => {
     mockPrisma.objectPermission.findMany.mockResolvedValue([{ resourceId: "folder-abc" }]);
     await canDo({
       userId: "user-1",
@@ -368,7 +385,7 @@ describe("OLP path (olpEnabled = true)", () => {
       where: {
         orgId: "org-1",
         resourceType: "folder",
-        actionId: "action-write",
+        actionId: { in: ["action-write", "action-manage"] },
         resourceId: { in: ["folder-abc"] },
         OR: [{ granteeUserId: "user-1" }, { granteeRoleId: { in: ["role-1"] } }],
       },
@@ -381,6 +398,40 @@ describe("OLP path (olpEnabled = true)", () => {
     await canDo({ userId: "user-1", action: "read", resourceType: "folder", resourceId: "f1", orgId: "org-1" });
     expect(mockPrisma.rolePermission.findFirst).not.toHaveBeenCalled();
     expect(mockPrisma.objectPermission.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  test("a direct manage grant implies write, read, and deletion through write on the same root only", async () => {
+    const rootId = "f1";
+    mockPrisma.objectPermission.findMany.mockImplementation(
+      async ({ where }: { where: { actionId: { in: string[] }; resourceId: { in: string[] } } }) =>
+        where.actionId.in.includes("action-manage") && where.resourceId.in.includes(rootId)
+          ? [{ resourceId: rootId }]
+          : [],
+    );
+
+    await expect(
+      canDo({ userId: "user-1", action: "write", resourceType: "folder", resourceId: rootId, orgId: "org-1" }),
+    ).resolves.toEqual({ allowed: true, reason: null });
+    await expect(
+      canDo({ userId: "user-1", action: "read", resourceType: "folder", resourceId: rootId, orgId: "org-1" }),
+    ).resolves.toEqual({ allowed: true, reason: null });
+    await expect(
+      canDo({ userId: "user-1", action: "delete", resourceType: "folder", resourceId: rootId, orgId: "org-1" }),
+    ).resolves.toEqual({ allowed: true, reason: null });
+  });
+
+  test("a legacy delete-only object grant is not treated as write or deletion permission", async () => {
+    mockPrisma.objectPermission.findMany.mockImplementation(
+      async ({ where }: { where: { actionId: { in: string[] } } }) =>
+        where.actionId.in.includes("action-delete") ? [{ resourceId: "f1" }] : [],
+    );
+
+    await expect(
+      canDo({ userId: "user-1", action: "write", resourceType: "folder", resourceId: "f1", orgId: "org-1" }),
+    ).resolves.toEqual({ allowed: false, reason: "no object permission" });
+    await expect(
+      canDo({ userId: "user-1", action: "delete", resourceType: "folder", resourceId: "f1", orgId: "org-1" }),
+    ).resolves.toEqual({ allowed: false, reason: "no object permission" });
   });
 });
 
@@ -409,7 +460,7 @@ describe("tombstone restore authorization", () => {
       where: {
         orgId: "org-1",
         resourceType: "folder",
-        actionId: "action-write",
+        actionId: { in: ["action-write"] },
         resourceId: { in: [rootId] },
         OR: [{ granteeUserId: "user-1" }, { granteeRoleId: { in: ["role-1"] } }],
       },

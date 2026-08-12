@@ -115,6 +115,9 @@ export function createObjectPermissionService(
   return {
     async grant(actor, input): Promise<ObjectPermission> {
       const userId = authenticatedUserId(actor);
+      if (input.action === "delete") {
+        throw badUserInput("delete is not a grantable permission; grant write instead");
+      }
       assertSingleGrantee(input);
       await dependencies.authorization.assertCanManage({
         userId,

@@ -14,6 +14,25 @@ import {
 
 type RoleResolution = AuthorizationDecision | { roleIds: string[]; olpEnabled: boolean; permissionActionId: string };
 
+const DIRECT_ACTION_CODES: Record<PermissionActionCode, PermissionActionCode[]> = {
+  read: ["read", "write", "manage_permissions"],
+  write: ["write", "manage_permissions"],
+  // `delete` is retained only for internal compatibility with the historical
+  // enum. The public model authorizes deletion through write.
+  delete: ["write", "manage_permissions"],
+  manage_permissions: ["manage_permissions"],
+};
+
+// `manage_permissions` is deliberately absent from inherited action sets.
+// A direct manage grant controls only that exact resource; it must never become
+// permission-management authority over every descendant folder or metadata item.
+const INHERITED_ACTION_CODES: Record<PermissionActionCode, PermissionActionCode[]> = {
+  read: ["read", "write"],
+  write: ["write"],
+  delete: ["write"],
+  manage_permissions: [],
+};
+
 interface AllowedResourcesDecision {
   reason: string | null;
   allowedIds: Set<string>;
@@ -93,16 +112,16 @@ export function createAuthorizationService(dependencies: AuthorizationServiceDep
 
   async function hasRbacCeiling(
     roleIds: string[],
-    permissionActionId: string,
+    permissionActionIds: string[],
     resourceType: ResourceType,
   ): Promise<boolean> {
-    const cacheKey = `${[...roleIds].sort().join(",")}::${permissionActionId}::${resourceType}`;
+    const cacheKey = `${[...roleIds].sort().join(",")}::${[...permissionActionIds].sort().join(",")}::${resourceType}`;
     const cached = rbacCeilingCache.get(cacheKey);
     if (cached !== undefined) return cached;
 
     const allowed = await dependencies.repository.hasRbacCeiling({
       roleIds,
-      permissionActionId,
+      permissionActionIds,
       resourceType,
     });
     rbacCeilingCache.set(cacheKey, allowed);
@@ -114,11 +133,16 @@ export function createAuthorizationService(dependencies: AuthorizationServiceDep
     orgId: string;
     resourceType: ResourceType;
     resourceIds: string[];
-    permissionActionId: string;
+    permissionActionIds: string[];
     roleIds: string[];
   }): Promise<Set<string>> {
     if (input.resourceIds.length === 0) return new Set();
     return new Set(await dependencies.repository.findGrantedResourceIds(input));
+  }
+
+  async function resolveActionIds(codes: PermissionActionCode[]): Promise<string[]> {
+    const actionIds = await Promise.all(codes.map(getPermissionActionId));
+    return actionIds.filter((actionId): actionId is string => actionId !== null);
   }
 
   async function decideAllowedResources(input: {
@@ -139,8 +163,9 @@ export function createAuthorizationService(dependencies: AuthorizationServiceDep
       };
     }
 
+    const directActionIds = await resolveActionIds(DIRECT_ACTION_CODES[input.action]);
     if (input.rbacOnly || !resolution.olpEnabled) {
-      const allowed = await hasRbacCeiling(resolution.roleIds, resolution.permissionActionId, input.resourceType);
+      const allowed = await hasRbacCeiling(resolution.roleIds, directActionIds, input.resourceType);
       return {
         reason: allowed ? null : "no RBAC ceiling",
         allowedIds: allowed ? new Set(input.resourceIds) : new Set(),
@@ -152,10 +177,11 @@ export function createAuthorizationService(dependencies: AuthorizationServiceDep
       orgId: input.orgId,
       resourceType: input.resourceType,
       resourceIds: input.resourceIds,
-      permissionActionId: resolution.permissionActionId,
+      permissionActionIds: directActionIds,
       roleIds: resolution.roleIds,
     });
-    if (input.action !== "manage_permissions" && input.getAncestorIds) {
+    const inheritedActionIds = await resolveActionIds(INHERITED_ACTION_CODES[input.action]);
+    if (inheritedActionIds.length > 0 && input.getAncestorIds) {
       const pendingIds = input.resourceIds.filter((resourceId) => !allowedIds.has(resourceId));
       const ancestorEntries = await Promise.all(
         pendingIds.map(async (resourceId) => [resourceId, await input.getAncestorIds!(resourceId)] as const),
@@ -167,7 +193,7 @@ export function createAuthorizationService(dependencies: AuthorizationServiceDep
         orgId: input.orgId,
         resourceType: ancestorResourceType,
         resourceIds: ancestorIds,
-        permissionActionId: resolution.permissionActionId,
+        permissionActionIds: inheritedActionIds,
         roleIds: resolution.roleIds,
       });
       for (const [resourceId, resourceAncestorIds] of ancestorEntries) {

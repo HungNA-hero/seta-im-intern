@@ -13,7 +13,6 @@ export const baseTypeDefs = /* GraphQL */ `
   enum PermissionAction {
     read
     write
-    delete
     manage_permissions
   }
 `;

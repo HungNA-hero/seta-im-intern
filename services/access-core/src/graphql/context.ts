@@ -61,7 +61,7 @@ export async function assertTrainerAdmin(ctx: GraphQLContext): Promise<void> {
 /**
  * Evaluates the policy for a specific action on a resource and throws a GraphQLError if denied.
  * @param userId The ID of the user attempting the action.
- * @param action The permission action code (e.g., "read", "write", "delete").
+ * @param action The permission action code (e.g., "read", "write", "manage_permissions").
  * @param resourceType The type of resource being accessed (e.g., "folder", "metadata_item").
  * @param resourceId The ID of the resource being accessed.
  * @param orgId The ID of the organization context, if any.
