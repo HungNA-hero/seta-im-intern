@@ -21,13 +21,13 @@ export interface GrantedResourceQuery {
   orgId: string;
   resourceType: ResourceType;
   resourceIds: string[];
-  permissionActionId: string;
+  permissionActionIds: string[];
   roleIds: string[];
 }
 
 export interface RbacCeilingQuery {
   roleIds: string[];
-  permissionActionId: string;
+  permissionActionIds: string[];
   resourceType: ResourceType;
 }
 

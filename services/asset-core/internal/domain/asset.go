@@ -196,6 +196,9 @@ type AssetRepository interface {
 	GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]Folder, error)
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
 	GetFolderRestoreAuthorizationFact(ctx context.Context, orgID, folderID string) (FolderRestoreAuthorizationFact, error)
+	// ListRecycleBinEntries returns only DELETED roots for one organization. Access
+	// Core must still apply read authorization to every returned candidate.
+	ListRecycleBinEntries(ctx context.Context, orgID string, filter RecycleBinFilter) ([]RecycleBinEntry, error)
 	CreateFolder(ctx context.Context, orgID, userID string, input CreateFolderInput) (Folder, error)
 	UpdateFolder(ctx context.Context, orgID, userID, folderID string, input UpdateFolderInput) (Folder, error)
 	// MoveFolder updates the folder and its descendants' paths in a single transaction.
@@ -234,6 +237,7 @@ type AssetUsecase interface {
 	GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]Folder, error)
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
 	GetFolderRestoreAuthorizationFact(ctx context.Context, orgID, folderID string) (FolderRestoreAuthorizationFact, error)
+	ListRecycleBinEntries(ctx context.Context, orgID string, filter RecycleBinFilter) ([]RecycleBinEntry, error)
 	CreateFolder(ctx context.Context, orgID, userID string, input CreateFolderInput) (Folder, error)
 	UpdateFolder(ctx context.Context, orgID, userID, folderID string, input UpdateFolderInput) (Folder, error)
 	// MoveFolder validates and applies a folder move, updating descendant paths.

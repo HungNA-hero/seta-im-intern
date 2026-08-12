@@ -16,6 +16,7 @@ type fakeAssetRepo struct {
 	updateCalled        bool
 	metadataCreateInput domain.CreateMetadataInput
 	metadataUpdateInput domain.UpdateMetadataInput
+	recycleBinFilter    domain.RecycleBinFilter
 }
 
 func (f *fakeAssetRepo) GetFolderTree(_ context.Context, _ string, _ string) ([]domain.Folder, error) {
@@ -53,6 +54,11 @@ func (f *fakeAssetRepo) DeleteFolder(_ context.Context, _, _, _ string) error {
 
 func (f *fakeAssetRepo) GetFolderRestoreAuthorizationFact(_ context.Context, _, _ string) (domain.FolderRestoreAuthorizationFact, error) {
 	return domain.FolderRestoreAuthorizationFact{}, nil
+}
+
+func (f *fakeAssetRepo) ListRecycleBinEntries(_ context.Context, _ string, filter domain.RecycleBinFilter) ([]domain.RecycleBinEntry, error) {
+	f.recycleBinFilter = filter
+	return nil, nil
 }
 
 func (f *fakeAssetRepo) RestoreFolder(_ context.Context, _, _, _ string) (domain.Folder, error) {
@@ -97,6 +103,22 @@ func (f *fakeAssetRepo) RestoreMetadataItem(_ context.Context, _, _, _ string) (
 // SearchMetadataItems satisfies the metadata search repository contract for use-case tests.
 func (f *fakeAssetRepo) SearchMetadataItems(ctx context.Context, orgID string, filter domain.MetadataSearchFilter) ([]domain.MetadataItem, error) {
 	return nil, nil
+}
+
+func TestAssetUsecase_RecycleBinCursorValidation(t *testing.T) {
+	repo := &fakeAssetRepo{}
+	uc := usecase.NewAssetUsecase(repo)
+
+	if _, err := uc.ListRecycleBinEntries(context.Background(), "org-1", domain.RecycleBinFilter{Limit: 0}); !errors.Is(err, domain.ErrInvalidInput) {
+		t.Fatalf("expected invalid limit, got %v", err)
+	}
+	afterID := "unit-1"
+	if _, err := uc.ListRecycleBinEntries(context.Background(), "org-1", domain.RecycleBinFilter{Limit: 1, AfterLifecycleID: &afterID}); !errors.Is(err, domain.ErrCursorInvalid) {
+		t.Fatalf("expected incomplete tuple to be CURSOR_INVALID, got %v", err)
+	}
+	if repo.recycleBinFilter.Limit != 0 {
+		t.Fatalf("expected invalid filters to stop before repository, got %#v", repo.recycleBinFilter)
+	}
 }
 
 func TestAssetUsecase_CreateFolder_Validation(t *testing.T) {

@@ -146,3 +146,115 @@ func TestAssetRepository_PostgresIntegration_RestoreIsParentFirstAndCollisionSaf
 		t.Fatalf("expected external-conflicting row to remain a restoreable tombstone, found %d", remainingExternalTombstone)
 	}
 }
+
+func TestAssetRepository_PostgresIntegration_RestoreClosesLifecycleUnitBeforeAnotherDelete(t *testing.T) {
+	dsn := os.Getenv("ASSET_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("ASSET_TEST_DATABASE_URL is not set")
+	}
+
+	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("open PostgreSQL: %v", err)
+	}
+	tx := database.Begin()
+	if tx.Error != nil {
+		t.Fatalf("begin rollback-only transaction: %v", tx.Error)
+	}
+	t.Cleanup(func() {
+		if err := tx.Rollback().Error; err != nil && err != gorm.ErrInvalidTransaction {
+			t.Errorf("rollback integration transaction: %v", err)
+		}
+	})
+
+	ctx := context.Background()
+	orgID := uuid.NewString()
+	userID := uuid.NewString()
+	emptyFolderID := uuid.NewString()
+	metadataFolderID := uuid.NewString()
+	metadataID := uuid.NewString()
+	if err := tx.Exec("INSERT INTO organization_ref (org_id) VALUES (?)", orgID).Error; err != nil {
+		t.Fatalf("seed organization reference: %v", err)
+	}
+	if err := tx.Exec("INSERT INTO user_ref (user_id) VALUES (?)", userID).Error; err != nil {
+		t.Fatalf("seed user reference: %v", err)
+	}
+	if err := tx.Exec(`
+		INSERT INTO folders (id, org_id, path, name, created_by)
+		VALUES (?, ?, ?::ltree, ?, ?), (?, ?, ?::ltree, ?, ?)
+	`,
+		emptyFolderID, orgID, strings.ReplaceAll(emptyFolderID, "-", ""), "Empty", userID,
+		metadataFolderID, orgID, strings.ReplaceAll(metadataFolderID, "-", ""), "Metadata parent", userID,
+	).Error; err != nil {
+		t.Fatalf("seed folders: %v", err)
+	}
+	if err := tx.Exec("INSERT INTO metadata_items (id, folder_id, title, created_by) VALUES (?, ?, ?, ?)", metadataID, metadataFolderID, "Reusable metadata", userID).Error; err != nil {
+		t.Fatalf("seed metadata: %v", err)
+	}
+
+	repo := repository.NewAssetRepository(tx)
+	type lifecycleCase struct {
+		name         string
+		resourceType domain.LifecycleResourceType
+		resourceID   string
+		delete       func() error
+		restore      func() error
+		linkTable    string
+	}
+	cases := []lifecycleCase{
+		{
+			name:         "folder",
+			resourceType: domain.LifecycleResourceFolder,
+			resourceID:   emptyFolderID,
+			delete:       func() error { return repo.DeleteFolder(ctx, orgID, userID, emptyFolderID) },
+			restore:      func() error { _, err := repo.RestoreFolder(ctx, orgID, userID, emptyFolderID); return err },
+			linkTable:    "folders",
+		},
+		{
+			name:         "metadata",
+			resourceType: domain.LifecycleResourceMetadata,
+			resourceID:   metadataID,
+			delete:       func() error { return repo.DeleteMetadataItem(ctx, orgID, userID, metadataID) },
+			restore:      func() error { _, err := repo.RestoreMetadataItem(ctx, orgID, userID, metadataID); return err },
+			linkTable:    "metadata_items",
+		},
+	}
+
+	for _, scenario := range cases {
+		t.Run(scenario.name, func(t *testing.T) {
+			if err := scenario.delete(); err != nil {
+				t.Fatalf("first delete: %v", err)
+			}
+			var firstUnit domain.LifecycleUnit
+			if err := tx.Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ?", orgID, scenario.resourceType, scenario.resourceID).First(&firstUnit).Error; err != nil {
+				t.Fatalf("load first lifecycle unit: %v", err)
+			}
+			if err := scenario.restore(); err != nil {
+				t.Fatalf("restore: %v", err)
+			}
+			if err := tx.First(&firstUnit, "id = ?", firstUnit.ID).Error; err != nil {
+				t.Fatalf("reload first lifecycle unit: %v", err)
+			}
+			if firstUnit.State != domain.LifecycleRestored {
+				t.Fatalf("expected first lifecycle unit to be RESTORED, got %s", firstUnit.State)
+			}
+			var linkedRows int64
+			if err := tx.Table(scenario.linkTable).Where("id = ? AND lifecycle_unit_id IS NOT NULL", scenario.resourceID).Count(&linkedRows).Error; err != nil {
+				t.Fatalf("count restored lifecycle link: %v", err)
+			}
+			if linkedRows != 0 {
+				t.Fatalf("expected restored source row to release its lifecycle link, got %d linked rows", linkedRows)
+			}
+			if err := scenario.delete(); err != nil {
+				t.Fatalf("second delete must create a new lifecycle unit: %v", err)
+			}
+			var units []domain.LifecycleUnit
+			if err := tx.Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ?", orgID, scenario.resourceType, scenario.resourceID).Order("created_at ASC").Find(&units).Error; err != nil {
+				t.Fatalf("load lifecycle history: %v", err)
+			}
+			if len(units) != 2 || units[0].State != domain.LifecycleRestored || units[1].State != domain.LifecycleDeleted {
+				t.Fatalf("expected RESTORED history plus one new DELETED unit, got %#v", units)
+			}
+		})
+	}
+}

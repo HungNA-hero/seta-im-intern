@@ -10,7 +10,6 @@ datasource db {
 enum PermissionActionCode {
   read
   write
-  delete
   manage_permissions
 
   @@map("permission_action_code")

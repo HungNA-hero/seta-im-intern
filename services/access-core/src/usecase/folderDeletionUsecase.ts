@@ -16,7 +16,7 @@ export async function previewFolderDeletion(ctx: GraphQLContext, orgId: string, 
   const response = await authorizedFetch({
     ctx,
     orgId,
-    preconditions: [{ action: "delete", resourceType: "folder", resourceId: folderId }],
+    preconditions: [{ action: "write", resourceType: "folder", resourceId: folderId }],
     path: assetPath(`${FOLDER_DELETIONS_PATH}/preview`, { orgId, folderId }),
     init: { method: "POST" },
   });
@@ -35,7 +35,7 @@ export async function confirmFolderDeletion(
   const response = await authorizedFetch({
     ctx,
     orgId,
-    preconditions: [{ action: "delete", resourceType: "folder", resourceId: folderId }],
+    preconditions: [{ action: "write", resourceType: "folder", resourceId: folderId }],
     path: assetPath(`${FOLDER_DELETIONS_PATH}/confirm`, { orgId, folderId }),
     init: {
       method: "POST",

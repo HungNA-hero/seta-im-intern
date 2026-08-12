@@ -845,13 +845,13 @@ describe("Mutation.deleteMetadata", () => {
     expect(mockObjectPermissionDeleteMany).not.toHaveBeenCalled();
   });
 
-  test("calls canDo with delete metadata_item permission", async () => {
+  test("calls canDo with write metadata_item permission", async () => {
     mockFetch.mockResolvedValueOnce({ ok: true, status: 204 });
     await metadataResolvers.Mutation.deleteMetadata(undefined, { orgId: org, id }, ctx);
 
     expect(mockCanDo).toHaveBeenCalledWith({
       userId: "user-1",
-      action: "delete",
+      action: "write",
       resourceType: "metadata_item",
       resourceId: id,
       orgId: org,

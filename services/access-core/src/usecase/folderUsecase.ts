@@ -200,7 +200,7 @@ export async function deleteFolder(ctx: GraphQLContext, orgId: string, id: strin
   const response = await authorizedFetch({
     ctx,
     orgId,
-    preconditions: [{ action: "delete", resourceType: "folder", resourceId: id }],
+    preconditions: [{ action: "write", resourceType: "folder", resourceId: id }],
     path: assetPath(FOLDERS_PATH, { orgId, id }),
     init: { method: "DELETE" },
   });

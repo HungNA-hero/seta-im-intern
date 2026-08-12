@@ -1,6 +1,7 @@
 import { baseTypeDefs } from "./base";
 import { folderMutationFields, folderQueryFields, folderTypeDefs } from "./folder";
 import { metadataMutationFields, metadataQueryFields, metadataTypeDefs } from "./metadata";
+import { recycleBinQueryFields, recycleBinTypeDefs } from "./recycleBin";
 import {
   organizationCreateMutationFields,
   organizationMemberMutationFields,
@@ -29,6 +30,7 @@ const queryFields = [
   permissionQueryFields,
   folderQueryFields,
   metadataQueryFields,
+  recycleBinQueryFields,
 ].join("\n");
 
 export const typeDefs = /* GraphQL */ `
@@ -42,6 +44,7 @@ export const typeDefs = /* GraphQL */ `
   }
   ${folderTypeDefs}
   ${metadataTypeDefs}
+  ${recycleBinTypeDefs}
   type Query {
     ${queryFields}
   }

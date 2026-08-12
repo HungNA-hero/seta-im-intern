@@ -5,6 +5,7 @@ import { organizationResolvers } from "./organizationResolvers";
 import { canDoResolvers } from "./canDoResolvers";
 import { folderResolvers } from "./folderResolvers";
 import { metadataResolvers } from "./metadataResolvers";
+import { recycleBinResolvers } from "./recycleBinResolvers";
 
 export const resolvers = {
   Query: {
@@ -15,6 +16,7 @@ export const resolvers = {
     ...canDoResolvers.Query,
     ...folderResolvers.Query,
     ...metadataResolvers.Query,
+    ...recycleBinResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,

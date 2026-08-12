@@ -250,6 +250,25 @@ func TestFolderRepository_PostgresIntegration(t *testing.T) {
 	if emptyFolderTombstones != 1 {
 		t.Errorf("expected deleted folder row to remain as a tombstone, got %d row", emptyFolderTombstones)
 	}
+	var emptyFolderUnit domain.LifecycleUnit
+	if err := tx.Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ?", orgID, domain.LifecycleResourceFolder, emptyFolderID).
+		First(&emptyFolderUnit).Error; err != nil {
+		t.Fatalf("load empty folder lifecycle unit: %v", err)
+	}
+	if emptyFolderUnit.State != domain.LifecycleDeleted || emptyFolderUnit.RootFolderPath != strings.ReplaceAll(emptyFolderID, "-", "") {
+		t.Fatalf("unexpected folder lifecycle unit: %#v", emptyFolderUnit)
+	}
+	if emptyFolderUnit.OriginalParentPath != nil || emptyFolderUnit.OriginalFolderID != nil {
+		t.Fatalf("expected root folder lifecycle context to have no parent references, got %#v", emptyFolderUnit)
+	}
+	var folderLifecycleLinkCount int64
+	if err := tx.Raw("SELECT COUNT(*) FROM folders WHERE id = ? AND lifecycle_unit_id = ?", emptyFolderID, emptyFolderUnit.ID).
+		Scan(&folderLifecycleLinkCount).Error; err != nil {
+		t.Fatalf("verify folder lifecycle link: %v", err)
+	}
+	if folderLifecycleLinkCount != 1 {
+		t.Fatalf("expected deleted folder to link to its lifecycle unit, got %d rows", folderLifecycleLinkCount)
+	}
 
 	// 7. Soft deletion preserves legacy tombstones inside the target subtree so
 	// parent-first restore remains possible later.

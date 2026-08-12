@@ -40,6 +40,9 @@ type fakeAssetUsecase struct {
 	metadataUpdateInput domain.UpdateMetadataInput
 	metadataUpdateErr   error
 	metadataSearchInput domain.MetadataSearchFilter
+	recycleBinEntries   []domain.RecycleBinEntry
+	recycleBinErr       error
+	recycleBinFilter    domain.RecycleBinFilter
 
 	moveFolderFunc         func(ctx context.Context, orgID, userID, folderID string, input domain.MoveFolderInput) (domain.Folder, error)
 	deleteFolderFunc       func(ctx context.Context, orgID, userID, folderID string) error
@@ -142,6 +145,14 @@ func (f *fakeAssetUsecase) GetFolderRestoreAuthorizationFact(_ context.Context, 
 	f.methodCalled = "GetFolderRestoreAuthorizationFact"
 	f.orgID = orgID
 	return f.folderRestoreFact, f.folderRestoreFactErr
+}
+
+func (f *fakeAssetUsecase) ListRecycleBinEntries(_ context.Context, orgID string, filter domain.RecycleBinFilter) ([]domain.RecycleBinEntry, error) {
+	f.called = true
+	f.methodCalled = "ListRecycleBinEntries"
+	f.orgID = orgID
+	f.recycleBinFilter = filter
+	return f.recycleBinEntries, f.recycleBinErr
 }
 
 func (f *fakeAssetUsecase) RestoreFolder(ctx context.Context, orgID, userID, folderID string) (domain.Folder, error) {

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -19,9 +20,97 @@ type assetRepository struct {
 	db *gorm.DB
 }
 
+const lifecycleRetentionDays = 30
+
 // NewAssetRepository creates a new instance of AssetRepository.
 func NewAssetRepository(db *gorm.DB) domain.AssetRepository {
 	return &assetRepository{db: db}
+}
+
+// createDeletedLifecycleUnit persists the one Recycle Bin root created by a
+// successful synchronous delete. The caller must use the same transaction for
+// the root tombstone and lifecycle_unit_id update.
+func createDeletedLifecycleUnit(
+	tx *gorm.DB,
+	orgID string,
+	userID string,
+	resourceType domain.LifecycleResourceType,
+	resourceID string,
+	rootFolderPath string,
+	originalParentPath *string,
+	originalFolderID *string,
+	now time.Time,
+) (string, error) {
+	retentionUntil := now.AddDate(0, 0, lifecycleRetentionDays)
+	unit := domain.LifecycleUnit{
+		OrgID:              orgID,
+		RootResourceType:   resourceType,
+		RootResourceID:     resourceID,
+		RootFolderPath:     rootFolderPath,
+		OriginalParentPath: originalParentPath,
+		OriginalFolderID:   originalFolderID,
+		State:              domain.LifecycleDeleted,
+		RequestedBy:        userID,
+		DeleteCompletedAt:  &now,
+		RetentionUntil:     &retentionUntil,
+	}
+	if err := tx.Create(&unit).Error; err != nil {
+		return "", err
+	}
+	return unit.ID, nil
+}
+
+// createDeletingLifecycleUnit records the root as soon as the asynchronous
+// worker hides its subtree. The entry remains non-visible in the Recycle Bin
+// until the worker has tombstoned every active member and marks it DELETED.
+func createDeletingLifecycleUnit(
+	tx *gorm.DB,
+	orgID string,
+	userID string,
+	resourceID string,
+	rootFolderPath string,
+	originalParentPath *string,
+) (string, error) {
+	unit := domain.LifecycleUnit{
+		OrgID:              orgID,
+		RootResourceType:   domain.LifecycleResourceFolder,
+		RootResourceID:     resourceID,
+		RootFolderPath:     rootFolderPath,
+		OriginalParentPath: originalParentPath,
+		State:              domain.LifecycleDeleting,
+		RequestedBy:        userID,
+	}
+	if err := tx.Create(&unit).Error; err != nil {
+		return "", err
+	}
+	return unit.ID, nil
+}
+
+func completeDeletingLifecycleUnit(tx *gorm.DB, orgID, resourceID string, now time.Time) error {
+	retentionUntil := now.AddDate(0, 0, lifecycleRetentionDays)
+	result := tx.Model(&domain.LifecycleUnit{}).
+		Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ? AND state = ?", orgID, domain.LifecycleResourceFolder, resourceID, domain.LifecycleDeleting).
+		Updates(map[string]any{
+			"state":               domain.LifecycleDeleted,
+			"delete_completed_at": now,
+			"retention_until":     retentionUntil,
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return fmt.Errorf("missing deleting lifecycle unit for folder %s", resourceID)
+	}
+	return nil
+}
+
+func lifecycleParentPath(path string) *string {
+	separator := strings.LastIndex(path, ".")
+	if separator < 0 {
+		return nil
+	}
+	parentPath := path[:separator]
+	return &parentPath
 }
 
 func (r *assetRepository) GetFolderTree(ctx context.Context, orgID string, rootPath string) ([]domain.Folder, error) {
@@ -95,6 +184,80 @@ func (r *assetRepository) GetRootFolders(ctx context.Context, orgID string) ([]d
 		Find(&folders).Error
 
 	return folders, err
+}
+
+// ListRecycleBinEntries returns root candidates in stable keyset order. It does
+// not use normal visibility predicates because a DELETED root is expected to be
+// hidden from normal APIs; Access Core performs the separate read check.
+func (r *assetRepository) ListRecycleBinEntries(ctx context.Context, orgID string, filter domain.RecycleBinFilter) ([]domain.RecycleBinEntry, error) {
+	entries := []domain.RecycleBinEntry{}
+
+	if filter.AfterDeletedAt != nil && filter.AfterLifecycleID != nil {
+		var cursorTarget domain.LifecycleUnit
+		cursorCheck := r.db.WithContext(ctx).
+			Where("id = ? AND org_id = ? AND state = ? AND delete_completed_at = ?", *filter.AfterLifecycleID, orgID, domain.LifecycleDeleted, *filter.AfterDeletedAt).
+			First(&cursorTarget).Error
+		if errors.Is(cursorCheck, gorm.ErrRecordNotFound) {
+			return nil, domain.ErrCursorInvalid
+		}
+		if cursorCheck != nil {
+			return nil, cursorCheck
+		}
+	}
+
+	query := r.recycleBinCandidateQuery(ctx, orgID)
+	if filter.AfterDeletedAt != nil && filter.AfterLifecycleID != nil {
+		// The sort mixes DESC timestamp with ASC UUID, so use two ordered ranges.
+		// This preserves the exact keyset predicate while allowing PostgreSQL to
+		// seek the index rather than scan earlier Recycle Bin pages.
+		sameTimestampRange := query.Session(&gorm.Session{}).
+			Where("lifecycle_units.delete_completed_at = ? AND lifecycle_units.id > ?", *filter.AfterDeletedAt, *filter.AfterLifecycleID).
+			Order("lifecycle_units.delete_completed_at DESC, lifecycle_units.id ASC")
+		earlierTimestampRange := query.Session(&gorm.Session{}).
+			Where("lifecycle_units.delete_completed_at < ?", *filter.AfterDeletedAt).
+			Order("lifecycle_units.delete_completed_at DESC, lifecycle_units.id ASC")
+		keysetRanges := r.db.WithContext(ctx).Raw("(?) UNION ALL (?)", sameTimestampRange, earlierTimestampRange)
+		err := r.db.WithContext(ctx).
+			Table("(?) AS recycle_bin_entries", keysetRanges).
+			Order("recycle_bin_entries.deleted_at DESC, recycle_bin_entries.lifecycle_unit_id ASC").
+			Limit(filter.Limit).
+			Scan(&entries).Error
+		return entries, err
+	}
+
+	err := query.
+		Order("lifecycle_units.delete_completed_at DESC, lifecycle_units.id ASC").
+		Limit(filter.Limit).
+		Scan(&entries).Error
+	return entries, err
+}
+
+func (r *assetRepository) recycleBinCandidateQuery(ctx context.Context, orgID string) *gorm.DB {
+	return r.db.WithContext(ctx).
+		Table("asset_lifecycle_units AS lifecycle_units").
+		Select(`
+			lifecycle_units.id AS lifecycle_unit_id,
+			lifecycle_units.root_resource_type AS resource_type,
+			lifecycle_units.root_resource_id AS resource_id,
+			COALESCE(root_folder.name, root_metadata.title, '') AS display_name,
+			COALESCE(root_folder.path, metadata_folder.path)::text AS root_folder_path,
+			lifecycle_units.delete_completed_at AS deleted_at
+		`).
+		Joins(`LEFT JOIN folders AS root_folder
+			ON lifecycle_units.root_resource_type = ?
+			AND root_folder.id = lifecycle_units.root_resource_id
+			AND root_folder.org_id = lifecycle_units.org_id`, domain.LifecycleResourceFolder).
+		Joins(`LEFT JOIN metadata_items AS root_metadata
+			ON lifecycle_units.root_resource_type = ?
+			AND root_metadata.id = lifecycle_units.root_resource_id`, domain.LifecycleResourceMetadata).
+		Joins(`LEFT JOIN folders AS metadata_folder
+			ON metadata_folder.id = root_metadata.folder_id
+			AND metadata_folder.org_id = lifecycle_units.org_id`).
+		Where("lifecycle_units.org_id = ? AND lifecycle_units.state = ? AND lifecycle_units.delete_completed_at IS NOT NULL", orgID, domain.LifecycleDeleted).
+		Where(`
+			(root_folder.id IS NOT NULL AND root_folder.deleted_at IS NOT NULL)
+			OR (root_metadata.id IS NOT NULL AND root_metadata.deleted_at IS NOT NULL AND metadata_folder.id IS NOT NULL)
+		`)
 }
 
 func (r *assetRepository) EnsureRefs(ctx context.Context, userID, orgID string) error {
@@ -463,10 +626,28 @@ func (r *assetRepository) DeleteFolder(ctx context.Context, orgID, userID, folde
 		}
 
 		now := time.Now().UTC()
-		if err := tx.Unscoped().Model(&domain.Folder{}).
-			Where("id = ? AND org_id = ? AND deleted_at IS NULL", folder.ID, orgID).
-			Updates(map[string]any{"deleted_at": now, "updated_by": userID}).Error; err != nil {
+		lifecycleUnitID, err := createDeletedLifecycleUnit(
+			tx,
+			orgID,
+			userID,
+			domain.LifecycleResourceFolder,
+			folder.ID,
+			folder.Path,
+			lifecycleParentPath(folder.Path),
+			nil,
+			now,
+		)
+		if err != nil {
 			return err
+		}
+		result := tx.Unscoped().Model(&domain.Folder{}).
+			Where("id = ? AND org_id = ? AND deleted_at IS NULL AND lifecycle_unit_id IS NULL", folder.ID, orgID).
+			Updates(map[string]any{"deleted_at": now, "updated_by": userID, "lifecycle_unit_id": lifecycleUnitID})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected != 1 {
+			return domain.ErrFolderNotFound
 		}
 
 		return nil
@@ -729,10 +910,29 @@ func (r *assetRepository) DeleteMetadataItem(ctx context.Context, orgID, userID,
 		}
 
 		now := time.Now().UTC()
-		if err := tx.Unscoped().Model(&domain.MetadataItem{}).
-			Where("id = ? AND deleted_at IS NULL", item.ID).
-			Updates(map[string]any{"deleted_at": now, "updated_by": userID}).Error; err != nil {
+		originalFolderID := parentFolder.ID
+		lifecycleUnitID, err := createDeletedLifecycleUnit(
+			tx,
+			orgID,
+			userID,
+			domain.LifecycleResourceMetadata,
+			item.ID,
+			parentFolder.Path,
+			nil,
+			&originalFolderID,
+			now,
+		)
+		if err != nil {
 			return err
+		}
+		result := tx.Unscoped().Model(&domain.MetadataItem{}).
+			Where("id = ? AND deleted_at IS NULL AND lifecycle_unit_id IS NULL", item.ID).
+			Updates(map[string]any{"deleted_at": now, "updated_by": userID, "lifecycle_unit_id": lifecycleUnitID})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected != 1 {
+			return domain.ErrMetadataNotFound
 		}
 
 		return nil

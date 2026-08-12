@@ -356,6 +356,38 @@ func (r *folderDeletionRepository) ProcessFolderDeletionJob(ctx context.Context,
 	}
 }
 
+// ensureFolderDeletionLifecycleUnit gives a recursive deletion one durable
+// root. It also repairs an in-flight job created before lifecycle units were
+// introduced: the root is already tombstoned, but the transaction can safely
+// create its DELETING unit before the worker continues.
+func ensureFolderDeletionLifecycleUnit(tx *gorm.DB, job domain.FolderDeletionJob) error {
+	var existing domain.LifecycleUnit
+	err := tx.
+		Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ? AND state = ?", job.OrgID, domain.LifecycleResourceFolder, job.RootFolderID, domain.LifecycleDeleting).
+		Order("created_at DESC").
+		First(&existing).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		lifecycleUnitID, createErr := createDeletingLifecycleUnit(
+			tx,
+			job.OrgID,
+			job.RequestedBy,
+			job.RootFolderID,
+			job.RootPath,
+			lifecycleParentPath(job.RootPath),
+		)
+		if createErr != nil {
+			return createErr
+		}
+		existing.ID = lifecycleUnitID
+	}
+	return tx.Unscoped().Model(&domain.Folder{}).
+		Where("id = ? AND org_id = ? AND deleted_at IS NOT NULL", job.RootFolderID, job.OrgID).
+		Update("lifecycle_unit_id", existing.ID).Error
+}
+
 func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Context, jobID, workerID string) (bool, bool, error) {
 	var done bool
 	var visibilityChanged bool
@@ -383,6 +415,9 @@ func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Contex
 		}
 		visibilityChanged = rootResult.RowsAffected > 0
 		job.DeletedFolderCount += rootResult.RowsAffected
+		if err := ensureFolderDeletionLifecycleUnit(tx, job); err != nil {
+			return err
+		}
 
 		metadataResult := tx.Exec(`
 			UPDATE metadata_items
@@ -432,6 +467,10 @@ func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Contex
 			return tx.Save(&job).Error
 		}
 
+		now = time.Now().UTC()
+		if err := completeDeletingLifecycleUnit(tx, job.OrgID, job.RootFolderID, now); err != nil {
+			return err
+		}
 		job.Status = domain.FolderDeletionSucceeded
 		job.LeaseOwner = nil
 		job.LeaseExpiresAt = nil

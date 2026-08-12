@@ -283,7 +283,7 @@ resourceId, orgId)` resolver, called internally by asset-core (and by access-cor
 resolvers) before every mutation or read. It always returns `{ allowed, reason }`; a
 `false` result surfaces as a GraphQL `FORBIDDEN` error.
 
-**Actions**: `read`, `write`, `delete`, `manage_permissions`
+**Actions**: `read`, `write`, `manage_permissions`
 **Resource types**: `folder`, `metadata_item`
 
 ### Two mutually exclusive modes, per organization
@@ -314,9 +314,12 @@ grants matter.
 ### Inheritance (OLP mode only)
 
 A grant on a folder propagates to all descendant folders (via the `ltree` ancestor chain)
-and to metadata items filed anywhere under that subtree, for `read`/`write`/`delete`.
+and to metadata items filed anywhere under that subtree, for `read`/`write`.
 **`manage_permissions` never inherits** — it only applies to the exact resource it was
 granted on. RBAC mode has no concept of inheritance since it never looks at grants at all.
+
+`write` is also the lifecycle capability: a caller with `write` may delete or restore an
+Asset resource. There is no separate public `delete` permission.
 
 ### Creator has no implicit access
 
@@ -324,13 +327,13 @@ granted on. RBAC mode has no concept of inheritance since it never looks at gran
 **no** automatic permission — there's no `owner` column and no bypass derived from it.
 Creators go through the same RBAC/OLP/grant checks as anyone else.
 
-### Hard delete and grant history
+### Recycle Bin and grant history
 
-Deleting a folder or metadata item is physically irreversible in Asset Core. The
-corresponding Access Core `object_permissions` rows are intentionally retained as
-historical grants; they cannot reveal or restore a resource because its Asset row
-no longer exists. Legacy `deleted_at` tombstones remain hidden and are purged only
-when they fall within the subtree of a folder being hard-deleted.
+Deleting a folder or metadata item creates an Asset tombstone. A Recycle Bin lifecycle
+unit records the deletion root and its 30-day retention window; a later purge may remove
+the Asset row physically. Access Core keeps `object_permissions` as historical grants
+instead of performing a cross-service cascade. Those rows cannot disclose a missing Asset
+row and do not restore it by themselves.
 
 ## Demo users & seed data
 
@@ -347,7 +350,7 @@ Not seeded by migrations — apply `infra/db/access/seed/demo_fixtures.sql` and
 | `admin@seta.com` | Seta Admin | `org_admin` | `...0001` |
 | `dungpd@seta.com` | Dung Pham Duc | `viewer`, `trainer_admin` | `...0002` |
 
-- `org_admin`: RBAC ceiling = all 4 actions on both `folder` and `metadata_item`.
+- `org_admin`: RBAC ceiling = all 3 actions on both `folder` and `metadata_item`.
 - `viewer`: RBAC ceiling = `read` only on both resource types.
 - `trainer_admin`: non-production global bypass, seeded on `dungpd@seta.com` for local
   testing; default-off unless explicitly enabled with a future expiry, and always inert
@@ -368,7 +371,7 @@ box.
 - **One org per user context per request.** A user can belong to multiple orgs, but every
   permission decision is scoped to a single `orgId` passed in — there's no cross-org
   query.
-- **Only two resource types** (`folder`, `metadata_item`) and a fixed, global set of four
+- **Only two resource types** (`folder`, `metadata_item`) and a fixed, global set of three
   actions. Organizations cannot define custom actions or resource types.
 - **`trainer_admin`/`org_admin` are reserved role codes** — orgs cannot repurpose them for
   regular roles.
@@ -378,8 +381,8 @@ box.
   This is intentional but easy to misread as a bug when testing: granting a viewer
   `write` on a specific folder does nothing until the org's `olp_enabled` flag is turned
   on.
-- **Hard-deleted resources retain historical grants** rather than cascading a
-  cross-service permission delete. This preserves audit history without creating
-  a partial cross-database mutation or a restore path.
+- **Purged resources retain historical grants** rather than cascading a cross-service
+  permission delete. This preserves audit history without creating a partial
+  cross-database mutation or a restore path.
 - Scope is sized for an intern training project: single-tenant defaults, ~100 users,
   ~10 orgs — not load-tested beyond that.

@@ -298,6 +298,25 @@ func TestMetadataRepository_SearchAndDelete_Integration(t *testing.T) {
 	if deletedCount != 1 {
 		t.Fatalf("expected deleted metadata row to remain as a tombstone, got %d row", deletedCount)
 	}
+	var metadataUnit domain.LifecycleUnit
+	if err := tx.Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ?", orgID, domain.LifecycleResourceMetadata, deleteItem.ID).
+		First(&metadataUnit).Error; err != nil {
+		t.Fatalf("load metadata lifecycle unit: %v", err)
+	}
+	if metadataUnit.State != domain.LifecycleDeleted || metadataUnit.OriginalFolderID == nil || *metadataUnit.OriginalFolderID != folderID {
+		t.Fatalf("unexpected metadata lifecycle unit: %#v", metadataUnit)
+	}
+	if metadataUnit.DeleteCompletedAt == nil || metadataUnit.RetentionUntil == nil || !metadataUnit.RetentionUntil.After(*metadataUnit.DeleteCompletedAt) {
+		t.Fatalf("expected metadata lifecycle retention timestamps, got %#v", metadataUnit)
+	}
+	var metadataLifecycleLinkCount int64
+	if err := tx.Raw("SELECT COUNT(*) FROM metadata_items WHERE id = ? AND lifecycle_unit_id = ?", deleteItem.ID, metadataUnit.ID).
+		Scan(&metadataLifecycleLinkCount).Error; err != nil {
+		t.Fatalf("verify metadata lifecycle link: %v", err)
+	}
+	if metadataLifecycleLinkCount != 1 {
+		t.Fatalf("expected deleted metadata to link to its lifecycle unit, got %d rows", metadataLifecycleLinkCount)
+	}
 	if err := repo.DeleteMetadataItem(ctx, orgID, userID, deleteItem.ID); !errors.Is(err, domain.ErrMetadataNotFound) {
 		t.Fatalf("expected ErrMetadataNotFound on double delete, got %v", err)
 	}
@@ -306,6 +325,22 @@ func TestMetadataRepository_SearchAndDelete_Integration(t *testing.T) {
 	}
 	if err := repo.DeleteMetadataItem(ctx, orgID, userID, uuid.NewString()); !errors.Is(err, domain.ErrMetadataNotFound) {
 		t.Fatalf("expected ErrMetadataNotFound for missing item, got %v", err)
+	}
+	var duplicateUnitCount int64
+	if err := tx.Raw("SELECT COUNT(*) FROM asset_lifecycle_units WHERE org_id = ? AND root_resource_id = ?", orgID, deleteItem.ID).
+		Scan(&duplicateUnitCount).Error; err != nil {
+		t.Fatalf("count duplicate-delete lifecycle units: %v", err)
+	}
+	if duplicateUnitCount != 1 {
+		t.Fatalf("expected exactly one lifecycle unit after a repeated delete, got %d", duplicateUnitCount)
+	}
+	var crossOrgUnitCount int64
+	if err := tx.Raw("SELECT COUNT(*) FROM asset_lifecycle_units WHERE root_resource_id = ?", combinedItem.ID).
+		Scan(&crossOrgUnitCount).Error; err != nil {
+		t.Fatalf("count cross-org lifecycle units: %v", err)
+	}
+	if crossOrgUnitCount != 0 {
+		t.Fatalf("expected a cross-org delete attempt to create no lifecycle unit, got %d", crossOrgUnitCount)
 	}
 
 	rollbackItem := createItem(orgID, folderID, "Soft Delete Rollback Target", nil, nil, nil)
@@ -331,6 +366,14 @@ func TestMetadataRepository_SearchAndDelete_Integration(t *testing.T) {
 	}
 	if rollbackCount != 1 {
 		t.Fatalf("expected rollback item to remain after failed soft delete, got %d row", rollbackCount)
+	}
+	var rollbackLifecycleCount int64
+	if err := tx.Raw("SELECT COUNT(*) FROM asset_lifecycle_units WHERE org_id = ? AND root_resource_type = ? AND root_resource_id = ?", orgID, domain.LifecycleResourceMetadata, rollbackItem.ID).
+		Scan(&rollbackLifecycleCount).Error; err != nil {
+		t.Fatalf("count rollback lifecycle units: %v", err)
+	}
+	if rollbackLifecycleCount != 0 {
+		t.Fatalf("expected failed metadata delete to roll back its lifecycle unit, got %d rows", rollbackLifecycleCount)
 	}
 	if err := tx.Exec("DROP TRIGGER kan37_reject_metadata_soft_delete ON metadata_items; DROP FUNCTION kan37_reject_metadata_soft_delete();").Error; err != nil {
 		t.Fatalf("drop rollback trigger: %v", err)

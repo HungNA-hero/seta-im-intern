@@ -138,10 +138,83 @@ func NewAssetHandler(mux *http.ServeMux, usecase domain.AssetUsecase, db *gorm.D
 	mux.HandleFunc("/internal/api/v1/folder-deletions/jobs", RequireActor(handler.HandleFolderDeletionJob))
 	mux.HandleFunc("/internal/api/v1/folder-deletions/jobs/cancel", RequireActor(handler.HandleFolderDeletionCancel))
 	mux.HandleFunc("/internal/api/v1/folder-deletions/jobs/retry", RequireActor(handler.HandleFolderDeletionRetry))
+	mux.HandleFunc("/internal/api/v1/recycle-bin", RequireActor(handler.HandleRecycleBin))
 	mux.HandleFunc("/internal/api/v1/metadata-items", RequireActor(handler.HandleMetadataItems))
 	mux.HandleFunc("/internal/api/v1/metadata-items/restore", RequireActor(handler.HandleRestoreMetadataItem))
 	mux.HandleFunc("/internal/api/v1/restore-facts/metadata-items", RequireActor(handler.HandleMetadataRestoreAuthorizationFact))
 	mux.HandleFunc("/internal/api/v1/metadata-items/search", RequireActor(handler.HandleSearchMetadataItems))
+}
+
+// HandleRecycleBin returns trusted candidate roots for Access Core to apply
+// object-level read authorization. It is never a public client endpoint.
+func (h *AssetHandler) HandleRecycleBin(w http.ResponseWriter, r *http.Request) {
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	queryValues := r.URL.Query()
+	orgID := queryValues.Get("orgId")
+	if orgID == "" {
+		writeLegacyError(w, r, "Missing orgId", http.StatusBadRequest)
+		return
+	}
+	if orgID != actor.OrgID {
+		writeLegacyError(w, r, "Organization context mismatch", http.StatusForbidden)
+		return
+	}
+
+	requestedLimit := 50
+	if queryValues.Has("limit") {
+		parsedLimit, parseErr := strconv.Atoi(queryValues.Get("limit"))
+		if parseErr != nil || parsedLimit < 1 || parsedLimit > maxCursorCandidateBatchSize {
+			writeError(w, r, http.StatusBadRequest, "CURSOR_INVALID")
+			return
+		}
+		requestedLimit = parsedLimit
+	}
+
+	filter := domain.RecycleBinFilter{Limit: requestedLimit + cursorDatabaseLookaheadRowCount}
+	hasAfterDeletedAt := queryValues.Has("afterDeletedAt")
+	hasAfterID := queryValues.Has("afterId")
+	if hasAfterDeletedAt != hasAfterID {
+		writeError(w, r, http.StatusBadRequest, "CURSOR_INVALID")
+		return
+	}
+	if hasAfterDeletedAt {
+		deletedAt, parseErr := time.Parse(time.RFC3339Nano, queryValues.Get("afterDeletedAt"))
+		afterID := queryValues.Get("afterId")
+		if parseErr != nil || uuid.Validate(afterID) != nil {
+			writeError(w, r, http.StatusBadRequest, "CURSOR_INVALID")
+			return
+		}
+		filter.AfterDeletedAt = &deletedAt
+		filter.AfterLifecycleID = &afterID
+	}
+
+	entries, err := h.usecase.ListRecycleBinEntries(r.Context(), orgID, filter)
+	if err != nil {
+		h.mapDomainError(w, r, err, "INTERNAL_ERROR")
+		return
+	}
+	if entries == nil {
+		entries = []domain.RecycleBinEntry{}
+	}
+	hasMore := len(entries) > requestedLimit
+	if hasMore {
+		entries = entries[:requestedLimit]
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{
+		"status":  "success",
+		"count":   len(entries),
+		"entries": entries,
+		"hasMore": hasMore,
+	})
 }
 
 func (h *AssetHandler) HandleHealth(w http.ResponseWriter, r *http.Request) {

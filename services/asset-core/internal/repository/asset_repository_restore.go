@@ -26,6 +26,21 @@ func nextAvailableDisplayValue(base string, used map[string]struct{}) string {
 	}
 }
 
+// completeLifecycleRestore closes the live Recycle Bin entry for one root. A
+// missing unit is tolerated for tombstones that predate KAN-82; a KAN-82
+// delete always has one and will transition it from DELETED to RESTORED in the
+// same transaction as the source-row restore.
+func completeLifecycleRestore(
+	tx *gorm.DB,
+	orgID string,
+	resourceType domain.LifecycleResourceType,
+	resourceID string,
+) error {
+	return tx.Model(&domain.LifecycleUnit{}).
+		Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ? AND state = ?", orgID, resourceType, resourceID, domain.LifecycleDeleted).
+		Update("state", domain.LifecycleRestored).Error
+}
+
 // GetFolderRestoreAuthorizationFact intentionally uses an unscoped lookup. It
 // is only exposed through a trusted internal endpoint and never through normal
 // public reads, which continue to hide tombstones.
@@ -157,7 +172,10 @@ func (r *assetRepository) RestoreFolder(ctx context.Context, orgID, userID, fold
 		now := time.Now().UTC()
 		if err := tx.Unscoped().Model(&domain.Folder{}).
 			Where("id = ? AND org_id = ? AND deleted_at IS NOT NULL", folder.ID, orgID).
-			Updates(map[string]any{"deleted_at": nil, "name": name, "updated_by": userID, "updated_at": now}).Error; err != nil {
+			Updates(map[string]any{"deleted_at": nil, "name": name, "updated_by": userID, "updated_at": now, "lifecycle_unit_id": nil}).Error; err != nil {
+			return err
+		}
+		if err := completeLifecycleRestore(tx, orgID, domain.LifecycleResourceFolder, folder.ID); err != nil {
 			return err
 		}
 		if err := tx.Unscoped().
@@ -261,7 +279,10 @@ func (r *assetRepository) RestoreMetadataItem(ctx context.Context, orgID, userID
 		now := time.Now().UTC()
 		if err := tx.Unscoped().Model(&domain.MetadataItem{}).
 			Where("id = ? AND deleted_at IS NOT NULL", item.ID).
-			Updates(map[string]any{"deleted_at": nil, "title": title, "updated_by": userID, "updated_at": now}).Error; err != nil {
+			Updates(map[string]any{"deleted_at": nil, "title": title, "updated_by": userID, "updated_at": now, "lifecycle_unit_id": nil}).Error; err != nil {
+			return err
+		}
+		if err := completeLifecycleRestore(tx, orgID, domain.LifecycleResourceMetadata, item.ID); err != nil {
 			return err
 		}
 		if err := tx.Unscoped().Table("metadata_items").

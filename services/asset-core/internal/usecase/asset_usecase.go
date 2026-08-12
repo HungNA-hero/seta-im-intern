@@ -52,6 +52,18 @@ func (u *assetUsecase) GetFolderRestoreAuthorizationFact(ctx context.Context, or
 	return u.repo.GetFolderRestoreAuthorizationFact(ctx, orgID, folderID)
 }
 
+// ListRecycleBinEntries validates the trusted keyset tuple used by the Access
+// Core candidate scan. It deliberately does not perform object authorization.
+func (u *assetUsecase) ListRecycleBinEntries(ctx context.Context, orgID string, filter domain.RecycleBinFilter) ([]domain.RecycleBinEntry, error) {
+	if filter.Limit <= 0 || filter.Limit > maxCursorDatabaseFetchLimit {
+		return nil, domain.ErrInvalidInput
+	}
+	if (filter.AfterDeletedAt == nil) != (filter.AfterLifecycleID == nil) {
+		return nil, domain.ErrCursorInvalid
+	}
+	return u.repo.ListRecycleBinEntries(ctx, orgID, filter)
+}
+
 func (u *assetUsecase) EnsureRefs(ctx context.Context, userID, orgID string) error {
 	return u.repo.EnsureRefs(ctx, userID, orgID)
 }
