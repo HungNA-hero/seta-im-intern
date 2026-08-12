@@ -116,6 +116,10 @@ services:
       ASSET_INTERNAL_API_TOKEN: ${ASSET_INTERNAL_API_TOKEN:-seta-dam-local-development-token}
       ASSET_REDIS_HOST: redis
       ASSET_REDIS_PORT: 6379
+      ASSET_KAFKA_BROKERS: kafka:9092
+      ASSET_KAFKA_MEDIA_TOPIC: ${ASSET_KAFKA_MEDIA_TOPIC:-media-processing.v1}
+      ASSET_KAFKA_MEDIA_DLQ_TOPIC: ${ASSET_KAFKA_MEDIA_DLQ_TOPIC:-media-processing-dlq.v1}
+      ASSET_KAFKA_MEDIA_GROUP_ID: ${ASSET_KAFKA_MEDIA_GROUP_ID:-media-workers-v1}
     ports:
       - "${GO_ASSET_CORE_PORT:-8080}:8080"
     depends_on:
@@ -168,13 +172,13 @@ services:
     image: apache/kafka:4.2.1
     container_name: ${SETA_COMPOSE_PREFIX:-seta}-kafka
     ports:
-      - "127.0.0.1:${KAFKA_HOST_PORT:-29092}:29092"
+      - "127.0.0.1:${KAFKA_HOST_PORT:-29092}:${KAFKA_HOST_PORT:-29092}"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,HOST://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,HOST://localhost:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,HOST://0.0.0.0:${KAFKA_HOST_PORT:-29092},CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,HOST://localhost:${KAFKA_HOST_PORT:-29092}
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
@@ -200,9 +204,9 @@ services:
       kafka:
         condition: service_healthy
     environment:
-      MEDIA_TOPIC: ${KAFKA_MEDIA_TOPIC:-media-processing.v1}
-      MEDIA_PARTITIONS: ${KAFKA_MEDIA_PARTITIONS:-3}
-      MEDIA_DLQ_TOPIC: ${KAFKA_MEDIA_DLQ_TOPIC:-media-processing-dlq.v1}
+      MEDIA_TOPIC: ${ASSET_KAFKA_MEDIA_TOPIC:-media-processing.v1}
+      MEDIA_PARTITIONS: ${ASSET_KAFKA_MEDIA_PARTITIONS:-3}
+      MEDIA_DLQ_TOPIC: ${ASSET_KAFKA_MEDIA_DLQ_TOPIC:-media-processing-dlq.v1}
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |

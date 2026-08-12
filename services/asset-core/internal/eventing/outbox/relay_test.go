@@ -10,15 +10,16 @@ import (
 )
 
 type fakeStore struct {
-	uncommitted []Record
-	claimable   []Record
-	claimedBy   []string
-	claimLimits []int
-	published   []uuid.UUID
-	rescheduled []uuid.UUID
-	claimErr    error
-	markErr     error
-	calls       *[]string
+	uncommitted    []Record
+	claimable      []Record
+	claimedBy      []string
+	claimLimits    []int
+	published      []uuid.UUID
+	rescheduled    []uuid.UUID
+	claimErr       error
+	markErr        error
+	calls          *[]string
+	leaseExpiresAt time.Time
 }
 
 func record(calls *[]string, call string) {
@@ -32,18 +33,22 @@ func (fake *fakeStore) commitTransaction() {
 	fake.uncommitted = nil
 }
 
-func (fake *fakeStore) Claim(_ context.Context, owner string, limit int) ([]Record, error) {
+func (fake *fakeStore) Claim(_ context.Context, owner string, limit int) (Claimed, error) {
 	fake.claimedBy = append(fake.claimedBy, owner)
 	fake.claimLimits = append(fake.claimLimits, limit)
 	if fake.claimErr != nil {
-		return nil, fake.claimErr
+		return Claimed{}, fake.claimErr
 	}
 	claimed := fake.claimable
 	if len(claimed) > limit {
 		claimed = claimed[:limit]
 	}
 	fake.claimable = fake.claimable[len(claimed):]
-	return claimed, nil
+	leaseExpiresAt := fake.leaseExpiresAt
+	if leaseExpiresAt.IsZero() {
+		leaseExpiresAt = time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
+	return Claimed{Records: claimed, LeaseExpiresAt: leaseExpiresAt}, nil
 }
 
 func (fake *fakeStore) MarkPublished(_ context.Context, eventID uuid.UUID, _ time.Time) error {
@@ -55,7 +60,7 @@ func (fake *fakeStore) MarkPublished(_ context.Context, eventID uuid.UUID, _ tim
 	return nil
 }
 
-func (fake *fakeStore) Reschedule(_ context.Context, eventID uuid.UUID, _ time.Time, _ string) error {
+func (fake *fakeStore) Reschedule(_ context.Context, eventID uuid.UUID, _ time.Time, _ int, _ string) error {
 	record(fake.calls, "reschedule:"+eventID.String())
 	fake.rescheduled = append(fake.rescheduled, eventID)
 	return nil
@@ -216,12 +221,15 @@ type leasedStore struct {
 	claimsBy []string
 }
 
-func (fake *leasedStore) Claim(_ context.Context, owner string, _ int) ([]Record, error) {
+func (fake *leasedStore) Claim(_ context.Context, owner string, _ int) (Claimed, error) {
 	fake.claimsBy = append(fake.claimsBy, owner)
 	if fake.marked {
-		return nil, nil
+		return Claimed{}, nil
 	}
-	return []Record{fake.record}, nil
+	return Claimed{
+		Records:        []Record{fake.record},
+		LeaseExpiresAt: time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+	}, nil
 }
 
 func (fake *leasedStore) MarkPublished(_ context.Context, _ uuid.UUID, _ time.Time) error {
@@ -232,7 +240,7 @@ func (fake *leasedStore) MarkPublished(_ context.Context, _ uuid.UUID, _ time.Ti
 	return nil
 }
 
-func (fake *leasedStore) Reschedule(_ context.Context, _ uuid.UUID, _ time.Time, _ string) error {
+func (fake *leasedStore) Reschedule(_ context.Context, _ uuid.UUID, _ time.Time, _ int, _ string) error {
 	return nil
 }
 
@@ -274,5 +282,114 @@ func TestARestartedRelayReclaimsTheLeaseAndRepublishesTheSameEventID(t *testing.
 	}
 	if len(store.claimsBy) != 2 || store.claimsBy[0] != "relay-1" || store.claimsBy[1] != "relay-2" {
 		t.Fatalf("claims = %v, want the expired lease reclaimed by a different owner", store.claimsBy)
+	}
+}
+
+func TestRelayBacksOffExponentiallyUsingTheTransportAttemptItPasses(t *testing.T) {
+	claimedAt := time.Date(2026, 8, 12, 10, 0, 0, 0, time.UTC)
+	retried := testRecord("job-1")
+	retried.AttemptCount = 3
+	store := &attemptRecordingStore{claimable: []Record{retried}}
+
+	relay := NewRelay(store, &fakePublisher{err: errPublishFailed}, RelayOptions{
+		Owner:       "relay-1",
+		BatchSize:   10,
+		BaseBackoff: time.Second,
+		MaxBackoff:  time.Minute,
+		Now:         fixedClock(claimedAt),
+		Jitter:      func(backoff time.Duration) time.Duration { return backoff },
+	})
+	if _, err := relay.DrainOnce(context.Background()); err != nil {
+		t.Fatalf("DrainOnce returned error: %v", err)
+	}
+
+	if store.attemptCounts[0] != 4 {
+		t.Fatalf("rescheduled attempt count = %d, want 4 so the adapter persists the transport attempt the relay computed", store.attemptCounts[0])
+	}
+	if delay := store.nextAttempts[0].Sub(claimedAt); delay != 8*time.Second {
+		t.Fatalf("backoff = %v, want 8s (1s doubled three times) rather than a flat base delay", delay)
+	}
+}
+
+func TestRelayBoundsItsDrainByTheLeaseTheDatabaseStamped(t *testing.T) {
+	ResetMetricsForTests()
+	t.Cleanup(ResetMetricsForTests)
+
+	claimedAt := time.Date(2026, 8, 12, 10, 0, 0, 0, time.UTC)
+	clock := claimedAt
+	store := &attemptRecordingStore{
+		claimable:      []Record{testRecord("job-1"), testRecord("job-2"), testRecord("job-3")},
+		leaseExpiresAt: claimedAt.Add(6 * time.Second),
+	}
+	publisher := &clockAdvancingPublisher{clock: &clock, step: 4 * time.Second}
+
+	relay := NewRelay(store, publisher, RelayOptions{
+		Owner:       "relay-1",
+		BatchSize:   10,
+		LeaseMargin: 3 * time.Second,
+		Now:         func() time.Time { return clock },
+	})
+
+	settled, err := relay.DrainOnce(context.Background())
+	if err != nil {
+		t.Fatalf("DrainOnce returned error: %v", err)
+	}
+
+	if settled != 1 {
+		t.Fatalf("settled = %d, want 1 — the relay must use the database-stamped 6s lease", settled)
+	}
+	if Metrics().LeaseExhaustedTotal != 1 {
+		t.Fatalf("LeaseExhaustedTotal = %d, want 1", Metrics().LeaseExhaustedTotal)
+	}
+}
+
+type attemptRecordingStore struct {
+	claimable      []Record
+	leaseExpiresAt time.Time
+	omitLease      bool
+	attemptCounts  []int
+	nextAttempts   []time.Time
+}
+
+func (fake *attemptRecordingStore) Claim(_ context.Context, _ string, limit int) (Claimed, error) {
+	claimed := fake.claimable
+	if len(claimed) > limit {
+		claimed = claimed[:limit]
+	}
+	fake.claimable = fake.claimable[len(claimed):]
+	leaseExpiresAt := fake.leaseExpiresAt
+	if leaseExpiresAt.IsZero() && !fake.omitLease {
+		leaseExpiresAt = time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
+	return Claimed{Records: claimed, LeaseExpiresAt: leaseExpiresAt}, nil
+}
+
+func (fake *attemptRecordingStore) MarkPublished(_ context.Context, _ uuid.UUID, _ time.Time) error {
+	return nil
+}
+
+func (fake *attemptRecordingStore) Reschedule(_ context.Context, _ uuid.UUID, nextAttemptAt time.Time, attemptCount int, _ string) error {
+	fake.attemptCounts = append(fake.attemptCounts, attemptCount)
+	fake.nextAttempts = append(fake.nextAttempts, nextAttemptAt)
+	return nil
+}
+
+func TestRelayFailsClosedWhenAClaimHasNoLeaseExpiry(t *testing.T) {
+	store := &attemptRecordingStore{
+		claimable: []Record{testRecord("job-1")},
+		omitLease: true,
+	}
+	publisher := &fakePublisher{}
+
+	settled, err := NewRelay(store, publisher, RelayOptions{
+		Owner:     "relay-1",
+		BatchSize: 10,
+	}).DrainOnce(context.Background())
+
+	if !errors.Is(err, ErrMissingLeaseExpiry) {
+		t.Fatalf("err = %v, want ErrMissingLeaseExpiry", err)
+	}
+	if settled != 0 || len(publisher.publishedKeys) != 0 {
+		t.Fatalf("settled = %d, published = %v; a lease-less claim must never be published", settled, publisher.publishedKeys)
 	}
 }

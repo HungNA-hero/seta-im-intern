@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Envelope struct {
@@ -21,7 +23,8 @@ type Envelope struct {
 var (
 	ErrMalformed      = errors.New("envelope is not valid JSON")
 	ErrUnknownVersion = errors.New("unknown schema version")
-	ErrMissingField   = errors.New("required envelope field missing or malformed")
+	ErrMissingField   = errors.New("required envelope field missing")
+	ErrInvalidField   = errors.New("envelope field has an invalid format")
 )
 
 func Parse(value []byte, knownVersions []int) (Envelope, error) {
@@ -46,6 +49,12 @@ func Parse(value []byte, knownVersions []int) (Envelope, error) {
 	}
 	if envelope.OccurredAt.IsZero() {
 		return Envelope{}, fmt.Errorf("%w: occurredAt", ErrMissingField)
+	}
+
+	for name, identifier := range map[string]string{"eventId": envelope.EventID, "orgId": envelope.OrgID} {
+		if _, err := uuid.Parse(identifier); err != nil {
+			return Envelope{}, fmt.Errorf("%w: %s is not a UUID", ErrInvalidField, name)
+		}
 	}
 	return envelope, nil
 }

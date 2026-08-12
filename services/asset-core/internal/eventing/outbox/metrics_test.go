@@ -67,15 +67,17 @@ func TestRelayStopsDrainingBeforeItsLeaseExpires(t *testing.T) {
 
 	claimedAt := time.Date(2026, 8, 12, 10, 0, 0, 0, time.UTC)
 	clock := claimedAt
-	store := &fakeStore{claimable: []Record{testRecord("job-1"), testRecord("job-2"), testRecord("job-3")}}
+	store := &fakeStore{
+		claimable:      []Record{testRecord("job-1"), testRecord("job-2"), testRecord("job-3")},
+		leaseExpiresAt: claimedAt.Add(10 * time.Second),
+	}
 	slowPublisher := &clockAdvancingPublisher{clock: &clock, step: 4 * time.Second}
 
 	relay := NewRelay(store, slowPublisher, RelayOptions{
-		Owner:         "relay-1",
-		BatchSize:     10,
-		LeaseDuration: 10 * time.Second,
-		LeaseMargin:   3 * time.Second,
-		Now:           func() time.Time { return clock },
+		Owner:       "relay-1",
+		BatchSize:   10,
+		LeaseMargin: 3 * time.Second,
+		Now:         func() time.Time { return clock },
 	})
 
 	settled, err := relay.DrainOnce(context.Background())
@@ -104,4 +106,41 @@ func (fake *clockAdvancingPublisher) Publish(_ context.Context, _ string, key st
 	*fake.clock = fake.clock.Add(fake.step)
 	fake.published = append(fake.published, key)
 	return nil
+}
+
+type deadlineRecordingPublisher struct {
+	deadlines   []time.Time
+	hadDeadline []bool
+}
+
+func (fake *deadlineRecordingPublisher) Publish(ctx context.Context, _ string, _ string, _ []byte) error {
+	deadline, ok := ctx.Deadline()
+	fake.deadlines = append(fake.deadlines, deadline)
+	fake.hadDeadline = append(fake.hadDeadline, ok)
+	return nil
+}
+
+func TestRelayGivesEachPublishADeadlineBeforeTheLeaseMargin(t *testing.T) {
+	claimedAt := time.Date(2026, 8, 12, 10, 0, 0, 0, time.UTC)
+	leaseExpiresAt := claimedAt.Add(6 * time.Second)
+	store := &attemptRecordingStore{claimable: []Record{testRecord("job-1")}, leaseExpiresAt: leaseExpiresAt}
+	publisher := &deadlineRecordingPublisher{}
+
+	relay := NewRelay(store, publisher, RelayOptions{
+		Owner:       "relay-1",
+		BatchSize:   10,
+		LeaseMargin: 2 * time.Second,
+		Now:         fixedClock(claimedAt),
+	})
+	if _, err := relay.DrainOnce(context.Background()); err != nil {
+		t.Fatalf("DrainOnce returned error: %v", err)
+	}
+
+	if !publisher.hadDeadline[0] {
+		t.Fatal("publish ran with no deadline; a write outlasting the lease can land after another relay reclaims the row")
+	}
+	wantDeadline := leaseExpiresAt.Add(-2 * time.Second)
+	if !publisher.deadlines[0].Equal(wantDeadline) {
+		t.Fatalf("publish deadline = %v, want %v so acknowledgement marking retains the lease margin", publisher.deadlines[0], wantDeadline)
+	}
 }
