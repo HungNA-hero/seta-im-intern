@@ -17,6 +17,7 @@ type Record struct {
 	Key          string
 	Payload      []byte
 	AttemptCount int
+	EnqueuedAt   time.Time
 }
 
 // Store is implemented once per feature, against that feature's own outbox table.
@@ -32,19 +33,22 @@ type Store interface {
 }
 
 // Publisher returns only after the broker durably acknowledges the record.
-// Implementations must enable idempotent production and acks=all.
+// Implementations must use acks=all. Duplicate records are tolerated, so
+// enabling Kafka's idempotent producer protocol is optional.
 type Publisher interface {
 	Publish(ctx context.Context, topic, key string, payload []byte) error
 }
 
 // RelayOptions configures one relay instance.
 type RelayOptions struct {
-	Owner       string
-	BatchSize   int
-	BaseBackoff time.Duration
-	MaxBackoff  time.Duration
-	Now         func() time.Time
-	Jitter      func(time.Duration) time.Duration
+	Owner         string
+	BatchSize     int
+	BaseBackoff   time.Duration
+	MaxBackoff    time.Duration
+	Now           func() time.Time
+	Jitter        func(time.Duration) time.Duration
+	LeaseDuration time.Duration
+	LeaseMargin   time.Duration
 }
 
 var ErrOutboxNotUpdated = errors.New("outbox row not updated after broker acknowledgement")
@@ -96,25 +100,53 @@ func (relay *Relay) DrainOnce(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
+	leaseExpiresAt := relay.now().Add(relay.options.LeaseDuration)
+
 	settled := 0
 	var unsettled error
 	for _, outboxRecord := range records {
+		if relay.leaseTooShort(leaseExpiresAt) {
+			leaseExhaustedTotal.Add(1)
+			break
+		}
+
 		publishErr := relay.publisher.Publish(ctx, outboxRecord.Topic, outboxRecord.Key, outboxRecord.Payload)
 		if publishErr != nil {
+			publishFailureTotal.Add(1)
 			nextAttemptAt := relay.now().Add(relay.backoffFor(outboxRecord.AttemptCount))
 			if rescheduleErr := relay.store.Reschedule(ctx, outboxRecord.EventID, nextAttemptAt, transportErrorCode(publishErr)); rescheduleErr != nil {
 				unsettled = errors.Join(unsettled, rescheduleErr)
 			}
 			continue
 		}
+		publishedTotal.Add(1)
+		relay.recordDeliveryLag(outboxRecord)
 
 		if markErr := relay.store.MarkPublished(ctx, outboxRecord.EventID, relay.now()); markErr != nil {
+			outboxUpdateFailureTotal.Add(1)
 			unsettled = errors.Join(unsettled, fmt.Errorf("%w: event %s reached the broker but its outbox row was not updated: %w", ErrOutboxNotUpdated, outboxRecord.EventID, markErr))
 			continue
 		}
 		settled++
 	}
 	return settled, unsettled
+}
+
+// leaseTooShort stops a drain before the relay's own lease expires. Publishing
+// under an expired lease races the relay that reclaimed the row, so the batch
+// ends and the remaining rows stay claimable.
+func (relay *Relay) leaseTooShort(leaseExpiresAt time.Time) bool {
+	if relay.options.LeaseDuration <= 0 {
+		return false
+	}
+	return relay.now().Add(relay.options.LeaseMargin).After(leaseExpiresAt)
+}
+
+func (relay *Relay) recordDeliveryLag(outboxRecord Record) {
+	if outboxRecord.EnqueuedAt.IsZero() {
+		return
+	}
+	lastDeliveryLagMillis.Store(relay.now().Sub(outboxRecord.EnqueuedAt).Milliseconds())
 }
 
 func (relay *Relay) backoffFor(attemptCount int) time.Duration {

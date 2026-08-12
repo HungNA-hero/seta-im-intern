@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"seta-im-intern/go-asset-core/internal/eventing/event"
+	"seta-im-intern/go-asset-core/internal/requestcontext"
 )
 
 type Record struct {
@@ -71,12 +72,15 @@ func (consumer *Consumer) Deliver(ctx context.Context, record Record) (Outcome, 
 		return consumer.isolate(ctx, record, reasonFor(err))
 	}
 
-	if err := consumer.effect.Apply(ctx, envelope); err != nil {
+	if err := consumer.effect.Apply(correlated(ctx, envelope), envelope); err != nil {
 		if errors.Is(err, ErrAlreadyApplied) {
+			duplicateTotal.Add(1)
 			return CommitOffset, nil
 		}
+		transientFailureTotal.Add(1)
 		return LeaveUncommitted, err
 	}
+	appliedTotal.Add(1)
 	return CommitOffset, nil
 }
 
@@ -110,8 +114,10 @@ func (consumer *Consumer) isolate(ctx context.Context, record Record, reason str
 	}
 
 	if err := consumer.quarantine.Isolate(ctx, quarantined); err != nil {
+		transientFailureTotal.Add(1)
 		return LeaveUncommitted, fmt.Errorf("isolating %s at %s/%d/%d: %w", reason, record.Topic, record.Partition, record.Offset, err)
 	}
+	quarantinedTotal.Add(1)
 	return CommitOffset, nil
 }
 
@@ -129,4 +135,16 @@ func (consumer *Consumer) now() time.Time {
 		return consumer.options.Now()
 	}
 	return time.Now().UTC()
+}
+
+func correlated(ctx context.Context, envelope event.Envelope) context.Context {
+	traceID := event.ParseTraceID(envelope.Traceparent)
+	if traceID == "" {
+		return ctx
+	}
+	return requestcontext.WithCorrelation(ctx, &requestcontext.Correlation{
+		TraceID:   traceID,
+		RequestID: envelope.EventID,
+		StartedAt: time.Now().UTC(),
+	})
 }

@@ -160,6 +160,62 @@ services:
       timeout: 3s
       retries: 10
 
+  # Local development topology only: single-node combined KRaft, replication
+  # factor 1, PLAINTEXT, bound to localhost. Production requires at least three
+  # brokers with replication factor 3, min.insync.replicas 2, and TLS+SASL —
+  # see docs/kan-81-kafka-outbox-transport-seam.md.
+  kafka:
+    image: apache/kafka:4.2.1
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-kafka
+    ports:
+      - "127.0.0.1:${KAFKA_HOST_PORT:-29092}:29092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,HOST://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID:-5L6g3nShT-eMCtK--X86sw}
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
+  kafka-init:
+    image: apache/kafka:4.2.1
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      MEDIA_TOPIC: ${KAFKA_MEDIA_TOPIC:-media-processing.v1}
+      MEDIA_PARTITIONS: ${KAFKA_MEDIA_PARTITIONS:-3}
+      MEDIA_DLQ_TOPIC: ${KAFKA_MEDIA_DLQ_TOPIC:-media-processing-dlq.v1}
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 \
+          --create --if-not-exists --topic "$$MEDIA_TOPIC" \
+          --partitions "$$MEDIA_PARTITIONS" --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 \
+          --create --if-not-exists --topic "$$MEDIA_DLQ_TOPIC" \
+          --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+    restart: "no"
+
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.111.0
     container_name: ${SETA_COMPOSE_PREFIX:-seta}-otel-collector
@@ -184,3 +240,4 @@ volumes:
   asset_db_data:
   access_db_data:
   redis_data:
+  kafka_data:

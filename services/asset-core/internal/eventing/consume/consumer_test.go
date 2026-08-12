@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"seta-im-intern/go-asset-core/internal/eventing/event"
+	"seta-im-intern/go-asset-core/internal/requestcontext"
 )
 
 type fakeEffect struct {
@@ -250,4 +251,47 @@ func TestARestartedConsumerCarriesNoInMemoryDeduplicationState(t *testing.T) {
 	if len(quarantine.isolated) != 0 {
 		t.Fatalf("redelivery after restart was quarantined: %v", quarantine.isolated)
 	}
+}
+
+func TestConsumerPropagatesTheEnvelopeTraceIDIntoTheEffectContext(t *testing.T) {
+	effect := &traceRecordingEffect{}
+	consumer := testConsumer(effect, &fakeQuarantine{})
+	traced := strings.Replace(
+		validEnvelope,
+		`"orgId"`,
+		`"traceparent":"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01","orgId"`,
+		1,
+	)
+
+	if _, err := consumer.Deliver(context.Background(), testRecord(traced)); err != nil {
+		t.Fatalf("Deliver returned error: %v", err)
+	}
+
+	if effect.traceID != "4bf92f3577b34da6a3ce929d0e0e4736" {
+		t.Fatalf("effect saw trace ID %q, want the producing request's trace ID", effect.traceID)
+	}
+}
+
+func TestConsumerLeavesTheEffectContextUncorrelatedWhenNoTraceparentIsPresent(t *testing.T) {
+	effect := &traceRecordingEffect{}
+	consumer := testConsumer(effect, &fakeQuarantine{})
+
+	if _, err := consumer.Deliver(context.Background(), testRecord(validEnvelope)); err != nil {
+		t.Fatalf("Deliver returned error: %v", err)
+	}
+
+	if effect.traceID != "" {
+		t.Fatalf("effect saw invented trace ID %q, want none for an event with no originating request", effect.traceID)
+	}
+}
+
+type traceRecordingEffect struct {
+	traceID string
+}
+
+func (fake *traceRecordingEffect) Apply(ctx context.Context, _ event.Envelope) error {
+	if correlation := requestcontext.GetCorrelation(ctx); correlation != nil {
+		fake.traceID = correlation.TraceID
+	}
+	return nil
 }
