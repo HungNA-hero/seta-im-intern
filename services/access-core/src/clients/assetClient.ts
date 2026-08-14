@@ -11,6 +11,7 @@ export type {
   AssetFactReader,
   FolderMeta,
   FolderRestoreAuthorizationFact,
+  LifecycleRestoreAuthorizationFact,
   MetadataItemMeta,
   MetadataRestoreAuthorizationFact,
 } from "./assetFacts";
@@ -23,6 +24,9 @@ export {
   RECYCLE_BIN_PATH,
   RESTORE_FOLDER_FACTS_PATH,
   RESTORE_METADATA_FACTS_PATH,
+  LIFECYCLE_JOBS_PATH,
+  LIFECYCLE_RESTORE_FACTS_PATH,
+  LIFECYCLE_RESTORE_PATH,
 } from "./assetPaths";
 
 export { throwAssetCoreError, unwrap204, unwrapEnvelope, unwrapListEnvelope } from "./assetErrors";
@@ -56,6 +60,7 @@ const assetFactReader = createAssetFactReader({
 
 export const getFolderRestoreAuthorizationFact = assetFactReader.getFolderRestoreAuthorizationFact;
 export const getMetadataRestoreAuthorizationFact = assetFactReader.getMetadataRestoreAuthorizationFact;
+export const getLifecycleRestoreAuthorizationFact = assetFactReader.getLifecycleRestoreAuthorizationFact;
 export const getFolderMeta = assetFactReader.getFolderMeta;
 export const getFolderMetaBatch = assetFactReader.getFolderMetaBatch;
 export const getMetadataMeta = assetFactReader.getMetadataMeta;

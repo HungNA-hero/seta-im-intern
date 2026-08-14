@@ -133,6 +133,9 @@ func NewAssetHandler(mux *http.ServeMux, usecase domain.AssetUsecase, db *gorm.D
 	mux.HandleFunc("/internal/api/v1/folders/restore", RequireActor(handler.HandleRestoreFolder))
 	mux.HandleFunc("/internal/api/v1/facts/folders", RequireActor(handler.HandleFolderFacts))
 	mux.HandleFunc("/internal/api/v1/restore-facts/folders", RequireActor(handler.HandleFolderRestoreAuthorizationFact))
+	mux.HandleFunc("/internal/api/v1/lifecycle-units/restore-facts", RequireActor(handler.HandleLifecycleRestoreAuthorizationFact))
+	mux.HandleFunc("/internal/api/v1/lifecycle-units/restore", RequireActor(handler.HandleQueueLifecycleRestore))
+	mux.HandleFunc("/internal/api/v1/lifecycle-jobs", RequireActor(handler.HandleLifecycleJob))
 	mux.HandleFunc("/internal/api/v1/folder-deletions/preview", RequireActor(handler.HandleFolderDeletionPreview))
 	mux.HandleFunc("/internal/api/v1/folder-deletions/confirm", RequireActor(handler.HandleFolderDeletionConfirm))
 	mux.HandleFunc("/internal/api/v1/folder-deletions/jobs", RequireActor(handler.HandleFolderDeletionJob))
@@ -701,6 +704,14 @@ func (h *AssetHandler) mapDomainError(w http.ResponseWriter, r *http.Request, er
 		writeError(w, r, http.StatusConflict, "FOLDER_NOT_EMPTY")
 	case errors.Is(err, domain.ErrFolderNotDeleted):
 		writeError(w, r, http.StatusConflict, "FOLDER_NOT_DELETED")
+	case errors.Is(err, domain.ErrRestoreParentDeleted):
+		writeError(w, r, http.StatusConflict, "RESTORE_PARENT_DELETED")
+	case errors.Is(err, domain.ErrLifecycleUnitNotFound):
+		writeError(w, r, http.StatusNotFound, "LIFECYCLE_UNIT_NOT_FOUND")
+	case errors.Is(err, domain.ErrLifecycleUnitNotRestorable):
+		writeError(w, r, http.StatusConflict, "LIFECYCLE_UNIT_NOT_RESTORABLE")
+	case errors.Is(err, domain.ErrLifecycleJobNotFound):
+		writeError(w, r, http.StatusNotFound, "LIFECYCLE_JOB_NOT_FOUND")
 	case errors.Is(err, domain.ErrFolderParentDeleted):
 		writeError(w, r, http.StatusConflict, "FOLDER_PARENT_DELETED")
 	case errors.Is(err, domain.ErrCycleDetected):
@@ -1217,6 +1228,81 @@ func (h *AssetHandler) HandleMetadataRestoreAuthorizationFact(w http.ResponseWri
 		return
 	}
 	writeJSON(w, r, http.StatusOK, map[string]any{"fact": fact})
+}
+
+// HandleLifecycleRestoreAuthorizationFact resolves a lifecycle unit to the
+// original protected resource for Access Core. The fact is intentionally not a
+// public Recycle Bin read and contains no member or display data.
+func (h *AssetHandler) HandleLifecycleRestoreAuthorizationFact(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
+		return
+	}
+	orgID, unitID, ok := requireDeletionOrgAndID(w, r, actor, "unitId")
+	if !ok {
+		return
+	}
+	fact, err := h.usecase.GetLifecycleRestoreAuthorizationFact(r.Context(), orgID, unitID)
+	if err != nil {
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
+		return
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{"fact": fact})
+}
+
+// HandleQueueLifecycleRestore only creates a durable restore job. It never
+// restores source rows in the request path; normal reads remain hidden until a
+// worker finishes the complete lifecycle unit.
+func (h *AssetHandler) HandleQueueLifecycleRestore(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
+		return
+	}
+	orgID, unitID, ok := requireDeletionOrgAndID(w, r, actor, "unitId")
+	if !ok {
+		return
+	}
+	job, err := h.usecase.QueueLifecycleRestore(r.Context(), orgID, actor.UserID, unitID)
+	if err != nil {
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
+		return
+	}
+	writeJSON(w, r, http.StatusAccepted, map[string]any{"job": job})
+}
+
+// HandleLifecycleJob returns a same-org job only through the trusted internal
+// boundary. Access Core still evaluates current write permission on its root
+// before returning the public status payload.
+func (h *AssetHandler) HandleLifecycleJob(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeLegacyError(w, r, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	actor, err := requestcontext.GetActor(r.Context())
+	if err != nil {
+		writeLegacyError(w, r, "Missing actor context", http.StatusInternalServerError)
+		return
+	}
+	orgID, jobID, ok := requireDeletionOrgAndID(w, r, actor, "id")
+	if !ok {
+		return
+	}
+	job, err := h.usecase.GetLifecycleJob(r.Context(), orgID, jobID)
+	if err != nil {
+		h.mapDomainError(w, r, err, "BAD_REQUEST")
+		return
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{"job": job})
 }
 
 func writeJSON(w http.ResponseWriter, r *http.Request, statusCode int, payload any) {

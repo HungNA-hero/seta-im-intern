@@ -6,6 +6,7 @@ import { canDoResolvers } from "./canDoResolvers";
 import { folderResolvers } from "./folderResolvers";
 import { metadataResolvers } from "./metadataResolvers";
 import { recycleBinResolvers } from "./recycleBinResolvers";
+import { lifecycleResolvers } from "./lifecycleResolvers";
 
 export const resolvers = {
   Query: {
@@ -17,6 +18,7 @@ export const resolvers = {
     ...folderResolvers.Query,
     ...metadataResolvers.Query,
     ...recycleBinResolvers.Query,
+    ...lifecycleResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,
@@ -25,6 +27,7 @@ export const resolvers = {
     ...permissionResolvers.Mutation,
     ...folderResolvers.Mutation,
     ...metadataResolvers.Mutation,
+    ...lifecycleResolvers.Mutation,
   },
   Folder: folderResolvers.Folder,
 };

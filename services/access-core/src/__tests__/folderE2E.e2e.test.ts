@@ -2,15 +2,17 @@ import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { Client } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
+import { createCanDoMock } from "./helpers/canDoMock";
 import { prisma } from "../db/prisma";
 import { buildServer } from "../server";
 
-const { mockCanDo } = vi.hoisted(() => ({
+const { mockCanDo, mockFilterAllowedResourceIds } = vi.hoisted(() => ({
   mockCanDo: vi.fn(),
+  mockFilterAllowedResourceIds: vi.fn(),
 }));
 
 // Policy is the only injected boundary; authentication and org membership use Access DB.
-vi.mock("../authz/decision", () => ({ canDo: mockCanDo }));
+vi.mock("../authz/decision", () => createCanDoMock(mockCanDo, mockFilterAllowedResourceIds));
 
 const ORG_ID = "00000000-0000-0000-0000-000000000010";
 const USER_ID = "00000000-0000-0000-0000-000000000001";
@@ -131,7 +133,11 @@ afterAll(async () => {
 beforeEach(() => {
   vi.restoreAllMocks();
   mockCanDo.mockReset();
+  mockFilterAllowedResourceIds.mockReset();
   mockCanDo.mockResolvedValue({ allowed: true, reason: null });
+  mockFilterAllowedResourceIds.mockImplementation(
+    async (_userId, _orgId, _action, _resourceType, resourceIds) => new Set(resourceIds),
+  );
 });
 
 describe("KAN-36 folder GraphQL to PostgreSQL E2E", () => {

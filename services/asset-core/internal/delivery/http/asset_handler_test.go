@@ -44,14 +44,20 @@ type fakeAssetUsecase struct {
 	recycleBinErr       error
 	recycleBinFilter    domain.RecycleBinFilter
 
-	moveFolderFunc         func(ctx context.Context, orgID, userID, folderID string, input domain.MoveFolderInput) (domain.Folder, error)
-	deleteFolderFunc       func(ctx context.Context, orgID, userID, folderID string) error
-	restoreFolderFunc      func(ctx context.Context, orgID, userID, folderID string) (domain.Folder, error)
-	restoreMetadataFunc    func(ctx context.Context, orgID, userID, metadataID string) (domain.MetadataItem, error)
-	folderRestoreFact      domain.FolderRestoreAuthorizationFact
-	folderRestoreFactErr   error
-	metadataRestoreFact    domain.MetadataRestoreAuthorizationFact
-	metadataRestoreFactErr error
+	moveFolderFunc          func(ctx context.Context, orgID, userID, folderID string, input domain.MoveFolderInput) (domain.Folder, error)
+	deleteFolderFunc        func(ctx context.Context, orgID, userID, folderID string) error
+	restoreFolderFunc       func(ctx context.Context, orgID, userID, folderID string) (domain.Folder, error)
+	restoreMetadataFunc     func(ctx context.Context, orgID, userID, metadataID string) (domain.MetadataItem, error)
+	folderRestoreFact       domain.FolderRestoreAuthorizationFact
+	folderRestoreFactErr    error
+	metadataRestoreFact     domain.MetadataRestoreAuthorizationFact
+	metadataRestoreFactErr  error
+	lifecycleRestoreFact    domain.LifecycleRestoreAuthorizationFact
+	lifecycleRestoreFactErr error
+	lifecycleJob            domain.LifecycleJob
+	lifecycleJobErr         error
+	queuedLifecycleJob      domain.LifecycleJob
+	queuedLifecycleJobErr   error
 }
 
 func (f *fakeAssetUsecase) GetFolderTree(_ context.Context, orgID, rootPath string) ([]domain.Folder, error) {
@@ -147,6 +153,20 @@ func (f *fakeAssetUsecase) GetFolderRestoreAuthorizationFact(_ context.Context, 
 	return f.folderRestoreFact, f.folderRestoreFactErr
 }
 
+func (f *fakeAssetUsecase) GetLifecycleRestoreAuthorizationFact(_ context.Context, orgID, unitID string) (domain.LifecycleRestoreAuthorizationFact, error) {
+	f.called = true
+	f.methodCalled = "GetLifecycleRestoreAuthorizationFact"
+	f.orgID = orgID
+	return f.lifecycleRestoreFact, f.lifecycleRestoreFactErr
+}
+
+func (f *fakeAssetUsecase) GetLifecycleJob(_ context.Context, orgID, jobID string) (domain.LifecycleJob, error) {
+	f.called = true
+	f.methodCalled = "GetLifecycleJob"
+	f.orgID = orgID
+	return f.lifecycleJob, f.lifecycleJobErr
+}
+
 func (f *fakeAssetUsecase) ListRecycleBinEntries(_ context.Context, orgID string, filter domain.RecycleBinFilter) ([]domain.RecycleBinEntry, error) {
 	f.called = true
 	f.methodCalled = "ListRecycleBinEntries"
@@ -163,6 +183,13 @@ func (f *fakeAssetUsecase) RestoreFolder(ctx context.Context, orgID, userID, fol
 		return f.restoreFolderFunc(ctx, orgID, userID, folderID)
 	}
 	return domain.Folder{}, nil
+}
+
+func (f *fakeAssetUsecase) QueueLifecycleRestore(_ context.Context, orgID, _, _ string) (domain.LifecycleJob, error) {
+	f.called = true
+	f.methodCalled = "QueueLifecycleRestore"
+	f.orgID = orgID
+	return f.queuedLifecycleJob, f.queuedLifecycleJobErr
 }
 
 func (f *fakeAssetUsecase) EnsureRefs(_ context.Context, userID, orgID string) error {
@@ -609,5 +636,108 @@ func TestHandleFolderFactsRejectsOrganizationMismatchBeforeUsecase(t *testing.T)
 	}
 	if usecase.called {
 		t.Fatal("expected organization mismatch to be rejected before the use case")
+	}
+}
+
+func TestHandleLifecycleRestoreAuthorizationFactReturnsTrustedRootFact(t *testing.T) {
+	const userID = "00000000-0000-0000-0000-000000000001"
+	const orgID = "00000000-0000-0000-0000-000000000002"
+	const unitID = "10000000-0000-0000-0000-000000000000"
+	const rootID = "20000000-0000-0000-0000-000000000000"
+
+	usecase := &fakeAssetUsecase{lifecycleRestoreFact: domain.LifecycleRestoreAuthorizationFact{
+		UnitID: unitID, RootResourceType: domain.LifecycleResourceFolder, RootResourceID: rootID,
+		RootFolderID: rootID, RootFolderPath: "root.deleted",
+	}}
+	mux := http.NewServeMux()
+	assetHTTP.NewAssetHandler(mux, usecase, nil)
+	req := httptest.NewRequest(http.MethodGet,
+		"/internal/api/v1/lifecycle-units/restore-facts?orgId="+orgID+"&unitId="+unitID, nil)
+	req.Header.Set("X-User-Id", userID)
+	req.Header.Set("X-Org-Id", orgID)
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, req)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusOK, response.Code, response.Body.String())
+	}
+	if !usecase.called || usecase.methodCalled != "GetLifecycleRestoreAuthorizationFact" {
+		t.Fatal("expected lifecycle restore fact use case to be called")
+	}
+	var payload struct {
+		Fact domain.LifecycleRestoreAuthorizationFact `json:"fact"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if payload.Fact.UnitID != unitID || payload.Fact.RootResourceID != rootID || payload.Fact.RootFolderPath != "root.deleted" {
+		t.Fatalf("unexpected lifecycle fact: %+v", payload.Fact)
+	}
+}
+
+func TestHandleQueueLifecycleRestoreReturnsAcceptedDurableJob(t *testing.T) {
+	const userID = "00000000-0000-0000-0000-000000000001"
+	const orgID = "00000000-0000-0000-0000-000000000002"
+	const unitID = "10000000-0000-0000-0000-000000000000"
+	const jobID = "30000000-0000-0000-0000-000000000000"
+
+	usecase := &fakeAssetUsecase{queuedLifecycleJob: domain.LifecycleJob{
+		ID: jobID, OrgID: orgID, Operation: domain.LifecycleJobRestore, Status: domain.LifecycleJobQueued,
+	}}
+	mux := http.NewServeMux()
+	assetHTTP.NewAssetHandler(mux, usecase, nil)
+	req := httptest.NewRequest(http.MethodPost,
+		"/internal/api/v1/lifecycle-units/restore?orgId="+orgID+"&unitId="+unitID, nil)
+	req.Header.Set("X-User-Id", userID)
+	req.Header.Set("X-Org-Id", orgID)
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, req)
+
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusAccepted, response.Code, response.Body.String())
+	}
+	if !usecase.called || usecase.methodCalled != "QueueLifecycleRestore" {
+		t.Fatal("expected QueueLifecycleRestore to be called")
+	}
+	var payload struct {
+		Job domain.LifecycleJob `json:"job"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if payload.Job.ID != jobID || payload.Job.Status != domain.LifecycleJobQueued {
+		t.Fatalf("unexpected lifecycle job: %+v", payload.Job)
+	}
+}
+
+func TestHandleQueueLifecycleRestoreMapsParentRuleWithoutMutation(t *testing.T) {
+	const userID = "00000000-0000-0000-0000-000000000001"
+	const orgID = "00000000-0000-0000-0000-000000000002"
+	const unitID = "10000000-0000-0000-0000-000000000000"
+
+	usecase := &fakeAssetUsecase{queuedLifecycleJobErr: domain.ErrRestoreParentDeleted}
+	mux := http.NewServeMux()
+	assetHTTP.NewAssetHandler(mux, usecase, nil)
+	req := httptest.NewRequest(http.MethodPost,
+		"/internal/api/v1/lifecycle-units/restore?orgId="+orgID+"&unitId="+unitID, nil)
+	req.Header.Set("X-User-Id", userID)
+	req.Header.Set("X-Org-Id", orgID)
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, req)
+
+	if response.Code != http.StatusConflict {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusConflict, response.Code, response.Body.String())
+	}
+	var payload struct {
+		Error struct {
+			Code   string `json:"code"`
+			Number int    `json:"number"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if payload.Error.Code != "RESTORE_PARENT_DELETED" || payload.Error.Number != 3013 {
+		t.Fatalf("unexpected safe error: %+v", payload.Error)
 	}
 }

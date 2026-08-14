@@ -52,6 +52,14 @@ func (u *assetUsecase) GetFolderRestoreAuthorizationFact(ctx context.Context, or
 	return u.repo.GetFolderRestoreAuthorizationFact(ctx, orgID, folderID)
 }
 
+func (u *assetUsecase) GetLifecycleRestoreAuthorizationFact(ctx context.Context, orgID, unitID string) (domain.LifecycleRestoreAuthorizationFact, error) {
+	return u.repo.GetLifecycleRestoreAuthorizationFact(ctx, orgID, unitID)
+}
+
+func (u *assetUsecase) GetLifecycleJob(ctx context.Context, orgID, jobID string) (domain.LifecycleJob, error) {
+	return u.repo.GetLifecycleJob(ctx, orgID, jobID)
+}
+
 // ListRecycleBinEntries validates the trusted keyset tuple used by the Access
 // Core candidate scan. It deliberately does not perform object authorization.
 func (u *assetUsecase) ListRecycleBinEntries(ctx context.Context, orgID string, filter domain.RecycleBinFilter) ([]domain.RecycleBinEntry, error) {
@@ -116,6 +124,10 @@ func (u *assetUsecase) DeleteFolder(ctx context.Context, orgID, userID, folderID
 // RestoreFolder delegates a parent-first folder restore to the repository.
 func (u *assetUsecase) RestoreFolder(ctx context.Context, orgID, userID, folderID string) (domain.Folder, error) {
 	return u.repo.RestoreFolder(ctx, orgID, userID, folderID)
+}
+
+func (u *assetUsecase) QueueLifecycleRestore(ctx context.Context, orgID, userID, unitID string) (domain.LifecycleJob, error) {
+	return u.repo.QueueLifecycleRestore(ctx, orgID, userID, unitID)
 }
 
 // GetMetadataItemsByFolder delegates an org-scoped active-folder metadata query to the repository.

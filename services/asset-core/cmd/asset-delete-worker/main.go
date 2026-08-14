@@ -51,7 +51,7 @@ func main() {
 		workerID = fmt.Sprintf("asset-delete-worker-%d", os.Getpid())
 	}
 
-	repo := repository.NewFolderDeletionRepository(db)
+	repo := repository.NewLifecycleJobWorkerRepository(db)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -77,12 +77,12 @@ func main() {
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
-	slog.Info("asset delete worker started", "workerId", workerID, "pollIntervalMs", pollInterval.Milliseconds())
+	slog.Info("asset lifecycle worker started", "workerId", workerID, "pollIntervalMs", pollInterval.Milliseconds())
 	for {
 		processNext(ctx, repo, workerID)
 		select {
 		case <-ctx.Done():
-			slog.Info("asset delete worker stopped", "workerId", workerID)
+			slog.Info("asset lifecycle worker stopped", "workerId", workerID)
 			return
 		case <-ticker.C:
 		}
@@ -100,24 +100,24 @@ func newWorkerMetricsServer() *http.Server {
 }
 
 func processNext(ctx context.Context, repo interface {
-	ClaimNextFolderDeletionJob(context.Context, string) (*domain.FolderDeletionJob, error)
-	ProcessFolderDeletionJob(context.Context, string, string) error
-	FailFolderDeletionJob(context.Context, string, string) error
+	ClaimNextLifecycleJob(context.Context, string) (*domain.LifecycleJob, error)
+	ProcessLifecycleJob(context.Context, string, string) error
+	FailLifecycleJob(context.Context, string, string) error
 }, workerID string) {
-	job, err := repo.ClaimNextFolderDeletionJob(ctx, workerID)
+	job, err := repo.ClaimNextLifecycleJob(ctx, workerID)
 	if err != nil {
-		slog.Error("folder deletion job claim failed", "workerId", workerID, "error", err.Error())
+		slog.Error("lifecycle job claim failed", "workerId", workerID, "error", err.Error())
 		return
 	}
 	if job == nil {
 		return
 	}
 
-	slog.Info("folder deletion job claimed", "workerId", workerID, "jobId", job.ID, "orgId", job.OrgID, "rootFolderId", job.RootFolderID, "attempt", job.Attempts)
-	if err := repo.ProcessFolderDeletionJob(ctx, job.ID, workerID); err != nil {
-		slog.Error("folder deletion job batch failed", "workerId", workerID, "jobId", job.ID, "error", err.Error())
-		if failErr := repo.FailFolderDeletionJob(context.Background(), job.ID, workerID); failErr != nil {
-			slog.Error("folder deletion job failure state update failed", "workerId", workerID, "jobId", job.ID, "error", failErr.Error())
+	slog.Info("lifecycle job claimed", "workerId", workerID, "jobId", job.ID, "orgId", job.OrgID, "operation", job.Operation, "rootResourceId", job.RootResourceID, "attempt", job.Attempts)
+	if err := repo.ProcessLifecycleJob(ctx, job.ID, workerID); err != nil {
+		slog.Error("lifecycle job batch failed", "workerId", workerID, "jobId", job.ID, "operation", job.Operation, "error", err.Error())
+		if failErr := repo.FailLifecycleJob(context.Background(), job.ID, workerID); failErr != nil {
+			slog.Error("lifecycle job failure state update failed", "workerId", workerID, "jobId", job.ID, "error", failErr.Error())
 		}
 	}
 }

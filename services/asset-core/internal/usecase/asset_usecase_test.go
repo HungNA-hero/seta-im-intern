@@ -56,6 +56,14 @@ func (f *fakeAssetRepo) GetFolderRestoreAuthorizationFact(_ context.Context, _, 
 	return domain.FolderRestoreAuthorizationFact{}, nil
 }
 
+func (f *fakeAssetRepo) GetLifecycleRestoreAuthorizationFact(_ context.Context, _, _ string) (domain.LifecycleRestoreAuthorizationFact, error) {
+	return domain.LifecycleRestoreAuthorizationFact{}, nil
+}
+
+func (f *fakeAssetRepo) GetLifecycleJob(_ context.Context, _, _ string) (domain.LifecycleJob, error) {
+	return domain.LifecycleJob{}, nil
+}
+
 func (f *fakeAssetRepo) ListRecycleBinEntries(_ context.Context, _ string, filter domain.RecycleBinFilter) ([]domain.RecycleBinEntry, error) {
 	f.recycleBinFilter = filter
 	return nil, nil
@@ -63,6 +71,10 @@ func (f *fakeAssetRepo) ListRecycleBinEntries(_ context.Context, _ string, filte
 
 func (f *fakeAssetRepo) RestoreFolder(_ context.Context, _, _, _ string) (domain.Folder, error) {
 	return domain.Folder{}, nil
+}
+
+func (f *fakeAssetRepo) QueueLifecycleRestore(_ context.Context, _, _, _ string) (domain.LifecycleJob, error) {
+	return domain.LifecycleJob{}, nil
 }
 
 // GetMetadataItemsByFolder satisfies the metadata list repository contract for use-case tests.
