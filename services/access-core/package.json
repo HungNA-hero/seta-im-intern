@@ -38,8 +38,7 @@
     "prisma": "^7.8.0",
     "tsx": "^4.20.6",
     "typescript": "^5",
-    "vitest": "^4.1.9",
-    "yaml": "^2.9.0"
+    "vitest": "^4.1.9"
   },
   "allowScripts": {
     "@prisma/engines@7.8.0": true,

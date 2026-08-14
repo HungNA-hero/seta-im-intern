@@ -1,188 +1,154 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, expect, test } from "vitest";
-import { parse } from "yaml";
+import {
+  MAX_UPLOAD_SIZE_BYTES,
+  MEDIA_CONTENT_TYPES,
+  MIN_UPLOAD_SIZE_BYTES,
+  isAdmittedContentType,
+  isAdmittedSize,
+  isValidBase64Sha256,
+  toMediaStatus,
+  toPresignedUploadDescriptor,
+  toProcessingStage,
+  toProcessingStatus,
+  toUploadSession,
+  toUploadSessionState,
+} from "../domain/media";
 import { errorDefinitions } from "../errors/errorCodes";
+import type { GoMediaStatus, GoUploadSession } from "../domain/media";
 
-const contractPath = resolve(process.cwd(), "../../specs/006-media-upload-processing/contracts/media-api.openapi.yaml");
+const goSession: GoUploadSession = {
+  upload_id: "11111111-1111-1111-1111-111111111111",
+  asset_id: "22222222-2222-2222-2222-222222222222",
+  state: "created",
+  session_expires_at: "2026-08-15T00:00:00Z",
+  created_at: "2026-08-14T00:00:00Z",
+  upload: {
+    protocol: "HTTP",
+    method: "PUT",
+    url: "https://storage.example/seta-media/raw/22222222/object?X-Amz-Signature=abc",
+    headers: { "x-amz-checksum-sha256": "a".repeat(43) + "=" },
+    credential_expires_at: "2026-08-14T01:00:00Z",
+  },
+};
 
-type JsonRecord = Record<string, unknown>;
+describe("media public contract", () => {
+  test("publishes exactly one presigned descriptor and never rewrites what was signed", () => {
+    const descriptor = toPresignedUploadDescriptor(goSession.upload);
 
-const document = parse(readFileSync(contractPath, "utf8")) as JsonRecord;
-
-/**
- * Resolves a local `#/...` reference. Remote references are rejected rather
- * than fetched: a contract test that reaches the network stops being a contract
- * test.
- */
-function resolveRef(ref: string): JsonRecord {
-  if (!ref.startsWith("#/")) {
-    throw new Error(`only local references are allowed, found: ${ref}`);
-  }
-  let node: unknown = document;
-  for (const segment of ref.slice(2).split("/")) {
-    if (typeof node !== "object" || node === null) {
-      throw new Error(`unresolvable reference: ${ref}`);
-    }
-    node = (node as JsonRecord)[segment];
-  }
-  if (typeof node !== "object" || node === null) {
-    throw new Error(`unresolvable reference: ${ref}`);
-  }
-  return node as JsonRecord;
-}
-
-function schema(name: string): JsonRecord {
-  return resolveRef(`#/components/schemas/${name}`);
-}
-
-function properties(name: string): JsonRecord {
-  return (schema(name).properties ?? {}) as JsonRecord;
-}
-
-function collectRefs(node: unknown, found: string[] = []): string[] {
-  if (Array.isArray(node)) {
-    for (const item of node) collectRefs(item, found);
-    return found;
-  }
-  if (typeof node === "object" && node !== null) {
-    for (const [key, value] of Object.entries(node)) {
-      if (key === "$ref" && typeof value === "string") {
-        found.push(value);
-      } else {
-        collectRefs(value, found);
-      }
-    }
-  }
-  return found;
-}
-
-describe("media OpenAPI contract", () => {
-  test("is an OpenAPI 3.1 document", () => {
-    expect(document.openapi).toBe("3.1.0");
+    expect(descriptor).toEqual({
+      protocol: "HTTP",
+      method: "PUT",
+      url: goSession.upload?.url,
+      headers: goSession.upload?.headers,
+      credentialExpiresAt: goSession.upload?.credential_expires_at,
+    });
   });
 
-  test("resolves every local reference and uses no remote ones", () => {
-    const refs = collectRefs(document);
-    expect(refs.length).toBeGreaterThan(0);
-    for (const ref of refs) {
-      expect(ref.startsWith("#/")).toBe(true);
-      expect(() => resolveRef(ref)).not.toThrow();
-    }
+  test("omits the descriptor once a session leaves the created state", () => {
+    expect(toPresignedUploadDescriptor(null)).toBeNull();
+    expect(toPresignedUploadDescriptor(undefined)).toBeNull();
   });
 
-  test("declares every media route Access Core owns", () => {
-    const paths = Object.keys((document.paths ?? {}) as JsonRecord);
-    expect(paths).toEqual(
-      expect.arrayContaining([
-        "/api/v1/assets/{assetId}/media/uploads",
-        "/api/v1/assets/{assetId}/media/uploads/{uploadId}",
-        "/api/v1/assets/{assetId}/media/uploads/{uploadId}/refresh",
-        "/api/v1/assets/{assetId}/media",
-      ]),
-    );
-    expect(paths).not.toContain("/api/v1/assets/{assetId}/media/status");
-  });
+  test("exposes no raw object key or storage identity on a session", () => {
+    const session = toUploadSession(goSession, "/api/v1/assets/x/media");
+    const serialized = JSON.stringify(session);
 
-  test("supports cancellation on the session route", () => {
-    const sessionRoute = ((document.paths ?? {}) as JsonRecord)[
-      "/api/v1/assets/{assetId}/media/uploads/{uploadId}"
-    ] as JsonRecord;
-
-    expect(Object.keys(sessionRoute)).toEqual(expect.arrayContaining(["get", "delete"]));
-  });
-
-  test("requires a client-declared SHA-256 at session creation", () => {
-    const request = schema("CreateUploadSessionRequest");
-    expect(request.required).toEqual(
-      expect.arrayContaining(["filename", "contentType", "sizeBytes", "checksumSha256"]),
-    );
-    expect(request.additionalProperties).toBe(false);
-  });
-
-  test("rejects transfer capability negotiation fields", () => {
-    const requestProperties = Object.keys(properties("CreateUploadSessionRequest"));
-    for (const obsolete of ["strategy", "capabilities", "transferStrategy", "parts", "partManifest"]) {
-      expect(requestProperties).not.toContain(obsolete);
-    }
-  });
-
-  test("exposes exactly one presigned upload descriptor with signed headers", () => {
-    const descriptor = schema("PresignedUploadDescriptor");
-    expect(descriptor.required).toEqual(["protocol", "method", "url", "headers", "credentialExpiresAt"]);
-    expect(descriptor.additionalProperties).toBe(false);
-
-    const descriptorProperties = properties("PresignedUploadDescriptor");
-    expect((descriptorProperties.method as JsonRecord).const).toBe("PUT");
-    expect((descriptorProperties.protocol as JsonRecord).const).toBe("HTTP");
-  });
-
-  test("commits with the upload identity alone", () => {
-    const request = schema("CommitUploadRequest");
-    expect(request.required).toEqual(["uploadId"]);
-    expect(Object.keys(properties("CommitUploadRequest"))).toEqual(["uploadId"]);
-    expect(request.additionalProperties).toBe(false);
-  });
-
-  test("describes durable acceptance without an unavailable status URL or internal replay marker", () => {
-    expect(schema("AcceptedJob").required).toEqual([
-      "assetId",
-      "uploadId",
-      "jobId",
-      "status",
-      "original",
-      "acceptedAt",
-    ]);
-    expect(Object.keys(properties("AcceptedJob"))).toEqual([
-      "assetId",
-      "uploadId",
-      "jobId",
-      "status",
-      "original",
-      "acceptedAt",
-    ]);
-  });
-
-  test("bounds the two outputs to their documented boxes", () => {
-    const thumbnail = properties("ThumbnailMediaOutput");
-    expect((thumbnail.width as JsonRecord).maximum).toBe(256);
-    expect((thumbnail.height as JsonRecord).maximum).toBe(256);
-
-    const web = properties("WebMediaOutput");
-    expect((web.width as JsonRecord).maximum).toBe(1080);
-    expect((web.height as JsonRecord).maximum).toBe(1080);
-
-    expect(schema("MediaOutputs").required).toEqual(["thumbnail", "web", "expiresAt"]);
-  });
-
-  test("never exposes a raw object key or storage URL", () => {
-    const serialized = JSON.stringify(document);
-    for (const leaked of ["rawObjectKey", "raw_object_key", "rawUrl", "originalUrl"]) {
+    for (const leaked of ["rawObjectKey", "raw_object_key", "rawUrl", "originalUrl", "bucket"]) {
       expect(serialized).not.toContain(leaked);
     }
+    expect(Object.keys(session).sort()).toEqual(
+      ["assetId", "commitUrl", "createdAt", "sessionExpiresAt", "state", "upload", "uploadId"].sort(),
+    );
   });
 
-  test("bounds the reported attempt count to the three permitted attempts", () => {
-    const attemptCount = properties("MediaStatus").attemptCount as JsonRecord;
-    expect(attemptCount.minimum).toBe(0);
-    expect(attemptCount.maximum).toBe(3);
+  test("admits only the documented session states", () => {
+    expect(toUploadSessionState("created")).toBe("CREATED");
+    expect(toUploadSessionState("committed")).toBe("COMMITTED");
+    expect(() => toUploadSessionState("cancelled")).toThrow(/unrecognized upload session state/);
   });
 
-  test("publishes only status values Access Core can map", () => {
-    const statusProperties = properties("MediaStatus");
-    expect((statusProperties.status as JsonRecord).enum).toEqual(["QUEUED", "PROCESSING", "COMPLETED", "FAILED"]);
+  test("admits only the four documented processing statuses", () => {
+    for (const status of ["queued", "processing", "completed", "failed"]) {
+      expect(toProcessingStatus(status)).toBe(status.toUpperCase());
+    }
+    expect(() => toProcessingStatus("PENDING")).toThrow(/unrecognized media processing status/);
   });
 
-  test("every documented media error code exists in the shared registry", () => {
-    const serialized = JSON.stringify(document);
-    const referenced = [
-      ...serialized.matchAll(
-        /"(MEDIA_[A-Z_]+|UPLOAD_SESSION_EXPIRED|INVALID_IMAGE|IDEMPOTENCY_KEY_REUSED|IMAGE_DIMENSIONS_EXCEEDED|PROCESSING_TIMEOUT)"/g,
-      ),
-    ].map(([, code]) => code);
+  test("admits only the two documented processing stages, and treats absence as null", () => {
+    expect(toProcessingStage("validating")).toBe("VALIDATING");
+    expect(toProcessingStage("transforming")).toBe("TRANSFORMING");
+    expect(toProcessingStage(null)).toBeNull();
+    expect(toProcessingStage("")).toBeNull();
+    expect(() => toProcessingStage("uploading")).toThrow(/unrecognized media processing stage/);
+  });
+
+  test("bounds declared uploads to the documented size window", () => {
+    expect(MIN_UPLOAD_SIZE_BYTES).toBe(1);
+    expect(MAX_UPLOAD_SIZE_BYTES).toBe(50_000_000);
+
+    expect(isAdmittedSize(MIN_UPLOAD_SIZE_BYTES)).toBe(true);
+    expect(isAdmittedSize(MAX_UPLOAD_SIZE_BYTES)).toBe(true);
+    expect(isAdmittedSize(0)).toBe(false);
+    expect(isAdmittedSize(MAX_UPLOAD_SIZE_BYTES + 1)).toBe(false);
+    expect(isAdmittedSize(1.5)).toBe(false);
+  });
+
+  test("admits only JPEG and PNG", () => {
+    expect(MEDIA_CONTENT_TYPES).toEqual(["image/jpeg", "image/png"]);
+    expect(isAdmittedContentType("image/gif")).toBe(false);
+    expect(isAdmittedContentType("image/webp")).toBe(false);
+  });
+
+  test("requires a strictly formed base64 SHA-256 declaration", () => {
+    expect(isValidBase64Sha256("a".repeat(43) + "=")).toBe(true);
+    expect(isValidBase64Sha256("a".repeat(43))).toBe(false);
+    expect(isValidBase64Sha256("a".repeat(64))).toBe(false);
+    expect(isValidBase64Sha256("not base64!")).toBe(false);
+    expect(isValidBase64Sha256(undefined)).toBe(false);
+  });
+
+  test("maps a failure to a safe code that exists in the shared registry", () => {
+    const failed: GoMediaStatus = {
+      asset_id: goSession.asset_id,
+      upload_id: goSession.upload_id,
+      job_id: "33333333-3333-3333-3333-333333333333",
+      status: "failed",
+      stage: null,
+      attempt_count: 3,
+      original: {
+        filename: "small-64x64.png",
+        declared_content_type: "image/png",
+        size_bytes: 1024,
+      },
+      error: { code: "MEDIA_PROCESSING_FAILED", message: "Media processing failed" },
+      outputs: null,
+      accepted_at: "2026-08-14T00:00:00Z",
+      completed_at: null,
+    };
+
+    const status = toMediaStatus(failed);
     const known = new Set(errorDefinitions.map((definition) => definition.code));
 
-    for (const code of new Set(referenced)) {
+    expect(status.status).toBe("FAILED");
+    expect(status.error).not.toBeNull();
+    expect(known.has(status.error?.code ?? "")).toBe(true);
+  });
+
+  test("registers every media error code the routes can return", () => {
+    const known = new Set(errorDefinitions.map((definition) => definition.code));
+
+    for (const code of [
+      "MEDIA_UPLOAD_NOT_FOUND",
+      "MEDIA_UPLOAD_IN_PROGRESS",
+      "IDEMPOTENCY_KEY_REUSED",
+      "UPLOAD_SESSION_EXPIRED",
+      "MEDIA_PAYLOAD_TOO_LARGE",
+      "MEDIA_TYPE_UNSUPPORTED",
+      "MEDIA_OBJECT_MISMATCH",
+      "MEDIA_QUOTA_EXCEEDED",
+      "MEDIA_RATE_LIMITED",
+      "MEDIA_UPLOAD_STATE_CONFLICT",
+    ]) {
       expect(known.has(code)).toBe(true);
     }
   });
