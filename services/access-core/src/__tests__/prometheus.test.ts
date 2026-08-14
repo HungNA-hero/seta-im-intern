@@ -28,6 +28,8 @@ describe("Prometheus metrics", () => {
       'seta_access_http_request_duration_seconds_bucket{method="POST",route="/graphql",status="200",result="success",le="1"} 2',
     );
     expect(rendered).toContain("seta_access_asset_breaker_in_flight");
+    expect(rendered).toContain("seta_access_media_asset_breaker_in_flight");
+    expect(rendered).toContain('seta_access_media_asset_breaker_state{state="closed"}');
   });
 
   it("does not collect request metrics when metrics are disabled", () => {

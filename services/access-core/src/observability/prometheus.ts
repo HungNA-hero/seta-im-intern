@@ -1,4 +1,4 @@
-import { getAssetBreakerSnapshot } from "../clients/assetBreaker";
+import { getAssetBreakerSnapshot, getMediaAssetBreakerSnapshot } from "../clients/assetBreaker";
 import { getMetricsSnapshotForTests } from "../cache/metrics";
 
 const HTTP_DURATION_BUCKETS_SECONDS = [0.05, 0.1, 0.25, 0.5, 1, 2, 3, 5];
@@ -112,6 +112,18 @@ export function renderPrometheusMetrics(): string {
   );
   for (const state of ["closed", "open", "halfOpen"]) {
     lines.push(`seta_access_asset_breaker_state${labels({ state })} ${breaker.state === state ? 1 : 0}`);
+  }
+
+  const mediaBreaker = getMediaAssetBreakerSnapshot();
+  lines.push(
+    "# HELP seta_access_media_asset_breaker_in_flight Current media requests admitted by the isolated Asset breaker.",
+    "# TYPE seta_access_media_asset_breaker_in_flight gauge",
+    `seta_access_media_asset_breaker_in_flight ${mediaBreaker.inFlight}`,
+    "# HELP seta_access_media_asset_breaker_state Current media-to-Asset Circuit Breaker state; exactly one state is 1.",
+    "# TYPE seta_access_media_asset_breaker_state gauge",
+  );
+  for (const state of ["closed", "open", "halfOpen"]) {
+    lines.push(`seta_access_media_asset_breaker_state${labels({ state })} ${mediaBreaker.state === state ? 1 : 0}`);
   }
 
   return `${lines.join("\n")}\n`;

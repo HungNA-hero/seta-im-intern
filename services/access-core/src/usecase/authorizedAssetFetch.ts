@@ -16,8 +16,9 @@ export interface AuthorizedAssetContext {
 }
 
 export interface AuthorizedAssetFetchInit {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: Record<string, unknown>;
+  idempotencyKey?: string;
   includeOrgAdmin?: boolean;
 }
 
@@ -81,6 +82,7 @@ export function createAuthorizedAssetFetch(dependencies: AuthorizedAssetFetchDep
         orgAdmin: init.includeOrgAdmin && ctx.roles.includes("org_admin"),
         method: init.method,
         body: init.body,
+        idempotencyKey: init.idempotencyKey,
       });
     },
 
