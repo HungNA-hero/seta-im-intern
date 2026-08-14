@@ -2,6 +2,11 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
+// config.ts loads the repo-root .env on every import, which would put back any
+// key this file deletes. These tests assert what the code does with a value
+// present or absent, so they must not see a developer's local .env at all.
+vi.mock("dotenv", () => ({ config: () => ({ parsed: {} }) }));
+
 const mediaEnvironmentKeys = [
   "ACCESS_MEDIA_UPLOAD_ENABLED",
   "ACCESS_MEDIA_SESSION_LIMIT_PER_USER_PER_MINUTE",

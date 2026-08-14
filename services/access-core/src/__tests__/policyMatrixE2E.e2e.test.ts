@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { prisma } from "../db/prisma";
 import { buildServer } from "../server";
+import { flushAllForTests } from "./helpers/redisTestUtils";
 
 const ORG_ID = "00000000-0000-0000-0000-000000000010";
 const OTHER_ORG_ID = "00000000-0000-0000-0000-000000000099";
@@ -178,6 +179,14 @@ async function revokePermission(id: string): Promise<void> {
 }
 
 /** Removes direct-grant fixtures and restores the organization policy mode. */
+async function enableOlp(): Promise<void> {
+  await prisma.organization.update({
+    where: { id: ORG_ID },
+    data: { olpEnabled: true },
+  });
+  await flushAllForTests();
+}
+
 async function resetAccessFixtures(): Promise<void> {
   await prisma.objectPermission.deleteMany({
     where: {
@@ -227,8 +236,6 @@ beforeAll(async () => {
     connectionString: process.env.ASSET_DB_URL ?? "postgresql://asset_user:asset_password@127.0.0.1:5433/asset_db",
   });
   await assetDb.connect();
-  app = await buildServer();
-  await app.ready();
 
   await prisma.user.upsert({
     where: { id: MISSING_MEMBERSHIP_USER },
@@ -253,10 +260,19 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetAccessFixtures();
   await resetTargetFolder();
+  // Grants are rewritten directly through Prisma, which bypasses the epoch
+  // bumps that would invalidate cached decisions and folder-ancestry facts.
+  await flushAllForTests();
+  // The authorization service memoizes RBAC ceilings for the lifetime of the
+  // app instance with no invalidation, so a shared server would leak an early
+  // test's ceiling into every later one.
+  app = await buildServer();
+  await app.ready();
 });
 
 afterEach(async () => {
   vi.restoreAllMocks();
+  await app?.close();
   await resetAccessFixtures();
   await resetTargetFolder();
 });
@@ -290,10 +306,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(await readFolderName()).toBe("Admin Edit 1");
 
-    await prisma.organization.update({
-      where: { id: ORG_ID },
-      data: { olpEnabled: true },
-    });
+    await enableOlp();
     fetchSpy.mockClear();
 
     const enabledResult = await updateFolder(USER_ADMIN, "Admin Edit 2");
@@ -340,10 +353,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
   });
 
   test("PM-05 denies viewer write when OLP is enabled without a matching grant", async () => {
-    await prisma.organization.update({
-      where: { id: ORG_ID },
-      data: { olpEnabled: true },
-    });
+    await enableOlp();
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
     const result = await updateFolder(USER_VIEWER, "Viewer Edit");
@@ -353,10 +363,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
   });
 
   test("PM-06 allows one viewer mutation with an exact OLP grant", async () => {
-    await prisma.organization.update({
-      where: { id: ORG_ID },
-      data: { olpEnabled: true },
-    });
+    await enableOlp();
     await prisma.objectPermission.create({
       data: {
         orgId: ORG_ID,
@@ -376,10 +383,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
   });
 
   test("PM-07 changes viewer write from deny to allow after a public grant", async () => {
-    await prisma.organization.update({
-      where: { id: ORG_ID },
-      data: { olpEnabled: true },
-    });
+    await enableOlp();
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
     const denied = await updateFolder(USER_VIEWER, "Pre-grant Edit");
@@ -410,10 +414,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
   });
 
   test("PM-08 changes viewer write from allow to deny after a public revoke", async () => {
-    await prisma.organization.update({
-      where: { id: ORG_ID },
-      data: { olpEnabled: true },
-    });
+    await enableOlp();
     const permissionId = await grantViewerWrite();
     const fetchSpy = vi.spyOn(globalThis, "fetch");
 
@@ -433,10 +434,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
   });
 
   test("PM-09 ignores grants from the wrong resource and wrong organization", async () => {
-    await prisma.organization.update({
-      where: { id: ORG_ID },
-      data: { olpEnabled: true },
-    });
+    await enableOlp();
     await prisma.objectPermission.createMany({
       data: [
         {
@@ -479,10 +477,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
     expectForbidden(rbacMetadata, "no RBAC ceiling");
     expect(fetchSpy).not.toHaveBeenCalled();
 
-    await prisma.organization.update({
-      where: { id: ORG_ID },
-      data: { olpEnabled: true },
-    });
+    await enableOlp();
     fetchSpy.mockClear();
 
     const olpFolder = await updateFolder(USER_VIEWER, "Creator Folder Edit");
@@ -501,10 +496,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
   });
 
   test("PM-11 allows a descendant folder write through an ancestor grant", async () => {
-    await prisma.organization.update({
-      where: { id: ORG_ID },
-      data: { olpEnabled: true },
-    });
+    await enableOlp();
     await prisma.objectPermission.create({
       data: {
         orgId: ORG_ID,
@@ -613,10 +605,7 @@ describe("KAN-41 Policy E2E Integration Matrix", () => {
   });
 
   test("PM-13 manage_permissions never inherits from an ancestor", async () => {
-    await prisma.organization.update({
-      where: { id: ORG_ID },
-      data: { olpEnabled: true },
-    });
+    await enableOlp();
     await prisma.objectPermission.create({
       data: {
         orgId: ORG_ID,
