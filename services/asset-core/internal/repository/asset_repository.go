@@ -60,9 +60,10 @@ func createDeletedLifecycleUnit(
 	return unit.ID, nil
 }
 
-// createDeletingLifecycleUnit records the root as soon as the asynchronous
-// worker hides its subtree. The entry remains non-visible in the Recycle Bin
-// until the worker has tombstoned every active member and marks it DELETED.
+// createDeletingLifecycleUnit records the root when an asynchronous subtree
+// deletion closes its visibility gate. The entry remains non-visible in the
+// Recycle Bin until the worker tombstones every active member and marks it
+// DELETED.
 func createDeletingLifecycleUnit(
 	tx *gorm.DB,
 	orgID string,

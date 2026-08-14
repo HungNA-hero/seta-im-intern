@@ -78,6 +78,87 @@ func (r *assetRepository) GetMetadataRestoreAuthorizationFact(ctx context.Contex
 	return fact, nil
 }
 
+// GetLifecycleRestoreAuthorizationFact resolves a Recycle Bin unit back to
+// the original protected resource. This is intentionally a private fact: it
+// lets Access Core evaluate current write permission before it can queue a
+// restore, without trusting a client-supplied resource identity.
+func (r *assetRepository) GetLifecycleRestoreAuthorizationFact(ctx context.Context, orgID, unitID string) (domain.LifecycleRestoreAuthorizationFact, error) {
+	var unit domain.LifecycleUnit
+	err := r.db.WithContext(ctx).
+		Where("id = ? AND org_id = ? AND state IN ?", unitID, orgID, []domain.LifecycleUnitState{
+			domain.LifecycleDeleted,
+			domain.LifecycleRestoreQueued,
+			domain.LifecycleRestoring,
+		}).
+		First(&unit).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return domain.LifecycleRestoreAuthorizationFact{}, domain.ErrLifecycleUnitNotFound
+	}
+	if err != nil {
+		return domain.LifecycleRestoreAuthorizationFact{}, err
+	}
+
+	fact := domain.LifecycleRestoreAuthorizationFact{
+		UnitID:           unit.ID,
+		RootResourceType: unit.RootResourceType,
+		RootResourceID:   unit.RootResourceID,
+	}
+	switch unit.RootResourceType {
+	case domain.LifecycleResourceFolder:
+		var root domain.Folder
+		err := r.db.WithContext(ctx).Unscoped().
+			Select("folders.id", "folders.path").
+			Where("folders.id = ? AND folders.org_id = ? AND folders.lifecycle_unit_id = ? AND folders.deleted_at IS NOT NULL", unit.RootResourceID, orgID, unit.ID).
+			First(&root).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return domain.LifecycleRestoreAuthorizationFact{}, domain.ErrLifecycleUnitNotFound
+		}
+		if err != nil {
+			return domain.LifecycleRestoreAuthorizationFact{}, err
+		}
+		fact.RootFolderID = root.ID
+		fact.RootFolderPath = root.Path
+		return fact, nil
+	case domain.LifecycleResourceMetadata:
+		var row struct {
+			FolderID   string `gorm:"column:folder_id"`
+			FolderPath string `gorm:"column:folder_path"`
+		}
+		err := r.db.WithContext(ctx).Unscoped().
+			Table("metadata_items").
+			Select("metadata_items.folder_id", "folders.path AS folder_path").
+			Joins("JOIN folders ON folders.id = metadata_items.folder_id").
+			Where("metadata_items.id = ? AND folders.org_id = ? AND metadata_items.lifecycle_unit_id = ? AND metadata_items.deleted_at IS NOT NULL", unit.RootResourceID, orgID, unit.ID).
+			Scan(&row).Error
+		if err != nil {
+			return domain.LifecycleRestoreAuthorizationFact{}, err
+		}
+		if row.FolderID == "" || row.FolderPath == "" {
+			return domain.LifecycleRestoreAuthorizationFact{}, domain.ErrLifecycleUnitNotFound
+		}
+		fact.RootFolderID = row.FolderID
+		fact.RootFolderPath = row.FolderPath
+		return fact, nil
+	default:
+		return domain.LifecycleRestoreAuthorizationFact{}, domain.ErrLifecycleUnitNotFound
+	}
+}
+
+// GetLifecycleJob is only used through the trusted Asset-to-Access boundary.
+// Access Core authorizes against the root information carried by the returned
+// job before exposing its status to a client.
+func (r *assetRepository) GetLifecycleJob(ctx context.Context, orgID, jobID string) (domain.LifecycleJob, error) {
+	var job domain.LifecycleJob
+	err := r.db.WithContext(ctx).Where("id = ? AND org_id = ?", jobID, orgID).First(&job).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return domain.LifecycleJob{}, domain.ErrLifecycleJobNotFound
+	}
+	if err != nil {
+		return domain.LifecycleJob{}, err
+	}
+	return job, nil
+}
+
 func lockedVisibleParent(
 	tx *gorm.DB,
 	orgID string,

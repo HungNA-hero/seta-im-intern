@@ -1,3 +1,8 @@
+param(
+    [switch]$WithLifecycleWorker,
+    [string]$TestFile
+)
+
 $ErrorActionPreference = "Stop"
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
@@ -13,7 +18,11 @@ $AccessContainer = "$RunId-access-db"
 $GoStdout = Join-Path $env:TEMP "$RunId-go.stdout.log"
 $GoStderr = Join-Path $env:TEMP "$RunId-go.stderr.log"
 $GoBinary = Join-Path $env:TEMP "$RunId-asset-core.exe"
+$WorkerStdout = Join-Path $env:TEMP "$RunId-worker.stdout.log"
+$WorkerStderr = Join-Path $env:TEMP "$RunId-worker.stderr.log"
+$WorkerBinary = Join-Path $env:TEMP "$RunId-asset-delete-worker.exe"
 $GoProcess = $null
+$WorkerProcess = $null
 $TestExitCode = 1
 
 # Returns an available loopback TCP port for an isolated test process.
@@ -107,6 +116,10 @@ try {
     try {
         go build -o $GoBinary ./cmd/server/main.go
         if ($LASTEXITCODE -ne 0) { throw "Go Asset Core build failed" }
+        if ($WithLifecycleWorker) {
+            go build -o $WorkerBinary ./cmd/asset-delete-worker/main.go
+            if ($LASTEXITCODE -ne 0) { throw "Lifecycle worker build failed" }
+        }
     } finally {
         Pop-Location
     }
@@ -116,6 +129,18 @@ try {
         -RedirectStandardOutput $GoStdout `
         -RedirectStandardError $GoStderr
     Wait-GoHealth $GoPort
+
+    Remove-Item Env:\E2E_LIFECYCLE_WORKER -ErrorAction SilentlyContinue
+    if ($WithLifecycleWorker) {
+        Write-Host "Starting the real lifecycle worker for the focused E2E..."
+        $env:E2E_LIFECYCLE_WORKER = "true"
+        $env:ASSET_DELETE_WORKER_ID = "$RunId-worker"
+        $WorkerProcess = Start-Process -FilePath $WorkerBinary `
+            -WindowStyle Hidden `
+            -PassThru `
+            -RedirectStandardOutput $WorkerStdout `
+            -RedirectStandardError $WorkerStderr
+    }
 
     Write-Host "Running GraphQL -> Node -> Go -> PostgreSQL E2E..."
     $env:GO_ASSET_URL = "http://127.0.0.1:$GoPort"
@@ -129,12 +154,18 @@ try {
 
     Push-Location $AccessCore
     try {
-        npx vitest run --config vitest.e2e.config.ts
+        $VitestArgs = @("run", "--config", "vitest.e2e.config.ts")
+        if ($TestFile) { $VitestArgs += $TestFile }
+        npx vitest @VitestArgs
         $TestExitCode = $LASTEXITCODE
     } finally {
         Pop-Location
     }
 } finally {
+    if ($WorkerProcess -and -not $WorkerProcess.HasExited) {
+        Stop-Process -Id $WorkerProcess.Id -Force
+        $WorkerProcess.WaitForExit()
+    }
     if ($GoProcess -and -not $GoProcess.HasExited) {
         Stop-Process -Id $GoProcess.Id -Force
         $GoProcess.WaitForExit()
@@ -142,9 +173,11 @@ try {
     if ($TestExitCode -ne 0) {
         if (Test-Path -LiteralPath $GoStdout) { Get-Content -LiteralPath $GoStdout -Tail 100 }
         if (Test-Path -LiteralPath $GoStderr) { Get-Content -LiteralPath $GoStderr -Tail 100 }
+        if (Test-Path -LiteralPath $WorkerStdout) { Get-Content -LiteralPath $WorkerStdout -Tail 100 }
+        if (Test-Path -LiteralPath $WorkerStderr) { Get-Content -LiteralPath $WorkerStderr -Tail 100 }
     }
     docker stop $AssetContainer $AccessContainer 2>$null | Out-Null
-    Remove-Item -LiteralPath $GoStdout, $GoStderr, $GoBinary -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $GoStdout, $GoStderr, $GoBinary, $WorkerStdout, $WorkerStderr, $WorkerBinary -Force -ErrorAction SilentlyContinue
 }
 
 exit $TestExitCode

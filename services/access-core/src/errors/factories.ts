@@ -59,6 +59,8 @@ export function cursorInvalid(): GraphQLError {
   return fromDefinition("CURSOR_INVALID");
 }
 
-export function resourceNotFound(code: "FOLDER_NOT_FOUND" | "METADATA_NOT_FOUND"): GraphQLError {
+export function resourceNotFound(
+  code: "FOLDER_NOT_FOUND" | "METADATA_NOT_FOUND" | "LIFECYCLE_UNIT_NOT_FOUND" | "LIFECYCLE_JOB_NOT_FOUND",
+): GraphQLError {
   return fromDefinition(code);
 }

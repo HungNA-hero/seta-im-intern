@@ -33,6 +33,18 @@ export const errorDefinitions: ErrorDefinition[] = [
     message: "Folder deletion job cannot be cancelled or retried in its current state",
   },
   { code: "FOLDER_NOT_DELETED", number: 3012, message: "Folder is already active" },
+  {
+    code: "RESTORE_PARENT_DELETED",
+    number: 3013,
+    message: "Restore the parent folder before restoring this item",
+  },
+  { code: "LIFECYCLE_UNIT_NOT_FOUND", number: 3014, message: "Lifecycle unit not found" },
+  {
+    code: "LIFECYCLE_UNIT_NOT_RESTORABLE",
+    number: 3015,
+    message: "Lifecycle unit cannot be restored in its current state",
+  },
+  { code: "LIFECYCLE_JOB_NOT_FOUND", number: 3016, message: "Lifecycle job not found" },
   { code: "METADATA_NOT_FOUND", number: 4001, message: "Metadata item not found" },
   { code: "METADATA_IDENTITY_CONFLICT", number: 4002, message: "External identity already exists on an active item" },
   { code: "METADATA_VALIDATION_ERROR", number: 4003, message: "Metadata field validation failed" },

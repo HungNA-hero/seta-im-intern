@@ -27,6 +27,13 @@ var (
 	ErrFolderDeletionInProgress  = errors.New("folder deletion is in progress")
 	ErrDeletionJobNotFound       = errors.New("folder deletion job not found")
 	ErrDeletionJobNotCancellable = errors.New("folder deletion job is not cancellable")
+	// ErrRestoreParentDeleted is deliberately lifecycle-specific. It means a
+	// standalone Recycle Bin entry cannot be restored because its recorded
+	// parent is still hidden by another lifecycle unit.
+	ErrRestoreParentDeleted       = errors.New("restore parent is deleted")
+	ErrLifecycleUnitNotFound      = errors.New("lifecycle unit not found")
+	ErrLifecycleUnitNotRestorable = errors.New("lifecycle unit is not restorable")
+	ErrLifecycleJobNotFound       = errors.New("lifecycle job not found")
 )
 
 // CreateFolderInput holds the data required to create a folder.
@@ -123,6 +130,18 @@ type MetadataRestoreAuthorizationFact struct {
 	FolderPath string `json:"folder_path"`
 }
 
+// LifecycleRestoreAuthorizationFact is the minimum tombstone-aware identity
+// Access Core needs to authorize a lifecycle-unit restore. It deliberately
+// contains no display data or member list: the client never receives this
+// trusted internal fact.
+type LifecycleRestoreAuthorizationFact struct {
+	UnitID           string                `json:"unit_id"`
+	RootResourceType LifecycleResourceType `json:"root_resource_type"`
+	RootResourceID   string                `json:"root_resource_id"`
+	RootFolderID     string                `json:"root_folder_id"`
+	RootFolderPath   string                `json:"root_folder_path"`
+}
+
 // TableName maps MetadataItem to the Asset DB metadata_items table.
 func (MetadataItem) TableName() string {
 	return "metadata_items"
@@ -196,6 +215,8 @@ type AssetRepository interface {
 	GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]Folder, error)
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
 	GetFolderRestoreAuthorizationFact(ctx context.Context, orgID, folderID string) (FolderRestoreAuthorizationFact, error)
+	GetLifecycleRestoreAuthorizationFact(ctx context.Context, orgID, unitID string) (LifecycleRestoreAuthorizationFact, error)
+	GetLifecycleJob(ctx context.Context, orgID, jobID string) (LifecycleJob, error)
 	// ListRecycleBinEntries returns only DELETED roots for one organization. Access
 	// Core must still apply read authorization to every returned candidate.
 	ListRecycleBinEntries(ctx context.Context, orgID string, filter RecycleBinFilter) ([]RecycleBinEntry, error)
@@ -206,6 +227,10 @@ type AssetRepository interface {
 	// DeleteFolder tombstones an eligible folder without physically deleting it.
 	DeleteFolder(ctx context.Context, orgID, userID, folderID string) error
 	RestoreFolder(ctx context.Context, orgID, userID, folderID string) (Folder, error)
+	// QueueLifecycleRestore creates an asynchronous restore for one completed
+	// Recycle Bin unit. It returns a durable worker job; it never exposes a
+	// partially restored subtree through normal reads.
+	QueueLifecycleRestore(ctx context.Context, orgID, userID, unitID string) (LifecycleJob, error)
 	EnsureRefs(ctx context.Context, userID, orgID string) error
 
 	// GetMetadataItemsByFolder returns active metadata only when the containing folder is active and org-scoped.
@@ -237,6 +262,8 @@ type AssetUsecase interface {
 	GetFolderChildren(ctx context.Context, orgID string, parentPath string) ([]Folder, error)
 	GetRootFolders(ctx context.Context, orgID string) ([]Folder, error)
 	GetFolderRestoreAuthorizationFact(ctx context.Context, orgID, folderID string) (FolderRestoreAuthorizationFact, error)
+	GetLifecycleRestoreAuthorizationFact(ctx context.Context, orgID, unitID string) (LifecycleRestoreAuthorizationFact, error)
+	GetLifecycleJob(ctx context.Context, orgID, jobID string) (LifecycleJob, error)
 	ListRecycleBinEntries(ctx context.Context, orgID string, filter RecycleBinFilter) ([]RecycleBinEntry, error)
 	CreateFolder(ctx context.Context, orgID, userID string, input CreateFolderInput) (Folder, error)
 	UpdateFolder(ctx context.Context, orgID, userID, folderID string, input UpdateFolderInput) (Folder, error)
@@ -245,6 +272,7 @@ type AssetUsecase interface {
 	// DeleteFolder validates and tombstones an eligible folder.
 	DeleteFolder(ctx context.Context, orgID, userID, folderID string) error
 	RestoreFolder(ctx context.Context, orgID, userID, folderID string) (Folder, error)
+	QueueLifecycleRestore(ctx context.Context, orgID, userID, unitID string) (LifecycleJob, error)
 	EnsureRefs(ctx context.Context, userID, orgID string) error
 
 	// GetMetadataItemsByFolder lists active metadata in an active org-scoped folder.

@@ -90,8 +90,8 @@ func PublishFolderMoved(ctx context.Context, orgID, folderID, oldPath, newPath s
 }
 
 // PublishFolderDeleted directly XADDs a `folder.deleted` event after either a
-// synchronous folder delete commits or an async job tombstones its root.
-// jobID is empty for the synchronous path.
+// synchronous folder delete commits or an async deletion confirmation closes
+// its root visibility gate. jobID is empty for the synchronous path.
 func PublishFolderDeleted(ctx context.Context, orgID, folderID, rootPath, jobID string) {
 	envelope, err := newEnvelope(orgID, "folder", folderID, "folder.deleted", FolderDeletedData{
 		FolderID: folderID,

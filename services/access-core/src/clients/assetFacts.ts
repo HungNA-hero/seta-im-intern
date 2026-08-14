@@ -2,6 +2,7 @@ import { AssetTransport } from "./assetTransport";
 import {
   assetPath,
   FOLDERS_PATH,
+  LIFECYCLE_RESTORE_FACTS_PATH,
   METADATA_PATH,
   RESTORE_FOLDER_FACTS_PATH,
   RESTORE_METADATA_FACTS_PATH,
@@ -27,6 +28,14 @@ export interface MetadataRestoreAuthorizationFact {
   folderPath: string;
 }
 
+export interface LifecycleRestoreAuthorizationFact {
+  unitId: string;
+  rootResourceType: "FOLDER" | "METADATA";
+  rootResourceId: string;
+  rootFolderId: string;
+  rootFolderPath: string;
+}
+
 export interface AssetFactReader {
   getFolderRestoreAuthorizationFact(
     orgId: string,
@@ -38,6 +47,11 @@ export interface AssetFactReader {
     userId: string,
     id: string,
   ): Promise<MetadataRestoreAuthorizationFact | null>;
+  getLifecycleRestoreAuthorizationFact(
+    orgId: string,
+    userId: string,
+    unitId: string,
+  ): Promise<LifecycleRestoreAuthorizationFact | null>;
   getFolderMeta(orgId: string, userId: string, id: string): Promise<FolderMeta | null>;
   getFolderMetaBatch(orgId: string, userId: string, ids: string[]): Promise<Map<string, FolderMeta>>;
   getMetadataMeta(orgId: string, userId: string, id: string): Promise<MetadataItemMeta | null>;
@@ -136,6 +150,44 @@ export function createAssetFactReader(dependencies: AssetFactReaderDependencies)
         id: data.fact.id,
         folderId: data.fact.folder_id,
         folderPath: data.fact.folder_path,
+      };
+    },
+
+    async getLifecycleRestoreAuthorizationFact(orgId, userId, unitId) {
+      const response = await request(
+        assetPath(LIFECYCLE_RESTORE_FACTS_PATH, {
+          orgId,
+          unitId,
+        }),
+        orgId,
+        userId,
+      );
+      if (response.status === 404) return null;
+      if (!response.ok) await throwAssetCoreError(response);
+      const data = (await response.json()) as {
+        fact?: {
+          unit_id?: unknown;
+          root_resource_type?: unknown;
+          root_resource_id?: unknown;
+          root_folder_id?: unknown;
+          root_folder_path?: unknown;
+        };
+      };
+      if (
+        typeof data.fact?.unit_id !== "string" ||
+        (data.fact.root_resource_type !== "FOLDER" && data.fact.root_resource_type !== "METADATA") ||
+        typeof data.fact.root_resource_id !== "string" ||
+        typeof data.fact.root_folder_id !== "string" ||
+        typeof data.fact.root_folder_path !== "string"
+      ) {
+        invalidAssetFact();
+      }
+      return {
+        unitId: data.fact.unit_id,
+        rootResourceType: data.fact.root_resource_type,
+        rootResourceId: data.fact.root_resource_id,
+        rootFolderId: data.fact.root_folder_id,
+        rootFolderPath: data.fact.root_folder_path,
       };
     },
 

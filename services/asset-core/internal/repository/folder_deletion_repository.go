@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -22,7 +23,44 @@ type folderDeletionRepository struct {
 	db *gorm.DB
 }
 
+// folderDeletionCheckpoint records the completed bounded batches. The
+// tombstoned source rows are the authoritative resume position: each later
+// query selects only deleted_at IS NULL rows. The counters make that implicit,
+// durable checkpoint observable without storing a cursor that can go stale.
+type folderDeletionCheckpoint struct {
+	RootVisibilityClosed bool  `json:"root_visibility_closed"`
+	MetadataBatches      int64 `json:"metadata_batches"`
+	MetadataRows         int64 `json:"metadata_rows"`
+	FolderBatches        int64 `json:"folder_batches"`
+	FolderRows           int64 `json:"folder_rows"`
+}
+
+func decodeFolderDeletionCheckpoint(value json.RawMessage) (folderDeletionCheckpoint, error) {
+	checkpoint := folderDeletionCheckpoint{}
+	if len(value) == 0 {
+		return checkpoint, fmt.Errorf("lifecycle delete job has an empty checkpoint")
+	}
+	if err := json.Unmarshal(value, &checkpoint); err != nil {
+		return checkpoint, fmt.Errorf("decode lifecycle delete checkpoint: %w", err)
+	}
+	return checkpoint, nil
+}
+
+func encodeFolderDeletionCheckpoint(checkpoint folderDeletionCheckpoint) (json.RawMessage, error) {
+	value, err := json.Marshal(checkpoint)
+	if err != nil {
+		return nil, fmt.Errorf("encode lifecycle delete checkpoint: %w", err)
+	}
+	return json.RawMessage(value), nil
+}
+
 func NewFolderDeletionRepository(db *gorm.DB) domain.FolderDeletionRepository {
+	return &folderDeletionRepository{db: db}
+}
+
+// NewLifecycleJobWorkerRepository exposes the V8 worker engine without
+// widening the V5 public folder-deletion contract.
+func NewLifecycleJobWorkerRepository(db *gorm.DB) domain.LifecycleJobWorkerRepository {
 	return &folderDeletionRepository{db: db}
 }
 
@@ -128,6 +166,7 @@ func (r *folderDeletionRepository) PreviewFolderDeletion(ctx context.Context, or
 
 func (r *folderDeletionRepository) ConfirmFolderDeletion(ctx context.Context, orgID, userID, folderID, previewID, token string) (domain.FolderDeletionJob, error) {
 	var confirmed domain.FolderDeletionJob
+	var visibilityChanged bool
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := lockOrganizationDeletion(tx, orgID); err != nil {
 			return err
@@ -198,12 +237,28 @@ func (r *folderDeletionRepository) ConfirmFolderDeletion(ctx context.Context, or
 		job.PreviewExpiresAt = nil
 		job.QueuedAt = &now
 		job.NextRunAt = &now
+
+		lifecycleUnitID, gateClosed, err := closeFolderDeletionVisibilityGate(tx, job, now)
+		if err != nil {
+			return err
+		}
+		visibilityChanged = gateClosed
+		if gateClosed {
+			job.DeletedFolderCount++
+		}
+
 		if err := tx.Save(&job).Error; err != nil {
+			return err
+		}
+		if _, err := createFolderDeletionLifecycleJob(tx, job, lifecycleUnitID, now); err != nil {
 			return err
 		}
 		confirmed = job
 		return nil
 	})
+	if err == nil && visibilityChanged {
+		eventing.PublishFolderDeleted(ctx, orgID, folderID, confirmed.RootPath, confirmed.ID)
+	}
 	return confirmed, err
 }
 
@@ -238,15 +293,73 @@ func (r *folderDeletionRepository) GetFolderDeletionJob(ctx context.Context, org
 
 func (r *folderDeletionRepository) CancelFolderDeletionJob(ctx context.Context, orgID, actorID, jobID string, actorIsOrgAdmin bool) (domain.FolderDeletionJob, error) {
 	var cancelled domain.FolderDeletionJob
+	var visibilityRestored bool
+	var restoredRootPath string
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockOrganizationDeletion(tx, orgID); err != nil {
+			return err
+		}
+		// Read first for authorization, then lock the worker-owned V8 row before
+		// taking the V5 compatibility row. Worker, retry and cancel all follow
+		// that order so a claim cannot race a cancellation into two outcomes.
+		preview, err := r.getAuthorizedJob(tx, orgID, actorID, jobID, actorIsOrgAdmin, false)
+		if err != nil {
+			return err
+		}
+		if preview.Status != domain.FolderDeletionQueued {
+			return domain.ErrDeletionJobNotCancellable
+		}
+		lifecycleJob, hasLifecycleJob, err := findLifecycleJobForFolderDeletion(tx, preview.ID, true)
+		if err != nil {
+			return err
+		}
 		job, err := r.getAuthorizedJob(tx, orgID, actorID, jobID, actorIsOrgAdmin, true)
 		if err != nil {
 			return err
 		}
-		if job.Status != domain.FolderDeletionQueued {
+		if job.Status != domain.FolderDeletionQueued || (hasLifecycleJob && lifecycleJob.Status != domain.LifecycleJobQueued) {
 			return domain.ErrDeletionJobNotCancellable
 		}
+
+		// A queued job created by this version has already hidden its root. A
+		// worker has not claimed it yet, so no descendant was changed and it is
+		// safe to reopen just the root. The restored unit and suppressed V8 job
+		// retain the lightweight lifecycle audit trail.
+		var unit domain.LifecycleUnit
+		unitErr := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ? AND state = ?", job.OrgID, domain.LifecycleResourceFolder, job.RootFolderID, domain.LifecycleDeleting).
+			First(&unit).Error
+		if unitErr != nil && !errors.Is(unitErr, gorm.ErrRecordNotFound) {
+			return unitErr
+		}
+		if unitErr == nil {
+			rootResult := tx.Exec(`
+				UPDATE folders
+				SET deleted_at = NULL, lifecycle_unit_id = NULL
+				WHERE id = ? AND org_id = ? AND lifecycle_unit_id = ? AND deleted_at IS NOT NULL
+			`, job.RootFolderID, job.OrgID, unit.ID)
+			if rootResult.Error != nil {
+				return rootResult.Error
+			}
+			if rootResult.RowsAffected != 1 {
+				return fmt.Errorf("lifecycle deletion root %s is not safely cancellable", job.RootFolderID)
+			}
+			if err := tx.Model(&unit).Update("state", domain.LifecycleRestored).Error; err != nil {
+				return err
+			}
+			visibilityRestored = true
+			restoredRootPath = job.RootPath
+		}
+
 		now := time.Now().UTC()
+		if hasLifecycleJob {
+			lifecycleJob.Status = domain.LifecycleJobSuppressed
+			lifecycleJob.NextRunAt = nil
+			lifecycleJob.CompletedAt = &now
+			if err := tx.Save(&lifecycleJob).Error; err != nil {
+				return err
+			}
+		}
 		job.Status = domain.FolderDeletionCancelled
 		job.CancelledAt = &now
 		job.NextRunAt = nil
@@ -256,6 +369,9 @@ func (r *folderDeletionRepository) CancelFolderDeletionJob(ctx context.Context, 
 		cancelled = job
 		return nil
 	})
+	if err == nil && visibilityRestored {
+		eventing.PublishFolderRestored(ctx, orgID, cancelled.RootFolderID, restoredRootPath)
+	}
 	return cancelled, err
 }
 
@@ -265,14 +381,37 @@ func (r *folderDeletionRepository) RetryFolderDeletionJob(ctx context.Context, o
 		if err := lockOrganizationDeletion(tx, orgID); err != nil {
 			return err
 		}
+		preview, err := r.getAuthorizedJob(tx, orgID, actorID, jobID, actorIsOrgAdmin, false)
+		if err != nil {
+			return err
+		}
+		if preview.Status != domain.FolderDeletionFailed {
+			return domain.ErrDeletionJobNotCancellable
+		}
+		lifecycleJob, hasLifecycleJob, err := findLifecycleJobForFolderDeletion(tx, preview.ID, true)
+		if err != nil {
+			return err
+		}
 		job, err := r.getAuthorizedJob(tx, orgID, actorID, jobID, actorIsOrgAdmin, true)
 		if err != nil {
 			return err
 		}
-		if job.Status != domain.FolderDeletionFailed {
+		if job.Status != domain.FolderDeletionFailed || (hasLifecycleJob && lifecycleJob.Status != domain.LifecycleJobFailed) {
 			return domain.ErrDeletionJobNotCancellable
 		}
 		now := time.Now().UTC()
+		if hasLifecycleJob {
+			lifecycleJob.Status = domain.LifecycleJobQueued
+			lifecycleJob.Attempts = 0
+			lifecycleJob.NextRunAt = &now
+			lifecycleJob.LeaseOwner = nil
+			lifecycleJob.LeaseExpiresAt = nil
+			lifecycleJob.FailureCode = nil
+			lifecycleJob.CompletedAt = nil
+			if err := tx.Save(&lifecycleJob).Error; err != nil {
+				return err
+			}
+		}
 		job.Status = domain.FolderDeletionQueued
 		job.ManualRetries++
 		job.Attempts = 0
@@ -291,35 +430,80 @@ func (r *folderDeletionRepository) RetryFolderDeletionJob(ctx context.Context, o
 
 func (r *folderDeletionRepository) ClaimNextFolderDeletionJob(ctx context.Context, workerID string) (*domain.FolderDeletionJob, error) {
 	var claimed *domain.FolderDeletionJob
+	var adoptionVisibilityEvent *domain.FolderDeletionJob
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var job domain.FolderDeletionJob
 		now := time.Now().UTC()
-		err := tx.Raw(`
-			SELECT *
-			FROM folder_deletion_jobs
-			WHERE (status = ? AND (next_run_at IS NULL OR next_run_at <= ?))
-			   OR (status = ? AND lease_expires_at IS NOT NULL AND lease_expires_at < ?)
-			ORDER BY queued_at ASC NULLS LAST, created_at ASC
-			FOR UPDATE SKIP LOCKED
-			LIMIT 1
-		`, domain.FolderDeletionQueued, now, domain.FolderDeletionRunning, now).Scan(&job).Error
+		adopted, visibilityChanged, err := adoptNextLegacyFolderDeletionJob(tx, now)
 		if err != nil {
 			return err
 		}
-		if job.ID == "" {
+		if visibilityChanged {
+			adoptionVisibilityEvent = adopted
+		}
+
+		var lifecycleJob domain.LifecycleJob
+		err = tx.Raw(`
+			SELECT *
+			FROM asset_lifecycle_jobs
+			WHERE operation = ?
+			  AND legacy_folder_deletion_job_id IS NOT NULL
+			  AND (
+				(status = ? AND (next_run_at IS NULL OR next_run_at <= ?))
+				OR (status = ? AND lease_expires_at IS NOT NULL AND lease_expires_at < ?)
+			  )
+			ORDER BY queued_at ASC NULLS LAST, created_at ASC
+			FOR UPDATE SKIP LOCKED
+			LIMIT 1
+		`, domain.LifecycleJobDelete, domain.LifecycleJobQueued, now, domain.LifecycleJobRunning, now).Scan(&lifecycleJob).Error
+		if err != nil {
+			return err
+		}
+		if lifecycleJob.ID == "" {
 			return nil
 		}
-		if job.Attempts >= domain.FolderDeletionMaxAttempts {
+		if lifecycleJob.LegacyFolderDeletionJobID == nil {
+			return fmt.Errorf("delete lifecycle job %s has no legacy compatibility row", lifecycleJob.ID)
+		}
+
+		var job domain.FolderDeletionJob
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("id = ? AND org_id = ?", *lifecycleJob.LegacyFolderDeletionJobID, lifecycleJob.OrgID).
+			First(&job).Error; err != nil {
+			return err
+		}
+		if lifecycleJob.Attempts >= domain.FolderDeletionMaxAttempts {
+			lifecycleJob.Status = domain.LifecycleJobFailed
+			lifecycleJob.NextRunAt = nil
+			lifecycleJob.LeaseOwner = nil
+			lifecycleJob.LeaseExpiresAt = nil
+			code := "INTERNAL_ERROR"
+			lifecycleJob.FailureCode = &code
+			lifecycleJob.CompletedAt = &now
+			if err := tx.Save(&lifecycleJob).Error; err != nil {
+				return err
+			}
 			job.Status = domain.FolderDeletionFailed
+			job.Attempts = lifecycleJob.Attempts
+			job.NextRunAt = nil
 			job.LeaseOwner = nil
 			job.LeaseExpiresAt = nil
-			code := "INTERNAL_ERROR"
 			job.LastErrorCode = &code
 			return tx.Save(&job).Error
 		}
 		leaseExpiresAt := now.Add(domain.FolderDeletionLeaseDuration)
+		lifecycleJob.Status = domain.LifecycleJobRunning
+		lifecycleJob.Attempts++
+		lifecycleJob.LeaseOwner = &workerID
+		lifecycleJob.LeaseExpiresAt = &leaseExpiresAt
+		lifecycleJob.NextRunAt = nil
+		if lifecycleJob.StartedAt == nil {
+			lifecycleJob.StartedAt = &now
+		}
+		if err := tx.Save(&lifecycleJob).Error; err != nil {
+			return err
+		}
 		job.Status = domain.FolderDeletionRunning
-		job.Attempts++
+		job.Attempts = lifecycleJob.Attempts
 		job.LeaseOwner = &workerID
 		job.LeaseExpiresAt = &leaseExpiresAt
 		job.NextRunAt = nil
@@ -332,7 +516,58 @@ func (r *folderDeletionRepository) ClaimNextFolderDeletionJob(ctx context.Contex
 		claimed = &job
 		return nil
 	})
+	if err == nil && adoptionVisibilityEvent != nil {
+		eventing.PublishFolderDeleted(ctx, adoptionVisibilityEvent.OrgID, adoptionVisibilityEvent.RootFolderID, adoptionVisibilityEvent.RootPath, adoptionVisibilityEvent.ID)
+	}
 	return claimed, err
+}
+
+// adoptNextLegacyFolderDeletionJob prevents a queued V5 row from being
+// stranded when the worker changes to V8 ownership. It is deliberately bounded
+// to one row per poll and only adopts a queued job or an expired legacy lease.
+func adoptNextLegacyFolderDeletionJob(tx *gorm.DB, now time.Time) (*domain.FolderDeletionJob, bool, error) {
+	var legacyJob domain.FolderDeletionJob
+	err := tx.Raw(`
+		SELECT legacy_jobs.*
+		FROM folder_deletion_jobs AS legacy_jobs
+		WHERE (
+				(legacy_jobs.status = ? AND (legacy_jobs.next_run_at IS NULL OR legacy_jobs.next_run_at <= ?))
+				OR (legacy_jobs.status = ? AND legacy_jobs.lease_expires_at IS NOT NULL AND legacy_jobs.lease_expires_at < ?)
+			)
+			AND NOT EXISTS (
+				SELECT 1
+				FROM asset_lifecycle_jobs AS lifecycle_jobs
+				WHERE lifecycle_jobs.legacy_folder_deletion_job_id = legacy_jobs.id
+			)
+		ORDER BY legacy_jobs.queued_at ASC NULLS LAST, legacy_jobs.created_at ASC
+		FOR UPDATE OF legacy_jobs SKIP LOCKED
+		LIMIT 1
+	`, domain.FolderDeletionQueued, now, domain.FolderDeletionRunning, now).Scan(&legacyJob).Error
+	if err != nil {
+		return nil, false, err
+	}
+	if legacyJob.ID == "" {
+		return nil, false, nil
+	}
+
+	unitID, visibilityChanged, err := closeFolderDeletionVisibilityGate(tx, legacyJob, now)
+	if err != nil {
+		return nil, false, err
+	}
+	if visibilityChanged {
+		legacyJob.DeletedFolderCount++
+	}
+	legacyJob.Status = domain.FolderDeletionQueued
+	legacyJob.NextRunAt = &now
+	legacyJob.LeaseOwner = nil
+	legacyJob.LeaseExpiresAt = nil
+	if err := tx.Save(&legacyJob).Error; err != nil {
+		return nil, false, err
+	}
+	if _, err := createFolderDeletionLifecycleJob(tx, legacyJob, unitID, now); err != nil {
+		return nil, false, err
+	}
+	return &legacyJob, visibilityChanged, nil
 }
 
 func (r *folderDeletionRepository) ProcessFolderDeletionJob(ctx context.Context, jobID, workerID string) error {
@@ -357,17 +592,17 @@ func (r *folderDeletionRepository) ProcessFolderDeletionJob(ctx context.Context,
 }
 
 // ensureFolderDeletionLifecycleUnit gives a recursive deletion one durable
-// root. It also repairs an in-flight job created before lifecycle units were
-// introduced: the root is already tombstoned, but the transaction can safely
-// create its DELETING unit before the worker continues.
-func ensureFolderDeletionLifecycleUnit(tx *gorm.DB, job domain.FolderDeletionJob) error {
+// root. It also repairs a V5 job from before the visibility gate or lifecycle
+// worker existed: the root may already be tombstoned, and the transaction can
+// safely create its DELETING unit before bounded processing continues.
+func ensureFolderDeletionLifecycleUnit(tx *gorm.DB, job domain.FolderDeletionJob) (string, error) {
 	var existing domain.LifecycleUnit
 	err := tx.
 		Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ? AND state = ?", job.OrgID, domain.LifecycleResourceFolder, job.RootFolderID, domain.LifecycleDeleting).
 		Order("created_at DESC").
 		First(&existing).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
+		return "", err
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		lifecycleUnitID, createErr := createDeletingLifecycleUnit(
@@ -379,13 +614,86 @@ func ensureFolderDeletionLifecycleUnit(tx *gorm.DB, job domain.FolderDeletionJob
 			lifecycleParentPath(job.RootPath),
 		)
 		if createErr != nil {
-			return createErr
+			return "", createErr
 		}
 		existing.ID = lifecycleUnitID
 	}
-	return tx.Unscoped().Model(&domain.Folder{}).
+	result := tx.Unscoped().Model(&domain.Folder{}).
 		Where("id = ? AND org_id = ? AND deleted_at IS NOT NULL", job.RootFolderID, job.OrgID).
-		Update("lifecycle_unit_id", existing.ID).Error
+		Update("lifecycle_unit_id", existing.ID)
+	if result.Error != nil {
+		return "", result.Error
+	}
+	if result.RowsAffected != 1 {
+		return "", fmt.Errorf("lifecycle deletion root %s is missing or active", job.RootFolderID)
+	}
+	return existing.ID, nil
+}
+
+// closeFolderDeletionVisibilityGate tombstones only the root. The visibility
+// predicate hides every descendant through its deleted ancestor while later
+// worker batches tombstone the physical member rows.
+func closeFolderDeletionVisibilityGate(tx *gorm.DB, job domain.FolderDeletionJob, now time.Time) (string, bool, error) {
+	rootResult := tx.Exec(`
+		UPDATE folders
+		SET deleted_at = ?, updated_by = ?
+		WHERE id = ? AND org_id = ? AND deleted_at IS NULL
+	`, now, job.RequestedBy, job.RootFolderID, job.OrgID)
+	if rootResult.Error != nil {
+		return "", false, rootResult.Error
+	}
+	unitID, err := ensureFolderDeletionLifecycleUnit(tx, job)
+	if err != nil {
+		return "", false, err
+	}
+	return unitID, rootResult.RowsAffected == 1, nil
+}
+
+func createFolderDeletionLifecycleJob(tx *gorm.DB, legacyJob domain.FolderDeletionJob, unitID string, now time.Time) (domain.LifecycleJob, error) {
+	checkpoint, err := encodeFolderDeletionCheckpoint(folderDeletionCheckpoint{
+		RootVisibilityClosed: true,
+		FolderRows:           legacyJob.DeletedFolderCount,
+	})
+	if err != nil {
+		return domain.LifecycleJob{}, err
+	}
+	legacyJobID := legacyJob.ID
+	job := domain.LifecycleJob{
+		ID:                        uuid.NewString(),
+		OrgID:                     legacyJob.OrgID,
+		UnitID:                    &unitID,
+		LegacyFolderDeletionJobID: &legacyJobID,
+		RootResourceType:          domain.LifecycleResourceFolder,
+		RootResourceID:            legacyJob.RootFolderID,
+		RootFolderID:              legacyJob.RootFolderID,
+		RootFolderPath:            legacyJob.RootPath,
+		RequestedBy:               legacyJob.RequestedBy,
+		Operation:                 domain.LifecycleJobDelete,
+		Status:                    domain.LifecycleJobQueued,
+		Checkpoint:                checkpoint,
+		Attempts:                  legacyJob.Attempts,
+		NextRunAt:                 &now,
+		QueuedAt:                  &now,
+	}
+	if err := tx.Create(&job).Error; err != nil {
+		return domain.LifecycleJob{}, err
+	}
+	return job, nil
+}
+
+func findLifecycleJobForFolderDeletion(tx *gorm.DB, legacyJobID string, lock bool) (domain.LifecycleJob, bool, error) {
+	var lifecycleJob domain.LifecycleJob
+	query := tx.Where("legacy_folder_deletion_job_id = ?", legacyJobID)
+	if lock {
+		query = query.Clauses(clause.Locking{Strength: "UPDATE"})
+	}
+	if err := query.First(&lifecycleJob).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return domain.LifecycleJob{}, false, nil
+		}
+		return domain.LifecycleJob{}, false, err
+	}
+	return lifecycleJob, true, nil
 }
 
 func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Context, jobID, workerID string) (bool, bool, error) {
@@ -393,35 +701,46 @@ func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Contex
 	var visibilityChanged bool
 	var job domain.FolderDeletionJob
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		lifecycleJob, foundLifecycleJob, err := findLifecycleJobForFolderDeletion(tx, jobID, true)
+		if err != nil {
+			return err
+		}
+		if !foundLifecycleJob || lifecycleJob.Status != domain.LifecycleJobRunning || lifecycleJob.LeaseOwner == nil || *lifecycleJob.LeaseOwner != workerID {
+			return fmt.Errorf("lifecycle deletion job claim was lost")
+		}
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("id = ? AND status = ? AND lease_owner = ?", jobID, domain.FolderDeletionRunning, workerID).
 			First(&job).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return fmt.Errorf("folder deletion job claim was lost")
+				return fmt.Errorf("folder deletion compatibility job claim was lost")
 			}
 			return err
 		}
-
-		// Tombstone the root in the first transaction. Every normal Asset read
-		// checks for a deleted ancestor, so this one update hides the entire
-		// subtree before the worker processes the remaining rows in batches.
-		rootResult := tx.Exec(`
-			UPDATE folders
-			SET deleted_at = ?, updated_by = ?
-			WHERE id = ? AND org_id = ? AND deleted_at IS NULL
-		`, time.Now().UTC(), job.RequestedBy, job.RootFolderID, job.OrgID)
-		if rootResult.Error != nil {
-			return rootResult.Error
+		if lifecycleJob.UnitID == nil {
+			return fmt.Errorf("lifecycle deletion job %s has no unit", lifecycleJob.ID)
 		}
-		visibilityChanged = rootResult.RowsAffected > 0
-		job.DeletedFolderCount += rootResult.RowsAffected
-		if err := ensureFolderDeletionLifecycleUnit(tx, job); err != nil {
+
+		unitID, rootVisibilityChanged, err := closeFolderDeletionVisibilityGate(tx, job, time.Now().UTC())
+		if err != nil {
 			return err
+		}
+		if unitID != *lifecycleJob.UnitID {
+			return fmt.Errorf("lifecycle deletion job %s is linked to the wrong unit", lifecycleJob.ID)
+		}
+		visibilityChanged = rootVisibilityChanged
+		checkpoint, err := decodeFolderDeletionCheckpoint(lifecycleJob.Checkpoint)
+		if err != nil {
+			return err
+		}
+		checkpoint.RootVisibilityClosed = true
+		if rootVisibilityChanged {
+			job.DeletedFolderCount++
+			checkpoint.FolderRows++
 		}
 
 		metadataResult := tx.Exec(`
 			UPDATE metadata_items
-			SET deleted_at = ?, updated_by = ?
+			SET deleted_at = ?, updated_by = ?, lifecycle_unit_id = ?
 			WHERE id IN (
 				SELECT metadata_items.id
 				FROM metadata_items
@@ -433,21 +752,21 @@ func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Contex
 				LIMIT ?
 				FOR UPDATE OF metadata_items SKIP LOCKED
 			)
-		`, time.Now().UTC(), job.RequestedBy, job.OrgID, job.RootPath, domain.FolderDeletionMetadataBatchSize)
+		`, time.Now().UTC(), job.RequestedBy, *lifecycleJob.UnitID, job.OrgID, job.RootPath, domain.FolderDeletionMetadataBatchSize)
 		if metadataResult.Error != nil {
 			return metadataResult.Error
 		}
 		now := time.Now().UTC()
-		leaseExpiresAt := now.Add(domain.FolderDeletionLeaseDuration)
-		job.LeaseExpiresAt = &leaseExpiresAt
 		if metadataResult.RowsAffected > 0 {
 			job.DeletedMetadataCount += metadataResult.RowsAffected
-			return tx.Save(&job).Error
+			checkpoint.MetadataBatches++
+			checkpoint.MetadataRows += metadataResult.RowsAffected
+			return saveRunningFolderDeletionProgress(tx, &lifecycleJob, &job, checkpoint, now)
 		}
 
 		folderResult := tx.Exec(`
 			UPDATE folders
-			SET deleted_at = ?, updated_by = ?
+			SET deleted_at = ?, updated_by = ?, lifecycle_unit_id = ?
 			WHERE id IN (
 				SELECT id
 				FROM folders
@@ -458,13 +777,15 @@ func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Contex
 				LIMIT ?
 				FOR UPDATE SKIP LOCKED
 			)
-		`, time.Now().UTC(), job.RequestedBy, job.OrgID, job.RootPath, domain.FolderDeletionFolderBatchSize)
+		`, time.Now().UTC(), job.RequestedBy, *lifecycleJob.UnitID, job.OrgID, job.RootPath, domain.FolderDeletionFolderBatchSize)
 		if folderResult.Error != nil {
 			return folderResult.Error
 		}
 		if folderResult.RowsAffected > 0 {
 			job.DeletedFolderCount += folderResult.RowsAffected
-			return tx.Save(&job).Error
+			checkpoint.FolderBatches++
+			checkpoint.FolderRows += folderResult.RowsAffected
+			return saveRunningFolderDeletionProgress(tx, &lifecycleJob, &job, checkpoint, now)
 		}
 
 		now = time.Now().UTC()
@@ -475,6 +796,18 @@ func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Contex
 		job.LeaseOwner = nil
 		job.LeaseExpiresAt = nil
 		job.CompletedAt = &now
+		checkpointValue, err := encodeFolderDeletionCheckpoint(checkpoint)
+		if err != nil {
+			return err
+		}
+		lifecycleJob.Status = domain.LifecycleJobSucceeded
+		lifecycleJob.Checkpoint = checkpointValue
+		lifecycleJob.LeaseOwner = nil
+		lifecycleJob.LeaseExpiresAt = nil
+		lifecycleJob.CompletedAt = &now
+		if err := tx.Save(&lifecycleJob).Error; err != nil {
+			return err
+		}
 		if err := tx.Save(&job).Error; err != nil {
 			return err
 		}
@@ -482,6 +815,27 @@ func (r *folderDeletionRepository) processFolderDeletionBatch(ctx context.Contex
 		return nil
 	})
 	return done, visibilityChanged, err
+}
+
+func saveRunningFolderDeletionProgress(
+	tx *gorm.DB,
+	lifecycleJob *domain.LifecycleJob,
+	legacyJob *domain.FolderDeletionJob,
+	checkpoint folderDeletionCheckpoint,
+	now time.Time,
+) error {
+	checkpointValue, err := encodeFolderDeletionCheckpoint(checkpoint)
+	if err != nil {
+		return err
+	}
+	leaseExpiresAt := now.Add(domain.FolderDeletionLeaseDuration)
+	lifecycleJob.Checkpoint = checkpointValue
+	lifecycleJob.LeaseExpiresAt = &leaseExpiresAt
+	legacyJob.LeaseExpiresAt = &leaseExpiresAt
+	if err := tx.Save(lifecycleJob).Error; err != nil {
+		return err
+	}
+	return tx.Save(legacyJob).Error
 }
 
 func automaticRetryDelay(attempt int) time.Duration {
@@ -497,6 +851,13 @@ func automaticRetryDelay(attempt int) time.Duration {
 
 func (r *folderDeletionRepository) FailFolderDeletionJob(ctx context.Context, jobID, workerID string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		lifecycleJob, foundLifecycleJob, err := findLifecycleJobForFolderDeletion(tx, jobID, true)
+		if err != nil {
+			return err
+		}
+		if !foundLifecycleJob || lifecycleJob.Status != domain.LifecycleJobRunning || lifecycleJob.LeaseOwner == nil || *lifecycleJob.LeaseOwner != workerID {
+			return fmt.Errorf("lifecycle deletion job claim was lost")
+		}
 		var job domain.FolderDeletionJob
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("id = ? AND status = ? AND lease_owner = ?", jobID, domain.FolderDeletionRunning, workerID).
@@ -505,15 +866,29 @@ func (r *folderDeletionRepository) FailFolderDeletionJob(ctx context.Context, jo
 		}
 		now := time.Now().UTC()
 		code := "INTERNAL_ERROR"
+		lifecycleJob.FailureCode = &code
+		lifecycleJob.LeaseOwner = nil
+		lifecycleJob.LeaseExpiresAt = nil
 		job.LastErrorCode = &code
 		job.LeaseOwner = nil
 		job.LeaseExpiresAt = nil
 		if job.Attempts >= domain.FolderDeletionMaxAttempts {
+			lifecycleJob.Status = domain.LifecycleJobFailed
+			lifecycleJob.NextRunAt = nil
+			lifecycleJob.CompletedAt = &now
+			if err := tx.Save(&lifecycleJob).Error; err != nil {
+				return err
+			}
 			job.Status = domain.FolderDeletionFailed
 			job.NextRunAt = nil
 			return tx.Save(&job).Error
 		}
 		nextRunAt := now.Add(automaticRetryDelay(job.Attempts))
+		lifecycleJob.Status = domain.LifecycleJobQueued
+		lifecycleJob.NextRunAt = &nextRunAt
+		if err := tx.Save(&lifecycleJob).Error; err != nil {
+			return err
+		}
 		job.Status = domain.FolderDeletionQueued
 		job.NextRunAt = &nextRunAt
 		return tx.Save(&job).Error
