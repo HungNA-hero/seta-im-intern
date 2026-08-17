@@ -18,9 +18,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// mediaRepository owns every durable media table. Media state is only ever read
-// or written through here, so the locking order below is the single place that
-// decides how concurrent uploads serialize.
 type mediaRepository struct {
 	db    *gorm.DB
 	clock domain.Clock
@@ -55,21 +52,10 @@ type CommitUploadIDs struct {
 	OutboxID  string
 }
 
-// Lock order, applied by every media transaction that touches more than one of
-// these rows: organization_media_usage, then metadata_items, then
-// media_upload_sessions. Taking them in this order everywhere is what prevents
-// a deadlock between a session creation and a concurrent commit.
-
-// withTransaction runs the unit of work inside one transaction. Every media
-// mutation goes through this so no caller can half-commit a version, job, and
-// outbox row.
 func (repository *mediaRepository) withTransaction(ctx context.Context, work func(tx *gorm.DB) error) error {
 	return repository.db.WithContext(ctx).Transaction(work)
 }
 
-// lockOrganizationUsageRow locks the quota ledger, inserting it from the
-// configured default when the organization has never uploaded. It is the first
-// lock any admission transaction takes.
 func lockOrganizationUsageRow(tx *gorm.DB, orgID string, defaultQuotaBytes int64) (domain.OrganizationMediaUsage, error) {
 	usage := domain.OrganizationMediaUsage{
 		OrgID:         orgID,
@@ -89,14 +75,6 @@ func lockOrganizationUsageRow(tx *gorm.DB, orgID string, defaultQuotaBytes int64
 	return locked, nil
 }
 
-// lockActiveAsset locks the metadata row and refuses a deleted, missing, or
-// cross-organization asset. Every media operation resolves the asset this way,
-// so lifecycle state is checked before any storage or quota work.
-//
-// metadata_items carries no org_id: tenancy lives on the containing folder, so
-// the scope check is a join and the lock is narrowed to the metadata row with
-// FOR UPDATE OF. Locking the folder too would serialize every asset that shares
-// a folder against each other.
 func lockActiveAsset(tx *gorm.DB, orgID, assetID string) (assetMediaPointers, error) {
 	var pointers assetMediaPointers
 	err := tx.Raw(`
@@ -122,9 +100,6 @@ func lockActiveAsset(tx *gorm.DB, orgID, assetID string) (assetMediaPointers, er
 	return pointers, nil
 }
 
-// assetMediaPointers is the media-relevant projection of metadata_items. The
-// full asset row is deliberately not loaded: media transactions need only the
-// two pointers and the tenant scope resolved from the containing folder.
 type assetMediaPointers struct {
 	ID                    string  `gorm:"column:id"`
 	OrgID                 string  `gorm:"column:org_id"`
@@ -137,9 +112,6 @@ func (pointers assetMediaPointers) hasPendingVersion() bool {
 	return pointers.PendingMediaVersionID != nil
 }
 
-// lockUploadSessionRow loads a session within its exact scope. A session that
-// belongs to another organization, asset, or requester is reported as missing
-// rather than forbidden, so probing cannot distinguish the cases.
 func lockUploadSessionRow(tx *gorm.DB, scope UploadSessionScope) (domain.MediaUploadSession, error) {
 	query := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Where("id = ? AND org_id = ? AND asset_id = ?", scope.UploadID, scope.OrgID, scope.AssetID)
@@ -158,9 +130,6 @@ func lockUploadSessionRow(tx *gorm.DB, scope UploadSessionScope) (domain.MediaUp
 	return session, nil
 }
 
-// UploadSessionScope is the full tenant scope every session read requires.
-// Passing it as one value keeps a caller from accidentally omitting the
-// organization or asset and widening a lookup.
 type UploadSessionScope struct {
 	OrgID       string
 	AssetID     string
@@ -168,9 +137,6 @@ type UploadSessionScope struct {
 	RequestedBy string
 }
 
-// reserveQuota increases the reservation if the invariant still holds. The
-// check is done in SQL against the locked row so a concurrent admission cannot
-// pass a stale read.
 func reserveQuota(tx *gorm.DB, orgID string, bytes int64) error {
 	result := tx.Exec(`
 		UPDATE organization_media_usage
@@ -187,9 +153,6 @@ func reserveQuota(tx *gorm.DB, orgID string, bytes int64) error {
 	return nil
 }
 
-// releaseReservation is the single conditional decrement shared by expiration
-// and caller cancellation. It clamps at zero so a retried cleanup can never
-// drive the ledger negative.
 func releaseReservation(tx *gorm.DB, orgID string, bytes int64) error {
 	return tx.Exec(`
 		UPDATE organization_media_usage
@@ -198,9 +161,6 @@ func releaseReservation(tx *gorm.DB, orgID string, bytes int64) error {
 		bytes, orgID).Error
 }
 
-// convertReservationToStored is the commit transition: the reservation becomes
-// occupied bytes in one statement so no window exists where the organization
-// appears to have freed space it is still using.
 func convertReservationToStored(tx *gorm.DB, orgID string, reservedBytes, actualBytes int64) error {
 	return tx.Exec(`
 		UPDATE organization_media_usage
@@ -210,8 +170,6 @@ func convertReservationToStored(tx *gorm.DB, orgID string, reservedBytes, actual
 		reservedBytes, actualBytes, orgID).Error
 }
 
-// releaseStoredBytes is used only by cleanup of a failed or invalid raw object.
-// A completed version's bytes are never decremented in this phase.
 func releaseStoredBytes(tx *gorm.DB, orgID string, bytes int64) error {
 	return tx.Exec(`
 		UPDATE organization_media_usage
@@ -220,9 +178,33 @@ func releaseStoredBytes(tx *gorm.DB, orgID string, bytes int64) error {
 		bytes, orgID).Error
 }
 
-// setPendingMediaVersion attaches a candidate to the asset. The partial unique
-// index enforces that one pending version belongs to one asset; this additional
-// scope check catches a cross-asset write before the constraint does.
+func reclaimExpiredSessions(tx *gorm.DB, orgID, assetID string, now time.Time) error {
+	var reclaimedBytes []int64
+	err := tx.Raw(`
+		UPDATE media_upload_sessions
+		SET state = ?, expired_at = ?, updated_at = ?
+		WHERE asset_id = ?
+		  AND org_id = ?
+		  AND state = ?
+		  AND session_expires_at <= ?
+		RETURNING expected_size_bytes`,
+		domain.UploadSessionExpired, now, now,
+		assetID, orgID, domain.UploadSessionCreated, now,
+	).Scan(&reclaimedBytes).Error
+	if err != nil {
+		return err
+	}
+
+	var total int64
+	for _, bytes := range reclaimedBytes {
+		total += bytes
+	}
+	if total == 0 {
+		return nil
+	}
+	return releaseReservation(tx, orgID, total)
+}
+
 func setPendingMediaVersion(tx *gorm.DB, orgID, assetID, versionID string) error {
 	result := tx.Exec(`
 		UPDATE metadata_items
@@ -243,8 +225,6 @@ func setPendingMediaVersion(tx *gorm.DB, orgID, assetID, versionID string) error
 	return nil
 }
 
-// clearPendingMediaVersion clears only the matching pointer, so a late failure
-// from a superseded candidate cannot detach the current one.
 func clearPendingMediaVersion(tx *gorm.DB, assetID, versionID string) error {
 	return tx.Exec(`
 		UPDATE metadata_items
@@ -253,9 +233,6 @@ func clearPendingMediaVersion(tx *gorm.DB, assetID, versionID string) error {
 		assetID, versionID).Error
 }
 
-// sessionIsCommittable reports whether a loaded session may still be committed,
-// separating "expired" from "wrong state" so callers can map them to their own
-// safe error codes.
 func sessionIsCommittable(session domain.MediaUploadSession, now time.Time) error {
 	if session.State == domain.UploadSessionCommitted {
 		return nil
@@ -273,10 +250,6 @@ func (repository *mediaRepository) now() time.Time {
 	return repository.clock.Now()
 }
 
-// CreateUploadSession reserves organization quota in the same transaction as
-// the checksum-bound session. A retry is resolved before reservation so replay
-// cannot double-charge quota and a conflicting retry cannot mutate the first
-// session.
 func (repository *mediaRepository) CreateUploadSession(
 	ctx context.Context,
 	request domain.CreateUploadSessionRequest,
@@ -315,10 +288,6 @@ func (repository *mediaRepository) CreateUploadSession(
 			if subtle.ConstantTimeCompare(existing.RequestFingerprint, fingerprint) != 1 {
 				return ErrIdempotencyConflict
 			}
-			// A cancelled, expired, or failed session released its quota
-			// reservation. Replaying it would hand back upload authority for a
-			// raw key nothing reserves, so the key is spent: the caller starts
-			// over under a new one.
 			if !existing.State.IsPublished() {
 				return ErrIdempotencyConflict
 			}
@@ -331,6 +300,9 @@ func (repository *mediaRepository) CreateUploadSession(
 		}
 		if asset.hasPendingVersion() {
 			return ErrUploadInProgress
+		}
+		if err := reclaimExpiredSessions(tx, request.OrgID, request.AssetID, repository.now()); err != nil {
+			return err
 		}
 		var openSessionCount int64
 		if err := tx.Model(&domain.MediaUploadSession{}).
