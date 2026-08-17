@@ -5,11 +5,11 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"seta-im-intern/go-asset-core/internal/domain"
 	"seta-im-intern/go-asset-core/internal/eventing/event"
+	"seta-im-intern/go-asset-core/internal/eventing/media"
 	"strconv"
 	"strings"
 	"time"
@@ -622,16 +622,20 @@ func (repository *mediaRepository) CommitUpload(
 			Updates(map[string]any{"state": domain.UploadSessionCommitted, "committed_at": now, "updated_at": now}).Error; err != nil {
 			return err
 		}
-		envelope := map[string]any{
-			"eventId": ids.OutboxID, "eventType": domain.MediaProcessingRequestedEventType,
-			"schemaVersion": 1, "source": "asset-core", "occurredAt": now,
-			"orgId": locked.OrgID, "assetId": locked.AssetID, "uploadId": locked.ID,
-			"versionId": version.ID, "jobId": job.ID,
-		}
-		if traceparent := event.Traceparent(ctx); traceparent != "" {
-			envelope["traceparent"] = traceparent
-		}
-		payload, err := json.Marshal(envelope)
+		payload, err := media.Marshal(
+			event.Envelope{
+				EventID:     ids.OutboxID,
+				OccurredAt:  now,
+				OrgID:       locked.OrgID,
+				Traceparent: event.Traceparent(ctx),
+			},
+			media.Payload{
+				AssetID:   locked.AssetID,
+				UploadID:  locked.ID,
+				VersionID: version.ID,
+				JobID:     job.ID,
+			},
+		)
 		if err != nil {
 			return err
 		}
