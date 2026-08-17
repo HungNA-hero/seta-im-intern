@@ -4,25 +4,23 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// MediaConfig is the validated media policy. Every duration and bound that the
-// upload, processing, and cleanup paths depend on is resolved once here so no
-// call site reads an environment variable directly.
 type MediaConfig struct {
 	Limits         MediaLimits
 	Retry          MediaRetryPolicy
 	Lease          MediaLeasePolicy
 	Reconciliation MediaReconciliationPolicy
+	Processor      MediaProcessorConfig
 	Storage        MediaStorageConfig
 	Kafka          MediaKafkaConfig
 	RequireHTTPS   bool
 }
 
-// MediaLimits bounds what may be admitted and what a processor may decode.
 type MediaLimits struct {
 	MinUploadSizeBytes    int64
 	MaxUploadSizeBytes    int64
@@ -36,28 +34,19 @@ type MediaLimits struct {
 	MaxProcessingAttempts int
 }
 
-// AdmitsUploadSize is the single size predicate used before issuing direct
-// upload authority. Every integer inside the inclusive range follows the same
-// whole-object PRESIGNED path; there is no strategy threshold.
 func (limits MediaLimits) AdmitsUploadSize(sizeBytes int64) bool {
 	return sizeBytes >= limits.MinUploadSizeBytes && sizeBytes <= limits.MaxUploadSizeBytes
 }
 
-// MediaRetryPolicy is the job retry schedule. It is deliberately separate from
-// the shared relay's transport backoff: these delays reschedule work, not a
-// publication.
 type MediaRetryPolicy struct {
 	Delays []time.Duration
 }
 
-// MediaLeasePolicy sizes crash detection. Expiry must stay comfortably above
-// the renewal interval so scheduling jitter never revokes live work.
 type MediaLeasePolicy struct {
 	RenewalInterval time.Duration
 	Expiry          time.Duration
 }
 
-// MediaReconciliationPolicy bounds the lost-event backstop sweep.
 type MediaReconciliationPolicy struct {
 	ScanInterval          time.Duration
 	BatchSize             int
@@ -65,9 +54,18 @@ type MediaReconciliationPolicy struct {
 	ProcessorHardDeadline time.Duration
 }
 
-// MediaStorageConfig separates the endpoint containers use from the endpoint
-// presigned URLs are signed against. The public endpoint is never rewritten
-// after signing, so the two are resolved independently.
+type MediaProcessorConfig struct {
+	ExecutablePath string
+	ScratchRoot    string
+	UID            int
+	GID            int
+	Validation     time.Duration
+	Transform      time.Duration
+	HardDeadline   time.Duration
+	SweepInterval  time.Duration
+	SweepBatchSize int
+}
+
 type MediaStorageConfig struct {
 	Bucket            string
 	Region            string
@@ -79,7 +77,6 @@ type MediaStorageConfig struct {
 	ChecksumSupported bool
 }
 
-// MediaKafkaConfig names the media topics on the shared KAN-81 transport.
 type MediaKafkaConfig struct {
 	Brokers          []string
 	Topic            string
@@ -93,13 +90,8 @@ type MediaKafkaConfig struct {
 
 var ErrInvalidMediaConfig = errors.New("invalid media configuration")
 
-// LookupEnv matches os.LookupEnv so configuration can be validated in tests
-// without mutating the process environment.
 type LookupEnv func(key string) (string, bool)
 
-// LoadMediaConfig resolves and validates media configuration. It fails rather
-// than falling back when a value is present but unusable, because a silently
-// defaulted endpoint or quota is worse than a refused start.
 func LoadMediaConfig(lookup LookupEnv) (MediaConfig, error) {
 	reader := envReader{lookup: lookup}
 
@@ -131,6 +123,17 @@ func LoadMediaConfig(lookup LookupEnv) (MediaConfig, error) {
 			BatchSize:             reader.int("ASSET_MEDIA_RECONCILE_BATCH_SIZE", 50),
 			StaleDispatchAfter:    reader.duration("ASSET_MEDIA_RECONCILE_STALE_SECONDS", time.Second, 60),
 			ProcessorHardDeadline: reader.duration("ASSET_MEDIA_PROCESSOR_DEADLINE_SECONDS", time.Second, 90),
+		},
+		Processor: MediaProcessorConfig{
+			ExecutablePath: reader.string("ASSET_MEDIA_PROCESSOR_PATH", "/usr/local/bin/media-processor"),
+			ScratchRoot:    reader.string("ASSET_MEDIA_SCRATCH_DIR", os.TempDir()),
+			UID:            reader.int("ASSET_MEDIA_PROCESSOR_UID", 0),
+			GID:            reader.int("ASSET_MEDIA_PROCESSOR_GID", 0),
+			Validation:     reader.duration("ASSET_MEDIA_PROCESSOR_VALIDATION_SECONDS", time.Second, 15),
+			Transform:      reader.duration("ASSET_MEDIA_PROCESSOR_TRANSFORM_SECONDS", time.Second, 60),
+			HardDeadline:   reader.duration("ASSET_MEDIA_PROCESSOR_DEADLINE_SECONDS", time.Second, 90),
+			SweepInterval:  reader.duration("ASSET_MEDIA_SWEEP_INTERVAL_MINUTES", time.Minute, 15),
+			SweepBatchSize: reader.int("ASSET_MEDIA_SWEEP_BATCH_SIZE", 50),
 		},
 		Storage: MediaStorageConfig{
 			Bucket:            reader.string("ASSET_MEDIA_BUCKET", "seta-media"),
@@ -192,6 +195,29 @@ func (config MediaConfig) validate() error {
 		return fmt.Errorf("%w: reconciliation batch size must be positive", ErrInvalidMediaConfig)
 	}
 
+	processor := config.Processor
+	if processor.Validation <= 0 || processor.Transform <= 0 || processor.HardDeadline <= 0 {
+		return fmt.Errorf("%w: processor budgets must be positive", ErrInvalidMediaConfig)
+	}
+	if processor.Validation > processor.HardDeadline || processor.Transform > processor.HardDeadline {
+		return fmt.Errorf(
+			"%w: processor stage budgets (%s validation, %s transform) must fit inside the %s hard deadline",
+			ErrInvalidMediaConfig, processor.Validation, processor.Transform, processor.HardDeadline,
+		)
+	}
+	if processor.SweepInterval <= 0 || processor.SweepBatchSize <= 0 {
+		return fmt.Errorf("%w: sweep interval and batch size must be positive", ErrInvalidMediaConfig)
+	}
+	if strings.TrimSpace(processor.ExecutablePath) == "" || strings.TrimSpace(processor.ScratchRoot) == "" {
+		return fmt.Errorf("%w: processor path and scratch directory are required", ErrInvalidMediaConfig)
+	}
+	if (processor.UID == 0) != (processor.GID == 0) {
+		return fmt.Errorf("%w: processor UID and GID must be configured together", ErrInvalidMediaConfig)
+	}
+	if config.RequireHTTPS && processor.UID == 0 {
+		return fmt.Errorf("%w: isolated processor UID and GID are required outside local/test mode", ErrInvalidMediaConfig)
+	}
+
 	if strings.TrimSpace(config.Storage.Bucket) == "" {
 		return fmt.Errorf("%w: media bucket is required", ErrInvalidMediaConfig)
 	}
@@ -222,9 +248,6 @@ func (config MediaConfig) validate() error {
 	return nil
 }
 
-// validateEndpoint refuses a plaintext storage endpoint whenever HTTPS is
-// required, so a staging or production deployment cannot sign a URL that
-// carries credentials over an unencrypted transport.
 func (config MediaConfig) validateEndpoint(name, endpoint string) error {
 	parsed, err := url.Parse(endpoint)
 	if err != nil || parsed.Host == "" {
@@ -249,8 +272,6 @@ func splitBrokers(value string) []string {
 	return brokers
 }
 
-// envReader accumulates the first parse failure so a caller reports one clear
-// error instead of a cascade of zero values.
 type envReader struct {
 	lookup LookupEnv
 	err    error
