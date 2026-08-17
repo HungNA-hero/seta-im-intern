@@ -42,6 +42,7 @@ type mediaRepositoryFake struct {
 	createCalls    int
 	commitCalls    int
 	createOptions  repository.CreateUploadSessionOptions
+	createRequest  domain.CreateUploadSessionRequest
 	commitAttrs    domain.ObjectAttributes
 	commitIDs      repository.CommitUploadIDs
 	refreshSession domain.MediaUploadSession
@@ -54,9 +55,10 @@ type mediaRepositoryFake struct {
 	cancelScope    repository.UploadSessionScope
 }
 
-func (fake *mediaRepositoryFake) CreateUploadSession(_ context.Context, _ domain.CreateUploadSessionRequest, options repository.CreateUploadSessionOptions) (domain.MediaUploadSession, bool, error) {
+func (fake *mediaRepositoryFake) CreateUploadSession(_ context.Context, request domain.CreateUploadSessionRequest, options repository.CreateUploadSessionOptions) (domain.MediaUploadSession, bool, error) {
 	fake.createCalls++
 	fake.createOptions = options
+	fake.createRequest = request
 	return fake.createSession, fake.createReplay, fake.createErr
 }
 
@@ -545,5 +547,51 @@ func TestMediaUsecase_GetReportsUnpublishedSessionAsGone(t *testing.T) {
 		if !errors.Is(err, repository.ErrUploadNotFound) {
 			t.Fatalf("state %s returned %v, want gone", state, err)
 		}
+	}
+}
+
+func TestMediaUsecase_AdmissionRejectsHostileFilenames(t *testing.T) {
+	hostile := map[string]string{
+		"posix traversal":    "../../etc/passwd.png",
+		"windows sepator":    "dir\\photo.png",
+		"line break":         "photo\n.png",
+		"nul":                "photo\x00.png",
+		"direction override": "photo‮gnp.png",
+		"only extension":     ".png",
+	}
+
+	for name, filename := range hostile {
+		t.Run(name, func(t *testing.T) {
+			repositoryFake := &mediaRepositoryFake{}
+			storageFake := &mediaStorageFake{}
+			service := usecase.NewMediaUsecase(repositoryFake, storageFake, mediaUsecaseClock{at: time.Now()}, &sequenceIDs{values: []string{"upload-1"}}, mediaPolicy())
+			request := validCreateRequest()
+			request.OriginalFilename = filename
+
+			_, err := service.CreateUploadSession(context.Background(), request)
+
+			if !errors.Is(err, usecase.ErrInvalidMediaFilename) {
+				t.Fatalf("error = %v, want %v", err, usecase.ErrInvalidMediaFilename)
+			}
+			if repositoryFake.createCalls != 0 || storageFake.presignCalls != 0 {
+				t.Error("a rejected filename must never reach the database or storage")
+			}
+		})
+	}
+}
+
+func TestMediaUsecase_AdmissionStoresTheNormalizedFilename(t *testing.T) {
+	repositoryFake := &mediaRepositoryFake{}
+	storageFake := &mediaStorageFake{}
+	service := usecase.NewMediaUsecase(repositoryFake, storageFake, mediaUsecaseClock{at: time.Now()}, &sequenceIDs{values: []string{"upload-1"}}, mediaPolicy())
+	request := validCreateRequest()
+	request.OriginalFilename = "  café.png  "
+
+	if _, err := service.CreateUploadSession(context.Background(), request); err != nil {
+		t.Fatalf("CreateUploadSession: %v", err)
+	}
+
+	if stored := repositoryFake.createRequest.OriginalFilename; stored != "café.png" {
+		t.Errorf("stored filename = %q, want the trimmed composed form", stored)
 	}
 }
