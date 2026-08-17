@@ -17,6 +17,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - default
+      - media-internal
 
   access-db:
     image: postgres:16-alpine
@@ -172,6 +175,72 @@ services:
     healthcheck:
       disable: true
 
+  media-worker:
+    build:
+      context: ../services/asset-core
+      target: prod
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-media-worker
+    entrypoint: ["/app/media-worker"]
+    environment:
+      ASSET_DB_HOST: asset-db
+      ASSET_DB_PORT: 5432
+      ASSET_DB_NAME: ${ASSET_DB_NAME:-asset_db}
+      ASSET_DB_USER: ${ASSET_DB_USER:-asset_user}
+      ASSET_DB_PASSWORD: ${ASSET_DB_PASSWORD:-asset_password}
+      ASSET_DB_SSLMODE: disable
+      ASSET_KAFKA_BROKERS: kafka:9092
+      ASSET_KAFKA_MEDIA_TOPIC: ${ASSET_KAFKA_MEDIA_TOPIC:-media-processing.v1}
+      ASSET_KAFKA_MEDIA_DLQ_TOPIC: ${ASSET_KAFKA_MEDIA_DLQ_TOPIC:-media-processing-dlq.v1}
+      ASSET_KAFKA_MEDIA_GROUP_ID: ${ASSET_KAFKA_MEDIA_GROUP_ID:-media-workers-v1}
+      ASSET_MEDIA_BUCKET: ${ASSET_MEDIA_BUCKET:-seta-media}
+      ASSET_MEDIA_S3_REGION: ${ASSET_MEDIA_S3_REGION:-us-east-1}
+      ASSET_MEDIA_S3_INTERNAL_ENDPOINT: http://minio:9000
+      ASSET_MEDIA_S3_PUBLIC_ENDPOINT: ${ASSET_MEDIA_S3_PUBLIC_ENDPOINT:-http://localhost:9000}
+      ASSET_MEDIA_S3_ACCESS_KEY_ID: ${ASSET_MEDIA_S3_ACCESS_KEY_ID:-seta-media-local}
+      ASSET_MEDIA_S3_SECRET_ACCESS_KEY: ${ASSET_MEDIA_S3_SECRET_ACCESS_KEY:-seta-media-local-secret}
+      ASSET_MEDIA_REQUIRE_HTTPS: ${ASSET_MEDIA_REQUIRE_HTTPS:-false}
+      ASSET_MEDIA_PROCESSOR_PATH: /usr/local/bin/media-processor
+      ASSET_MEDIA_SCRATCH_DIR: /scratch
+      ASSET_MEDIA_PROCESSOR_UID: 65532
+      ASSET_MEDIA_PROCESSOR_GID: 65532
+      ASSET_MEDIA_PROCESSOR_VALIDATION_SECONDS: ${ASSET_MEDIA_PROCESSOR_VALIDATION_SECONDS:-15}
+      ASSET_MEDIA_PROCESSOR_TRANSFORM_SECONDS: ${ASSET_MEDIA_PROCESSOR_TRANSFORM_SECONDS:-60}
+      ASSET_MEDIA_PROCESSOR_DEADLINE_SECONDS: ${ASSET_MEDIA_PROCESSOR_DEADLINE_SECONDS:-90}
+      ASSET_MEDIA_SWEEP_INTERVAL_MINUTES: ${ASSET_MEDIA_SWEEP_INTERVAL_MINUTES:-15}
+      ASSET_MEDIA_SWEEP_BATCH_SIZE: ${ASSET_MEDIA_SWEEP_BATCH_SIZE:-50}
+    depends_on:
+      asset-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    read_only: true
+    user: "0:0"
+    tmpfs:
+      - /scratch:mode=0711,uid=0,gid=0,size=${ASSET_MEDIA_SCRATCH_SIZE:-512m},noexec,nosuid,nodev
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+    restart: unless-stopped
+    networks:
+      - media-internal
+    deploy:
+      resources:
+        limits:
+          cpus: "${ASSET_MEDIA_WORKER_CPUS:-2.0}"
+          memory: ${ASSET_MEDIA_WORKER_MEMORY:-1g}
+          pids: ${ASSET_MEDIA_WORKER_PIDS:-128}
+    stop_grace_period: 100s
+    healthcheck:
+      disable: true
+
   redis:
     image: redis:7-alpine
     container_name: ${SETA_COMPOSE_PREFIX:-seta}-redis
@@ -209,6 +278,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    networks:
+      - default
+      - media-internal
 
   minio-init:
     image: minio/mc:RELEASE.2025-08-13T08-35-41Z
@@ -258,6 +330,9 @@ services:
       interval: 5s
       timeout: 10s
       retries: 20
+    networks:
+      - default
+      - media-internal
 
   kafka-init:
     image: apache/kafka:4.2.1
@@ -301,6 +376,11 @@ services:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
       - "${JAEGER_UI_PORT:-16686}:16686"
+
+networks:
+  default:
+  media-internal:
+    internal: true
 
 volumes:
   asset_db_data:
