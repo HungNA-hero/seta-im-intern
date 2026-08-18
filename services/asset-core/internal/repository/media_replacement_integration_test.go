@@ -105,7 +105,11 @@ func (fixture *mediaRepositoryFixture) accept(asset string, size int64) candidat
 	accepted, _, err := fixture.repo.CommitUpload(
 		fixture.ctx,
 		domain.CommitUploadRequest{OrgID: fixture.orgID, AssetID: asset, UploadID: uploadID, RequestedBy: fixture.userID},
-		domain.ObjectAttributes{SizeBytes: size, ContentType: string(domain.MediaContentTypePNG)},
+		domain.ObjectAttributes{
+			SizeBytes:      size,
+			ContentType:    string(domain.MediaContentTypePNG),
+			ChecksumSHA256: bytes.Repeat([]byte{0x2a}, domain.ChecksumByteLength),
+		},
 		repository.CommitUploadIDs{VersionID: uuid.NewString(), JobID: uuid.NewString(), OutboxID: uuid.NewString()},
 	)
 	if err != nil {
@@ -123,7 +127,7 @@ func (fixture *mediaRepositoryFixture) jobStore() interface {
 	return repository.NewMediaJobStore(
 		fixture.db,
 		domain.MediaLeasePolicy{RenewalInterval: testJobLeaseRenewal, Expiry: testJobLeaseExpiry},
-		testMaxAttempts,
+		testRetryPolicy(),
 	)
 }
 
@@ -303,7 +307,11 @@ func TestMediaRepository_ReclaimedSessionCannotCommitLate(t *testing.T) {
 	_, _, err = fixture.repo.CommitUpload(
 		fixture.ctx,
 		domain.CommitUploadRequest{OrgID: fixture.orgID, AssetID: asset, UploadID: abandoned.ID, RequestedBy: fixture.userID},
-		domain.ObjectAttributes{SizeBytes: 4, ContentType: string(domain.MediaContentTypePNG)},
+		domain.ObjectAttributes{
+			SizeBytes:      4,
+			ContentType:    string(domain.MediaContentTypePNG),
+			ChecksumSHA256: bytes.Repeat([]byte{0x2a}, domain.ChecksumByteLength),
+		},
 		repository.CommitUploadIDs{VersionID: uuid.NewString(), JobID: uuid.NewString(), OutboxID: uuid.NewString()},
 	)
 

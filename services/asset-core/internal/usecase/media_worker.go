@@ -18,7 +18,7 @@ var (
 type MediaJobStore interface {
 	ClaimJob(ctx context.Context, jobID, owner string) (domain.MediaProcessingJob, domain.JobLease, error)
 	RenewLease(ctx context.Context, jobID string, held domain.JobLease) (domain.JobLease, error)
-	ReleaseLease(ctx context.Context, jobID string, held domain.JobLease) (bool, error)
+	SettleExecutionFailure(ctx context.Context, job domain.MediaProcessingJob, held domain.JobLease) (bool, error)
 }
 
 type MediaJobExecutor interface {
@@ -80,28 +80,28 @@ func (worker *MediaWorker) RunJob(ctx context.Context, jobID string) error {
 	}
 
 	if executeErr != nil {
-		worker.returnToQueue(ctx, jobID, heldLease.Current(), executeErr)
+		settled, settleErr := worker.jobs.SettleExecutionFailure(ctx, job, heldLease.Current())
+		if settleErr != nil {
+			return fmt.Errorf("settling failed media job %s: %w", jobID, settleErr)
+		}
+		if !settled {
+			return fmt.Errorf("%w: %s", ErrLeaseLost, jobID)
+		}
+		worker.logger.Warn(
+			"durably settled a failed media execution",
+			"jobId", jobID,
+			"attempt", job.AttemptCount,
+			"error", executeErr.Error(),
+		)
+		return nil
 	}
-	return executeErr
-}
-
-func (worker *MediaWorker) returnToQueue(ctx context.Context, jobID string, lease domain.JobLease, cause error) {
-	released, err := worker.jobs.ReleaseLease(ctx, jobID, lease)
-	if err != nil {
-		worker.logger.Error("releasing a failed media job failed", "jobId", jobID, "error", err.Error())
-		return
-	}
-	if !released {
-		return
-	}
-	worker.logger.Warn("returned a failed media job to the queue", "jobId", jobID, "error", cause.Error())
+	return nil
 }
 
 func (worker *MediaWorker) classifyClaimFailure(jobID string, err error) error {
 	switch {
 	case errors.Is(err, repository.ErrJobTerminal),
-		errors.Is(err, repository.ErrJobIsolated),
-		errors.Is(err, repository.ErrJobExhausted):
+		errors.Is(err, repository.ErrJobIsolated):
 		worker.logger.Info("media job needs no processing", "jobId", jobID, "reason", err.Error())
 		return fmt.Errorf("%w: %s", ErrJobSettled, jobID)
 

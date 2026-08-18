@@ -21,7 +21,7 @@ func (fixture *mediaJobFixture) purgeStore() interface {
 	return repository.NewMediaJobStore(
 		fixture.db,
 		domain.MediaLeasePolicy{RenewalInterval: testJobLeaseRenewal, Expiry: testJobLeaseExpiry},
-		testMaxAttempts,
+		testRetryPolicy(),
 	)
 }
 

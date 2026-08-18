@@ -144,7 +144,7 @@ func buildRelay(db *gorm.DB, config domain.MediaConfig, workerID string) (*outbo
 }
 
 func buildReader(ctx context.Context, db *gorm.DB, config domain.MediaConfig, workerID string) (*kafka.Reader, error) {
-	jobs := repository.NewMediaJobStore(db, config.Lease, config.Limits.MaxProcessingAttempts)
+	jobs := repository.NewMediaJobStore(db, config.Lease, config.Retry)
 	leases := usecase.NewLeaseKeeper(jobs, config.Lease, slog.Default())
 
 	executor, err := buildRenditionExecutor(ctx, db, config)
@@ -200,7 +200,7 @@ func mediaObjectStorage(ctx context.Context, config domain.MediaConfig) (*storag
 }
 
 func buildRenditionExecutor(ctx context.Context, db *gorm.DB, config domain.MediaConfig) (*usecase.RenditionExecutor, error) {
-	sources := repository.NewMediaJobStore(db, config.Lease, config.Limits.MaxProcessingAttempts)
+	sources := repository.NewMediaJobStore(db, config.Lease, config.Retry)
 
 	objects, err := mediaObjectStorage(ctx, config)
 	if err != nil {
@@ -244,7 +244,7 @@ func buildObjectPurger(ctx context.Context, db *gorm.DB, config domain.MediaConf
 	if err != nil {
 		return nil, err
 	}
-	store := repository.NewMediaJobStore(db, config.Lease, config.Limits.MaxProcessingAttempts)
+	store := repository.NewMediaJobStore(db, config.Lease, config.Retry)
 
 	return usecase.NewMediaObjectPurger(store, objects, usecase.MediaPurgeOptions{
 		Quarantine: config.Limits.AbandonedQuarantine,

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 	"os"
 	"strings"
 	"testing"
@@ -17,6 +19,7 @@ import (
 	"seta-im-intern/go-asset-core/internal/eventing/event"
 	"seta-im-intern/go-asset-core/internal/eventing/media"
 	"seta-im-intern/go-asset-core/internal/repository"
+	"seta-im-intern/go-asset-core/internal/usecase"
 )
 
 const (
@@ -24,6 +27,20 @@ const (
 	testJobLeaseExpiry  = 30 * time.Second
 	testJobLeaseRenewal = 10 * time.Second
 )
+
+func testRetryPolicy() domain.MediaRetryPolicy {
+	return domain.MediaRetryPolicy{Delays: []time.Duration{2 * time.Second, 10 * time.Second}}
+}
+
+type transientFailureExecutor struct{ err error }
+
+func (executor transientFailureExecutor) Execute(
+	context.Context,
+	domain.MediaProcessingJob,
+	*usecase.HeldLease,
+) error {
+	return executor.err
+}
 
 // mediaJobFixture seeds one asset with one pending version, one queued job, and
 // one unpublished outbox row — the exact shape a committed upload leaves behind.
@@ -147,12 +164,12 @@ func (fixture *mediaJobFixture) seedOutboxRow() {
 func (fixture *mediaJobFixture) store() interface {
 	ClaimJob(context.Context, string, string) (domain.MediaProcessingJob, domain.JobLease, error)
 	RenewLease(context.Context, string, domain.JobLease) (domain.JobLease, error)
-	ReleaseLease(context.Context, string, domain.JobLease) (bool, error)
+	SettleExecutionFailure(context.Context, domain.MediaProcessingJob, domain.JobLease) (bool, error)
 } {
 	return repository.NewMediaJobStore(
 		fixture.db,
 		domain.MediaLeasePolicy{RenewalInterval: testJobLeaseRenewal, Expiry: testJobLeaseExpiry},
-		testMaxAttempts,
+		testRetryPolicy(),
 	)
 }
 
@@ -429,40 +446,200 @@ func TestRenewLeaseFailsForANonOwner(t *testing.T) {
 	}
 }
 
-func TestReleaseLeaseReturnsTheJobToTheQueueWithoutTerminalState(t *testing.T) {
+func (fixture *mediaJobFixture) publishPendingOutbox(t *testing.T) domain.MediaJobOutboxRecord {
+	t.Helper()
+	var record domain.MediaJobOutboxRecord
+	if err := fixture.db.
+		Where("job_id = ? AND status = 'pending'", fixture.jobID).
+		Order("created_at DESC").
+		Take(&record).Error; err != nil {
+		t.Fatalf("load pending outbox event: %v", err)
+	}
+	if err := fixture.db.Model(&domain.MediaJobOutboxRecord{}).
+		Where("id = ?", record.ID).
+		Updates(map[string]any{"status": "published", "published_at": time.Now().UTC()}).Error; err != nil {
+		t.Fatalf("publish outbox event %s: %v", record.ID, err)
+	}
+	return record
+}
+
+func TestSettleExecutionFailureSchedulesRetriesThenUnblocksReplacement(t *testing.T) {
+	fixture := newMediaJobFixture(t)
+	priorActive := fixture.seedCompletedActiveVersion(t)
+	fixture.attachPending(t)
+	for _, output := range []domain.MediaOutput{
+		testOutput(domain.MediaOutputThumbnail, priorActive),
+		testOutput(domain.MediaOutputWeb, priorActive),
+	} {
+		if err := fixture.db.Create(&output).Error; err != nil {
+			t.Fatalf("seed prior active output: %v", err)
+		}
+	}
+
+	store := fixture.store()
+	retry := testRetryPolicy()
+	fixture.publishPendingOutbox(t)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	worker := usecase.NewMediaWorker(
+		store,
+		usecase.NewLeaseKeeper(
+			store,
+			domain.MediaLeasePolicy{RenewalInterval: testJobLeaseRenewal, Expiry: testJobLeaseExpiry},
+			logger,
+		),
+		transientFailureExecutor{err: errors.New("injected storage outage")},
+		"worker-a",
+		90*time.Second,
+		logger,
+	)
+
+	for attempt := 1; attempt <= testMaxAttempts; attempt++ {
+		if err := worker.RunJob(fixture.ctx, fixture.jobID); err != nil {
+			t.Fatalf("worker attempt %d was not durably acknowledged: %v", attempt, err)
+		}
+
+		current := fixture.jobRow()
+		if current.AttemptCount != attempt {
+			t.Fatalf("attempt count = %d, want %d", current.AttemptCount, attempt)
+		}
+		if attempt < testMaxAttempts {
+			if current.Status != domain.ProcessingJobQueued {
+				t.Fatalf("attempt %d status = %q, want queued", attempt, current.Status)
+			}
+			remaining := time.Until(current.NextAttemptAt)
+			wantDelay := retry.Delays[attempt-1]
+			if remaining < wantDelay-time.Second || remaining > wantDelay+time.Second {
+				t.Fatalf("attempt %d retry delay = %s, want approximately %s", attempt, remaining, wantDelay)
+			}
+			if current.LeaseOwner != nil || current.LeaseExpiresAt != nil || current.Stage != nil {
+				t.Fatalf("attempt %d retained execution state: %+v", attempt, current)
+			}
+
+			var outbox domain.MediaJobOutboxRecord
+			if err := fixture.db.
+				Where("job_id = ? AND status = 'pending'", fixture.jobID).
+				Take(&outbox).Error; err != nil {
+				t.Fatalf("load retry outbox after attempt %d: %v", attempt, err)
+			}
+			if !outbox.NextAttemptAt.Equal(current.NextAttemptAt) {
+				t.Fatalf("attempt %d outbox due %s != job due %s", attempt, outbox.NextAttemptAt, current.NextAttemptAt)
+			}
+			envelope, err := event.Parse(outbox.Payload, []int{media.SchemaVersion})
+			if err != nil {
+				t.Fatalf("parse retry event after attempt %d: %v", attempt, err)
+			}
+			payload, err := media.Parse(envelope)
+			if err != nil {
+				t.Fatalf("parse retry payload after attempt %d: %v", attempt, err)
+			}
+			if envelope.EventID != outbox.ID || payload.JobID != fixture.jobID || payload.VersionID != fixture.versionID {
+				t.Fatalf("attempt %d retry event does not identify durable truth: envelope=%+v payload=%+v", attempt, envelope, payload)
+			}
+
+			fixture.publishPendingOutbox(t)
+			if err := fixture.db.Exec(
+				"UPDATE media_processing_jobs SET next_attempt_at = statement_timestamp() WHERE id = ?",
+				fixture.jobID,
+			).Error; err != nil {
+				t.Fatalf("make attempt %d due: %v", attempt+1, err)
+			}
+			continue
+		}
+
+		if current.Status != domain.ProcessingJobFailed || current.FailedAt == nil {
+			t.Fatalf("exhausted job = %+v, want terminal failed", current)
+		}
+		if current.LastErrorCode == nil || *current.LastErrorCode != "MEDIA_PROCESSING_FAILED" {
+			t.Fatalf("exhausted job error code = %v, want safe processing failure", current.LastErrorCode)
+		}
+	}
+
+	active, pending := fixture.assetPointers(t)
+	if active == nil || *active != priorActive {
+		t.Fatalf("active version = %v, want prior version %s", active, priorActive)
+	}
+	if pending != nil {
+		t.Fatalf("pending version = %v, want exhausted candidate cleared", pending)
+	}
+	var priorOutputs int64
+	if err := fixture.db.Model(&domain.MediaOutput{}).
+		Where("version_id = ?", priorActive).
+		Count(&priorOutputs).Error; err != nil {
+		t.Fatalf("count prior outputs: %v", err)
+	}
+	if priorOutputs != int64(len(domain.MediaOutputManifest)) {
+		t.Fatalf("prior active outputs = %d, want %d still available", priorOutputs, len(domain.MediaOutputManifest))
+	}
+	var failedVersion domain.AssetMediaVersion
+	if err := fixture.db.Take(&failedVersion, "id = ?", fixture.versionID).Error; err != nil {
+		t.Fatalf("load exhausted version: %v", err)
+	}
+	if failedVersion.Status != domain.MediaVersionFailed || failedVersion.FailureCode == nil ||
+		*failedVersion.FailureCode != "MEDIA_PROCESSING_FAILED" {
+		t.Fatalf("exhausted version = %+v, want safe terminal failure", failedVersion)
+	}
+
+	now := time.Now().UTC()
+	uploadID := uuid.NewString()
+	request := domain.CreateUploadSessionRequest{
+		OrgID: fixture.orgID, AssetID: fixture.assetID, RequestedBy: fixture.userID,
+		IdempotencyKey: uuid.NewString(), OriginalFilename: "replacement.png",
+		DeclaredContentType: domain.MediaContentTypePNG, ExpectedSizeBytes: 7,
+		DeclaredChecksumSHA256: bytes.Repeat([]byte{0x2a}, domain.ChecksumByteLength),
+	}
+	rawKey, err := domain.RawObjectKey(request.OrgID, request.AssetID, uploadID, request.DeclaredContentType)
+	if err != nil {
+		t.Fatalf("derive replacement key: %v", err)
+	}
+	_, replayed, err := repository.NewMediaRepository(fixture.db, mediaFixedClock{at: now}).CreateUploadSession(
+		fixture.ctx,
+		request,
+		repository.CreateUploadSessionOptions{
+			UploadID: uploadID, RawObjectKey: rawKey, DefaultQuotaBytes: 1024 * 1024,
+			CredentialExpiresAt: now.Add(time.Hour), SessionExpiresAt: now.Add(24 * time.Hour),
+		},
+	)
+	if err != nil || replayed {
+		t.Fatalf("new upload after retry exhaustion: replayed=%v err=%v", replayed, err)
+	}
+}
+
+func TestSettleExecutionFailureRollsBackWithoutADurableRetryEvent(t *testing.T) {
 	fixture := newMediaJobFixture(t)
 	store := fixture.store()
-
-	_, lease, err := store.ClaimJob(fixture.ctx, fixture.jobID, "worker-a")
+	job, lease, err := store.ClaimJob(fixture.ctx, fixture.jobID, "worker-a")
 	if err != nil {
 		t.Fatalf("ClaimJob: %v", err)
 	}
 
-	released, err := store.ReleaseLease(fixture.ctx, fixture.jobID, lease)
-	if err != nil {
-		t.Fatalf("ReleaseLease: %v", err)
-	}
-	if !released {
-		t.Fatal("releasing a held lease must apply")
-	}
+	settled, err := store.SettleExecutionFailure(fixture.ctx, job, lease)
 
-	job := fixture.jobRow()
-	if job.Status != domain.ProcessingJobQueued {
-		t.Errorf("status = %q, want queued", job.Status)
+	if err == nil {
+		t.Fatal("the existing unpublished event must make the retry transaction fail")
 	}
-	if job.CompletedAt != nil || job.FailedAt != nil {
-		t.Error("releasing a lease must not write terminal state")
+	if settled {
+		t.Fatal("a retry without a fresh durable event must not be acknowledged")
 	}
-	if job.AttemptCount != 1 {
-		t.Errorf("attemptCount = %d, want the attempt to remain counted", job.AttemptCount)
+	current := fixture.jobRow()
+	if current.Status != domain.ProcessingJobProcessing || current.LeaseOwner == nil || current.LeaseExpiresAt == nil {
+		t.Fatalf("failed retry transaction partially released the job: %+v", current)
+	}
+	var outboxCount int64
+	if err := fixture.db.Model(&domain.MediaJobOutboxRecord{}).
+		Where("job_id = ?", fixture.jobID).
+		Count(&outboxCount).Error; err != nil {
+		t.Fatalf("count outbox events: %v", err)
+	}
+	if outboxCount != 1 {
+		t.Fatalf("failed retry transaction left %d outbox events, want the original only", outboxCount)
 	}
 }
 
-func TestReleaseLeaseDoesNothingForAStaleLease(t *testing.T) {
+func TestSettleExecutionFailureDoesNothingForAStaleLease(t *testing.T) {
 	fixture := newMediaJobFixture(t)
 	store := fixture.store()
 
-	_, stale, err := store.ClaimJob(fixture.ctx, fixture.jobID, "worker-a")
+	job, stale, err := store.ClaimJob(fixture.ctx, fixture.jobID, "worker-a")
 	if err != nil {
 		t.Fatalf("ClaimJob: %v", err)
 	}
@@ -475,11 +652,11 @@ func TestReleaseLeaseDoesNothingForAStaleLease(t *testing.T) {
 		t.Fatalf("takeover claim: %v", err)
 	}
 
-	released, err := store.ReleaseLease(fixture.ctx, fixture.jobID, stale)
+	settled, err := store.SettleExecutionFailure(fixture.ctx, job, stale)
 	if err != nil {
-		t.Fatalf("ReleaseLease: %v", err)
+		t.Fatalf("SettleExecutionFailure: %v", err)
 	}
-	if released {
+	if settled {
 		t.Error("a superseded worker must not be able to move the job")
 	}
 	if status := fixture.jobRow().Status; status != domain.ProcessingJobProcessing {
@@ -529,6 +706,6 @@ func (fixture *mediaJobFixture) sourceStore() interface {
 	return repository.NewMediaJobStore(
 		fixture.db,
 		domain.MediaLeasePolicy{RenewalInterval: testJobLeaseRenewal, Expiry: testJobLeaseExpiry},
-		testMaxAttempts,
+		testRetryPolicy(),
 	)
 }

@@ -96,23 +96,7 @@ func (store *mediaJobStore) FailVersion(ctx context.Context, failure MediaFailur
 			return err
 		}
 
-		if err := tx.Exec(`
-			UPDATE asset_media_versions
-			SET status = 'failed', failure_code = ?, failed_at = statement_timestamp()
-			WHERE id = ? AND org_id = ?`,
-			failure.ErrorCode, failure.VersionID, failure.OrgID,
-		).Error; err != nil {
-			return err
-		}
-
-		if err := clearPendingMediaVersion(tx, failure.AssetID, failure.VersionID); err != nil {
-			return err
-		}
-		if err := tx.Exec(`
-			UPDATE media_processing_jobs
-			SET status = 'failed', stage = NULL, failed_at = statement_timestamp(), last_error_code = ?,
-			    lease_owner = NULL, lease_expires_at = NULL
-			WHERE id = ?`, failure.ErrorCode, failure.JobID).Error; err != nil {
+		if err := failMediaVersion(tx, failure); err != nil {
 			return err
 		}
 
@@ -120,6 +104,26 @@ func (store *mediaJobStore) FailVersion(ctx context.Context, failure MediaFailur
 		return nil
 	})
 	return applied, err
+}
+
+func failMediaVersion(tx *gorm.DB, failure MediaFailure) error {
+	if err := tx.Exec(`
+		UPDATE asset_media_versions
+		SET status = 'failed', failure_code = ?, failed_at = statement_timestamp()
+		WHERE id = ? AND org_id = ?`,
+		failure.ErrorCode, failure.VersionID, failure.OrgID,
+	).Error; err != nil {
+		return err
+	}
+
+	if err := clearPendingMediaVersion(tx, failure.AssetID, failure.VersionID); err != nil {
+		return err
+	}
+	return tx.Exec(`
+		UPDATE media_processing_jobs
+		SET status = 'failed', stage = NULL, failed_at = statement_timestamp(), last_error_code = ?,
+		    lease_owner = NULL, lease_expires_at = NULL
+		WHERE id = ?`, failure.ErrorCode, failure.JobID).Error
 }
 
 func lockLeasedJob(tx *gorm.DB, jobID string, held domain.JobLease) (bool, error) {

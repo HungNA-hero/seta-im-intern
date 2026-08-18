@@ -93,6 +93,7 @@ func TestApplyLeavesTheOffsetUncommittedWhenTheJobIsUnavailable(t *testing.T) {
 	for name, result := range map[string]error{
 		"leased elsewhere": fmt.Errorf("%w: %w", usecase.ErrJobUnavailable, repository.ErrJobLeased),
 		"lease lost":       fmt.Errorf("%w: job-1", usecase.ErrLeaseLost),
+		"exhausted queued": fmt.Errorf("%w: job-1 used 3 of 3", repository.ErrJobExhausted),
 		"database down":    errors.New("connection refused"),
 	} {
 		t.Run(name, func(t *testing.T) {

@@ -19,7 +19,7 @@ func (fixture *mediaJobFixture) promotionStore() interface {
 	return repository.NewMediaJobStore(
 		fixture.db,
 		domain.MediaLeasePolicy{RenewalInterval: testJobLeaseRenewal, Expiry: testJobLeaseExpiry},
-		testMaxAttempts,
+		testRetryPolicy(),
 	)
 }
 
