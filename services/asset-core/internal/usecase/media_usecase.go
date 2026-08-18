@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
@@ -41,9 +42,11 @@ func NewMediaUsecase(repository MediaRepository, storage domain.ObjectStorage, c
 }
 
 func (usecase *MediaUsecase) CreateUploadSession(ctx context.Context, request domain.CreateUploadSessionRequest) (domain.UploadSessionResult, error) {
-	if err := usecase.validateAdmission(request); err != nil {
+	normalizedFilename, err := usecase.validateAdmission(request)
+	if err != nil {
 		return domain.UploadSessionResult{}, err
 	}
+	request.OriginalFilename = normalizedFilename
 	uploadID := usecase.ids.NewID()
 	key, err := domain.RawObjectKey(request.OrgID, request.AssetID, uploadID, request.DeclaredContentType)
 	if err != nil {
@@ -245,27 +248,27 @@ func (usecase *MediaUsecase) verifyStoredObject(
 	return attributes, nil
 }
 
-func (usecase *MediaUsecase) validateAdmission(request domain.CreateUploadSessionRequest) error {
+func (usecase *MediaUsecase) validateAdmission(request domain.CreateUploadSessionRequest) (string, error) {
 	if !usecase.config.Limits.AdmitsUploadSize(request.ExpectedSizeBytes) {
-		return ErrInvalidMediaSize
+		return "", ErrInvalidMediaSize
 	}
 	if len(request.DeclaredChecksumSHA256) != domain.ChecksumByteLength {
-		return ErrInvalidMediaChecksum
+		return "", ErrInvalidMediaChecksum
 	}
 	extension, ok := request.DeclaredContentType.FileExtension()
 	if !ok {
-		return domain.ErrUnsupportedMediaType
+		return "", domain.ErrUnsupportedMediaType
 	}
-	filename := strings.TrimSpace(request.OriginalFilename)
-	if filename == "" || len(filename) > 255 || strings.ContainsAny(filename, "/\\\x00\r\n") {
-		return ErrInvalidMediaFilename
+	filename, err := domain.ValidateDisplayFilename(request.OriginalFilename)
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", ErrInvalidMediaFilename, err)
 	}
 	actualExtension := strings.TrimPrefix(strings.ToLower(filepath.Ext(filename)), ".")
 	if request.DeclaredContentType == domain.MediaContentTypeJPEG && actualExtension == "jpeg" {
-		return nil
+		return filename, nil
 	}
 	if actualExtension != extension {
-		return domain.ErrUnsupportedMediaType
+		return "", domain.ErrUnsupportedMediaType
 	}
-	return nil
+	return filename, nil
 }
