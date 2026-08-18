@@ -13,7 +13,12 @@ type Counter =
   | "asset_breaker_half_open"
   | "asset_breaker_close"
   | "asset_breaker_reject"
-  | "asset_breaker_capacity_rejected";
+  | "asset_breaker_capacity_rejected"
+  | "media_asset_breaker_open"
+  | "media_asset_breaker_half_open"
+  | "media_asset_breaker_close"
+  | "media_asset_breaker_reject"
+  | "media_asset_breaker_capacity_rejected";
 
 const counters: Record<Counter, number> = {
   decision_hit: 0,
@@ -31,6 +36,11 @@ const counters: Record<Counter, number> = {
   asset_breaker_close: 0,
   asset_breaker_reject: 0,
   asset_breaker_capacity_rejected: 0,
+  media_asset_breaker_open: 0,
+  media_asset_breaker_half_open: 0,
+  media_asset_breaker_close: 0,
+  media_asset_breaker_reject: 0,
+  media_asset_breaker_capacity_rejected: 0,
 };
 
 const invalidationLatenciesMs: number[] = [];

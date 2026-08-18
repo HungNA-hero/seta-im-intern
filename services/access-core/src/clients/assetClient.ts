@@ -2,7 +2,7 @@ import { config } from "../config";
 import { getRequestCorrelation } from "../observability/requestContext";
 import { singleFlight } from "../cache/singleFlight";
 import { readFolderFactThrough, readItemFactThrough } from "../cache/factCache";
-import { fireAssetRequest } from "./assetBreaker";
+import { fireAssetRequest, fireMediaAssetRequest } from "./assetBreaker";
 import { AssetRequest, createAssetTransport } from "./assetTransport";
 import { createAssetFactReader } from "./assetFacts";
 
@@ -47,8 +47,19 @@ const assetTransport = createAssetTransport({
   getCorrelation: getRequestCorrelation,
 });
 
+const mediaAssetTransport = createAssetTransport({
+  baseUrl: config.goAssetUrl,
+  internalApiToken: config.assetInternalApiToken,
+  executor: { fire: fireMediaAssetRequest },
+  getCorrelation: getRequestCorrelation,
+});
+
 export async function assetFetch(path: string, request: AssetRequest): Promise<Response> {
   return assetTransport.request(path, request);
+}
+
+export async function mediaAssetFetch(path: string, request: AssetRequest): Promise<Response> {
+  return mediaAssetTransport.request(path, request);
 }
 
 const assetFactReader = createAssetFactReader({

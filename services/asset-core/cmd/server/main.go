@@ -11,16 +11,27 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
 	httpDelivery "seta-im-intern/go-asset-core/internal/delivery/http"
+	"seta-im-intern/go-asset-core/internal/domain"
 	"seta-im-intern/go-asset-core/internal/observability"
 	"seta-im-intern/go-asset-core/internal/repository"
+	"seta-im-intern/go-asset-core/internal/storage"
 	"seta-im-intern/go-asset-core/internal/usecase"
 )
+
+type systemClock struct{}
+
+func (systemClock) Now() time.Time { return time.Now().UTC() }
+
+type uuidGenerator struct{}
+
+func (uuidGenerator) NewID() string { return uuid.NewString() }
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
@@ -46,6 +57,27 @@ func main() {
 	assetUsecase := usecase.NewAssetUsecase(assetRepo)
 	folderDeletionRepo := repository.NewFolderDeletionRepository(db)
 	folderDeletionUsecase := usecase.NewFolderDeletionUsecase(folderDeletionRepo)
+	mediaConfig, err := domain.LoadMediaConfig(os.LookupEnv)
+	if err != nil {
+		slog.Error("invalid media configuration", "error", err.Error())
+		os.Exit(1)
+	}
+	mediaStorage, err := storage.NewMinIOStorage(context.Background(), storage.MinIOConfig{
+		InternalEndpoint:  mediaConfig.Storage.InternalEndpoint,
+		PublicEndpoint:    mediaConfig.Storage.PublicEndpoint,
+		Region:            mediaConfig.Storage.Region,
+		AccessKeyID:       mediaConfig.Storage.AccessKeyID,
+		SecretAccessKey:   mediaConfig.Storage.SecretAccessKey,
+		Bucket:            mediaConfig.Storage.Bucket,
+		ChecksumSupported: mediaConfig.Storage.ChecksumSupported,
+	})
+	if err != nil {
+		slog.Error("media storage configuration failed", "error", err.Error())
+		os.Exit(1)
+	}
+	clock := systemClock{}
+	mediaRepo := repository.NewMediaRepository(db, clock)
+	mediaUsecase := usecase.NewMediaUsecase(mediaRepo, mediaStorage, clock, uuidGenerator{}, mediaConfig)
 
 	// 3. Setup Routes and Handlers
 	muxPtr := http.NewServeMux()
@@ -56,6 +88,7 @@ func main() {
 	}
 
 	httpDelivery.NewAssetHandler(muxPtr, assetUsecase, db, folderDeletionUsecase)
+	httpDelivery.NewMediaHandler(muxPtr, mediaUsecase)
 
 	// 4. Start Server
 	port := os.Getenv("PORT")

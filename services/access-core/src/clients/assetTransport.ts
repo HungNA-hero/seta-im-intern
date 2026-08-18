@@ -2,8 +2,9 @@ export interface AssetRequest {
   userId: string;
   orgId: string;
   orgAdmin?: boolean;
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: Record<string, unknown>;
+  idempotencyKey?: string;
 }
 
 export interface AssetRequestExecutor {
@@ -36,6 +37,9 @@ export function createAssetTransport(dependencies: AssetTransportDependencies): 
       };
       if (request.orgAdmin === true) {
         headers["X-Org-Admin"] = "true";
+      }
+      if (request.idempotencyKey) {
+        headers["Idempotency-Key"] = request.idempotencyKey;
       }
 
       const correlation = dependencies.getCorrelation();

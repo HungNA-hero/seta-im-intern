@@ -49,6 +49,41 @@ var errorCodes = map[string]ErrorCode{
 	"METADATA_NOT_DELETED":          {"METADATA_NOT_DELETED", 4005, "Metadata item is already active"},
 	"GRANT_NOT_FOUND":               {"GRANT_NOT_FOUND", 5001, "Object permission not found"},
 	"GRANT_INVALID_TARGET":          {"GRANT_INVALID_TARGET", 5002, "Grant must target exactly one of user or role"},
+	"MEDIA_UPLOAD_NOT_FOUND":        {"MEDIA_UPLOAD_NOT_FOUND", 6001, "Media upload not found"},
+	"MEDIA_UPLOAD_IN_PROGRESS":      {"MEDIA_UPLOAD_IN_PROGRESS", 6002, "A media upload is already in progress for this asset"},
+	"IDEMPOTENCY_KEY_REUSED":        {"IDEMPOTENCY_KEY_REUSED", 6003, "Idempotency key was already used with different request data"},
+	"UPLOAD_SESSION_EXPIRED":        {"UPLOAD_SESSION_EXPIRED", 6004, "Upload session has expired"},
+	"MEDIA_PAYLOAD_TOO_LARGE":       {"MEDIA_PAYLOAD_TOO_LARGE", 6005, "Media file exceeds the maximum allowed size"},
+	"MEDIA_TYPE_UNSUPPORTED":        {"MEDIA_TYPE_UNSUPPORTED", 6006, "Media type is not supported"},
+	"MEDIA_OBJECT_MISMATCH":         {"MEDIA_OBJECT_MISMATCH", 6007, "Stored object does not match the upload session"},
+	"INVALID_IMAGE":                 {"INVALID_IMAGE", 6008, "File is not a valid image"},
+	"IMAGE_DIMENSIONS_EXCEEDED":     {"IMAGE_DIMENSIONS_EXCEEDED", 6009, "Image dimensions exceed the maximum allowed"},
+	"PROCESSING_TIMEOUT":            {"PROCESSING_TIMEOUT", 6010, "Media processing exceeded its time limit"},
+	"MEDIA_STORAGE_UNAVAILABLE":     {"MEDIA_STORAGE_UNAVAILABLE", 6011, "Media storage is temporarily unavailable"},
+	"MEDIA_PROCESSING_FAILED":       {"MEDIA_PROCESSING_FAILED", 6012, "Media processing failed"},
+	"MEDIA_QUOTA_EXCEEDED":          {"MEDIA_QUOTA_EXCEEDED", 6013, "Organization media storage quota exceeded"},
+	"MEDIA_RATE_LIMITED":            {"MEDIA_RATE_LIMITED", 6014, "Too many upload requests, please retry later"},
+	"MEDIA_UPLOAD_STATE_CONFLICT":   {"MEDIA_UPLOAD_STATE_CONFLICT", 6015, "Operation is not valid for the current upload state"},
+}
+
+// internalMediaErrorCodes never reach a client. Notification isolation is an
+// operator-facing state, so it is recorded and mapped to a safe public code
+// rather than being added to the shared table.
+var internalMediaErrorCodes = map[string]string{
+	"MEDIA_NOTIFICATION_ISOLATED": "MEDIA_PROCESSING_FAILED",
+}
+
+// publicMediaErrorCode maps an internal media failure category to the safe code
+// a client may see. An unrecognised category degrades to the generic media
+// processing failure rather than leaking its own name.
+func publicMediaErrorCode(internalCode string) string {
+	if publicCode, ok := internalMediaErrorCodes[internalCode]; ok {
+		return publicCode
+	}
+	if _, ok := errorCodes[internalCode]; ok {
+		return internalCode
+	}
+	return "MEDIA_PROCESSING_FAILED"
 }
 
 func lookupErrorCode(code string) ErrorCode {

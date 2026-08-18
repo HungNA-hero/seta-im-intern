@@ -52,6 +52,33 @@ export const errorDefinitions: ErrorDefinition[] = [
   { code: "METADATA_NOT_DELETED", number: 4005, message: "Metadata item is already active" },
   { code: "GRANT_NOT_FOUND", number: 5001, message: "Object permission not found" },
   { code: "GRANT_INVALID_TARGET", number: 5002, message: "Grant must target exactly one of user or role" },
+  { code: "MEDIA_UPLOAD_NOT_FOUND", number: 6001, message: "Media upload not found" },
+  {
+    code: "MEDIA_UPLOAD_IN_PROGRESS",
+    number: 6002,
+    message: "A media upload is already in progress for this asset",
+  },
+  {
+    code: "IDEMPOTENCY_KEY_REUSED",
+    number: 6003,
+    message: "Idempotency key was already used with different request data",
+  },
+  { code: "UPLOAD_SESSION_EXPIRED", number: 6004, message: "Upload session has expired" },
+  { code: "MEDIA_PAYLOAD_TOO_LARGE", number: 6005, message: "Media file exceeds the maximum allowed size" },
+  { code: "MEDIA_TYPE_UNSUPPORTED", number: 6006, message: "Media type is not supported" },
+  { code: "MEDIA_OBJECT_MISMATCH", number: 6007, message: "Stored object does not match the upload session" },
+  { code: "INVALID_IMAGE", number: 6008, message: "File is not a valid image" },
+  { code: "IMAGE_DIMENSIONS_EXCEEDED", number: 6009, message: "Image dimensions exceed the maximum allowed" },
+  { code: "PROCESSING_TIMEOUT", number: 6010, message: "Media processing exceeded its time limit" },
+  { code: "MEDIA_STORAGE_UNAVAILABLE", number: 6011, message: "Media storage is temporarily unavailable" },
+  { code: "MEDIA_PROCESSING_FAILED", number: 6012, message: "Media processing failed" },
+  { code: "MEDIA_QUOTA_EXCEEDED", number: 6013, message: "Organization media storage quota exceeded" },
+  { code: "MEDIA_RATE_LIMITED", number: 6014, message: "Too many upload requests, please retry later" },
+  {
+    code: "MEDIA_UPLOAD_STATE_CONFLICT",
+    number: 6015,
+    message: "Operation is not valid for the current upload state",
+  },
 ];
 
 const byCode = new Map(errorDefinitions.map((definition) => [definition.code, definition]));

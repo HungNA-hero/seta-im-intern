@@ -11,6 +11,11 @@ import {
   RequestCorrelation,
   runWithRequestCorrelation,
 } from "./observability/requestContext";
+import { registerMediaRoutes } from "./rest/mediaRoutes";
+import { mediaRateLimiter } from "./rest/mediaRateLimit";
+import { createAuthorizedMediaUploadUsecase } from "./usecase/mediaUploadUsecase";
+
+const mediaUploadUsecase = createAuthorizedMediaUploadUsecase(mediaRateLimiter);
 
 interface YogaServerContext {
   fastifyRequest: FastifyRequest;
@@ -65,6 +70,13 @@ export async function buildServer(): Promise<FastifyInstance> {
       reply.send(await response.text());
     },
   });
+
+  if (config.mediaUploadEnabled) {
+    registerMediaRoutes(app, {
+      loadContext: loadRequestContext,
+      usecase: mediaUploadUsecase,
+    });
+  }
 
   app.get("/health", async () => ({ status: "ok" }));
 

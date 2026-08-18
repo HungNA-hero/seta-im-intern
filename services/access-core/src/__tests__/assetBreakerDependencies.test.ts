@@ -19,6 +19,7 @@ describe("createAssetBreaker dependency injection", () => {
     const breaker = createAssetBreaker(
       {
         enabled: false,
+        requestTimeoutMs: 3000,
         errorThresholdPercentage: 50,
         volumeThreshold: 1,
         resetTimeoutMs: 10,

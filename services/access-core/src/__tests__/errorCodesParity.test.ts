@@ -18,4 +18,32 @@ describe("error code registry parity", () => {
 
     expect(goDefinitions).toEqual(errorDefinitions);
   });
+
+  test("defines media codes 6001 through 6015 contiguously on both sides", () => {
+    const goSource = readFileSync(goRegistryPath, "utf8");
+    const mediaDefinitions = errorDefinitions.filter(
+      (definition) => definition.number >= 6001 && definition.number <= 6015,
+    );
+
+    expect(mediaDefinitions.map((definition) => definition.number)).toEqual(
+      Array.from({ length: 15 }, (_, index) => 6001 + index),
+    );
+
+    for (const definition of mediaDefinitions) {
+      expect(goSource).toContain(`"${definition.code}"`);
+      expect(goSource).toContain(`${definition.number}, "${definition.message}"`);
+    }
+  });
+
+  test("keeps every error number unique", () => {
+    const numbers = errorDefinitions.map((definition) => definition.number);
+    expect(new Set(numbers).size).toBe(numbers.length);
+  });
+
+  test("keeps notification isolation internal to Asset Core", () => {
+    const goSource = readFileSync(goRegistryPath, "utf8");
+
+    expect(goSource).toContain("MEDIA_NOTIFICATION_ISOLATED");
+    expect(errorDefinitions.some((definition) => definition.code === "MEDIA_NOTIFICATION_ISOLATED")).toBe(false);
+  });
 });

@@ -10,6 +10,7 @@ const NULL_BODY_STATUSES = new Set([101, 103, 204, 205, 304]);
 
 export interface AssetBreakerOptions {
   enabled: boolean;
+  requestTimeoutMs: number;
   errorThresholdPercentage: number;
   volumeThreshold: number;
   resetTimeoutMs: number;
@@ -40,10 +41,40 @@ export interface AssetBreakerDependencies {
 
 const DEFAULT_BREAKER_OPTIONS: AssetBreakerOptions = {
   enabled: true,
+  requestTimeoutMs: ASSET_FETCH_TIMEOUT_MS,
   errorThresholdPercentage: 50,
   volumeThreshold: 10,
   resetTimeoutMs: 5000,
   capacity: 50,
+};
+
+type BreakerMetricName = Parameters<typeof incrementCounter>[0];
+
+interface BreakerEvents {
+  open: BreakerMetricName;
+  halfOpen: BreakerMetricName;
+  close: BreakerMetricName;
+  reject: BreakerMetricName;
+  capacityRejected: BreakerMetricName;
+  capacityRejectedSummary: string;
+}
+
+const assetBreakerEvents: BreakerEvents = {
+  open: "asset_breaker_open",
+  halfOpen: "asset_breaker_half_open",
+  close: "asset_breaker_close",
+  reject: "asset_breaker_reject",
+  capacityRejected: "asset_breaker_capacity_rejected",
+  capacityRejectedSummary: "asset_breaker_capacity_rejected_summary",
+};
+
+const mediaAssetBreakerEvents: BreakerEvents = {
+  open: "media_asset_breaker_open",
+  halfOpen: "media_asset_breaker_half_open",
+  close: "media_asset_breaker_close",
+  reject: "media_asset_breaker_reject",
+  capacityRejected: "media_asset_breaker_capacity_rejected",
+  capacityRejectedSummary: "media_asset_breaker_capacity_rejected_summary",
 };
 
 class AssetServerResponseError extends Error {
@@ -69,9 +100,10 @@ async function fetchWithDeadlineUsing(
   url: string,
   init: RequestInit,
   dependencies: AssetBreakerDependencies,
+  requestTimeoutMs: number,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeout = dependencies.setTimer(() => controller.abort(), ASSET_FETCH_TIMEOUT_MS);
+  const timeout = dependencies.setTimer(() => controller.abort(), requestTimeoutMs);
   try {
     const response = await dependencies.fetch(url, {
       ...init,
@@ -96,14 +128,17 @@ interface CapacityRejectionReporter {
   disable(): void;
 }
 
-function createCapacityRejectionReporter(dependencies: AssetBreakerDependencies): CapacityRejectionReporter {
+function createCapacityRejectionReporter(
+  dependencies: AssetBreakerDependencies,
+  events: BreakerEvents,
+): CapacityRejectionReporter {
   let capacityRejectedCount = 0;
   let capacityLogTimer: NodeJS.Timeout | undefined;
   let disabled = false;
 
   return {
     record(): void {
-      dependencies.recordMetric("asset_breaker_capacity_rejected");
+      dependencies.recordMetric(events.capacityRejected);
       if (disabled) return;
       capacityRejectedCount += 1;
       if (capacityLogTimer) return;
@@ -112,7 +147,7 @@ function createCapacityRejectionReporter(dependencies: AssetBreakerDependencies)
         if (disabled) return;
         const rejectedCount = capacityRejectedCount;
         capacityRejectedCount = 0;
-        dependencies.log("warn", "asset_breaker_capacity_rejected_summary", {
+        dependencies.log("warn", events.capacityRejectedSummary, {
           rejectedCount,
           windowMs: CAPACITY_LOG_WINDOW_MS,
         });
@@ -130,12 +165,16 @@ function createCapacityRejectionReporter(dependencies: AssetBreakerDependencies)
   };
 }
 
-function createController(options: AssetBreakerOptions, dependencies: AssetBreakerDependencies): AssetBreakerHarness {
+function createController(
+  options: AssetBreakerOptions,
+  dependencies: AssetBreakerDependencies,
+  events: BreakerEvents,
+): AssetBreakerHarness {
   let inFlight = 0;
-  const capacityReporter = createCapacityRejectionReporter(dependencies);
+  const capacityReporter = createCapacityRejectionReporter(dependencies, events);
 
   const action = async (url: string, init: RequestInit): Promise<Response> => {
-    const response = await fetchWithDeadlineUsing(url, init, dependencies);
+    const response = await fetchWithDeadlineUsing(url, init, dependencies, options.requestTimeoutMs);
     if (response.status >= 500) {
       throw new AssetServerResponseError(response);
     }
@@ -151,23 +190,23 @@ function createController(options: AssetBreakerOptions, dependencies: AssetBreak
   });
 
   breaker.on("open", () => {
-    dependencies.recordMetric("asset_breaker_open");
-    dependencies.log("error", "asset_breaker_open");
+    dependencies.recordMetric(events.open);
+    dependencies.log("error", events.open);
   });
   breaker.on("halfOpen", () => {
-    dependencies.recordMetric("asset_breaker_half_open");
-    dependencies.log("warn", "asset_breaker_half_open");
+    dependencies.recordMetric(events.halfOpen);
+    dependencies.log("warn", events.halfOpen);
   });
   breaker.on("close", () => {
-    dependencies.recordMetric("asset_breaker_close");
-    dependencies.log("warn", "asset_breaker_close");
+    dependencies.recordMetric(events.close);
+    dependencies.log("warn", events.close);
   });
-  breaker.on("reject", () => dependencies.recordMetric("asset_breaker_reject"));
+  breaker.on("reject", () => dependencies.recordMetric(events.reject));
 
   const breakerOpenError = (): Error => dependencies.createDependencyError();
 
   const rejectAsBreakerOpen = (): never => {
-    dependencies.recordMetric("asset_breaker_reject");
+    dependencies.recordMetric(events.reject);
     throw breakerOpenError();
   };
 
@@ -197,7 +236,7 @@ function createController(options: AssetBreakerOptions, dependencies: AssetBreak
   return {
     async fire(url: string, init: RequestInit): Promise<Response> {
       if (!options.enabled) {
-        return await fetchWithDeadlineUsing(url, init, dependencies);
+        return await fetchWithDeadlineUsing(url, init, dependencies, options.requestTimeoutMs);
       }
 
       checkAdmission();
@@ -234,40 +273,56 @@ const defaultDependencies: AssetBreakerDependencies = {
   clearTimer: (timer) => clearTimeout(timer),
 };
 
-function configuredOptions(): AssetBreakerOptions {
-  return config.assetBreaker ?? DEFAULT_BREAKER_OPTIONS;
+function configuredOptions(kind: "asset" | "media"): AssetBreakerOptions {
+  return (kind === "asset" ? config.assetBreaker : config.mediaBreaker) ?? DEFAULT_BREAKER_OPTIONS;
 }
 
-let assetBreaker = createController(configuredOptions(), defaultDependencies);
+let assetBreaker = createController(configuredOptions("asset"), defaultDependencies, assetBreakerEvents);
+let mediaAssetBreaker = createController(configuredOptions("media"), defaultDependencies, mediaAssetBreakerEvents);
 
 export function createAssetBreaker(
   options: AssetBreakerOptions,
   dependencies: AssetBreakerDependencies,
 ): AssetBreakerHarness {
-  return createController(options, dependencies);
+  return createController(options, dependencies, assetBreakerEvents);
 }
 
 export function createAssetBreakerForTests(options: AssetBreakerOptions): AssetBreakerHarness {
-  return createController(options, defaultDependencies);
+  return createController(options, defaultDependencies, assetBreakerEvents);
+}
+
+export function createMediaAssetBreakerForTests(options: AssetBreakerOptions): AssetBreakerHarness {
+  return createController(options, defaultDependencies, mediaAssetBreakerEvents);
 }
 
 export function fireAssetRequest(url: string, init: RequestInit): Promise<Response> {
   return assetBreaker.fire(url, init);
 }
 
+export function fireMediaAssetRequest(url: string, init: RequestInit): Promise<Response> {
+  return mediaAssetBreaker.fire(url, init);
+}
+
 export function getAssetBreakerSnapshot(): AssetBreakerSnapshot {
   return assetBreaker.snapshot();
 }
 
+export function getMediaAssetBreakerSnapshot(): AssetBreakerSnapshot {
+  return mediaAssetBreaker.snapshot();
+}
+
 export function resetAssetBreakerForTests(): void {
   shutdownAssetBreaker();
-  assetBreaker = createController(configuredOptions(), defaultDependencies);
+  assetBreaker = createController(configuredOptions("asset"), defaultDependencies, assetBreakerEvents);
+  mediaAssetBreaker = createController(configuredOptions("media"), defaultDependencies, mediaAssetBreakerEvents);
 }
 
 export function shutdownAssetBreaker(): void {
   assetBreaker.shutdown();
+  mediaAssetBreaker.shutdown();
 }
 
 export function disableAssetBreakerCapacityLog(): void {
   assetBreaker.disableCapacityLogging();
+  mediaAssetBreaker.disableCapacityLogging();
 }
