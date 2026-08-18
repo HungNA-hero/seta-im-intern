@@ -189,6 +189,65 @@ func TestMediaRepository_OneOpenSessionPerAssetAndScopedRetryIsImmutable(t *test
 	}
 }
 
+func TestMediaRepository_IdempotencyReplayIsRequesterScoped(t *testing.T) {
+	fixture := newMediaRepositoryFixture(t)
+	secondUserID := uuid.NewString()
+	if err := fixture.db.Exec(
+		"INSERT INTO user_ref (user_id) VALUES (?)",
+		secondUserID,
+	).Error; err != nil {
+		t.Fatalf("seed second requester: %v", err)
+	}
+
+	retryKey := uuid.NewString()
+	firstRequest := fixture.request(fixture.assets[0], retryKey, 7)
+	firstSession, replayed, err := fixture.reserve(firstRequest, uuid.NewString(), 100)
+	if err != nil || replayed {
+		t.Fatalf("create first requester session: replayed=%v err=%v", replayed, err)
+	}
+
+	secondRequest := firstRequest
+	secondRequest.RequestedBy = secondUserID
+	replayedSession, replayed, err := fixture.reserve(
+		secondRequest,
+		uuid.NewString(),
+		100,
+	)
+	if !errors.Is(err, repository.ErrUploadInProgress) {
+		t.Fatalf("second requester error = %v, want upload in progress", err)
+	}
+	if replayed || replayedSession.ID != "" {
+		t.Fatalf(
+			"second requester received first session: session=%q replayed=%v",
+			replayedSession.ID,
+			replayed,
+		)
+	}
+
+	if err := fixture.repo.CancelUploadSession(fixture.ctx, repository.UploadSessionScope{
+		OrgID:       fixture.orgID,
+		AssetID:     firstRequest.AssetID,
+		UploadID:    firstSession.ID,
+		RequestedBy: firstRequest.RequestedBy,
+	}); err != nil {
+		t.Fatalf("cancel first requester session: %v", err)
+	}
+
+	secondSession, replayed, err := fixture.reserve(
+		secondRequest,
+		uuid.NewString(),
+		100,
+	)
+	if err != nil || replayed || secondSession.RequestedBy != secondUserID {
+		t.Fatalf(
+			"create second requester session: session=%#v replayed=%v err=%v",
+			secondSession,
+			replayed,
+			err,
+		)
+	}
+}
+
 func TestMediaRepository_GetUploadSessionRequiresActiveAssetAndFolder(t *testing.T) {
 	for _, target := range []string{"asset", "folder"} {
 		t.Run(target, func(t *testing.T) {
@@ -437,6 +496,44 @@ func TestMediaRepository_CommitRejectsUnverifiedObjectBeforeAssetTransaction(t *
 	}
 	if versions != 0 {
 		t.Fatalf("unverified object created %d versions", versions)
+	}
+}
+
+func TestMediaRepository_CommitRejectsMissingVerifiedChecksumBeforeAssetTransaction(t *testing.T) {
+	fixture := newMediaRepositoryFixture(t)
+	request := fixture.request(fixture.assets[0], uuid.NewString(), 7)
+	session, _, err := fixture.reserve(request, uuid.NewString(), 100)
+	if err != nil {
+		t.Fatalf("reserve session: %v", err)
+	}
+
+	_, _, err = fixture.repo.CommitUpload(
+		fixture.ctx,
+		domain.CommitUploadRequest{
+			OrgID: fixture.orgID, AssetID: request.AssetID,
+			RequestedBy: fixture.userID, UploadID: session.ID,
+		},
+		domain.ObjectAttributes{
+			SizeBytes: 7, ContentType: "image/png",
+		},
+		repository.CommitUploadIDs{
+			VersionID: uuid.NewString(),
+			JobID:     uuid.NewString(),
+			OutboxID:  uuid.NewString(),
+		},
+	)
+	if !errors.Is(err, repository.ErrMediaObjectMismatch) {
+		t.Fatalf("missing verified checksum error = %v, want media object mismatch", err)
+	}
+
+	var versions int64
+	if err := fixture.db.Model(&domain.AssetMediaVersion{}).
+		Where("upload_id = ?", session.ID).
+		Count(&versions).Error; err != nil {
+		t.Fatalf("count versions: %v", err)
+	}
+	if versions != 0 {
+		t.Fatalf("missing verified checksum created %d versions", versions)
 	}
 }
 

@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -304,7 +303,13 @@ func (repository *mediaRepository) CreateUploadSession(
 
 		var existing domain.MediaUploadSession
 		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("org_id = ? AND asset_id = ? AND idempotency_key = ?", request.OrgID, request.AssetID, request.IdempotencyKey).
+			Where(
+				"org_id = ? AND asset_id = ? AND requested_by = ? AND idempotency_key = ?",
+				request.OrgID,
+				request.AssetID,
+				request.RequestedBy,
+				request.IdempotencyKey,
+			).
 			Take(&existing).Error
 		if err == nil {
 			if subtle.ConstantTimeCompare(existing.RequestFingerprint, fingerprint) != 1 {
@@ -521,7 +526,10 @@ func verifyStoredObject(session domain.MediaUploadSession, attributes domain.Obj
 	if attributes.SizeBytes != session.ExpectedSizeBytes || attributes.ContentType != string(session.DeclaredContentType) {
 		return ErrMediaObjectMismatch
 	}
-	if len(attributes.ChecksumSHA256) != 0 && !bytes.Equal(attributes.ChecksumSHA256, session.DeclaredChecksumSHA256) {
+	if len(attributes.ChecksumSHA256) != domain.ChecksumByteLength ||
+		subtle.ConstantTimeCompare(
+			attributes.ChecksumSHA256, session.DeclaredChecksumSHA256,
+		) != 1 {
 		return ErrMediaObjectMismatch
 	}
 	return nil

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getMetricsSnapshotForTests, resetMetricsForTests } from "../cache/metrics";
 import { createMediaAssetBreakerForTests, getMediaAssetBreakerSnapshot } from "../clients/assetBreaker";
-import { makeBreakerOptions, openBreaker } from "./helpers/assetBreakerTestFixtures";
+import { abortableStalledBodyFetch, makeBreakerOptions, openBreaker } from "./helpers/assetBreakerTestFixtures";
 
 const originalFetch = global.fetch;
 const mockFetch = vi.fn();
@@ -43,6 +43,35 @@ describe("media breaker isolation", () => {
         asset_breaker_half_open: 0,
         asset_breaker_close: 0,
       });
+    } finally {
+      breaker.shutdown();
+    }
+  });
+
+  it("uses a media request deadline independent from the three-second asset deadline", async () => {
+    const requestTimeoutMs = 60_000;
+    const breaker = createMediaAssetBreakerForTests(makeBreakerOptions({ requestTimeoutMs }));
+    mockFetch.mockImplementationOnce(abortableStalledBodyFetch());
+
+    try {
+      let settled = false;
+      const request = breaker.fire("http://asset/media-commit", {});
+      void request.then(
+        () => {
+          settled = true;
+        },
+        () => {
+          settled = true;
+        },
+      );
+
+      await vi.advanceTimersByTimeAsync(3_000);
+      expect(settled).toBe(false);
+
+      const rejection = expect(request).rejects.toMatchObject({ name: "AbortError" });
+      await vi.advanceTimersByTimeAsync(requestTimeoutMs - 3_000);
+      await rejection;
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     } finally {
       breaker.shutdown();
     }

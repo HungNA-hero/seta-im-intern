@@ -12,6 +12,7 @@ const mediaEnvironmentKeys = [
   "ACCESS_MEDIA_SESSION_LIMIT_PER_USER_PER_MINUTE",
   "ACCESS_MEDIA_SESSION_LIMIT_PER_ORG_PER_MINUTE",
   "ACCESS_MEDIA_BREAKER_ENABLED",
+  "ACCESS_MEDIA_FETCH_TIMEOUT_MS",
   "ACCESS_MEDIA_BREAKER_ERROR_THRESHOLD_PCT",
   "ACCESS_MEDIA_BREAKER_VOLUME_THRESHOLD",
   "ACCESS_MEDIA_BREAKER_RESET_MS",
@@ -70,6 +71,7 @@ describe("media rollout configuration", () => {
 
     expect(config.mediaBreaker).toEqual({
       enabled: false,
+      requestTimeoutMs: 3000,
       errorThresholdPercentage: 42,
       volumeThreshold: 7,
       resetTimeoutMs: 7000,
@@ -77,13 +79,27 @@ describe("media rollout configuration", () => {
     });
   });
 
+  test("configures a media request deadline independently from the asset deadline", async () => {
+    vi.stubEnv("ACCESS_MEDIA_FETCH_TIMEOUT_MS", "60000");
+    vi.stubEnv("ACCESS_MEDIA_BREAKER_RESET_MS", "65000");
+
+    const config = await loadConfig();
+
+    expect(config.assetBreaker.requestTimeoutMs).toBe(3000);
+    expect(config.mediaBreaker).toMatchObject({
+      requestTimeoutMs: 60000,
+      resetTimeoutMs: 65000,
+    });
+  });
+
   test("forwards independent media breaker settings into the Access container", () => {
     const compose = readFileSync(resolve(process.cwd(), "../../infra/docker-compose.yml"), "utf8");
     for (const line of [
       "ACCESS_MEDIA_BREAKER_ENABLED: ${ACCESS_MEDIA_BREAKER_ENABLED-true}",
+      "ACCESS_MEDIA_FETCH_TIMEOUT_MS: ${ACCESS_MEDIA_FETCH_TIMEOUT_MS-60000}",
       "ACCESS_MEDIA_BREAKER_ERROR_THRESHOLD_PCT: ${ACCESS_MEDIA_BREAKER_ERROR_THRESHOLD_PCT-50}",
       "ACCESS_MEDIA_BREAKER_VOLUME_THRESHOLD: ${ACCESS_MEDIA_BREAKER_VOLUME_THRESHOLD-10}",
-      "ACCESS_MEDIA_BREAKER_RESET_MS: ${ACCESS_MEDIA_BREAKER_RESET_MS-5000}",
+      "ACCESS_MEDIA_BREAKER_RESET_MS: ${ACCESS_MEDIA_BREAKER_RESET_MS-65000}",
       "ACCESS_MEDIA_BREAKER_CAPACITY: ${ACCESS_MEDIA_BREAKER_CAPACITY-50}",
     ]) {
       expect(compose).toContain(line);

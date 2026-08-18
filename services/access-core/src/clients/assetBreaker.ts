@@ -10,6 +10,7 @@ const NULL_BODY_STATUSES = new Set([101, 103, 204, 205, 304]);
 
 export interface AssetBreakerOptions {
   enabled: boolean;
+  requestTimeoutMs: number;
   errorThresholdPercentage: number;
   volumeThreshold: number;
   resetTimeoutMs: number;
@@ -40,6 +41,7 @@ export interface AssetBreakerDependencies {
 
 const DEFAULT_BREAKER_OPTIONS: AssetBreakerOptions = {
   enabled: true,
+  requestTimeoutMs: ASSET_FETCH_TIMEOUT_MS,
   errorThresholdPercentage: 50,
   volumeThreshold: 10,
   resetTimeoutMs: 5000,
@@ -98,9 +100,10 @@ async function fetchWithDeadlineUsing(
   url: string,
   init: RequestInit,
   dependencies: AssetBreakerDependencies,
+  requestTimeoutMs: number,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeout = dependencies.setTimer(() => controller.abort(), ASSET_FETCH_TIMEOUT_MS);
+  const timeout = dependencies.setTimer(() => controller.abort(), requestTimeoutMs);
   try {
     const response = await dependencies.fetch(url, {
       ...init,
@@ -171,7 +174,7 @@ function createController(
   const capacityReporter = createCapacityRejectionReporter(dependencies, events);
 
   const action = async (url: string, init: RequestInit): Promise<Response> => {
-    const response = await fetchWithDeadlineUsing(url, init, dependencies);
+    const response = await fetchWithDeadlineUsing(url, init, dependencies, options.requestTimeoutMs);
     if (response.status >= 500) {
       throw new AssetServerResponseError(response);
     }
@@ -233,7 +236,7 @@ function createController(
   return {
     async fire(url: string, init: RequestInit): Promise<Response> {
       if (!options.enabled) {
-        return await fetchWithDeadlineUsing(url, init, dependencies);
+        return await fetchWithDeadlineUsing(url, init, dependencies, options.requestTimeoutMs);
       }
 
       checkAdmission();

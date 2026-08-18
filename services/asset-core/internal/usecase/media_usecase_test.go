@@ -3,6 +3,7 @@ package usecase_test
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"io"
 	"strconv"
@@ -88,10 +89,14 @@ type mediaStorageFake struct {
 	presignErr    error
 	headResult    domain.ObjectAttributes
 	headErr       error
+	getBody       []byte
+	getErr        error
 	presignCalls  int
 	headCalls     int
+	getCalls      int
 	presignInput  domain.PutAuthority
 	headKey       domain.ObjectKey
+	getKey        domain.ObjectKey
 }
 
 func (fake *mediaStorageFake) PresignPut(_ context.Context, input domain.PutAuthority) (domain.UploadDescriptor, error) {
@@ -110,8 +115,13 @@ func (fake *mediaStorageFake) Head(_ context.Context, key domain.ObjectKey) (dom
 func (*mediaStorageFake) Put(context.Context, domain.ObjectKey, io.Reader, domain.PutAttributes) error {
 	panic("not used")
 }
-func (*mediaStorageFake) Get(context.Context, domain.ObjectKey) (io.ReadCloser, error) {
-	panic("not used")
+func (fake *mediaStorageFake) Get(_ context.Context, key domain.ObjectKey) (io.ReadCloser, error) {
+	fake.getCalls++
+	fake.getKey = key
+	if fake.getErr != nil {
+		return nil, fake.getErr
+	}
+	return io.NopCloser(bytes.NewReader(fake.getBody)), nil
 }
 func (*mediaStorageFake) Delete(context.Context, domain.ObjectKey) error { panic("not used") }
 
@@ -278,6 +288,50 @@ func TestMediaUsecase_StorageMismatchNeverStartsAssetTransaction(t *testing.T) {
 	}
 }
 
+func TestMediaUsecase_ChecksumlessHeadRejectsDifferentStoredBytesBeforeDurableCommit(t *testing.T) {
+	declaredChecksum := sha256.Sum256([]byte("correct"))
+	session := domain.MediaUploadSession{
+		ID:                     "upload-1",
+		OrgID:                  "org-1",
+		AssetID:                "asset-1",
+		RequestedBy:            "user-1",
+		State:                  domain.UploadSessionCreated,
+		RawObjectKey:           "raw/org-1/asset-1/upload-1/original.png",
+		DeclaredContentType:    domain.MediaContentTypePNG,
+		ExpectedSizeBytes:      7,
+		DeclaredChecksumSHA256: declaredChecksum[:],
+	}
+	repositoryFake := &mediaRepositoryFake{getSession: session}
+	storageFake := &mediaStorageFake{
+		headResult: domain.ObjectAttributes{
+			SizeBytes:   7,
+			ContentType: "image/png",
+		},
+		getBody: []byte("altered"),
+	}
+	service := usecase.NewMediaUsecase(
+		repositoryFake,
+		storageFake,
+		mediaUsecaseClock{at: time.Now()},
+		&sequenceIDs{values: []string{"version-1", "job-1", "outbox-1"}},
+		mediaPolicy(),
+	)
+
+	_, err := service.CommitUpload(context.Background(), domain.CommitUploadRequest{
+		OrgID: "org-1", AssetID: "asset-1", RequestedBy: "user-1", UploadID: "upload-1",
+	})
+
+	if !errors.Is(err, repository.ErrMediaObjectMismatch) {
+		t.Fatalf("checksumless mismatch error = %v, want media object mismatch", err)
+	}
+	if storageFake.getCalls != 1 || storageFake.getKey != domain.ObjectKey(session.RawObjectKey) {
+		t.Fatalf("checksumless verification GET calls=%d key=%q", storageFake.getCalls, storageFake.getKey)
+	}
+	if repositoryFake.commitCalls != 0 {
+		t.Fatalf("checksumless mismatch started %d durable commits", repositoryFake.commitCalls)
+	}
+}
+
 func TestMediaUsecase_EveryAdmittedSizeUsesOneWholeObjectPresignedDescriptor(t *testing.T) {
 	now := time.Date(2026, time.August, 13, 10, 0, 0, 0, time.UTC)
 	limits := mediaPolicy().Limits
@@ -381,6 +435,59 @@ func TestMediaUsecase_RefreshRecoversLostPutResponseWithExactHead(t *testing.T) 
 	}
 	if storageFake.headKey != domain.ObjectKey(session.RawObjectKey) || repositoryFake.refreshCalls != 0 || storageFake.presignCalls != 0 {
 		t.Fatalf("lost-response recovery head=%q refresh=%d presign=%d", storageFake.headKey, repositoryFake.refreshCalls, storageFake.presignCalls)
+	}
+}
+
+func TestMediaUsecase_RefreshRejectsChecksumlessObjectWithDifferentStoredBytes(t *testing.T) {
+	declaredChecksum := sha256.Sum256([]byte("correct"))
+	session := domain.MediaUploadSession{
+		ID:                     "upload-1",
+		OrgID:                  "org-1",
+		AssetID:                "asset-1",
+		RequestedBy:            "user-1",
+		State:                  domain.UploadSessionCreated,
+		RawObjectKey:           "raw/org-1/asset-1/upload-1/original.png",
+		DeclaredContentType:    domain.MediaContentTypePNG,
+		ExpectedSizeBytes:      7,
+		DeclaredChecksumSHA256: declaredChecksum[:],
+		SessionExpiresAt:       time.Now().Add(23 * time.Hour),
+	}
+	repositoryFake := &mediaRepositoryFake{getSession: session}
+	storageFake := &mediaStorageFake{
+		headResult: domain.ObjectAttributes{
+			SizeBytes:   7,
+			ContentType: "image/png",
+		},
+		getBody: []byte("altered"),
+	}
+	service := usecase.NewMediaUsecase(
+		repositoryFake,
+		storageFake,
+		mediaUsecaseClock{at: time.Now()},
+		&sequenceIDs{},
+		mediaPolicy(),
+	)
+
+	_, err := service.RefreshUploadSession(
+		context.Background(),
+		repository.UploadSessionScope{
+			OrgID: session.OrgID, AssetID: session.AssetID,
+			UploadID: session.ID, RequestedBy: session.RequestedBy,
+		},
+	)
+
+	if !errors.Is(err, repository.ErrMediaObjectMismatch) {
+		t.Fatalf("checksumless refresh error = %v, want media object mismatch", err)
+	}
+	if storageFake.getCalls != 1 || storageFake.getKey != domain.ObjectKey(session.RawObjectKey) {
+		t.Fatalf("checksumless refresh GET calls=%d key=%q", storageFake.getCalls, storageFake.getKey)
+	}
+	if repositoryFake.refreshCalls != 0 || storageFake.presignCalls != 0 {
+		t.Fatalf(
+			"mismatched refresh persisted=%d presigned=%d",
+			repositoryFake.refreshCalls,
+			storageFake.presignCalls,
+		)
 	}
 }
 

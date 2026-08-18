@@ -3,7 +3,9 @@ package usecase
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
+	"io"
 	"path/filepath"
 	"strings"
 	"time"
@@ -114,8 +116,8 @@ func (usecase *MediaUsecase) RefreshUploadSession(ctx context.Context, scope rep
 	attributes, headErr := usecase.storage.Head(ctx, domain.ObjectKey(session.RawObjectKey))
 	switch {
 	case headErr == nil:
-		if !objectMatchesSession(session, attributes) {
-			return domain.UploadSessionResult{}, repository.ErrMediaObjectMismatch
+		if _, err := usecase.verifyStoredObject(ctx, session, attributes); err != nil {
+			return domain.UploadSessionResult{}, err
 		}
 		return domain.UploadSessionResult{}, repository.ErrUploadStateConflict
 	case !errors.Is(headErr, domain.ErrObjectNotFound):
@@ -180,8 +182,9 @@ func (usecase *MediaUsecase) CommitUpload(ctx context.Context, request domain.Co
 		if err != nil {
 			return domain.CommitUploadResult{}, err
 		}
-		if !objectMatchesSession(session, attributes) {
-			return domain.CommitUploadResult{}, repository.ErrMediaObjectMismatch
+		attributes, err = usecase.verifyStoredObject(ctx, session, attributes)
+		if err != nil {
+			return domain.CommitUploadResult{}, err
 		}
 		ids = repository.CommitUploadIDs{
 			VersionID: usecase.ids.NewID(),
@@ -201,11 +204,45 @@ func (usecase *MediaUsecase) CommitUpload(ctx context.Context, request domain.Co
 	}, nil
 }
 
-func objectMatchesSession(session domain.MediaUploadSession, attributes domain.ObjectAttributes) bool {
-	if attributes.SizeBytes != session.ExpectedSizeBytes || attributes.ContentType != string(session.DeclaredContentType) {
-		return false
+func (usecase *MediaUsecase) verifyStoredObject(
+	ctx context.Context,
+	session domain.MediaUploadSession,
+	attributes domain.ObjectAttributes,
+) (domain.ObjectAttributes, error) {
+	if attributes.SizeBytes != session.ExpectedSizeBytes ||
+		attributes.ContentType != string(session.DeclaredContentType) {
+		return domain.ObjectAttributes{}, repository.ErrMediaObjectMismatch
 	}
-	return len(attributes.ChecksumSHA256) == 0 || bytes.Equal(attributes.ChecksumSHA256, session.DeclaredChecksumSHA256)
+	if len(attributes.ChecksumSHA256) != 0 {
+		if !bytes.Equal(attributes.ChecksumSHA256, session.DeclaredChecksumSHA256) {
+			return domain.ObjectAttributes{}, repository.ErrMediaObjectMismatch
+		}
+		return attributes, nil
+	}
+
+	body, err := usecase.storage.Get(ctx, domain.ObjectKey(session.RawObjectKey))
+	if err != nil {
+		return domain.ObjectAttributes{}, err
+	}
+	hasher := sha256.New()
+	count, readErr := io.Copy(
+		hasher,
+		io.LimitReader(body, session.ExpectedSizeBytes+1),
+	)
+	closeErr := body.Close()
+	if readErr != nil {
+		return domain.ObjectAttributes{}, readErr
+	}
+	if closeErr != nil {
+		return domain.ObjectAttributes{}, closeErr
+	}
+	computedChecksum := hasher.Sum(nil)
+	if count != session.ExpectedSizeBytes ||
+		!bytes.Equal(computedChecksum, session.DeclaredChecksumSHA256) {
+		return domain.ObjectAttributes{}, repository.ErrMediaObjectMismatch
+	}
+	attributes.ChecksumSHA256 = computedChecksum
+	return attributes, nil
 }
 
 func (usecase *MediaUsecase) validateAdmission(request domain.CreateUploadSessionRequest) error {

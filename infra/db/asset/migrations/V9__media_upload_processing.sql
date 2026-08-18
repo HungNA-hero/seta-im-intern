@@ -65,7 +65,7 @@ CREATE TABLE media_upload_sessions (
 );
 
 CREATE UNIQUE INDEX uq_media_upload_sessions_idempotency
-    ON media_upload_sessions (org_id, asset_id, idempotency_key);
+    ON media_upload_sessions (org_id, asset_id, requested_by, idempotency_key);
 
 CREATE UNIQUE INDEX uq_media_upload_sessions_raw_object_key
     ON media_upload_sessions (raw_object_key);

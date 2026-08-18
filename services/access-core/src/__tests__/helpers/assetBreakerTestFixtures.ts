@@ -15,6 +15,7 @@ export function deferredResponse(): {
 export function makeBreakerOptions(overrides: Partial<AssetBreakerOptions> = {}): AssetBreakerOptions {
   return {
     enabled: true,
+    requestTimeoutMs: 3000,
     errorThresholdPercentage: 50,
     volumeThreshold: 2,
     resetTimeoutMs: 500,

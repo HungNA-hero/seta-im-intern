@@ -34,14 +34,20 @@ function boolEnv(name: string, fallback: boolean): boolean {
 }
 
 export const ASSET_FETCH_TIMEOUT_MS = 3000;
+export const MEDIA_ASSET_FETCH_TIMEOUT_MS = intInRange(
+  "ACCESS_MEDIA_FETCH_TIMEOUT_MS",
+  ASSET_FETCH_TIMEOUT_MS,
+  1000,
+  119500,
+);
 const RESET_TIMEOUT_SAFETY_MARGIN_MS = 500;
 
-function validateResetTimeoutMs(name: string, resetTimeoutMs: number): number {
-  const minRequired = ASSET_FETCH_TIMEOUT_MS + RESET_TIMEOUT_SAFETY_MARGIN_MS;
+function validateResetTimeoutMs(name: string, resetTimeoutMs: number, requestTimeoutMs: number): number {
+  const minRequired = requestTimeoutMs + RESET_TIMEOUT_SAFETY_MARGIN_MS;
   if (resetTimeoutMs < minRequired) {
     throw new Error(
       `${name} (${resetTimeoutMs}) must be at least ${minRequired}ms — ` +
-        `greater than the asset fetch deadline (${ASSET_FETCH_TIMEOUT_MS}ms) plus a ` +
+        `greater than the request deadline (${requestTimeoutMs}ms) plus a ` +
         `${RESET_TIMEOUT_SAFETY_MARGIN_MS}ms safety margin — so every call admitted before the ` +
         `breaker opened is guaranteed to have settled before the breaker can transition to ` +
         `half-open; otherwise a stale pre-open success could incorrectly close recovery`,
@@ -67,21 +73,25 @@ export const config = {
   },
   assetBreaker: {
     enabled: boolEnv("ACCESS_ASSET_BREAKER_ENABLED", true),
+    requestTimeoutMs: ASSET_FETCH_TIMEOUT_MS,
     errorThresholdPercentage: intInRange("ACCESS_ASSET_BREAKER_ERROR_THRESHOLD_PCT", 50, 1, 99),
     volumeThreshold: intInRange("ACCESS_ASSET_BREAKER_VOLUME_THRESHOLD", 10, 1, 1000),
     resetTimeoutMs: validateResetTimeoutMs(
       "ACCESS_ASSET_BREAKER_RESET_MS",
       intInRange("ACCESS_ASSET_BREAKER_RESET_MS", 5000, 500, 120000),
+      ASSET_FETCH_TIMEOUT_MS,
     ),
     capacity: intInRange("ACCESS_ASSET_BREAKER_CAPACITY", 50, 1, 10000),
   },
   mediaBreaker: {
     enabled: boolEnv("ACCESS_MEDIA_BREAKER_ENABLED", true),
+    requestTimeoutMs: MEDIA_ASSET_FETCH_TIMEOUT_MS,
     errorThresholdPercentage: intInRange("ACCESS_MEDIA_BREAKER_ERROR_THRESHOLD_PCT", 50, 1, 99),
     volumeThreshold: intInRange("ACCESS_MEDIA_BREAKER_VOLUME_THRESHOLD", 10, 1, 1000),
     resetTimeoutMs: validateResetTimeoutMs(
       "ACCESS_MEDIA_BREAKER_RESET_MS",
       intInRange("ACCESS_MEDIA_BREAKER_RESET_MS", 5000, 500, 120000),
+      MEDIA_ASSET_FETCH_TIMEOUT_MS,
     ),
     capacity: intInRange("ACCESS_MEDIA_BREAKER_CAPACITY", 50, 1, 10000),
   },
