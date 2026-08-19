@@ -166,12 +166,42 @@ services:
       ASSET_DB_SSLMODE: disable
       ASSET_REDIS_HOST: redis
       ASSET_REDIS_PORT: 6379
+      ASSET_MEDIA_BUCKET: ${ASSET_MEDIA_BUCKET:-seta-media}
+      ASSET_MEDIA_S3_REGION: ${ASSET_MEDIA_S3_REGION:-us-east-1}
+      ASSET_MEDIA_S3_INTERNAL_ENDPOINT: http://minio:9000
+      ASSET_MEDIA_S3_PUBLIC_ENDPOINT: ${ASSET_MEDIA_S3_PUBLIC_ENDPOINT:-http://localhost:9000}
+      ASSET_MEDIA_S3_ACCESS_KEY_ID: ${ASSET_MEDIA_S3_ACCESS_KEY_ID:-seta-media-local}
+      ASSET_MEDIA_S3_SECRET_ACCESS_KEY: ${ASSET_MEDIA_S3_SECRET_ACCESS_KEY:-seta-media-local-secret}
+      ASSET_MEDIA_S3_CHECKSUM_SUPPORTED: ${ASSET_MEDIA_S3_CHECKSUM_SUPPORTED:-true}
+    depends_on:
+      asset-db:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    stop_grace_period: 15s
+    # The worker has no HTTP listener; inheriting the Asset API healthcheck would
+    # report a false unhealthy state even while the job loop is running.
+    healthcheck:
+      disable: true
+
+  asset-retention-scheduler:
+    build:
+      context: ../services/asset-core
+      target: prod
+    container_name: ${SETA_COMPOSE_PREFIX:-seta}-asset-retention-scheduler
+    entrypoint: ["/app/asset-retention-scheduler"]
+    environment:
+      ASSET_DB_HOST: asset-db
+      ASSET_DB_PORT: 5432
+      ASSET_DB_NAME: ${ASSET_DB_NAME:-asset_db}
+      ASSET_DB_USER: ${ASSET_DB_USER:-asset_user}
+      ASSET_DB_PASSWORD: ${ASSET_DB_PASSWORD:-asset_password}
+      ASSET_DB_SSLMODE: disable
+      ASSET_RETENTION_CLEANUP_TIMEZONE: ${ASSET_RETENTION_CLEANUP_TIMEZONE:-Asia/Bangkok}
     depends_on:
       asset-db:
         condition: service_healthy
     stop_grace_period: 15s
-    # The worker has no HTTP listener; inheriting the Asset API healthcheck would
-    # report a false unhealthy state even while the job loop is running.
     healthcheck:
       disable: true
 

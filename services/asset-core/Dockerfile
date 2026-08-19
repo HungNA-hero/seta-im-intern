@@ -16,7 +16,8 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/asset-core ./cmd/server \
  && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/asset-delete-worker ./cmd/asset-delete-worker \
  && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/media-worker ./cmd/media-worker \
- && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/media-processor ./cmd/media-processor
+ && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/media-processor ./cmd/media-processor \
+ && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/asset-retention-scheduler ./cmd/asset-retention-scheduler
 
 FROM alpine:3.23 AS prod
 RUN addgroup -S asset \
@@ -29,6 +30,7 @@ COPY --from=build --chown=asset:asset /out/asset-delete-worker /app/asset-delete
 COPY --from=build --chown=asset:asset /out/media-worker /app/media-worker
 COPY --from=build --chown=root:root /out/media-processor /usr/local/bin/media-processor
 RUN chmod 0555 /usr/local/bin/media-processor
+COPY --from=build --chown=asset:asset /out/asset-retention-scheduler /app/asset-retention-scheduler
 USER asset
 EXPOSE 8080 8081
 HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=5 \

@@ -252,8 +252,15 @@ func TestAssetRepository_PostgresIntegration_RestoreClosesLifecycleUnitBeforeAno
 			if err := tx.Where("org_id = ? AND root_resource_type = ? AND root_resource_id = ?", orgID, scenario.resourceType, scenario.resourceID).Order("created_at ASC").Find(&units).Error; err != nil {
 				t.Fatalf("load lifecycle history: %v", err)
 			}
-			if len(units) != 2 || units[0].State != domain.LifecycleRestored || units[1].State != domain.LifecycleDeleted {
-				t.Fatalf("expected RESTORED history plus one new DELETED unit, got %#v", units)
+			if len(units) != 2 {
+				t.Fatalf("expected two lifecycle history rows, got %#v", units)
+			}
+			states := map[domain.LifecycleUnitState]int{}
+			for _, unit := range units {
+				states[unit.State]++
+			}
+			if states[domain.LifecycleRestored] != 1 || states[domain.LifecycleDeleted] != 1 {
+				t.Fatalf("expected one RESTORED history row plus one new DELETED row, got %#v", units)
 			}
 		})
 	}

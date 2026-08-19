@@ -19,6 +19,8 @@ import (
 	"seta-im-intern/go-asset-core/internal/domain"
 	"seta-im-intern/go-asset-core/internal/observability"
 	"seta-im-intern/go-asset-core/internal/repository"
+	"seta-im-intern/go-asset-core/internal/storage"
+	"seta-im-intern/go-asset-core/internal/usecase"
 )
 
 const (
@@ -52,6 +54,13 @@ func main() {
 	}
 
 	repo := repository.NewLifecycleJobWorkerRepository(db)
+	cleanupRepo := repository.NewLifecycleCleanupWorkerRepository(db)
+	purgeObjects, err := newLifecycleObjectStore(context.Background())
+	if err != nil {
+		slog.Error("asset delete worker object storage connection failed", "error", err.Error())
+		os.Exit(1)
+	}
+	purger := usecase.NewLifecyclePurger(repository.NewLifecyclePurgeRepository(db), purgeObjects)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -79,7 +88,8 @@ func main() {
 
 	slog.Info("asset lifecycle worker started", "workerId", workerID, "pollIntervalMs", pollInterval.Milliseconds())
 	for {
-		processNext(ctx, repo, workerID)
+		processNextRetentionCleanup(ctx, cleanupRepo)
+		processNext(ctx, repo, purger, workerID)
 		select {
 		case <-ctx.Done():
 			slog.Info("asset lifecycle worker stopped", "workerId", workerID)
@@ -87,6 +97,18 @@ func main() {
 		case <-ticker.C:
 		}
 	}
+}
+
+func processNextRetentionCleanup(ctx context.Context, repo domain.LifecycleCleanupWorkerRepository) {
+	result, err := repo.ProcessNextLifecycleCleanupBatch(ctx)
+	if err != nil {
+		slog.Error("lifecycle retention cleanup batch failed", "error", err.Error())
+		return
+	}
+	if result == nil {
+		return
+	}
+	slog.Info("lifecycle retention cleanup batch processed", "runId", result.RunID, "queuedJobs", result.QueuedJobs, "completed", result.Completed)
 }
 
 func newWorkerMetricsServer() *http.Server {
@@ -103,6 +125,8 @@ func processNext(ctx context.Context, repo interface {
 	ClaimNextLifecycleJob(context.Context, string) (*domain.LifecycleJob, error)
 	ProcessLifecycleJob(context.Context, string, string) error
 	FailLifecycleJob(context.Context, string, string) error
+}, purger interface {
+	Process(context.Context, string, string) error
 }, workerID string) {
 	job, err := repo.ClaimNextLifecycleJob(ctx, workerID)
 	if err != nil {
@@ -114,12 +138,33 @@ func processNext(ctx context.Context, repo interface {
 	}
 
 	slog.Info("lifecycle job claimed", "workerId", workerID, "jobId", job.ID, "orgId", job.OrgID, "operation", job.Operation, "rootResourceId", job.RootResourceID, "attempt", job.Attempts)
-	if err := repo.ProcessLifecycleJob(ctx, job.ID, workerID); err != nil {
-		slog.Error("lifecycle job batch failed", "workerId", workerID, "jobId", job.ID, "operation", job.Operation, "error", err.Error())
+	var processErr error
+	if job.Operation == domain.LifecycleJobPurge {
+		processErr = purger.Process(ctx, job.ID, workerID)
+	} else {
+		processErr = repo.ProcessLifecycleJob(ctx, job.ID, workerID)
+	}
+	if processErr != nil {
+		slog.Error("lifecycle job batch failed", "workerId", workerID, "jobId", job.ID, "operation", job.Operation, "error", processErr.Error())
 		if failErr := repo.FailLifecycleJob(context.Background(), job.ID, workerID); failErr != nil {
 			slog.Error("lifecycle job failure state update failed", "workerId", workerID, "jobId", job.ID, "error", failErr.Error())
 		}
 	}
+}
+
+// newLifecycleObjectStore uses the same private MinIO endpoint and credentials
+// as media-worker. Lifecycle PURGE needs only Delete; it never needs Kafka or
+// public presigned URL behavior.
+func newLifecycleObjectStore(ctx context.Context) (*storage.MinIOStorage, error) {
+	return storage.NewMinIOStorage(ctx, storage.MinIOConfig{
+		Bucket:            getenv("ASSET_MEDIA_BUCKET", "seta-media"),
+		Region:            getenv("ASSET_MEDIA_S3_REGION", "us-east-1"),
+		InternalEndpoint:  getenv("ASSET_MEDIA_S3_INTERNAL_ENDPOINT", "http://minio:9000"),
+		PublicEndpoint:    getenv("ASSET_MEDIA_S3_PUBLIC_ENDPOINT", "http://localhost:9000"),
+		AccessKeyID:       getenv("ASSET_MEDIA_S3_ACCESS_KEY_ID", ""),
+		SecretAccessKey:   getenv("ASSET_MEDIA_S3_SECRET_ACCESS_KEY", ""),
+		ChecksumSupported: strings.EqualFold(getenv("ASSET_MEDIA_S3_CHECKSUM_SUPPORTED", "true"), "true"),
+	})
 }
 
 func openAssetDB(dsn string) (*gorm.DB, error) {

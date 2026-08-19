@@ -667,7 +667,7 @@ func createFolderDeletionLifecycleJob(tx *gorm.DB, legacyJob domain.FolderDeleti
 		RootResourceID:            legacyJob.RootFolderID,
 		RootFolderID:              legacyJob.RootFolderID,
 		RootFolderPath:            legacyJob.RootPath,
-		RequestedBy:               legacyJob.RequestedBy,
+		RequestedBy:               &legacyJob.RequestedBy,
 		Operation:                 domain.LifecycleJobDelete,
 		Status:                    domain.LifecycleJobQueued,
 		Checkpoint:                checkpoint,

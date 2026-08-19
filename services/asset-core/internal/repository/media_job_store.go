@@ -60,6 +60,11 @@ func (store *mediaJobStore) ClaimJob(ctx context.Context, jobID, owner string) (
 			    started_at = COALESCE(started_at, statement_timestamp())
 			WHERE id = ?
 			  AND status IN ('queued', 'processing')
+			  AND EXISTS (
+				SELECT 1 FROM metadata_items AS asset
+				WHERE asset.id = media_processing_jobs.asset_id
+				  AND asset.deleted_at IS NULL
+			  )
 			  AND next_attempt_at <= statement_timestamp()
 			  AND notification_isolated_at IS NULL
 			  AND attempt_count < ?
