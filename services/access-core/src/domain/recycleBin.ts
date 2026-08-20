@@ -52,7 +52,7 @@ export function isRecycleBinCandidate(value: unknown): value is GoRecycleBinEntr
     entry.resource_id.length > 0 &&
     typeof entry.display_name === "string" &&
     typeof entry.root_folder_path === "string" &&
-    entry.root_folder_path.split(".").every((segment) => /^[A-Za-z0-9_]{32}$/.test(segment)) &&
+    entry.root_folder_path.split(".").every((segment) => /^[A-Za-z0-9_]{1,256}$/.test(segment)) &&
     (entry.resource_type === "FOLDER" || entry.resource_type === "METADATA") &&
     isValidRecycleBinCursorPosition({
       deletedAt: entry.deleted_at,

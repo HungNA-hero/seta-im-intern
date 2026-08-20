@@ -55,8 +55,45 @@ func TestRunRetentionCleanupTick_UsesConfiguredLocalDateAndTimezone(t *testing.T
 	if repo.schedulerName != retentionSchedulerName || repo.workerID != "scheduler-a" {
 		t.Fatalf("unexpected scheduler call identity: name=%q worker=%q", repo.schedulerName, repo.workerID)
 	}
-	if repo.runDate.Format("2006-01-02") != "2026-08-18" {
+	if repo.runDate.Format("2006-01-02 15:04") != "2026-08-18 02:30" {
 		t.Fatalf("expected Bangkok calendar date 2026-08-18, got %s", repo.runDate.Format("2006-01-02"))
+	}
+	if repo.timezone != "Asia/Bangkok" {
+		t.Fatalf("expected Asia/Bangkok timezone, got %q", repo.timezone)
+	}
+}
+
+func TestRunRetentionCleanupOnce_UsesCurrentLocalDateAtSchedulerHour(t *testing.T) {
+	repo := &fakeCleanupSchedulerRepository{
+		result: domain.LifecycleCleanupRunAcquireResult{
+			LeaseAcquired: true,
+			Created:       true,
+			Run:           &domain.LifecycleCleanupRun{ID: "run-1"},
+		},
+	}
+	location, err := time.LoadLocation("Asia/Bangkok")
+	if err != nil {
+		t.Fatalf("load test timezone: %v", err)
+	}
+
+	result, err := runRetentionCleanupOnce(
+		context.Background(),
+		repo,
+		"scheduler-a",
+		time.Date(2026, time.August, 18, 9, 45, 0, 0, time.UTC),
+		location,
+	)
+	if err != nil {
+		t.Fatalf("run manual cleanup: %v", err)
+	}
+	if !result.LeaseAcquired || !result.Created {
+		t.Fatalf("expected manual run to acquire a run, got %+v", result)
+	}
+	if repo.calls != 1 {
+		t.Fatalf("expected one repository call, got %d", repo.calls)
+	}
+	if repo.runDate.Format("2006-01-02 15:04") != "2026-08-18 02:00" {
+		t.Fatalf("expected manual run key at local 02:00, got %s", repo.runDate.Format(time.RFC3339))
 	}
 	if repo.timezone != "Asia/Bangkok" {
 		t.Fatalf("expected Asia/Bangkok timezone, got %q", repo.timezone)

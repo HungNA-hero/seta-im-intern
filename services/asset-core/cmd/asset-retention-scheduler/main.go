@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log/slog"
 	"os"
@@ -27,6 +28,9 @@ const (
 )
 
 func main() {
+	runOnce := flag.Bool("run-once", false, "acquire today's retention cleanup run once, then exit")
+	flag.Parse()
+
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 	for _, path := range []string{"../../.env", ".env"} {
 		_ = godotenv.Load(path)
@@ -52,6 +56,13 @@ func main() {
 	repo := repository.NewLifecycleCleanupSchedulerRepository(db)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	if *runOnce {
+		if err := processRetentionCleanupRunOnce(ctx, repo, workerID, time.Now(), location); err != nil {
+			slog.Error("manual asset retention cleanup run failed", "schedulerName", retentionSchedulerName, "workerId", workerID, "error", err.Error())
+			os.Exit(1)
+		}
+		return
+	}
 
 	ticker := time.NewTicker(retentionSchedulerPollInterval)
 	defer ticker.Stop()
@@ -65,6 +76,30 @@ func main() {
 		case <-ticker.C:
 		}
 	}
+}
+
+// processRetentionCleanupRunOnce is an explicit operator/demo action. It uses
+// the same daily run key and PostgreSQL lease as the scheduled 02:00 tick, but
+// does not wait for the wall clock. It only creates or reuses the durable run;
+// the lifecycle worker remains responsible for selecting eligible roots and
+// performing physical purge.
+func processRetentionCleanupRunOnce(
+	ctx context.Context,
+	repo domain.LifecycleCleanupSchedulerRepository,
+	workerID string,
+	now time.Time,
+	location *time.Location,
+) error {
+	result, err := runRetentionCleanupOnce(ctx, repo, workerID, now, location)
+	if err != nil {
+		return err
+	}
+	if !result.LeaseAcquired {
+		slog.Info("manual asset retention cleanup run already owned or completed", "schedulerName", retentionSchedulerName, "workerId", workerID)
+		return nil
+	}
+	slog.Info("manual asset retention cleanup run available", "schedulerName", retentionSchedulerName, "workerId", workerID, "runId", result.Run.ID, "created", result.Created, "runDate", result.Run.RunDate.Format("2006-01-02"))
+	return nil
 }
 
 func processRetentionCleanupTick(
@@ -100,8 +135,33 @@ func runRetentionCleanupTick(
 	if localNow.Hour() != retentionSchedulerHour {
 		return domain.LifecycleCleanupRunAcquireResult{}, false, nil
 	}
-	result, err := repo.AcquireDailyCleanupRun(ctx, retentionSchedulerName, workerID, localNow, location.String())
+	result, err := acquireRetentionCleanupRun(ctx, repo, workerID, localNow, location)
 	return result, true, err
+}
+
+// runRetentionCleanupOnce creates or reuses the same calendar-day run that
+// the automatic 02:00 scheduler would create. The supplied time selects the
+// local calendar date only; it never changes the database's retention test.
+func runRetentionCleanupOnce(
+	ctx context.Context,
+	repo domain.LifecycleCleanupSchedulerRepository,
+	workerID string,
+	now time.Time,
+	location *time.Location,
+) (domain.LifecycleCleanupRunAcquireResult, error) {
+	localNow := now.In(location)
+	runTime := time.Date(localNow.Year(), localNow.Month(), localNow.Day(), retentionSchedulerHour, 0, 0, 0, location)
+	return acquireRetentionCleanupRun(ctx, repo, workerID, runTime, location)
+}
+
+func acquireRetentionCleanupRun(
+	ctx context.Context,
+	repo domain.LifecycleCleanupSchedulerRepository,
+	workerID string,
+	runTime time.Time,
+	location *time.Location,
+) (domain.LifecycleCleanupRunAcquireResult, error) {
+	return repo.AcquireDailyCleanupRun(ctx, retentionSchedulerName, workerID, runTime, location.String())
 }
 
 func retentionCleanupLocationFromEnv() (*time.Location, error) {

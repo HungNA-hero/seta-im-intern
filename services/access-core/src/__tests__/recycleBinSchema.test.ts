@@ -82,7 +82,7 @@ describe("recycleBin GraphQL query", () => {
             resource_type: "FOLDER",
             resource_id: "folder-denied",
             display_name: "hidden",
-            root_folder_path: "000000000000400080000000000000a0",
+            root_folder_path: "root.000000000000400080000000000000a0",
             deleted_at: "2026-08-12T10:00:00Z",
           },
           {
@@ -90,7 +90,7 @@ describe("recycleBin GraphQL query", () => {
             resource_type: "FOLDER",
             resource_id: "folder-allowed",
             display_name: "visible",
-            root_folder_path: "000000000000400080000000000000a0",
+            root_folder_path: "root.000000000000400080000000000000a0",
             deleted_at: "2026-08-12T09:00:00Z",
           },
         ],
