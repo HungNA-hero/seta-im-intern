@@ -20,6 +20,7 @@ import (
 func TestLifecyclePurgeRepository_PostgresIntegration_TeardownMetadataAfterManifestedObjects(t *testing.T) {
 	fixture := newTeardownFixture(t)
 	ctx := context.Background()
+	sessionRawKey, reservedBytes := fixture.seedUncommittedUploadSession(t)
 
 	var folder struct {
 		ID   string
@@ -72,17 +73,31 @@ func TestLifecyclePurgeRepository_PostgresIntegration_TeardownMetadataAfterManif
 
 	worker := repository.NewLifecycleJobWorkerRepository(fixture.db)
 	claimed, err := worker.ClaimNextLifecycleJob(ctx, "purge-integration-worker")
-	if err != nil || claimed == nil || claimed.ID != job.ID || claimed.Operation != domain.LifecycleJobPurge {
+	if err != nil || claimed == nil || claimed.ID != job.ID || claimed.Operation != domain.LifecycleJobPurge || claimed.LeaseExpiresAt == nil {
 		t.Fatalf("claim purge job: job=%#v err=%v", claimed, err)
 	}
-
 	purge := repository.NewLifecyclePurgeRepository(fixture.db)
+	originalExpiry := *claimed.LeaseExpiresAt
+	renewedExpiry, err := purge.RenewLifecyclePurgeLease(ctx, job.ID, "purge-integration-worker", originalExpiry)
+	if err != nil {
+		t.Fatalf("renew claimed purge lease: %v", err)
+	}
+	if !renewedExpiry.After(originalExpiry) {
+		t.Fatalf("renewed expiry = %s, want later than original %s", renewedExpiry, originalExpiry)
+	}
+	if stolen, err := worker.ClaimNextLifecycleJob(ctx, "purge-integration-worker-b"); err != nil || stolen != nil {
+		t.Fatalf("second worker reclaimed renewed purge job: job=%#v err=%v", stolen, err)
+	}
+
 	work, err := purge.NextLifecyclePurgeAsset(ctx, job.ID, "purge-integration-worker")
 	if err != nil || work == nil || work.AssetID != fixture.assetID {
 		t.Fatalf("prepare asset purge: work=%#v err=%v", work, err)
 	}
-	if len(work.ObjectKeys) != 6 {
-		t.Fatalf("manifested object keys = %d, want raw plus two outputs for two versions", len(work.ObjectKeys))
+	if len(work.ObjectKeys) != 7 {
+		t.Fatalf("manifested object keys = %d, want raw plus two outputs for two versions plus one uncommitted session", len(work.ObjectKeys))
+	}
+	if !containsObjectKey(work.ObjectKeys, sessionRawKey) {
+		t.Fatalf("manifest omitted uncommitted upload-session object %q", sessionRawKey)
 	}
 	if err := purge.MarkLifecyclePurgeObjectsDeleted(ctx, job.ID, "purge-integration-worker", fixture.assetID, work.ObjectKeys); err != nil {
 		t.Fatalf("mark storage objects deleted: %v", err)
@@ -122,6 +137,9 @@ func TestLifecyclePurgeRepository_PostgresIntegration_TeardownMetadataAfterManif
 	}
 	if persistedUnit.State != domain.LifecyclePurged {
 		t.Errorf("purge unit state = %q, want %q", persistedUnit.State, domain.LifecyclePurged)
+	}
+	if reserved := fixture.reservedRawBytes(t); reserved != 0 {
+		t.Errorf("reserved quota = %d, want zero after deleting uncommitted session worth %d bytes", reserved, reservedBytes)
 	}
 }
 
@@ -379,6 +397,7 @@ func TestLifecyclePurgeJob_FailureRequeuesUnit_PostgresIntegration(t *testing.T)
 func TestLifecyclePurger_PostgresAndMinIOIntegration_DeletesObjectsBeforeAssetRows(t *testing.T) {
 	fixture := newTeardownFixture(t)
 	ctx := context.Background()
+	sessionRawKey, reservedBytes := fixture.seedUncommittedUploadSession(t)
 	var folder struct {
 		ID   string
 		Path string
@@ -428,7 +447,8 @@ func TestLifecyclePurger_PostgresAndMinIOIntegration_DeletesObjectsBeforeAssetRo
 	}
 	workerID := "minio-purge-worker"
 	worker := repository.NewLifecycleJobWorkerRepository(fixture.db)
-	if claimed, err := worker.ClaimNextLifecycleJob(ctx, workerID); err != nil || claimed == nil || claimed.ID != jobID {
+	claimed, err := worker.ClaimNextLifecycleJob(ctx, workerID)
+	if err != nil || claimed == nil || claimed.ID != jobID || claimed.LeaseExpiresAt == nil {
 		t.Fatalf("claim purge lifecycle job: job=%#v err=%v", claimed, err)
 	}
 
@@ -454,13 +474,16 @@ func TestLifecyclePurger_PostgresAndMinIOIntegration_DeletesObjectsBeforeAssetRo
 		}
 	}
 
-	if err := usecase.NewLifecyclePurger(purgeStore, objects).Process(ctx, jobID, workerID); err != nil {
+	if err := usecase.NewLifecyclePurger(purgeStore, objects).Process(ctx, jobID, workerID, *claimed.LeaseExpiresAt); err != nil {
 		t.Fatalf("run lifecycle purger: %v", err)
 	}
 	for _, key := range prepared.ObjectKeys {
 		if _, err := objects.Head(ctx, domain.ObjectKey(key)); !errors.Is(err, domain.ErrObjectNotFound) {
 			t.Errorf("object %s still exists or cannot be checked after purge: %v", key, err)
 		}
+	}
+	if _, err := objects.Head(ctx, domain.ObjectKey(sessionRawKey)); !errors.Is(err, domain.ErrObjectNotFound) {
+		t.Errorf("uncommitted session object %s still exists or cannot be checked after purge: %v", sessionRawKey, err)
 	}
 	var assetRows int64
 	if err := fixture.db.Raw("SELECT count(*) FROM metadata_items WHERE id = ?", fixture.assetID).Scan(&assetRows).Error; err != nil {
@@ -469,4 +492,16 @@ func TestLifecyclePurger_PostgresAndMinIOIntegration_DeletesObjectsBeforeAssetRo
 	if assetRows != 0 {
 		t.Errorf("metadata row count = %d, want zero after storage teardown", assetRows)
 	}
+	if reserved := fixture.reservedRawBytes(t); reserved != 0 {
+		t.Errorf("reserved quota = %d, want zero after purging uncommitted session worth %d bytes", reserved, reservedBytes)
+	}
+}
+
+func containsObjectKey(keys []string, wanted string) bool {
+	for _, key := range keys {
+		if key == wanted {
+			return true
+		}
+	}
+	return false
 }

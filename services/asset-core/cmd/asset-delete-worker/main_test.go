@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"seta-im-intern/go-asset-core/internal/domain"
 	"seta-im-intern/go-asset-core/internal/observability"
@@ -33,7 +34,7 @@ type lifecyclePurgerSpy struct {
 	calls int
 }
 
-func (spy *lifecyclePurgerSpy) Process(context.Context, string, string) error {
+func (spy *lifecyclePurgerSpy) Process(context.Context, string, string, time.Time) error {
 	spy.calls++
 	return nil
 }
@@ -65,9 +66,11 @@ func TestWorkerMetricsServerExposesOnlyMetrics(t *testing.T) {
 }
 
 func TestProcessNextRoutesPurgeToLifecyclePurger(t *testing.T) {
+	leaseExpiresAt := time.Now().Add(time.Minute)
 	repo := &lifecycleWorkerRepositorySpy{job: &domain.LifecycleJob{
-		ID:        "purge-job",
-		Operation: domain.LifecycleJobPurge,
+		ID:             "purge-job",
+		Operation:      domain.LifecycleJobPurge,
+		LeaseExpiresAt: &leaseExpiresAt,
 	}}
 	purger := &lifecyclePurgerSpy{}
 

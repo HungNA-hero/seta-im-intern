@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -126,7 +127,7 @@ func processNext(ctx context.Context, repo interface {
 	ProcessLifecycleJob(context.Context, string, string) error
 	FailLifecycleJob(context.Context, string, string) error
 }, purger interface {
-	Process(context.Context, string, string) error
+	Process(context.Context, string, string, time.Time) error
 }, workerID string) {
 	job, err := repo.ClaimNextLifecycleJob(ctx, workerID)
 	if err != nil {
@@ -140,11 +141,19 @@ func processNext(ctx context.Context, repo interface {
 	slog.Info("lifecycle job claimed", "workerId", workerID, "jobId", job.ID, "orgId", job.OrgID, "operation", job.Operation, "rootResourceId", job.RootResourceID, "attempt", job.Attempts)
 	var processErr error
 	if job.Operation == domain.LifecycleJobPurge {
-		processErr = purger.Process(ctx, job.ID, workerID)
+		if job.LeaseExpiresAt == nil {
+			processErr = fmt.Errorf("purge lifecycle job %s was claimed without a lease expiry", job.ID)
+		} else {
+			processErr = purger.Process(ctx, job.ID, workerID, *job.LeaseExpiresAt)
+		}
 	} else {
 		processErr = repo.ProcessLifecycleJob(ctx, job.ID, workerID)
 	}
 	if processErr != nil {
+		if errors.Is(processErr, usecase.ErrLifecyclePurgeLeaseLost) {
+			slog.Warn("lifecycle purge lease lost; another worker may continue", "workerId", workerID, "jobId", job.ID)
+			return
+		}
 		slog.Error("lifecycle job batch failed", "workerId", workerID, "jobId", job.ID, "operation", job.Operation, "error", processErr.Error())
 		if failErr := repo.FailLifecycleJob(context.Background(), job.ID, workerID); failErr != nil {
 			slog.Error("lifecycle job failure state update failed", "workerId", workerID, "jobId", job.ID, "error", failErr.Error())

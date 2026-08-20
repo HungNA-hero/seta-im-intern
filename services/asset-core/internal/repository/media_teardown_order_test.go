@@ -56,6 +56,43 @@ func (fixture *teardownFixture) storedRawBytes(t *testing.T) int64 {
 	return stored
 }
 
+func (fixture *teardownFixture) reservedRawBytes(t *testing.T) int64 {
+	t.Helper()
+	var reserved int64
+	if err := fixture.db.Raw(
+		"SELECT reserved_raw_bytes FROM organization_media_usage WHERE org_id = ?", fixture.orgID,
+	).Scan(&reserved).Error; err != nil {
+		t.Fatalf("read quota ledger: %v", err)
+	}
+	return reserved
+}
+
+func (fixture *teardownFixture) seedUncommittedUploadSession(t *testing.T) (string, int64) {
+	t.Helper()
+	const reservedBytes int64 = 4096
+	uploadID := uuid.NewString()
+	rawObjectKey := "raw/" + fixture.orgID + "/" + fixture.assetID + "/" + uploadID + "/original.png"
+	if err := fixture.db.Exec(
+		`INSERT INTO media_upload_sessions
+		 (id, org_id, asset_id, requested_by, idempotency_key, request_fingerprint, state,
+		  original_filename, declared_content_type, file_extension, expected_size_bytes,
+		  declared_checksum_sha256, raw_object_key, credential_expires_at, session_expires_at)
+		 VALUES (?, ?, ?, ?, ?, decode(repeat('44', 32), 'hex'), 'created', 'pending.png', 'image/png', 'png', ?,
+		         decode(repeat('44', 32), 'hex'), ?, now() + interval '1 hour', now() + interval '24 hours')`,
+		uploadID, fixture.orgID, fixture.assetID, fixture.userID, uuid.NewString(), reservedBytes, rawObjectKey,
+	).Error; err != nil {
+		t.Fatalf("seed uncommitted upload session: %v", err)
+	}
+	if err := fixture.db.Exec(
+		`UPDATE organization_media_usage
+		 SET reserved_raw_bytes = reserved_raw_bytes + ?
+		 WHERE org_id = ?`, reservedBytes, fixture.orgID,
+	).Error; err != nil {
+		t.Fatalf("reserve upload-session quota: %v", err)
+	}
+	return rawObjectKey, reservedBytes
+}
+
 func (fixture *teardownFixture) rowCount(t *testing.T, query string, args ...any) int64 {
 	t.Helper()
 	var count int64

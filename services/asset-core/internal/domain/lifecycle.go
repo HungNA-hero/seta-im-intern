@@ -151,6 +151,7 @@ type LifecyclePurgeAsset struct {
 // removal. The use case deletes external objects first, then asks this
 // boundary to apply the foreign-key-safe database teardown.
 type LifecyclePurgeRepository interface {
+	RenewLifecyclePurgeLease(ctx context.Context, jobID, workerID string, expectedExpiry time.Time) (time.Time, error)
 	NextLifecyclePurgeAsset(ctx context.Context, jobID, workerID string) (*LifecyclePurgeAsset, error)
 	MarkLifecyclePurgeObjectsDeleted(ctx context.Context, jobID, workerID, assetID string, objectKeys []string) error
 	FinalizeLifecyclePurgeAsset(ctx context.Context, jobID, workerID, assetID string) error

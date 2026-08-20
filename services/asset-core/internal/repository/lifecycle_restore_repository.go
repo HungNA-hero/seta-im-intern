@@ -303,6 +303,41 @@ func (r *folderDeletionRepository) ClaimNextLifecycleJob(ctx context.Context, wo
 	return claimed, err
 }
 
+// RenewLifecyclePurgeLease extends a claimed PURGE job only while the exact
+// lease handed to this worker is still current. Matching the previous expiry
+// prevents a stale worker from extending a lease after ownership changed.
+func (r *folderDeletionRepository) RenewLifecyclePurgeLease(
+	ctx context.Context,
+	jobID, workerID string,
+	expectedExpiry time.Time,
+) (time.Time, error) {
+	var renewed struct{ LeaseExpiresAt time.Time }
+	result := r.db.WithContext(ctx).Raw(`
+		UPDATE asset_lifecycle_jobs
+		SET lease_expires_at = statement_timestamp() + make_interval(secs => ?)
+		WHERE id = ?
+		  AND operation = ?
+		  AND status = ?
+		  AND lease_owner = ?
+		  AND lease_expires_at = ?
+		  AND lease_expires_at > statement_timestamp()
+		RETURNING lease_expires_at`,
+		domain.FolderDeletionLeaseDuration.Seconds(),
+		jobID,
+		domain.LifecycleJobPurge,
+		domain.LifecycleJobRunning,
+		workerID,
+		expectedExpiry.UTC(),
+	).Scan(&renewed)
+	if result.Error != nil {
+		return time.Time{}, fmt.Errorf("renew lifecycle purge lease for job %s: %w", jobID, result.Error)
+	}
+	if result.RowsAffected != 1 {
+		return time.Time{}, fmt.Errorf("lifecycle purge lease was not held for job %s", jobID)
+	}
+	return renewed.LeaseExpiresAt, nil
+}
+
 func failClaimedLifecycleJob(tx *gorm.DB, job *domain.LifecycleJob, legacyJob *domain.FolderDeletionJob, now time.Time) error {
 	code := "INTERNAL_ERROR"
 	job.Status = domain.LifecycleJobFailed

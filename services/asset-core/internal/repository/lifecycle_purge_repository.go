@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -53,7 +54,7 @@ func (r *folderDeletionRepository) NextLifecyclePurgeAsset(ctx context.Context, 
 func lockRunningPurgeJob(tx *gorm.DB, jobID, workerID string) (domain.LifecycleJob, domain.LifecycleUnit, error) {
 	var job domain.LifecycleJob
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-		Where("id = ? AND operation = ? AND status = ? AND lease_owner = ?", jobID, domain.LifecycleJobPurge, domain.LifecycleJobRunning, workerID).
+		Where("id = ? AND operation = ? AND status = ? AND lease_owner = ? AND lease_expires_at > statement_timestamp()", jobID, domain.LifecycleJobPurge, domain.LifecycleJobRunning, workerID).
 		First(&job).Error; err != nil {
 		return domain.LifecycleJob{}, domain.LifecycleUnit{}, fmt.Errorf("lock claimed purge job: %w", err)
 	}
@@ -98,7 +99,7 @@ func nextPurgeAssetID(tx *gorm.DB, job domain.LifecycleJob, unit domain.Lifecycl
 }
 
 func createPurgeObjectManifest(tx *gorm.DB, jobID, orgID, assetID string) error {
-	// Version keys and output keys are recorded before any external delete. The
+	// Every raw key and output key is recorded before any external delete. The
 	// unique constraint makes a crash/retry converge on one manifest per job.
 	if err := tx.Exec(`
 		INSERT INTO asset_lifecycle_purge_objects (lifecycle_job_id, org_id, asset_id, object_key)
@@ -116,6 +117,16 @@ func createPurgeObjectManifest(tx *gorm.DB, jobID, orgID, assetID string) error 
 		WHERE versions.asset_id = ?
 		ON CONFLICT (lifecycle_job_id, object_key) DO NOTHING`, jobID, orgID, assetID).Error; err != nil {
 		return fmt.Errorf("manifest derivative objects for asset %s: %w", assetID, err)
+	}
+	if err := tx.Exec(`
+		INSERT INTO asset_lifecycle_purge_objects (lifecycle_job_id, org_id, asset_id, object_key)
+		SELECT ?, ?, sessions.asset_id, sessions.raw_object_key
+		FROM media_upload_sessions AS sessions
+		WHERE sessions.org_id = ?
+		  AND sessions.asset_id = ?
+		  AND sessions.raw_object_key <> ''
+		ON CONFLICT (lifecycle_job_id, object_key) DO NOTHING`, jobID, orgID, orgID, assetID).Error; err != nil {
+		return fmt.Errorf("manifest upload-session raw objects for asset %s: %w", assetID, err)
 	}
 	return nil
 }
@@ -156,10 +167,27 @@ func (r *folderDeletionRepository) FinalizeLifecyclePurgeAsset(ctx context.Conte
 			return fmt.Errorf("asset %s still has %d purge objects", assetID, pending)
 		}
 
+		var usage domain.OrganizationMediaUsage
+		usageErr := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("org_id = ?", job.OrgID).
+			Take(&usage).Error
+		if usageErr != nil && !errors.Is(usageErr, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("lock media quota for asset %s: %w", assetID, usageErr)
+		}
+
 		var storedBytes int64
 		if err := tx.Raw(`SELECT COALESCE(sum(original_size_bytes) FILTER (WHERE raw_retained), 0)
 			FROM asset_media_versions WHERE asset_id = ?`, assetID).Scan(&storedBytes).Error; err != nil {
 			return fmt.Errorf("sum stored media bytes for asset %s: %w", assetID, err)
+		}
+		var reservedBytes int64
+		if err := tx.Raw(`SELECT COALESCE(sum(expected_size_bytes), 0)
+			FROM media_upload_sessions
+			WHERE org_id = ? AND asset_id = ? AND state = ?`, job.OrgID, assetID, domain.UploadSessionCreated).Scan(&reservedBytes).Error; err != nil {
+			return fmt.Errorf("sum reserved media bytes for asset %s: %w", assetID, err)
+		}
+		if (storedBytes > 0 || reservedBytes > 0) && errors.Is(usageErr, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("media quota ledger is missing for asset %s", assetID)
 		}
 
 		// This order is deliberately the same as media_teardown_order_test. Each
@@ -181,11 +209,12 @@ func (r *folderDeletionRepository) FinalizeLifecyclePurgeAsset(ctx context.Conte
 				return fmt.Errorf("teardown purged asset %s: %w", assetID, err)
 			}
 		}
-		if storedBytes > 0 {
+		if storedBytes > 0 || reservedBytes > 0 {
 			if err := tx.Exec(`UPDATE organization_media_usage
-				SET stored_raw_bytes = GREATEST(stored_raw_bytes - ?, 0)
-				WHERE org_id = ?`, storedBytes, job.OrgID).Error; err != nil {
-				return fmt.Errorf("release stored media quota for asset %s: %w", assetID, err)
+				SET stored_raw_bytes = GREATEST(stored_raw_bytes - ?, 0),
+				    reserved_raw_bytes = GREATEST(reserved_raw_bytes - ?, 0)
+				WHERE org_id = ?`, storedBytes, reservedBytes, job.OrgID).Error; err != nil {
+				return fmt.Errorf("release media quota for asset %s: %w", assetID, err)
 			}
 		}
 		return nil
