@@ -11,6 +11,17 @@ interface HttpRequestStats {
 
 const httpRequests = new Map<string, HttpRequestStats>();
 const KNOWN_HTTP_METHODS = new Set(["CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT", "TRACE"]);
+const MEDIA_SESSION_OUTCOMES = new Set(["created", "replayed"]);
+const MEDIA_REJECTION_REASONS = new Set([
+  "rate_limited",
+  "checksum",
+  "descriptor",
+  "authorization",
+  "dependency",
+  "quota",
+]);
+const mediaSessions = new Map<string, { count: number; declaredBytes: number }>();
+const mediaRejections = new Map<string, number>();
 
 function escapeLabel(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/"/g, '\\"');
@@ -50,6 +61,22 @@ export function recordHttpRequest(
   httpRequests.set(key, current);
 }
 
+export function recordMediaSessionCreation(outcome: "created" | "replayed", declaredBytes: number): void {
+  const boundedOutcome = MEDIA_SESSION_OUTCOMES.has(outcome) ? outcome : "other";
+  const current = mediaSessions.get(boundedOutcome) ?? { count: 0, declaredBytes: 0 };
+  current.count += 1;
+  current.declaredBytes += Number.isSafeInteger(declaredBytes) && declaredBytes > 0 ? declaredBytes : 0;
+  mediaSessions.set(boundedOutcome, current);
+}
+
+export type MediaRejectionReason =
+  "rate_limited" | "checksum" | "descriptor" | "authorization" | "dependency" | "quota";
+
+export function recordMediaRejection(reason: MediaRejectionReason): void {
+  const boundedReason = MEDIA_REJECTION_REASONS.has(reason) ? reason : "other";
+  mediaRejections.set(boundedReason, (mediaRejections.get(boundedReason) ?? 0) + 1);
+}
+
 /** Renders the Prometheus text exposition format without adding a client SDK. */
 export function renderPrometheusMetrics(): string {
   const lines = [
@@ -61,6 +88,47 @@ export function renderPrometheusMetrics(): string {
     const [method, route, status, result] = key.split("\u0000");
     const requestLabels = { method, route, status, result };
     lines.push(`seta_access_http_requests_total${labels(requestLabels)} ${stats.count}`);
+  }
+
+  lines.push(
+    "# HELP seta_access_media_route_duration_seconds Public media route duration.",
+    "# TYPE seta_access_media_route_duration_seconds histogram",
+  );
+  for (const [key, stats] of httpRequests) {
+    const [method, route, status, result] = key.split("\u0000");
+    if (!route.startsWith("/api/v1/assets/") || !route.includes("/media")) continue;
+    const mediaLabels = { method, route, status, result };
+    HTTP_DURATION_BUCKETS_SECONDS.forEach((bucket, index) => {
+      lines.push(
+        `seta_access_media_route_duration_seconds_bucket${labels({ ...mediaLabels, le: String(bucket) })} ${stats.buckets[index]}`,
+      );
+    });
+    lines.push(
+      `seta_access_media_route_duration_seconds_bucket${labels({ ...mediaLabels, le: "+Inf" })} ${stats.count}`,
+      `seta_access_media_route_duration_seconds_sum${labels(mediaLabels)} ${stats.sumSeconds}`,
+      `seta_access_media_route_duration_seconds_count${labels(mediaLabels)} ${stats.count}`,
+    );
+  }
+
+  lines.push(
+    "# HELP seta_access_media_sessions_total Direct-upload session creation outcomes.",
+    "# TYPE seta_access_media_sessions_total counter",
+    "# HELP seta_access_media_declared_bytes_total Bytes declared by direct-upload sessions.",
+    "# TYPE seta_access_media_declared_bytes_total counter",
+  );
+  for (const [outcome, stats] of mediaSessions) {
+    lines.push(
+      `seta_access_media_sessions_total${labels({ outcome })} ${stats.count}`,
+      `seta_access_media_declared_bytes_total${labels({ outcome })} ${stats.declaredBytes}`,
+    );
+  }
+
+  lines.push(
+    "# HELP seta_access_media_rejections_total Public media request rejections by bounded category.",
+    "# TYPE seta_access_media_rejections_total counter",
+  );
+  for (const [reason, count] of mediaRejections) {
+    lines.push(`seta_access_media_rejections_total${labels({ reason })} ${count}`);
   }
 
   lines.push(
@@ -131,4 +199,6 @@ export function renderPrometheusMetrics(): string {
 
 export function resetPrometheusMetricsForTests(): void {
   httpRequests.clear();
+  mediaSessions.clear();
+  mediaRejections.clear();
 }

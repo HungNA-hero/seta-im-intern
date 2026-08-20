@@ -53,6 +53,16 @@ type mediaRepositoryFake struct {
 	cancelErr      error
 	cancelCalls    int
 	cancelScope    repository.UploadSessionScope
+	statusRecord   repository.MediaStatusRecord
+	statusErr      error
+	statusScope    repository.MediaStatusScope
+	statusCalls    int
+}
+
+func (fake *mediaRepositoryFake) GetLatestMediaStatus(_ context.Context, scope repository.MediaStatusScope) (repository.MediaStatusRecord, error) {
+	fake.statusCalls++
+	fake.statusScope = scope
+	return fake.statusRecord, fake.statusErr
 }
 
 func (fake *mediaRepositoryFake) CreateUploadSession(_ context.Context, request domain.CreateUploadSessionRequest, options repository.CreateUploadSessionOptions) (domain.MediaUploadSession, bool, error) {
@@ -87,18 +97,23 @@ func (fake *mediaRepositoryFake) CancelUploadSession(_ context.Context, scope re
 }
 
 type mediaStorageFake struct {
-	presignResult domain.UploadDescriptor
-	presignErr    error
-	headResult    domain.ObjectAttributes
-	headErr       error
-	getBody       []byte
-	getErr        error
-	presignCalls  int
-	headCalls     int
-	getCalls      int
-	presignInput  domain.PutAuthority
-	headKey       domain.ObjectKey
-	getKey        domain.ObjectKey
+	presignResult   domain.UploadDescriptor
+	presignErr      error
+	headResult      domain.ObjectAttributes
+	headErr         error
+	getBody         []byte
+	getErr          error
+	presignCalls    int
+	headCalls       int
+	getCalls        int
+	presignInput    domain.PutAuthority
+	headKey         domain.ObjectKey
+	getKey          domain.ObjectKey
+	presignGetCalls []struct {
+		Key domain.ObjectKey
+		TTL time.Duration
+	}
+	presignGetNow time.Time
 }
 
 func (fake *mediaStorageFake) PresignPut(_ context.Context, input domain.PutAuthority) (domain.UploadDescriptor, error) {
@@ -106,8 +121,16 @@ func (fake *mediaStorageFake) PresignPut(_ context.Context, input domain.PutAuth
 	fake.presignInput = input
 	return fake.presignResult, fake.presignErr
 }
-func (*mediaStorageFake) PresignGet(context.Context, domain.ObjectKey, time.Duration) (domain.DownloadDescriptor, error) {
-	panic("not used")
+func (fake *mediaStorageFake) PresignGet(_ context.Context, key domain.ObjectKey, ttl time.Duration) (domain.DownloadDescriptor, error) {
+	fake.presignGetCalls = append(fake.presignGetCalls, struct {
+		Key domain.ObjectKey
+		TTL time.Duration
+	}{Key: key, TTL: ttl})
+	expiresAt := fake.presignGetNow.Add(ttl)
+	return domain.DownloadDescriptor{
+		URL:       "https://media.example.test/" + key.String() + "?expires=" + strconv.FormatInt(expiresAt.Unix(), 10),
+		ExpiresAt: expiresAt,
+	}, nil
 }
 func (fake *mediaStorageFake) Head(_ context.Context, key domain.ObjectKey) (domain.ObjectAttributes, error) {
 	fake.headCalls++

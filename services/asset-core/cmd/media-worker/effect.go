@@ -15,20 +15,36 @@ type jobRunner interface {
 	RunJob(ctx context.Context, jobID string) error
 }
 
+type notificationVerifier interface {
+	VerifyNotification(ctx context.Context, orgID string, payload media.Payload) error
+}
+
 type notificationEffect struct {
-	runner jobRunner
-	logger *slog.Logger
+	runner   jobRunner
+	verifier notificationVerifier
+	logger   *slog.Logger
 }
 
 func (effect *notificationEffect) Apply(ctx context.Context, envelope event.Envelope) error {
 	payload, parseErr := media.Parse(envelope)
 	if parseErr != nil {
 		effect.logger.Error(
-			"dropping a media notification with an unusable payload",
+			"rejecting a media notification with an unusable payload",
 			"eventId", envelope.EventID,
-			"error", parseErr.Error(),
 		)
-		return consume.ErrAlreadyApplied
+		return consume.Poison("INVALID_MEDIA_PAYLOAD")
+	}
+	if effect.verifier != nil {
+		if err := effect.verifier.VerifyNotification(ctx, envelope.OrgID, payload); err != nil {
+			switch {
+			case errors.Is(err, repository.ErrJobNotFound):
+				return consume.Poison("MEDIA_JOB_NOT_FOUND")
+			case errors.Is(err, repository.ErrNotificationMismatch):
+				return consume.Poison("MEDIA_NOTIFICATION_MISMATCH")
+			default:
+				return err
+			}
+		}
 	}
 
 	err := effect.runner.RunJob(ctx, payload.JobID)
@@ -41,32 +57,13 @@ func (effect *notificationEffect) Apply(ctx context.Context, envelope event.Enve
 
 	case errors.Is(err, repository.ErrJobNotFound):
 		effect.logger.Error(
-			"dropping a media notification for a job that does not exist",
+			"rejecting a media notification for a job that does not exist",
 			"eventId", envelope.EventID,
 			"jobId", payload.JobID,
 		)
-		return consume.ErrAlreadyApplied
+		return consume.Poison("MEDIA_JOB_NOT_FOUND")
 
 	default:
 		return err
 	}
-}
-
-type loggingQuarantine struct {
-	logger *slog.Logger
-}
-
-func (quarantine *loggingQuarantine) Isolate(_ context.Context, quarantined consume.QuarantinedRecord) error {
-	quarantine.logger.Error(
-		"quarantining a media notification",
-		"quarantineId", quarantined.QuarantineID,
-		"reasonCode", quarantined.ReasonCode,
-		"sourceTopic", quarantined.SourceTopic,
-		"sourcePartition", quarantined.SourcePartition,
-		"sourceOffset", quarantined.SourceOffset,
-		"eventId", quarantined.EventID,
-		"jobId", quarantined.AggregateID,
-		"payloadSha256", quarantined.PayloadSHA256,
-	)
-	return nil
 }

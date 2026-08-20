@@ -35,11 +35,21 @@ type fakeMediaUsecase struct {
 	refreshScope  repository.UploadSessionScope
 	cancelScope   repository.UploadSessionScope
 	commitRequest domain.CommitUploadRequest
+	statusResult  domain.MediaStatusResult
+	statusErr     error
+	statusScope   repository.MediaStatusScope
+	statusCalls   int
 	createCalls   int
 	getCalls      int
 	refreshCalls  int
 	cancelCalls   int
 	commitCalls   int
+}
+
+func (usecase *fakeMediaUsecase) GetMediaStatus(_ context.Context, scope repository.MediaStatusScope) (domain.MediaStatusResult, error) {
+	usecase.statusCalls++
+	usecase.statusScope = scope
+	return usecase.statusResult, usecase.statusErr
 }
 
 func (usecase *fakeMediaUsecase) CreateUploadSession(_ context.Context, request domain.CreateUploadSessionRequest) (domain.UploadSessionResult, error) {
@@ -212,6 +222,49 @@ func TestMediaHandler_GetIsScopedToUserOrganizationAssetAndUpload(t *testing.T) 
 	}
 	if usecase.getScope != (repository.UploadSessionScope{OrgID: orgID, AssetID: assetID, UploadID: uploadID, RequestedBy: userID}) {
 		t.Fatalf("unexpected get scope: %#v", usecase.getScope)
+	}
+}
+
+func TestMediaHandler_StatusReturnsRequiredNullableAuthoritativeFields(t *testing.T) {
+	assetID, uploadID, jobID := uuid.NewString(), uuid.NewString(), uuid.NewString()
+	userID, orgID := uuid.NewString(), uuid.NewString()
+	now := time.Date(2026, time.August, 19, 11, 0, 0, 0, time.UTC)
+	usecase := &fakeMediaUsecase{statusResult: domain.MediaStatusResult{
+		AssetID: assetID, UploadID: uploadID, JobID: jobID,
+		Status: domain.ProcessingJobQueued, AttemptCount: 0,
+		Original: domain.MediaStatusOriginal{
+			Filename: "photo.png", DeclaredContentType: domain.MediaContentTypePNG, SizeBytes: 7,
+		},
+		AcceptedAt: now,
+	}}
+	mux := http.NewServeMux()
+	assetHTTP.NewMediaHandler(mux, usecase)
+	response := httptest.NewRecorder()
+	target := "/internal/api/v1/metadata-items/" + assetID + "/media/status"
+	mux.ServeHTTP(response, mediaInternalRequest(http.MethodGet, target, userID, orgID, "", ""))
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", response.Code, response.Body.String())
+	}
+	if usecase.statusCalls != 1 || usecase.statusScope != (repository.MediaStatusScope{OrgID: orgID, AssetID: assetID}) {
+		t.Fatalf("status calls=%d scope=%#v", usecase.statusCalls, usecase.statusScope)
+	}
+	var envelope struct {
+		Data map[string]any `json:"data"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&envelope); err != nil {
+		t.Fatalf("decode status: %v", err)
+	}
+	for _, requiredNullable := range []string{"stage", "outputs", "error", "started_at", "completed_at", "failed_at"} {
+		value, present := envelope.Data[requiredNullable]
+		if !present || value != nil {
+			t.Fatalf("field %s = %#v present=%v, want explicit null", requiredNullable, value, present)
+		}
+	}
+	if envelope.Data["asset_id"] != assetID || envelope.Data["upload_id"] != uploadID ||
+		envelope.Data["job_id"] != jobID || envelope.Data["status"] != "queued" ||
+		envelope.Data["attempt_count"] != float64(0) {
+		t.Fatalf("status data = %#v", envelope.Data)
 	}
 }
 

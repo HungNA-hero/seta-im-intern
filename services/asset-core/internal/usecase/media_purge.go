@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"seta-im-intern/go-asset-core/internal/domain"
+	"seta-im-intern/go-asset-core/internal/observability"
 	"seta-im-intern/go-asset-core/internal/repository"
 )
 
@@ -20,6 +21,10 @@ type MediaPurgeOptions struct {
 	Quarantine time.Duration
 	BatchSize  int
 	Logger     *slog.Logger
+}
+
+type mediaOperationalSnapshotStore interface {
+	GetMediaOperationalSnapshot(context.Context, time.Duration) (repository.MediaOperationalSnapshot, error)
 }
 
 // MediaObjectPurger reclaims storage that nothing references: raw objects from
@@ -49,6 +54,7 @@ func NewMediaObjectPurger(store PurgeableObjectStore, objects MediaObjectStore, 
 // settled. A batch that cannot be fully deleted is left unmarked so the next
 // sweep retries it.
 func (purger *MediaObjectPurger) PurgeOnce(ctx context.Context) (int, error) {
+	defer purger.refreshOperationalMetrics(ctx)
 	// The two halves are independent: sessions that could not be expired are
 	// reported and the sweep still reclaims whatever storage is already eligible.
 	expired, err := purger.store.ExpireUploadSessions(ctx, purger.options.BatchSize)
@@ -56,6 +62,7 @@ func (purger *MediaObjectPurger) PurgeOnce(ctx context.Context) (int, error) {
 		purger.options.Logger.Warn("could not expire every abandoned upload session", "error", err.Error())
 	}
 	if expired > 0 {
+		observability.RecordMediaAbandonedSessions(expired)
 		purger.options.Logger.Info("expired abandoned upload sessions", "sessions", expired)
 	}
 
@@ -67,6 +74,7 @@ func (purger *MediaObjectPurger) PurgeOnce(ctx context.Context) (int, error) {
 	purged := 0
 	for _, batch := range batches {
 		if err := purger.purgeBatch(ctx, batch); err != nil {
+			observability.RecordMediaFailure("storage")
 			purger.options.Logger.Warn(
 				"could not reclaim a quarantined media object",
 				"uploadId", batch.UploadID,
@@ -77,6 +85,35 @@ func (purger *MediaObjectPurger) PurgeOnce(ctx context.Context) (int, error) {
 		purged++
 	}
 	return purged, nil
+}
+
+func (purger *MediaObjectPurger) refreshOperationalMetrics(ctx context.Context) {
+	reader, ok := purger.store.(mediaOperationalSnapshotStore)
+	if !ok || ctx.Err() != nil {
+		return
+	}
+	snapshot, err := reader.GetMediaOperationalSnapshot(ctx, purger.options.Quarantine)
+	if err != nil {
+		purger.options.Logger.Warn("could not refresh media operational metrics", "errorCode", "MEDIA_METRICS_REFRESH_FAILED")
+		return
+	}
+	observability.SetMediaBacklogs(observability.MediaBacklogs{
+		QueueOldestAge:          snapshot.QueueOldestAge,
+		OutboxOldestAge:         snapshot.OutboxOldestAge,
+		ReconciliationOldestAge: snapshot.ReconciliationOldestAge,
+		Cleanup:                 snapshot.CleanupBacklog,
+		Quarantine:              snapshot.QuarantineBacklog,
+		QuarantineOldestAge:     snapshot.QuarantineOldestAge,
+	})
+	quota := make([]observability.MediaQuotaHeadroom, 0, len(snapshot.Quota))
+	for _, observation := range snapshot.Quota {
+		quota = append(quota, observability.MediaQuotaHeadroom{
+			OrganizationID: observation.OrganizationID,
+			ConsumedBytes:  observation.ConsumedBytes,
+			QuotaBytes:     observation.QuotaBytes,
+		})
+	}
+	observability.SetMediaQuotaHeadroom(quota, purger.options.Logger)
 }
 
 func (purger *MediaObjectPurger) purgeBatch(ctx context.Context, batch repository.PurgeableMediaObjects) error {

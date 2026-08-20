@@ -9,6 +9,7 @@ import { getErrorDefinition, isKnownErrorCode } from "../errors/errorCodes";
 import type { GraphQLContext } from "../graphql/context";
 import type { MediaUploadOperations } from "../usecase/mediaUploadUsecase";
 import { runWithRequestCorrelation } from "../observability/requestContext";
+import { recordMediaRejection, recordMediaSessionCreation } from "../observability/prometheus";
 import { ServiceName } from "../observability/serviceName";
 
 export interface MediaRouteDependencies {
@@ -40,7 +41,11 @@ export function registerMediaRoutes(app: FastifyInstance, dependencies: MediaRou
     "/api/v1/assets/:assetId/media/uploads",
     {
       errorHandler: mediaFrameworkErrorHandler,
-      preValidation: rejectUnknownMediaBody(["filename", "contentType", "sizeBytes", "checksumSha256"]),
+      onRequest: setMediaResponseSecurityHeaders,
+      preValidation: [
+        recordChecksumDeclarationRejection,
+        rejectUnknownMediaBody(["filename", "contentType", "sizeBytes", "checksumSha256"]),
+      ],
       schema: {
         params: assetParamsSchema,
         headers: {
@@ -88,6 +93,7 @@ export function registerMediaRoutes(app: FastifyInstance, dependencies: MediaRou
         } else {
           reply.header("Location", `/api/v1/assets/${params.assetId}/media/uploads/${session.uploadId}`);
         }
+        recordMediaSessionCreation(replayed ? "replayed" : "created", body.sizeBytes);
         reply.status(replayed ? 200 : 201).send({ data: session });
       } catch (error) {
         sendMediaRouteError(request, reply, error);
@@ -97,7 +103,11 @@ export function registerMediaRoutes(app: FastifyInstance, dependencies: MediaRou
 
   app.get(
     "/api/v1/assets/:assetId/media/uploads/:uploadId",
-    { errorHandler: mediaFrameworkErrorHandler, schema: { params: uploadParamsSchema } },
+    {
+      errorHandler: mediaFrameworkErrorHandler,
+      onRequest: setMediaResponseSecurityHeaders,
+      schema: { params: uploadParamsSchema },
+    },
     async (request, reply) => {
       try {
         const { assetId, uploadId } = request.params as { assetId: string; uploadId: string };
@@ -116,6 +126,7 @@ export function registerMediaRoutes(app: FastifyInstance, dependencies: MediaRou
     "/api/v1/assets/:assetId/media/uploads/:uploadId/refresh",
     {
       errorHandler: mediaFrameworkErrorHandler,
+      onRequest: setMediaResponseSecurityHeaders,
       preValidation: rejectUnknownMediaBody([]),
       schema: { params: uploadParamsSchema },
     },
@@ -135,7 +146,11 @@ export function registerMediaRoutes(app: FastifyInstance, dependencies: MediaRou
 
   app.delete(
     "/api/v1/assets/:assetId/media/uploads/:uploadId",
-    { errorHandler: mediaFrameworkErrorHandler, schema: { params: uploadParamsSchema } },
+    {
+      errorHandler: mediaFrameworkErrorHandler,
+      onRequest: setMediaResponseSecurityHeaders,
+      schema: { params: uploadParamsSchema },
+    },
     async (request, reply) => {
       try {
         const { assetId, uploadId } = request.params as { assetId: string; uploadId: string };
@@ -154,6 +169,7 @@ export function registerMediaRoutes(app: FastifyInstance, dependencies: MediaRou
     "/api/v1/assets/:assetId/media",
     {
       errorHandler: mediaFrameworkErrorHandler,
+      onRequest: setMediaResponseSecurityHeaders,
       preValidation: rejectUnknownMediaBody(["uploadId"]),
       schema: {
         params: assetParamsSchema,
@@ -173,6 +189,7 @@ export function registerMediaRoutes(app: FastifyInstance, dependencies: MediaRou
         const result = await runWithRequestCorrelation(request.correlation, () =>
           dependencies.usecase.commit(ctx, assetId, uploadId),
         );
+        if (result.replayed) reply.header("Idempotency-Replayed", "true");
         reply.status(result.replayed ? 200 : 202).send({
           data: {
             assetId: result.assetId,
@@ -188,6 +205,40 @@ export function registerMediaRoutes(app: FastifyInstance, dependencies: MediaRou
       }
     },
   );
+
+  app.get(
+    "/api/v1/assets/:assetId/media/status",
+    {
+      errorHandler: mediaFrameworkErrorHandler,
+      onRequest: setMediaResponseSecurityHeaders,
+      schema: { params: assetParamsSchema },
+    },
+    async (request, reply) => {
+      try {
+        const { assetId } = request.params as { assetId: string };
+        const ctx = await loadMediaContext(request, dependencies);
+        const result = await runWithRequestCorrelation(request.correlation, () =>
+          dependencies.usecase.getStatus(ctx, assetId),
+        );
+        reply.send({ data: result });
+      } catch (error) {
+        sendMediaRouteError(request, reply, error);
+      }
+    },
+  );
+}
+
+async function setMediaResponseSecurityHeaders(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  reply.header("X-Content-Type-Options", "nosniff");
+}
+
+async function recordChecksumDeclarationRejection(request: FastifyRequest): Promise<void> {
+  const body = request.body;
+  if (!body || typeof body !== "object" || Array.isArray(body)) return;
+  const checksum = (body as Record<string, unknown>).checksumSha256;
+  if (typeof checksum !== "string" || !new RegExp(SHA256_BASE64_PATTERN).test(checksum)) {
+    recordMediaRejection("checksum");
+  }
 }
 
 function mediaFrameworkErrorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply): void {
@@ -266,6 +317,10 @@ function sendMediaRouteError(request: FastifyRequest, reply: FastifyReply, error
   const code = isKnownErrorCode(requestedCode) ? requestedCode : "INTERNAL_ERROR";
   const definition = getErrorDefinition(code);
   const status = statuses[code] ?? 503;
+  if (code === "MEDIA_RATE_LIMITED") recordMediaRejection("rate_limited");
+  else if (code === "MEDIA_QUOTA_EXCEEDED") recordMediaRejection("quota");
+  else if (code === "UNAUTHENTICATED" || code === "FORBIDDEN") recordMediaRejection("authorization");
+  else if (status >= 500) recordMediaRejection("dependency");
   if (status === 429 && typeof candidate?.extensions?.retryAfterSeconds === "number") {
     reply.header("Retry-After", String(candidate.extensions.retryAfterSeconds));
   }

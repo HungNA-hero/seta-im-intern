@@ -49,28 +49,42 @@ func (store *mediaJobStore) ClaimJob(ctx context.Context, jobID, owner string) (
 	}
 
 	var claimed domain.MediaProcessingJob
+	recoveredExhaustion := false
 	err := store.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		rows := tx.Raw(`
-			UPDATE media_processing_jobs
+			WITH claimable AS (
+				SELECT id, status AS previous_status, lease_expires_at AS previous_lease_expires_at
+				FROM media_processing_jobs
+				WHERE id = ?
+				  AND status IN ('queued', 'processing')
+				  AND EXISTS (
+					SELECT 1 FROM metadata_items AS asset
+					WHERE asset.id = media_processing_jobs.asset_id
+					  AND asset.deleted_at IS NULL
+				  )
+				  AND next_attempt_at <= statement_timestamp()
+				  AND notification_isolated_at IS NULL
+				  AND attempt_count < ?
+				  AND (lease_expires_at IS NULL OR lease_expires_at <= statement_timestamp())
+				FOR UPDATE
+			)
+			UPDATE media_processing_jobs AS jobs
 			SET status = 'processing',
 			    stage = 'validating',
-			    attempt_count = attempt_count + 1,
+			    attempt_count = jobs.attempt_count + 1,
 			    lease_owner = ?,
 			    lease_expires_at = statement_timestamp() + make_interval(secs => ?),
-			    started_at = COALESCE(started_at, statement_timestamp())
-			WHERE id = ?
-			  AND status IN ('queued', 'processing')
-			  AND EXISTS (
-				SELECT 1 FROM metadata_items AS asset
-				WHERE asset.id = media_processing_jobs.asset_id
-				  AND asset.deleted_at IS NULL
-			  )
-			  AND next_attempt_at <= statement_timestamp()
-			  AND notification_isolated_at IS NULL
-			  AND attempt_count < ?
-			  AND (lease_expires_at IS NULL OR lease_expires_at <= statement_timestamp())
-			RETURNING *`,
-			owner, store.lease.Expiry.Seconds(), jobID, store.attempts,
+			    started_at = COALESCE(jobs.started_at, statement_timestamp())
+			FROM claimable
+			WHERE jobs.id = claimable.id
+			RETURNING jobs.*,
+			  (claimable.previous_status = 'processing' AND claimable.previous_lease_expires_at IS NOT NULL) AS recovered_lease,
+			  CASE
+			    WHEN claimable.previous_status = 'processing' AND claimable.previous_lease_expires_at IS NOT NULL
+			    THEN (EXTRACT(EPOCH FROM (statement_timestamp() - claimable.previous_lease_expires_at)) * 1000000000)::bigint
+			    ELSE 0
+			  END AS lease_recovery_latency_nanos`,
+			jobID, store.attempts, owner, store.lease.Expiry.Seconds(),
 		).Scan(&claimed)
 		if rows.Error != nil {
 			return fmt.Errorf("claiming media job %s: %w", jobID, rows.Error)
@@ -78,10 +92,25 @@ func (store *mediaJobStore) ClaimJob(ctx context.Context, jobID, owner string) (
 		if rows.RowsAffected == 1 {
 			return nil
 		}
+		settled, err := store.settleExpiredExhaustedClaim(tx, jobID, owner)
+		if err != nil {
+			return err
+		}
+		if settled {
+			recoveredExhaustion = true
+			return nil
+		}
 		return store.explainRefusal(tx, jobID)
 	})
 	if err != nil {
 		return domain.MediaProcessingJob{}, domain.JobLease{}, err
+	}
+	if recoveredExhaustion {
+		return domain.MediaProcessingJob{}, domain.JobLease{}, fmt.Errorf(
+			"%w: %s exhausted its processing attempts after lease expiry",
+			ErrJobTerminal,
+			jobID,
+		)
 	}
 
 	lease := domain.JobLease{Owner: owner}
@@ -89,6 +118,32 @@ func (store *mediaJobStore) ClaimJob(ctx context.Context, jobID, owner string) (
 		lease.ExpiresAt = *claimed.LeaseExpiresAt
 	}
 	return claimed, lease, nil
+}
+
+func (store *mediaJobStore) settleExpiredExhaustedClaim(tx *gorm.DB, jobID, owner string) (bool, error) {
+	var exhausted domain.MediaProcessingJob
+	result := tx.Raw(`
+		UPDATE media_processing_jobs
+		SET lease_owner = ?,
+		    lease_expires_at = statement_timestamp() + make_interval(secs => ?)
+		WHERE id = ?
+		  AND status = 'processing'
+		  AND notification_isolated_at IS NULL
+		  AND attempt_count >= ?
+		  AND (lease_expires_at IS NULL OR lease_expires_at <= statement_timestamp())
+		RETURNING *`,
+		owner, store.lease.Expiry.Seconds(), jobID, store.attempts,
+	).Scan(&exhausted)
+	if result.Error != nil {
+		return false, fmt.Errorf("acquiring exhausted media job %s for terminal recovery: %w", jobID, result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return false, nil
+	}
+	if err := failExhaustedMediaJob(tx, exhausted); err != nil {
+		return false, fmt.Errorf("terminally recovering exhausted media job %s: %w", jobID, err)
+	}
+	return true, nil
 }
 
 func (store *mediaJobStore) explainRefusal(tx *gorm.DB, jobID string) error {
@@ -166,11 +221,7 @@ func (store *mediaJobStore) SettleExecutionFailure(
 		}
 
 		if current.AttemptCount >= store.attempts {
-			if err := failMediaVersion(tx, MediaFailure{
-				JobID: current.ID, VersionID: current.VersionID,
-				OrgID: current.OrgID, AssetID: current.AssetID,
-				ErrorCode: mediaProcessingFailedCode,
-			}); err != nil {
+			if err := failExhaustedMediaJob(tx, current); err != nil {
 				return err
 			}
 			applied = true
@@ -214,6 +265,16 @@ func (store *mediaJobStore) SettleExecutionFailure(
 		return false, fmt.Errorf("settling the failed execution of media job %s: %w", job.ID, err)
 	}
 	return applied, nil
+}
+
+func failExhaustedMediaJob(tx *gorm.DB, job domain.MediaProcessingJob) error {
+	return failMediaVersion(tx, MediaFailure{
+		JobID:     job.ID,
+		VersionID: job.VersionID,
+		OrgID:     job.OrgID,
+		AssetID:   job.AssetID,
+		ErrorCode: mediaProcessingFailedCode,
+	})
 }
 
 func lockMediaJobForFailureSettlement(

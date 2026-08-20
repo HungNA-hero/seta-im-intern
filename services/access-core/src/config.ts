@@ -33,6 +33,21 @@ function boolEnv(name: string, fallback: boolean): boolean {
   throw new Error(`${name} must be either true or false`);
 }
 
+function listEnv(name: string, fallback: readonly string[]): string[] {
+  const raw = process.env[name];
+  if (raw === undefined) return [...fallback];
+  return raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+export function validateMediaTransportConfig(nodeEnvironment: string, requireHTTPS: boolean): void {
+  if (nodeEnvironment === "production" && !requireHTTPS) {
+    throw new Error("ACCESS_MEDIA_REQUIRE_HTTPS cannot be disabled in production");
+  }
+}
+
 export const ASSET_FETCH_TIMEOUT_MS = 3000;
 export const MEDIA_ASSET_FETCH_TIMEOUT_MS = intInRange(
   "ACCESS_MEDIA_FETCH_TIMEOUT_MS",
@@ -67,6 +82,9 @@ export const config = {
   host: process.env.HOST ?? "0.0.0.0",
   metricsEnabled: boolEnv("METRICS_ENABLED", false),
   mediaUploadEnabled: boolEnv("ACCESS_MEDIA_UPLOAD_ENABLED", false),
+  mediaRequireHTTPS: boolEnv("ACCESS_MEDIA_REQUIRE_HTTPS", true),
+  trustedProxies: listEnv("ACCESS_TRUSTED_PROXIES", ["127.0.0.1", "::1"]),
+  mediaAllowedOrigins: listEnv("ACCESS_MEDIA_CORS_ALLOW_ORIGINS", ["http://localhost:3000", "http://localhost:4000"]),
   mediaSessionRateLimit: {
     userPerMinute: intInRange("ACCESS_MEDIA_SESSION_LIMIT_PER_USER_PER_MINUTE", 10, 1, 10000),
     organizationPerMinute: intInRange("ACCESS_MEDIA_SESSION_LIMIT_PER_ORG_PER_MINUTE", 60, 1, 100000),
@@ -116,4 +134,5 @@ export function assertRuntimeConfig(): void {
   if (!config.assetInternalApiToken.trim()) {
     throw new Error("ASSET_INTERNAL_API_TOKEN must be configured before Access Core starts");
   }
+  validateMediaTransportConfig(process.env.NODE_ENV ?? "development", config.mediaRequireHTTPS);
 }

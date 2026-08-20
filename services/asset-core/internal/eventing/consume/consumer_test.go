@@ -98,6 +98,28 @@ func TestConsumerLeavesTheOffsetUncommittedWhenTheEffectFailsTransiently(t *test
 	}
 }
 
+func TestConsumerQuarantinesAnAuthoritativeDatabaseTruthMismatch(t *testing.T) {
+	effect := &fakeEffect{err: Poison("MEDIA_JOB_NOT_FOUND")}
+	quarantine := &fakeQuarantine{}
+	consumer := testConsumer(effect, quarantine)
+
+	outcome, err := consumer.Deliver(context.Background(), testRecord(validEnvelope))
+
+	if err != nil || outcome != CommitOffset {
+		t.Fatalf("outcome = %v, err = %v; want committed quarantine", outcome, err)
+	}
+	if effect.calls != 1 {
+		t.Fatalf("effect calls = %d, want one authoritative lookup", effect.calls)
+	}
+	if len(quarantine.isolated) != 1 {
+		t.Fatalf("isolated = %v, want one database-truth mismatch", quarantine.isolated)
+	}
+	isolated := quarantine.isolated[0]
+	if isolated.ReasonCode != "MEDIA_JOB_NOT_FOUND" || isolated.AggregateID != testRecord(validEnvelope).Key {
+		t.Fatalf("isolated = %#v, want safe reason and validated job identity", isolated)
+	}
+}
+
 func TestConsumerQuarantinesMalformedRecordsThenCommitsTheSourceOffset(t *testing.T) {
 	effect := &fakeEffect{}
 	quarantine := &fakeQuarantine{}

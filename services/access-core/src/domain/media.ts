@@ -51,6 +51,7 @@ export interface MediaOutputView {
   url: string;
   width: number;
   height: number;
+  sizeBytes: number;
   contentType: MediaContentType;
 }
 
@@ -86,6 +87,7 @@ export interface MediaStatus {
   acceptedAt: string;
   startedAt?: string | null;
   completedAt?: string | null;
+  failedAt?: string | null;
 }
 
 /** Asset Core's internal representation. Field names are snake_case there. */
@@ -123,6 +125,7 @@ export interface GoMediaOutput {
   url: string;
   width: number;
   height: number;
+  size_bytes: number;
   content_type: MediaContentType;
 }
 
@@ -149,6 +152,7 @@ export interface GoMediaStatus {
   accepted_at: string;
   started_at?: string | null;
   completed_at?: string | null;
+  failed_at?: string | null;
 }
 
 const uploadSessionStates: readonly UploadSessionState[] = ["CREATED", "COMMITTED"];
@@ -223,6 +227,7 @@ function toMediaOutputView(output: GoMediaOutput): MediaOutputView {
     url: output.url,
     width: output.width,
     height: output.height,
+    sizeBytes: output.size_bytes,
     contentType: output.content_type,
   };
 }
@@ -253,6 +258,7 @@ export function toMediaStatus(status: GoMediaStatus): MediaStatus {
     acceptedAt: status.accepted_at,
     startedAt: status.started_at ?? null,
     completedAt: status.completed_at ?? null,
+    failedAt: status.failed_at ?? null,
   };
 }
 

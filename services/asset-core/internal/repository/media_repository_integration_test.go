@@ -155,6 +155,40 @@ func TestMediaRepository_ReservesQuotaBeforeCreatingUploadAuthorityState(t *test
 	}
 }
 
+func TestMediaRepository_RaisingQuotaAdmitsThePreviouslyRejectedDeclaration(t *testing.T) {
+	fixture := newMediaRepositoryFixture(t)
+	firstRequest := fixture.request(fixture.assets[0], uuid.NewString(), 6)
+	if _, _, err := fixture.reserve(firstRequest, uuid.NewString(), 10); err != nil {
+		t.Fatalf("reserve first session: %v", err)
+	}
+	secondRequest := fixture.request(fixture.assets[1], uuid.NewString(), 5)
+	secondUploadID := uuid.NewString()
+	if _, _, err := fixture.reserve(secondRequest, secondUploadID, 10); !errors.Is(err, repository.ErrQuotaExceeded) {
+		t.Fatalf("initial admission error = %v, want quota rejection", err)
+	}
+
+	if err := fixture.db.Exec(
+		"UPDATE organization_media_usage SET raw_quota_bytes = 11 WHERE org_id = ?",
+		fixture.orgID,
+	).Error; err != nil {
+		t.Fatalf("raise raw quota: %v", err)
+	}
+	admitted, replayed, err := fixture.reserve(secondRequest, secondUploadID, 10)
+	if err != nil || replayed {
+		t.Fatalf("admission after supported quota remedy: replayed=%v err=%v", replayed, err)
+	}
+	if admitted.ID != secondUploadID || admitted.State != domain.UploadSessionCreated {
+		t.Fatalf("admitted session = %#v", admitted)
+	}
+	var usage domain.OrganizationMediaUsage
+	if err := fixture.db.Take(&usage, "org_id = ?", fixture.orgID).Error; err != nil {
+		t.Fatalf("read quota ledger: %v", err)
+	}
+	if usage.RawQuotaBytes != 11 || usage.ReservedRawBytes != 11 || usage.StoredRawBytes != 0 {
+		t.Fatalf("quota after remedy = %#v", usage)
+	}
+}
+
 func TestMediaRepository_OneOpenSessionPerAssetAndScopedRetryIsImmutable(t *testing.T) {
 	fixture := newMediaRepositoryFixture(t)
 	retryKey := uuid.NewString()

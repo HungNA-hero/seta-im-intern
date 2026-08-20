@@ -3,6 +3,7 @@ package repository_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"io"
 	"log/slog"
@@ -72,7 +73,9 @@ func newMediaJobFixture(t *testing.T) *mediaJobFixture {
 		t.Fatalf("begin rollback-only transaction: %v", tx.Error)
 	}
 	t.Cleanup(func() {
-		if err := tx.Rollback().Error; err != nil && !errors.Is(err, gorm.ErrInvalidTransaction) {
+		if err := tx.Rollback().Error; err != nil &&
+			!errors.Is(err, gorm.ErrInvalidTransaction) &&
+			!errors.Is(err, sql.ErrTxDone) {
 			t.Errorf("rollback integration transaction: %v", err)
 		}
 	})
@@ -293,6 +296,9 @@ func TestClaimJobTakesTheLeaseAndCountsTheAttempt(t *testing.T) {
 	if job.StartedAt == nil {
 		t.Error("startedAt must be stamped on the first claim")
 	}
+	if job.RecoveredLease || job.LeaseRecoveryLatencyNanos != 0 {
+		t.Errorf("first claim was reported as a recovery: %+v", job)
+	}
 }
 
 func TestClaimJobRefusesAJobAnotherWorkerHolds(t *testing.T) {
@@ -340,6 +346,12 @@ func TestClaimJobRecoversAnExpiredLease(t *testing.T) {
 	if job.AttemptCount != 2 {
 		t.Errorf("attemptCount = %d, want the recovery to count as a started execution", job.AttemptCount)
 	}
+	if !job.RecoveredLease {
+		t.Error("expired processing lease was not identified as crash recovery")
+	}
+	if time.Duration(job.LeaseRecoveryLatencyNanos) < time.Second {
+		t.Errorf("recovery latency = %s, want at least the seeded one-second expiry", time.Duration(job.LeaseRecoveryLatencyNanos))
+	}
 }
 
 func TestClaimJobRefusesTerminalIsolatedAndExhaustedJobs(t *testing.T) {
@@ -380,6 +392,40 @@ func TestClaimJobReportsAMissingJob(t *testing.T) {
 
 	if !errors.Is(err, repository.ErrJobNotFound) {
 		t.Errorf("error = %v, want %v", err, repository.ErrJobNotFound)
+	}
+}
+
+func TestMediaOperationalSnapshotReadsBacklogsAndQuotaWithoutTenantLabels(t *testing.T) {
+	fixture := newMediaJobFixture(t)
+	store := repository.NewMediaJobStore(
+		fixture.db,
+		domain.MediaLeasePolicy{RenewalInterval: testJobLeaseRenewal, Expiry: testJobLeaseExpiry},
+		testRetryPolicy(),
+	)
+	if err := fixture.db.Exec(
+		"UPDATE media_processing_jobs SET queued_at = now() - interval '2 seconds' WHERE id = ?",
+		fixture.jobID,
+	).Error; err != nil {
+		t.Fatalf("age queued job: %v", err)
+	}
+	if err := fixture.db.Exec(`
+		INSERT INTO organization_media_usage (org_id, raw_quota_bytes, reserved_raw_bytes, stored_raw_bytes)
+		VALUES (?, 1000, 100, 800)`, fixture.orgID).Error; err != nil {
+		t.Fatalf("seed quota headroom: %v", err)
+	}
+
+	snapshot, err := store.GetMediaOperationalSnapshot(fixture.ctx, time.Hour)
+	if err != nil {
+		t.Fatalf("GetMediaOperationalSnapshot: %v", err)
+	}
+	if snapshot.QueueOldestAge < 2*time.Second {
+		t.Errorf("queue oldest age = %s, want at least two seconds", snapshot.QueueOldestAge)
+	}
+	if snapshot.OutboxOldestAge < 0 || snapshot.CleanupBacklog != 0 || snapshot.QuarantineBacklog != 0 {
+		t.Errorf("unexpected backlog snapshot: %+v", snapshot)
+	}
+	if len(snapshot.Quota) == 0 || snapshot.Quota[0].OrganizationID == "" || snapshot.Quota[0].QuotaBytes <= 0 {
+		t.Errorf("quota snapshot = %+v, want aggregate source rows", snapshot.Quota)
 	}
 }
 

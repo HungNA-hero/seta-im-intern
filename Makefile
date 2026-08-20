@@ -12,7 +12,8 @@ ASSET_DATABASE_URL ?= postgresql://asset_user:asset_password@localhost:5433/asse
 .DEFAULT_GOAL := help
 
 .PHONY: help setup dev up down restart build migrate test logs clean \
-	backfill-refs backfill-metadata verify
+	backfill-refs backfill-metadata verify media-db-test media-kafka-test \
+	media-e2e media-worker-e2e media-fault-e2e media-load-e2e
 
 help:
 	@echo "seta-dam developer commands"
@@ -25,6 +26,12 @@ help:
 	@echo "  make migrate            Apply both databases' Flyway migrations"
 	@echo "  make test               Run both services' unit tests"
 	@echo "  make verify             Run formatting, static checks, tests, and builds"
+	@echo "  make media-db-test       Run opt-in media PostgreSQL integration tests"
+	@echo "  make media-kafka-test    Run opt-in Kafka round-trip tests"
+	@echo "  make media-e2e           Run opt-in direct-upload/MinIO E2E tests"
+	@echo "  make media-worker-e2e    Run the full opt-in rendition worker E2E suite"
+	@echo "  make media-fault-e2e     Run opt-in delivery/recovery fault injection"
+	@echo "  make media-load-e2e      Run the opt-in normal-load media SLO probe"
 	@echo "  make logs               Follow logs from the development stack"
 	@echo "  make clean              Stop the stack and remove its local volumes"
 
@@ -62,6 +69,29 @@ migrate:
 test:
 	npm --prefix $(ACCESS_CORE_DIR) test
 	cd $(ASSET_CORE_DIR) && go test ./...
+
+# Network-dependent media suites stay opt-in. `make test` and `make verify`
+# exercise fake storage and skip these gates unless the caller selects them.
+media-db-test:
+	cd $(ASSET_CORE_DIR) && ASSET_TEST_DATABASE_URL="$(ASSET_DATABASE_URL)" go test ./internal/repository -count=1
+
+media-kafka-test:
+	cd $(ASSET_CORE_DIR) && ASSET_KAFKA_BROKERS="$${ASSET_KAFKA_BROKERS:-localhost:29092}" go test ./internal/eventing/kafka -run RoundTrip -count=1
+
+media-e2e:
+	cd $(ACCESS_CORE_DIR) && MEDIA_E2E=1 npm exec -- vitest run --config vitest.e2e.config.ts src/__tests__/mediaE2E.e2e.test.ts
+
+media-worker-e2e:
+	cd $(ACCESS_CORE_DIR) && MEDIA_E2E=1 MEDIA_WORKER_E2E=1 npm exec -- vitest run --config vitest.e2e.config.ts src/__tests__/mediaE2E.e2e.test.ts
+
+media-fault-e2e:
+	cd $(ACCESS_CORE_DIR) && MEDIA_FAULT_E2E=1 npm exec -- vitest run --config vitest.e2e.config.ts src/__tests__/mediaFaults.e2e.test.ts
+
+media-load-e2e:
+	cd $(ACCESS_CORE_DIR) && MEDIA_LOAD_E2E=1 \
+		ACCESS_MEDIA_SESSION_LIMIT_PER_USER_PER_MINUTE=60 \
+		ACCESS_MEDIA_SESSION_LIMIT_PER_ORG_PER_MINUTE=60 \
+		npm exec -- vitest run --config vitest.e2e.config.ts src/__tests__/mediaLoad.e2e.test.ts
 
 logs:
 	$(DEV_COMPOSE) logs -f

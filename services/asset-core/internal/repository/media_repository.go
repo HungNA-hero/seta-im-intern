@@ -551,7 +551,12 @@ func (repository *mediaRepository) CommitUpload(
 			if err := tx.Where("version_id = ?", version.ID).Take(&job).Error; err != nil {
 				return err
 			}
-			acceptance = domain.CommitAcceptance{VersionID: version.ID, JobID: job.ID, Status: job.Status, AcceptedAt: version.CreatedAt}
+			acceptance = domain.CommitAcceptance{
+				VersionID:  version.ID,
+				JobID:      job.ID,
+				Status:     job.Status,
+				AcceptedAt: version.CreatedAt.UTC(),
+			}
 			replayed = true
 			return nil
 		}
@@ -618,7 +623,12 @@ func (repository *mediaRepository) CommitUpload(
 		}); err != nil {
 			return err
 		}
-		acceptance = domain.CommitAcceptance{VersionID: version.ID, JobID: job.ID, Status: job.Status, AcceptedAt: now}
+		acceptance = domain.CommitAcceptance{
+			VersionID:  version.ID,
+			JobID:      job.ID,
+			Status:     job.Status,
+			AcceptedAt: now.UTC(),
+		}
 		return nil
 	})
 	return acceptance, replayed, err

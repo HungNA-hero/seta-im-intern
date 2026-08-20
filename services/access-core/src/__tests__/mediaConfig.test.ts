@@ -51,6 +51,8 @@ describe("media rollout configuration", () => {
   test("forwards rollout and rate-limit settings into the Access container", () => {
     const compose = readFileSync(resolve(process.cwd(), "../../infra/docker-compose.yml"), "utf8");
 
+    expect(compose).toContain("NODE_ENV: ${NODE_ENV:-production}");
+    expect(compose).toContain("ACCESS_MEDIA_REQUIRE_HTTPS: ${ACCESS_MEDIA_REQUIRE_HTTPS:-true}");
     expect(compose).toContain("ACCESS_MEDIA_UPLOAD_ENABLED: ${ACCESS_MEDIA_UPLOAD_ENABLED:-false}");
     expect(compose).toContain(
       "ACCESS_MEDIA_SESSION_LIMIT_PER_USER_PER_MINUTE: ${ACCESS_MEDIA_SESSION_LIMIT_PER_USER_PER_MINUTE:-10}",

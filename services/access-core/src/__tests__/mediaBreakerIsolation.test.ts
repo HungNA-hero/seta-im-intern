@@ -1,7 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getMetricsSnapshotForTests, resetMetricsForTests } from "../cache/metrics";
-import { createMediaAssetBreakerForTests, getMediaAssetBreakerSnapshot } from "../clients/assetBreaker";
-import { abortableStalledBodyFetch, makeBreakerOptions, openBreaker } from "./helpers/assetBreakerTestFixtures";
+import {
+  createAssetBreakerForTests,
+  createMediaAssetBreakerForTests,
+  getMediaAssetBreakerSnapshot,
+} from "../clients/assetBreaker";
+import {
+  abortableStalledBodyFetch,
+  deferredResponse,
+  makeBreakerOptions,
+  openBreaker,
+} from "./helpers/assetBreakerTestFixtures";
 
 const originalFetch = global.fetch;
 const mockFetch = vi.fn();
@@ -79,5 +88,38 @@ describe("media breaker isolation", () => {
 
   it("exposes the production media breaker state separately", () => {
     expect(getMediaAssetBreakerSnapshot()).toMatchObject({ state: expect.stringMatching(/^(closed|open|halfOpen)$/) });
+  });
+
+  it("admits folder ancestry traffic while the independent media capacity pool is saturated", async () => {
+    const media = createMediaAssetBreakerForTests(makeBreakerOptions({ capacity: 1 }));
+    const authorization = createAssetBreakerForTests(makeBreakerOptions({ capacity: 1 }));
+    const stalledMedia = deferredResponse();
+    mockFetch
+      .mockImplementationOnce(() => stalledMedia.promise)
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }));
+
+    try {
+      const upload = media.fire("http://asset/internal/api/v1/metadata-items/asset/media/status", {});
+      await Promise.resolve();
+      expect(media.snapshot().inFlight).toBe(1);
+
+      await expect(
+        media.fire("http://asset/internal/api/v1/metadata-items/other/media/status", {}),
+      ).rejects.toMatchObject({
+        extensions: { code: "INTERNAL_ERROR" },
+      });
+      const ancestry = await authorization.fire("http://asset/internal/api/v1/facts/folders/ancestors", {});
+
+      expect(ancestry.status).toBe(200);
+      expect(authorization.snapshot().inFlight).toBe(0);
+      expect(media.snapshot().inFlight).toBe(1);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      stalledMedia.resolve(new Response(null, { status: 200 }));
+      await upload;
+    } finally {
+      media.shutdown();
+      authorization.shutdown();
+    }
   });
 });
