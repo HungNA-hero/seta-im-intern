@@ -115,7 +115,7 @@ func (r *assetRepository) QueueLifecycleRestore(ctx context.Context, orgID, user
 			RootResourceID:   unit.RootResourceID,
 			RootFolderID:     rootFolderID,
 			RootFolderPath:   unit.RootFolderPath,
-			RequestedBy:      userID,
+			RequestedBy:      &userID,
 			Operation:        domain.LifecycleJobRestore,
 			Status:           domain.LifecycleJobQueued,
 			Checkpoint:       checkpoint,
@@ -206,7 +206,7 @@ func (r *folderDeletionRepository) ClaimNextLifecycleJob(ctx context.Context, wo
 		err = tx.Raw(`
 			SELECT *
 			FROM asset_lifecycle_jobs
-			WHERE operation IN (?, ?)
+			WHERE operation IN (?, ?, ?)
 			  AND (
 				(status = ? AND (next_run_at IS NULL OR next_run_at <= ?))
 				OR (status = ? AND lease_expires_at IS NOT NULL AND lease_expires_at < ?)
@@ -214,7 +214,7 @@ func (r *folderDeletionRepository) ClaimNextLifecycleJob(ctx context.Context, wo
 			ORDER BY queued_at ASC NULLS LAST, created_at ASC
 			FOR UPDATE SKIP LOCKED
 			LIMIT 1
-		`, domain.LifecycleJobDelete, domain.LifecycleJobRestore, domain.LifecycleJobQueued, now, domain.LifecycleJobRunning, now).Scan(&job).Error
+		`, domain.LifecycleJobDelete, domain.LifecycleJobRestore, domain.LifecycleJobPurge, domain.LifecycleJobQueued, now, domain.LifecycleJobRunning, now).Scan(&job).Error
 		if err != nil {
 			return err
 		}
@@ -257,6 +257,17 @@ func (r *folderDeletionRepository) ClaimNextLifecycleJob(ctx context.Context, wo
 				return err
 			}
 		}
+		if job.Operation == domain.LifecycleJobPurge {
+			result := tx.Model(&domain.LifecycleUnit{}).
+				Where("id = ? AND org_id = ? AND state IN ?", *job.UnitID, job.OrgID, []domain.LifecycleUnitState{domain.LifecyclePurgeQueued, domain.LifecyclePurging}).
+				Update("state", domain.LifecyclePurging)
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected != 1 {
+				return fmt.Errorf("purge lifecycle job %s does not own a purgeable unit", job.ID)
+			}
+		}
 
 		leaseExpiresAt := now.Add(domain.FolderDeletionLeaseDuration)
 		job.Status = domain.LifecycleJobRunning
@@ -292,6 +303,41 @@ func (r *folderDeletionRepository) ClaimNextLifecycleJob(ctx context.Context, wo
 	return claimed, err
 }
 
+// RenewLifecyclePurgeLease extends a claimed PURGE job only while the exact
+// lease handed to this worker is still current. Matching the previous expiry
+// prevents a stale worker from extending a lease after ownership changed.
+func (r *folderDeletionRepository) RenewLifecyclePurgeLease(
+	ctx context.Context,
+	jobID, workerID string,
+	expectedExpiry time.Time,
+) (time.Time, error) {
+	var renewed struct{ LeaseExpiresAt time.Time }
+	result := r.db.WithContext(ctx).Raw(`
+		UPDATE asset_lifecycle_jobs
+		SET lease_expires_at = statement_timestamp() + make_interval(secs => ?)
+		WHERE id = ?
+		  AND operation = ?
+		  AND status = ?
+		  AND lease_owner = ?
+		  AND lease_expires_at = ?
+		  AND lease_expires_at > statement_timestamp()
+		RETURNING lease_expires_at`,
+		domain.FolderDeletionLeaseDuration.Seconds(),
+		jobID,
+		domain.LifecycleJobPurge,
+		domain.LifecycleJobRunning,
+		workerID,
+		expectedExpiry.UTC(),
+	).Scan(&renewed)
+	if result.Error != nil {
+		return time.Time{}, fmt.Errorf("renew lifecycle purge lease for job %s: %w", jobID, result.Error)
+	}
+	if result.RowsAffected != 1 {
+		return time.Time{}, fmt.Errorf("lifecycle purge lease was not held for job %s", jobID)
+	}
+	return renewed.LeaseExpiresAt, nil
+}
+
 func failClaimedLifecycleJob(tx *gorm.DB, job *domain.LifecycleJob, legacyJob *domain.FolderDeletionJob, now time.Time) error {
 	code := "INTERNAL_ERROR"
 	job.Status = domain.LifecycleJobFailed
@@ -303,11 +349,20 @@ func failClaimedLifecycleJob(tx *gorm.DB, job *domain.LifecycleJob, legacyJob *d
 	if err := tx.Save(job).Error; err != nil {
 		return err
 	}
-	if job.Operation == domain.LifecycleJobRestore && job.UnitID != nil {
-		if err := tx.Model(&domain.LifecycleUnit{}).
-			Where("id = ? AND org_id = ? AND state IN ?", *job.UnitID, job.OrgID, []domain.LifecycleUnitState{domain.LifecycleRestoreQueued, domain.LifecycleRestoring}).
-			Update("state", domain.LifecycleFailed).Error; err != nil {
-			return err
+	if job.UnitID != nil {
+		states := []domain.LifecycleUnitState(nil)
+		switch job.Operation {
+		case domain.LifecycleJobRestore:
+			states = []domain.LifecycleUnitState{domain.LifecycleRestoreQueued, domain.LifecycleRestoring}
+		case domain.LifecycleJobPurge:
+			states = []domain.LifecycleUnitState{domain.LifecyclePurgeQueued, domain.LifecyclePurging}
+		}
+		if len(states) > 0 {
+			if err := tx.Model(&domain.LifecycleUnit{}).
+				Where("id = ? AND org_id = ? AND state IN ?", *job.UnitID, job.OrgID, states).
+				Update("state", domain.LifecycleFailed).Error; err != nil {
+				return err
+			}
 		}
 	}
 	if legacyJob == nil {
@@ -344,8 +399,8 @@ func (r *folderDeletionRepository) ProcessLifecycleJob(ctx context.Context, jobI
 	}
 }
 
-// FailLifecycleJob applies bounded retry to native restore jobs. A failed
-// restore keeps the root tombstone in place; no partial member becomes visible.
+// FailLifecycleJob applies bounded retry to native RESTORE and PURGE jobs. A
+// failed operation keeps the root tombstone in place; no partial member becomes visible.
 func (r *folderDeletionRepository) FailLifecycleJob(ctx context.Context, jobID, workerID string) error {
 	var job domain.LifecycleJob
 	if err := r.db.WithContext(ctx).Where("id = ?", jobID).First(&job).Error; err != nil {
@@ -357,19 +412,19 @@ func (r *folderDeletionRepository) FailLifecycleJob(ctx context.Context, jobID, 
 		}
 		return r.FailFolderDeletionJob(ctx, *job.LegacyFolderDeletionJobID, workerID)
 	}
-	if job.Operation != domain.LifecycleJobRestore {
+	if job.Operation != domain.LifecycleJobRestore && job.Operation != domain.LifecycleJobPurge {
 		return fmt.Errorf("unsupported lifecycle operation %s", job.Operation)
 	}
 
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var locked domain.LifecycleJob
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("id = ? AND operation = ? AND status = ? AND lease_owner = ?", jobID, domain.LifecycleJobRestore, domain.LifecycleJobRunning, workerID).
+			Where("id = ? AND operation = ? AND status = ? AND lease_owner = ?", jobID, job.Operation, domain.LifecycleJobRunning, workerID).
 			First(&locked).Error; err != nil {
 			return err
 		}
 		if locked.UnitID == nil {
-			return fmt.Errorf("restore lifecycle job %s has no unit", locked.ID)
+			return fmt.Errorf("lifecycle %s job %s has no unit", locked.Operation, locked.ID)
 		}
 		now := time.Now().UTC()
 		code := "INTERNAL_ERROR"
@@ -383,8 +438,12 @@ func (r *folderDeletionRepository) FailLifecycleJob(ctx context.Context, jobID, 
 			if err := tx.Save(&locked).Error; err != nil {
 				return err
 			}
+			state := domain.LifecycleRestoring
+			if locked.Operation == domain.LifecycleJobPurge {
+				state = domain.LifecyclePurging
+			}
 			return tx.Model(&domain.LifecycleUnit{}).
-				Where("id = ? AND org_id = ? AND state = ?", *locked.UnitID, locked.OrgID, domain.LifecycleRestoring).
+				Where("id = ? AND org_id = ? AND state = ?", *locked.UnitID, locked.OrgID, state).
 				Update("state", domain.LifecycleFailed).Error
 		}
 		nextRunAt := now.Add(automaticRetryDelay(locked.Attempts))
@@ -393,9 +452,15 @@ func (r *folderDeletionRepository) FailLifecycleJob(ctx context.Context, jobID, 
 		if err := tx.Save(&locked).Error; err != nil {
 			return err
 		}
+		state := domain.LifecycleRestoring
+		queuedState := domain.LifecycleRestoreQueued
+		if locked.Operation == domain.LifecycleJobPurge {
+			state = domain.LifecyclePurging
+			queuedState = domain.LifecyclePurgeQueued
+		}
 		return tx.Model(&domain.LifecycleUnit{}).
-			Where("id = ? AND org_id = ? AND state = ?", *locked.UnitID, locked.OrgID, domain.LifecycleRestoring).
-			Update("state", domain.LifecycleRestoreQueued).Error
+			Where("id = ? AND org_id = ? AND state = ?", *locked.UnitID, locked.OrgID, state).
+			Update("state", queuedState).Error
 	})
 }
 

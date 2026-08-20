@@ -64,7 +64,12 @@ func (store *mediaJobStore) CompleteAndPromote(ctx context.Context, completion M
 			    sha256 = ?,
 			    completed_at = statement_timestamp(),
 			    activated_at = statement_timestamp()
-			WHERE id = ? AND org_id = ? AND status IN ('pending', 'processing')`,
+			WHERE id = ? AND org_id = ? AND status IN ('pending', 'processing')
+			  AND EXISTS (
+				SELECT 1 FROM metadata_items AS asset
+				WHERE asset.id = asset_media_versions.asset_id
+				  AND asset.deleted_at IS NULL
+			  )`,
 			completion.DetectedContentType, completion.SourceWidth, completion.SourceHeight,
 			completion.SourceSHA256, completion.VersionID, completion.OrgID,
 		).Error; err != nil {
@@ -148,7 +153,7 @@ func promoteActiveVersion(tx *gorm.DB, completion MediaCompletion) error {
 	result := tx.Exec(`
 		UPDATE metadata_items
 		SET active_media_version_id = ?, pending_media_version_id = NULL
-		WHERE id = ? AND pending_media_version_id = ?`,
+		WHERE id = ? AND pending_media_version_id = ? AND deleted_at IS NULL`,
 		completion.VersionID, completion.AssetID, completion.VersionID,
 	)
 	if result.Error != nil {
