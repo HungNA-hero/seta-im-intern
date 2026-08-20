@@ -276,24 +276,26 @@ type MediaOutput struct {
 func (MediaOutput) TableName() string { return "media_outputs" }
 
 type MediaProcessingJob struct {
-	ID                     string              `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	OrgID                  string              `gorm:"type:uuid;not null" json:"org_id"`
-	AssetID                string              `gorm:"type:uuid;not null" json:"asset_id"`
-	VersionID              string              `gorm:"type:uuid;not null" json:"version_id"`
-	Status                 ProcessingJobStatus `gorm:"type:varchar(20);not null" json:"status"`
-	Stage                  *ProcessingStage    `gorm:"type:varchar(20)" json:"stage,omitempty"`
-	AttemptCount           int                 `gorm:"not null;default:0" json:"attempt_count"`
-	NextAttemptAt          time.Time           `gorm:"not null;default:now()" json:"next_attempt_at"`
-	LeaseOwner             *string             `gorm:"type:text" json:"-"`
-	LeaseExpiresAt         *time.Time          `json:"-"`
-	LastErrorCode          *string             `gorm:"type:varchar(64)" json:"last_error_code,omitempty"`
-	NotificationIsolatedAt *time.Time          `json:"notification_isolated_at,omitempty"`
-	QueuedAt               time.Time           `gorm:"not null;default:now()" json:"queued_at"`
-	StartedAt              *time.Time          `json:"started_at,omitempty"`
-	CompletedAt            *time.Time          `json:"completed_at,omitempty"`
-	FailedAt               *time.Time          `json:"failed_at,omitempty"`
-	CreatedAt              time.Time           `gorm:"not null;default:now()" json:"created_at"`
-	UpdatedAt              time.Time           `gorm:"not null;default:now()" json:"updated_at"`
+	ID                        string              `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	OrgID                     string              `gorm:"type:uuid;not null" json:"org_id"`
+	AssetID                   string              `gorm:"type:uuid;not null" json:"asset_id"`
+	VersionID                 string              `gorm:"type:uuid;not null" json:"version_id"`
+	Status                    ProcessingJobStatus `gorm:"type:varchar(20);not null" json:"status"`
+	Stage                     *ProcessingStage    `gorm:"type:varchar(20)" json:"stage,omitempty"`
+	AttemptCount              int                 `gorm:"not null;default:0" json:"attempt_count"`
+	NextAttemptAt             time.Time           `gorm:"not null;default:now()" json:"next_attempt_at"`
+	LeaseOwner                *string             `gorm:"type:text" json:"-"`
+	LeaseExpiresAt            *time.Time          `json:"-"`
+	LastErrorCode             *string             `gorm:"type:varchar(64)" json:"last_error_code,omitempty"`
+	NotificationIsolatedAt    *time.Time          `json:"notification_isolated_at,omitempty"`
+	QueuedAt                  time.Time           `gorm:"not null;default:now()" json:"queued_at"`
+	StartedAt                 *time.Time          `json:"started_at,omitempty"`
+	CompletedAt               *time.Time          `json:"completed_at,omitempty"`
+	FailedAt                  *time.Time          `json:"failed_at,omitempty"`
+	CreatedAt                 time.Time           `gorm:"not null;default:now()" json:"created_at"`
+	UpdatedAt                 time.Time           `gorm:"not null;default:now()" json:"updated_at"`
+	RecoveredLease            bool                `gorm:"column:recovered_lease;->;-:migration" json:"-"`
+	LeaseRecoveryLatencyNanos int64               `gorm:"column:lease_recovery_latency_nanos;->;-:migration" json:"-"`
 }
 
 func (MediaProcessingJob) TableName() string { return "media_processing_jobs" }
@@ -370,4 +372,47 @@ type CommitUploadResult struct {
 	OriginalSizeBytes   int64
 	AcceptedAt          time.Time
 	Replayed            bool
+}
+
+type MediaStatusOriginal struct {
+	Filename            string
+	DeclaredContentType MediaContentType
+	DetectedContentType *MediaContentType
+	SizeBytes           int64
+	SHA256              *string
+}
+
+type MediaStatusOutput struct {
+	URL         string
+	Width       int
+	Height      int
+	SizeBytes   int64
+	ContentType MediaContentType
+}
+
+type MediaStatusOutputs struct {
+	Thumbnail MediaStatusOutput
+	Web       MediaStatusOutput
+	ExpiresAt time.Time
+}
+
+type MediaStatusError struct {
+	Code    string
+	Message string
+}
+
+type MediaStatusResult struct {
+	AssetID      string
+	UploadID     string
+	JobID        string
+	Status       ProcessingJobStatus
+	AttemptCount int
+	Stage        *ProcessingStage
+	Original     MediaStatusOriginal
+	Outputs      *MediaStatusOutputs
+	Error        *MediaStatusError
+	AcceptedAt   time.Time
+	StartedAt    *time.Time
+	CompletedAt  *time.Time
+	FailedAt     *time.Time
 }

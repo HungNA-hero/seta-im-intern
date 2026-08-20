@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"seta-im-intern/go-asset-core/internal/domain"
+	"seta-im-intern/go-asset-core/internal/observability"
 	"seta-im-intern/go-asset-core/internal/repository"
 	"time"
 )
@@ -60,6 +61,17 @@ func (worker *MediaWorker) RunJob(ctx context.Context, jobID string) error {
 	if err != nil {
 		return worker.classifyClaimFailure(jobID, err)
 	}
+	claimedAt := time.Now()
+	if !job.QueuedAt.IsZero() {
+		observability.ObserveMediaQueueAge(claimedAt.Sub(job.QueuedAt))
+	}
+	claimOutcome := "success"
+	if job.RecoveredLease {
+		claimOutcome = "recovered"
+		observability.RecordMediaLeaseRecovery(time.Duration(job.LeaseRecoveryLatencyNanos))
+	}
+	observability.RecordMediaAttempt("claim", claimOutcome)
+	defer func() { observability.ObserveMediaProcessingDuration(time.Since(claimedAt)) }()
 
 	held, heldLease, release := worker.leases.Hold(ctx, jobID, lease)
 	defer release()
@@ -70,6 +82,7 @@ func (worker *MediaWorker) RunJob(ctx context.Context, jobID string) error {
 	executeErr := worker.executor.Execute(bounded, job, heldLease)
 
 	if LeaseWasLost(held) {
+		observability.RecordMediaAttempt("terminal", "lease_lost")
 		worker.logger.Warn(
 			"abandoning media job without terminal state; the lease was lost",
 			"jobId", jobID,
@@ -80,6 +93,11 @@ func (worker *MediaWorker) RunJob(ctx context.Context, jobID string) error {
 	}
 
 	if executeErr != nil {
+		failureCategory := "transient"
+		if errors.Is(executeErr, context.DeadlineExceeded) || errors.Is(bounded.Err(), context.DeadlineExceeded) {
+			failureCategory = "timeout"
+		}
+		observability.RecordMediaFailure(failureCategory)
 		settled, settleErr := worker.jobs.SettleExecutionFailure(ctx, job, heldLease.Current())
 		if settleErr != nil {
 			return fmt.Errorf("settling failed media job %s: %w", jobID, settleErr)
@@ -93,7 +111,19 @@ func (worker *MediaWorker) RunJob(ctx context.Context, jobID string) error {
 			"attempt", job.AttemptCount,
 			"error", executeErr.Error(),
 		)
+		if job.AttemptCount >= 3 {
+			observability.RecordMediaAttempt("terminal", "failure")
+			if !job.CreatedAt.IsZero() {
+				observability.ObserveMediaAcceptanceToTerminal(time.Since(job.CreatedAt))
+			}
+		} else {
+			observability.RecordMediaAttempt("terminal", "retry")
+		}
 		return nil
+	}
+	observability.RecordMediaAttempt("terminal", "success")
+	if !job.CreatedAt.IsZero() {
+		observability.ObserveMediaAcceptanceToTerminal(time.Since(job.CreatedAt))
 	}
 	return nil
 }

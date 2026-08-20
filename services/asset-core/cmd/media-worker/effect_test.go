@@ -25,6 +25,16 @@ type stubRunner struct {
 	calls  []string
 }
 
+type stubNotificationVerifier struct {
+	err   error
+	calls int
+}
+
+func (verifier *stubNotificationVerifier) VerifyNotification(context.Context, string, media.Payload) error {
+	verifier.calls++
+	return verifier.err
+}
+
 func (runner *stubRunner) RunJob(_ context.Context, jobID string) error {
 	runner.calls = append(runner.calls, jobID)
 	return runner.result
@@ -111,45 +121,73 @@ func TestApplyLeavesTheOffsetUncommittedWhenTheJobIsUnavailable(t *testing.T) {
 	}
 }
 
-// A job that does not exist can never become actionable, so its record is
-// acknowledged rather than left to block the partition.
-func TestApplyAcknowledgesANotificationForAMissingJob(t *testing.T) {
+func TestApplyQuarantinesANotificationForAMissingJob(t *testing.T) {
 	runner := &stubRunner{result: fmt.Errorf("%w: job-1", repository.ErrJobNotFound)}
 
 	err := testEffect(runner).Apply(context.Background(), acceptedEnvelope(t, validJobPayload()))
 
-	if !errors.Is(err, consume.ErrAlreadyApplied) {
-		t.Errorf("error = %v, want %v", err, consume.ErrAlreadyApplied)
+	if reason, poison := consume.PoisonReason(err); !poison || reason != "MEDIA_JOB_NOT_FOUND" {
+		t.Errorf("error = %v, want MEDIA_JOB_NOT_FOUND poison", err)
 	}
 }
 
-func TestApplyAcknowledgesAnUnusablePayloadWithoutRunningAnything(t *testing.T) {
+func TestApplyQuarantinesAnUnusablePayloadWithoutRunningAnything(t *testing.T) {
 	envelope := acceptedEnvelope(t, validJobPayload())
 	envelope.Raw = []byte(`{"eventId":"` + envelope.EventID + `","jobId":"not-a-uuid"}`)
 	runner := &stubRunner{}
 
 	err := testEffect(runner).Apply(context.Background(), envelope)
 
-	if !errors.Is(err, consume.ErrAlreadyApplied) {
-		t.Errorf("error = %v, want %v", err, consume.ErrAlreadyApplied)
+	if reason, poison := consume.PoisonReason(err); !poison || reason != "INVALID_MEDIA_PAYLOAD" {
+		t.Errorf("error = %v, want INVALID_MEDIA_PAYLOAD poison", err)
 	}
 	if len(runner.calls) != 0 {
 		t.Errorf("runner was called %v for an unusable payload", runner.calls)
 	}
 }
 
-func TestQuarantineReportsWithoutFailingTheRecord(t *testing.T) {
-	quarantine := &loggingQuarantine{logger: slog.New(slog.NewTextHandler(io.Discard, nil))}
-
-	err := quarantine.Isolate(context.Background(), consume.QuarantinedRecord{
-		SourceTopic:  "media-processing.v1",
-		QuarantineID: "abc",
-		ReasonCode:   "UNSUPPORTED_SCHEMA_VERSION",
-	})
-
-	if err != nil {
-		t.Errorf("Isolate: %v", err)
+func TestApplyQuarantinesADatabaseTruthMismatchBeforeRunningAnything(t *testing.T) {
+	runner := &stubRunner{}
+	verifier := &stubNotificationVerifier{err: repository.ErrNotificationMismatch}
+	effect := &notificationEffect{
+		runner:   runner,
+		verifier: verifier,
+		logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
+
+	err := effect.Apply(context.Background(), acceptedEnvelope(t, validJobPayload()))
+
+	if reason, poison := consume.PoisonReason(err); !poison || reason != "MEDIA_NOTIFICATION_MISMATCH" {
+		t.Fatalf("error = %v, want MEDIA_NOTIFICATION_MISMATCH poison", err)
+	}
+	if verifier.calls != 1 || len(runner.calls) != 0 {
+		t.Fatalf("verifier calls = %d, runner calls = %v; mismatch must spend no processing attempt", verifier.calls, runner.calls)
+	}
+}
+
+func TestApplyRetriesATemporaryDatabaseVerificationFailure(t *testing.T) {
+	runner := &stubRunner{}
+	databaseFailure := errors.New("database unavailable")
+	verifier := &stubNotificationVerifier{err: databaseFailure}
+	effect := &notificationEffect{
+		runner:   runner,
+		verifier: verifier,
+		logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
+	}
+
+	err := effect.Apply(context.Background(), acceptedEnvelope(t, validJobPayload()))
+
+	if !errors.Is(err, databaseFailure) || consumeErrIsPoison(err) {
+		t.Fatalf("error = %v, want transient database failure", err)
+	}
+	if len(runner.calls) != 0 {
+		t.Fatalf("runner calls = %v, want none before authoritative verification", runner.calls)
+	}
+}
+
+func consumeErrIsPoison(err error) bool {
+	_, poisoned := consume.PoisonReason(err)
+	return poisoned
 }
 
 // The whole point of the child process: this binary holds the database lease

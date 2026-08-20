@@ -15,6 +15,11 @@ type replayPayload struct {
 	AggregateID string `json:"aggregateId"`
 }
 
+const (
+	testReplayQuarantineID = "64f4f7570b3f7b1ec67f1ea7a80ff2ec9f44acb91544a456b820087aa62ed273"
+	testReplayJobID        = "a74e1124-b5c0-47b4-b73f-4ce7c7031d77"
+)
+
 type fakeReplayStore struct {
 	mu          sync.Mutex
 	aggregateID string
@@ -56,7 +61,8 @@ func TestReplayAtomicallyRebuildsCurrentStateWithTheFreshEventID(t *testing.T) {
 	}
 
 	eventID, err := Replay(context.Background(), store, ReplayRequest{
-		QuarantineID: "deadbeef",
+		QuarantineID: testReplayQuarantineID,
+		JobID:        testReplayJobID,
 		Operator:     "ops-alice",
 	})
 	if err != nil {
@@ -65,7 +71,7 @@ func TestReplayAtomicallyRebuildsCurrentStateWithTheFreshEventID(t *testing.T) {
 	if eventID == uuid.Nil || len(store.eventIDs) != 1 || store.eventIDs[0] != eventID {
 		t.Fatalf("returned event ID = %s, stored IDs = %v; replay row and result must share one fresh ID", eventID, store.eventIDs)
 	}
-	if len(store.requests) != 1 || store.requests[0].QuarantineID != "deadbeef" || store.requests[0].Operator != "ops-alice" {
+	if len(store.requests) != 1 || store.requests[0].QuarantineID != testReplayQuarantineID || store.requests[0].Operator != "ops-alice" {
 		t.Fatalf("requests = %+v, want the quarantine and auditable operator passed into the transaction", store.requests)
 	}
 
@@ -84,7 +90,7 @@ func TestReplayAtomicallyRebuildsCurrentStateWithTheFreshEventID(t *testing.T) {
 func TestReplayRefusesWithoutAnOperatorIdentity(t *testing.T) {
 	store := &fakeReplayStore{isolated: true}
 
-	_, err := Replay(context.Background(), store, ReplayRequest{QuarantineID: "deadbeef"})
+	_, err := Replay(context.Background(), store, ReplayRequest{QuarantineID: testReplayQuarantineID, JobID: testReplayJobID})
 
 	if !errors.Is(err, ErrOperatorRequired) {
 		t.Fatalf("err = %v, want ErrOperatorRequired — replay is never automatic", err)
@@ -94,12 +100,49 @@ func TestReplayRefusesWithoutAnOperatorIdentity(t *testing.T) {
 	}
 }
 
+func TestReplayRefusesWithoutAJobCorrelation(t *testing.T) {
+	store := &fakeReplayStore{isolated: true}
+
+	_, err := Replay(context.Background(), store, ReplayRequest{
+		QuarantineID: testReplayQuarantineID,
+		Operator:     "ops-alice",
+	})
+
+	if !errors.Is(err, ErrJobRequired) {
+		t.Fatalf("err = %v, want ErrJobRequired", err)
+	}
+	if len(store.eventIDs) != 0 {
+		t.Fatalf("an uncorrelated replay enqueued %d events, want 0", len(store.eventIDs))
+	}
+}
+
+func TestReplayRefusesAnInvalidQuarantineIdentity(t *testing.T) {
+	store := &fakeReplayStore{isolated: true}
+
+	_, err := Replay(context.Background(), store, ReplayRequest{
+		QuarantineID: "deadbeef",
+		JobID:        testReplayJobID,
+		Operator:     "ops-alice",
+	})
+
+	if !errors.Is(err, ErrInvalidQuarantineID) {
+		t.Fatalf("err = %v, want ErrInvalidQuarantineID", err)
+	}
+	if len(store.eventIDs) != 0 {
+		t.Fatalf("an invalid replay enqueued %d events, want 0", len(store.eventIDs))
+	}
+}
+
 func TestConcurrentReplayCannotClearIsolationTwice(t *testing.T) {
 	store := &fakeReplayStore{isolated: true}
 	errorsByOperator := make(chan error, 2)
 	for _, operator := range []string{"ops-alice", "ops-bob"} {
 		go func() {
-			_, err := Replay(context.Background(), store, ReplayRequest{QuarantineID: "deadbeef", Operator: operator})
+			_, err := Replay(context.Background(), store, ReplayRequest{
+				QuarantineID: testReplayQuarantineID,
+				JobID:        testReplayJobID,
+				Operator:     operator,
+			})
 			errorsByOperator <- err
 		}()
 	}
@@ -127,7 +170,11 @@ func TestConcurrentReplayCannotClearIsolationTwice(t *testing.T) {
 func TestReplayPropagatesAtomicStoreFailure(t *testing.T) {
 	store := &fakeReplayStore{isolated: true, err: errors.New("transaction failed")}
 
-	eventID, err := Replay(context.Background(), store, ReplayRequest{QuarantineID: "deadbeef", Operator: "ops-alice"})
+	eventID, err := Replay(context.Background(), store, ReplayRequest{
+		QuarantineID: testReplayQuarantineID,
+		JobID:        testReplayJobID,
+		Operator:     "ops-alice",
+	})
 
 	if err == nil {
 		t.Fatal("Replay returned no error when the atomic store transaction failed")
@@ -145,7 +192,8 @@ func (missingIDReplayStore) RebuildAndEnqueue(context.Context, ReplayRequest) (u
 
 func TestReplayRejectsACommittedTransactionWithoutAnEventID(t *testing.T) {
 	eventID, err := Replay(context.Background(), missingIDReplayStore{}, ReplayRequest{
-		QuarantineID: "deadbeef",
+		QuarantineID: testReplayQuarantineID,
+		JobID:        testReplayJobID,
 		Operator:     "ops-alice",
 	})
 

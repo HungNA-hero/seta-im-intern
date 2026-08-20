@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 
 	"seta-im-intern/go-asset-core/internal/domain"
+	"seta-im-intern/go-asset-core/internal/observability"
 	"seta-im-intern/go-asset-core/internal/repository"
 	"seta-im-intern/go-asset-core/internal/requestcontext"
 	"seta-im-intern/go-asset-core/internal/usecase"
@@ -23,6 +24,7 @@ type MediaUsecase interface {
 	RefreshUploadSession(context.Context, repository.UploadSessionScope) (domain.UploadSessionResult, error)
 	CancelUploadSession(context.Context, repository.UploadSessionScope) error
 	CommitUpload(context.Context, domain.CommitUploadRequest) (domain.CommitUploadResult, error)
+	GetMediaStatus(context.Context, repository.MediaStatusScope) (domain.MediaStatusResult, error)
 }
 
 type MediaHandler struct{ usecase MediaUsecase }
@@ -34,6 +36,7 @@ func NewMediaHandler(mux *http.ServeMux, mediaUsecase MediaUsecase) {
 	mux.HandleFunc("POST /internal/api/v1/metadata-items/{assetId}/media/uploads/{uploadId}/refresh", RequireActor(handler.refreshUploadSession))
 	mux.HandleFunc("DELETE /internal/api/v1/metadata-items/{assetId}/media/uploads/{uploadId}", RequireActor(handler.cancelUploadSession))
 	mux.HandleFunc("PUT /internal/api/v1/metadata-items/{assetId}/media", RequireActor(handler.commitUpload))
+	mux.HandleFunc("GET /internal/api/v1/metadata-items/{assetId}/media/status", RequireActor(handler.getMediaStatus))
 }
 
 type createMediaSessionBody struct {
@@ -73,6 +76,7 @@ func (handler *MediaHandler) createUploadSession(response http.ResponseWriter, r
 	}
 	checksum, err := base64.StdEncoding.Strict().DecodeString(body.ChecksumSHA256)
 	if err != nil || len(checksum) != domain.ChecksumByteLength {
+		observability.RecordMediaFailure("deterministic")
 		writeError(response, request, http.StatusBadRequest, "BAD_REQUEST")
 		return
 	}
@@ -89,6 +93,7 @@ func (handler *MediaHandler) createUploadSession(response http.ResponseWriter, r
 	if result.Replayed {
 		status = http.StatusOK
 	}
+	observability.RecordMediaSession(map[bool]string{true: "replayed", false: "created"}[result.Replayed], body.SizeBytes)
 	response.Header().Set("Idempotency-Replayed", map[bool]string{true: "true", false: "false"}[result.Replayed])
 	writeMediaJSON(response, status, map[string]any{"data": uploadSessionEnvelope(result)})
 }
@@ -188,6 +193,21 @@ func (handler *MediaHandler) commitUpload(response http.ResponseWriter, request 
 	}})
 }
 
+func (handler *MediaHandler) getMediaStatus(response http.ResponseWriter, request *http.Request) {
+	actor, assetID, ok := mediaActorAndAsset(response, request)
+	if !ok {
+		return
+	}
+	result, err := handler.usecase.GetMediaStatus(request.Context(), repository.MediaStatusScope{
+		OrgID: actor.OrgID, AssetID: assetID,
+	})
+	if err != nil {
+		writeMediaError(response, request, err)
+		return
+	}
+	writeMediaJSON(response, http.StatusOK, map[string]any{"data": mediaStatusEnvelope(result)})
+}
+
 func mediaActorAndAsset(response http.ResponseWriter, request *http.Request) (requestcontext.Actor, string, bool) {
 	actor, err := requestcontext.GetActor(request.Context())
 	if err != nil {
@@ -232,6 +252,41 @@ func uploadSessionEnvelope(result domain.UploadSessionResult) map[string]any {
 	}
 }
 
+func mediaStatusEnvelope(result domain.MediaStatusResult) map[string]any {
+	var outputs any
+	if result.Outputs != nil {
+		output := func(value domain.MediaStatusOutput) map[string]any {
+			return map[string]any{
+				"url": value.URL, "width": value.Width, "height": value.Height,
+				"size_bytes": value.SizeBytes, "content_type": value.ContentType,
+			}
+		}
+		outputs = map[string]any{
+			"thumbnail":  output(result.Outputs.Thumbnail),
+			"web":        output(result.Outputs.Web),
+			"expires_at": result.Outputs.ExpiresAt,
+		}
+	}
+	var failure any
+	if result.Error != nil {
+		failure = map[string]any{"code": result.Error.Code, "message": result.Error.Message}
+	}
+	return map[string]any{
+		"asset_id": result.AssetID, "upload_id": result.UploadID, "job_id": result.JobID,
+		"status": result.Status, "attempt_count": result.AttemptCount, "stage": result.Stage,
+		"original": map[string]any{
+			"filename":              result.Original.Filename,
+			"declared_content_type": result.Original.DeclaredContentType,
+			"detected_content_type": result.Original.DetectedContentType,
+			"size_bytes":            result.Original.SizeBytes,
+			"sha256":                result.Original.SHA256,
+		},
+		"outputs": outputs, "error": failure,
+		"accepted_at": result.AcceptedAt, "started_at": result.StartedAt,
+		"completed_at": result.CompletedAt, "failed_at": result.FailedAt,
+	}
+}
+
 func writeMediaJSON(response http.ResponseWriter, status int, payload any) {
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(status)
@@ -240,17 +295,19 @@ func writeMediaJSON(response http.ResponseWriter, status int, payload any) {
 
 func writeMediaError(response http.ResponseWriter, request *http.Request, err error) {
 	switch {
-	case errors.Is(err, repository.ErrUploadNotFound), errors.Is(err, repository.ErrAssetNotAvailable):
+	case errors.Is(err, repository.ErrUploadNotFound), errors.Is(err, repository.ErrAssetNotAvailable), errors.Is(err, repository.ErrMediaStatusNotFound):
 		writeError(response, request, http.StatusNotFound, "MEDIA_UPLOAD_NOT_FOUND")
 	case errors.Is(err, repository.ErrUploadInProgress):
 		writeError(response, request, http.StatusConflict, "MEDIA_UPLOAD_IN_PROGRESS")
 	case errors.Is(err, repository.ErrIdempotencyConflict):
+		observability.RecordMediaRetryConflict()
 		writeError(response, request, http.StatusConflict, "IDEMPOTENCY_KEY_REUSED")
 	case errors.Is(err, repository.ErrUploadSessionExpired):
 		writeError(response, request, http.StatusGone, "UPLOAD_SESSION_EXPIRED")
 	case errors.Is(err, repository.ErrQuotaExceeded):
 		writeError(response, request, http.StatusRequestEntityTooLarge, "MEDIA_QUOTA_EXCEEDED")
 	case errors.Is(err, repository.ErrMediaObjectMismatch), errors.Is(err, domain.ErrObjectNotFound):
+		observability.RecordMediaFailure("deterministic")
 		writeError(response, request, http.StatusConflict, "MEDIA_OBJECT_MISMATCH")
 	case errors.Is(err, repository.ErrUploadStateConflict):
 		writeError(response, request, http.StatusConflict, "MEDIA_UPLOAD_STATE_CONFLICT")
@@ -261,6 +318,7 @@ func writeMediaError(response http.ResponseWriter, request *http.Request, err er
 	case errors.Is(err, usecase.ErrInvalidMediaFilename), errors.Is(err, usecase.ErrInvalidMediaChecksum):
 		writeError(response, request, http.StatusBadRequest, "BAD_REQUEST")
 	default:
+		observability.RecordMediaFailure("storage")
 		writeError(response, request, http.StatusServiceUnavailable, "MEDIA_STORAGE_UNAVAILABLE")
 	}
 }

@@ -543,16 +543,27 @@ describe.skipIf(!liveMediaE2E || !liveMediaWorker)("US2 rendition pipeline end t
     return { uploadId: session.uploadId, jobId: commit.json().data.jobId as string, committedAt: Date.now() };
   }
 
-  async function waitForTerminalJob(jobId: string): Promise<{ status: string; elapsedMs: number }> {
+  async function waitForTerminalJob(
+    targetAssetId: string,
+    jobId: string,
+  ): Promise<{ status: string; elapsedMs: number; data: Record<string, any> }> {
     const startedAt = Date.now();
     while (Date.now() - startedAt < claimToTerminalBudgetMs) {
-      const { rows } = await assetDb.query<{ status: string }>(
-        "SELECT status FROM media_processing_jobs WHERE id = $1",
-        [jobId],
-      );
-      const status = rows[0]?.status;
+      const response = await app.inject({
+        method: "GET",
+        url: `/api/v1/assets/${targetAssetId}/media/status`,
+        headers: { "x-user-id": userId, "x-org-id": orgId },
+      });
+      if (response.statusCode !== 200) {
+        throw new Error(`status poll returned ${response.statusCode}: ${response.body}`);
+      }
+      const data = response.json().data as Record<string, any>;
+      if (data.jobId !== jobId) {
+        throw new Error(`status poll returned job ${String(data.jobId)}, want ${jobId}`);
+      }
+      const status = String(data.status).toLowerCase();
       if (status === "completed" || status === "failed") {
-        return { status, elapsedMs: Date.now() - startedAt };
+        return { status, elapsedMs: Date.now() - startedAt, data };
       }
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
@@ -571,9 +582,23 @@ describe.skipIf(!liveMediaE2E || !liveMediaWorker)("US2 rendition pipeline end t
         "image/jpeg",
       );
 
-      const terminal = await waitForTerminalJob(jobId);
+      const terminal = await waitForTerminalJob(processedAssetId, jobId);
       expect(terminal.status).toBe("completed");
       expect(Date.now() - committedAt).toBeLessThan(claimToTerminalBudgetMs);
+      expect(terminal.data).toMatchObject({
+        assetId: processedAssetId,
+        uploadId,
+        jobId,
+        status: "COMPLETED",
+        outputs: {
+          thumbnail: { width: expect.any(Number), height: expect.any(Number), sizeBytes: expect.any(Number) },
+          web: { width: expect.any(Number), height: expect.any(Number), sizeBytes: expect.any(Number) },
+          expiresAt: expect.any(String),
+        },
+        error: null,
+      });
+      expect(new Date(terminal.data.outputs.expiresAt).getTime() - Date.now()).toBeLessThanOrEqual(15 * 60 * 1000);
+      expect(new Date(terminal.data.outputs.expiresAt).getTime()).toBeGreaterThan(Date.now());
 
       const version = await assetDb.query<{
         id: string;
@@ -651,8 +676,14 @@ describe.skipIf(!liveMediaE2E || !liveMediaWorker)("US2 rendition pipeline end t
         "image/jpeg",
       );
 
-      const terminal = await waitForTerminalJob(jobId);
+      const terminal = await waitForTerminalJob(hostileAssetId, jobId);
       expect(terminal.status).toBe("failed");
+      expect(terminal.data).toMatchObject({
+        status: "FAILED",
+        outputs: null,
+        error: { code: expect.any(String), message: expect.any(String) },
+      });
+      expect(JSON.stringify(terminal.data.error)).not.toContain("/tmp/");
 
       const version = await assetDb.query<{ id: string; status: string; failure_code: string | null }>(
         "SELECT id, status, failure_code FROM asset_media_versions WHERE asset_id = $1",
@@ -693,7 +724,7 @@ describe.skipIf(!liveMediaE2E || !liveMediaWorker)("US2 rendition pipeline end t
         "landscape-2048x1152.jpg",
         "image/jpeg",
       );
-      expect((await waitForTerminalJob(first.jobId)).status).toBe("completed");
+      expect((await waitForTerminalJob(replacedAssetId, first.jobId)).status).toBe("completed");
 
       const activeBefore = await assetDb.query<{ active_media_version_id: string }>(
         "SELECT active_media_version_id FROM metadata_items WHERE id = $1",
@@ -709,7 +740,7 @@ describe.skipIf(!liveMediaE2E || !liveMediaWorker)("US2 rendition pipeline end t
         "jpeg-trailing-payload.jpg",
         "image/jpeg",
       );
-      expect((await waitForTerminalJob(replacement.jobId)).status).toBe("failed");
+      expect((await waitForTerminalJob(replacedAssetId, replacement.jobId)).status).toBe("failed");
 
       const activeAfter = await assetDb.query<{
         active_media_version_id: string;
@@ -755,7 +786,7 @@ describe.skipIf(!liveMediaE2E || !liveMediaWorker)("US2 rendition pipeline end t
           `sample.${extension}`,
           sample.contentType,
         );
-        const terminal = await waitForTerminalJob(jobId);
+        const terminal = await waitForTerminalJob(corpusAssetId, jobId);
 
         expect(terminal.status, `${sample.file} must fail`).toBe("failed");
 
@@ -787,7 +818,7 @@ describe.skipIf(!liveMediaE2E || !liveMediaWorker)("US2 rendition pipeline end t
       "landscape-2048x1152.jpg",
       "image/jpeg",
     );
-    expect((await waitForTerminalJob(jobId)).status).toBe("completed");
+    expect((await waitForTerminalJob(isolatedAssetId, jobId)).status).toBe("completed");
 
     const outputs = await assetDb.query<{ object_key: string }>(
       `SELECT object_key FROM media_outputs WHERE version_id = (
@@ -804,10 +835,19 @@ describe.skipIf(!liveMediaE2E || !liveMediaWorker)("US2 rendition pipeline end t
 
     const crossTenantRead = await app.inject({
       method: "GET",
-      url: `/api/v1/assets/${isolatedAssetId}/media/uploads/${randomUUID()}`,
+      url: `/api/v1/assets/${isolatedAssetId}/media/status`,
       headers: { "x-user-id": userId, "x-org-id": otherOrgId },
     });
     expect(crossTenantRead.statusCode).toBeGreaterThanOrEqual(400);
+
+    mockCanDo.mockResolvedValue({ allowed: false, reason: "revoked" });
+    const revokedRead = await app.inject({
+      method: "GET",
+      url: `/api/v1/assets/${isolatedAssetId}/media/status`,
+      headers: { "x-user-id": userId, "x-org-id": orgId },
+    });
+    expect(revokedRead.statusCode).toBe(403);
+    mockCanDo.mockResolvedValue({ allowed: true });
 
     const rawKeys = await assetDb.query<{ raw_object_key: string }>(
       "SELECT raw_object_key FROM asset_media_versions WHERE asset_id = $1",

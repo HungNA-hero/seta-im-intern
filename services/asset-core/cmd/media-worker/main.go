@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/subtle"
+	"errors"
+	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -22,15 +26,20 @@ import (
 	"seta-im-intern/go-asset-core/internal/eventing/media"
 	"seta-im-intern/go-asset-core/internal/eventing/outbox"
 	"seta-im-intern/go-asset-core/internal/media/processing"
+	"seta-im-intern/go-asset-core/internal/observability"
 	"seta-im-intern/go-asset-core/internal/repository"
 	"seta-im-intern/go-asset-core/internal/storage"
 	"seta-im-intern/go-asset-core/internal/usecase"
 )
 
 const (
-	relayInterval  = 500 * time.Millisecond
-	relayBatchSize = 50
+	relayInterval                  = 500 * time.Millisecond
+	relayBatchSize                 = 50
+	replayTokenEnvironment         = "ASSET_MEDIA_REPLAY_TOKEN"
+	replayAuthorizationEnvironment = "ASSET_MEDIA_REPLAY_AUTHORIZATION"
 )
+
+var errReplayUnauthorized = errors.New("media dead-letter replay is not authorized")
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
@@ -45,6 +54,16 @@ func main() {
 }
 
 func run() error {
+	if len(os.Args) > 1 {
+		if os.Args[1] != "replay-dead-letter" {
+			return fmt.Errorf("unknown media-worker subcommand %q", os.Args[1])
+		}
+		return runReplayDeadLetter(os.Args[2:])
+	}
+	return runWorker()
+}
+
+func runWorker() error {
 	config, err := domain.LoadMediaConfig(os.LookupEnv)
 	if err != nil {
 		return fmt.Errorf("loading media configuration: %w", err)
@@ -70,7 +89,7 @@ func run() error {
 	}
 	defer func() { _ = producer.Close() }()
 
-	reader, err := buildReader(ctx, db, config, workerID)
+	reader, err := buildReader(ctx, db, config, workerID, producer)
 	if err != nil {
 		return err
 	}
@@ -98,10 +117,19 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	reconciler, err := buildReconciler(db, config)
+	if err != nil {
+		return err
+	}
 	waitGroup.Add(1)
 	go func() {
 		defer waitGroup.Done()
 		purger.PurgeUntilStopped(ctx, config.Processor.SweepInterval)
+	}()
+	waitGroup.Add(1)
+	go func() {
+		defer waitGroup.Done()
+		reconciler.Run(ctx)
 	}()
 
 	waitGroup.Add(1)
@@ -118,6 +146,64 @@ func run() error {
 	waitGroup.Wait()
 	slog.Info("media worker stopped", "workerId", workerID)
 	return readerErr
+}
+
+func parseReplayDeadLetter(args []string, lookupEnv func(string) string) (outbox.ReplayRequest, error) {
+	flags := flag.NewFlagSet("replay-dead-letter", flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	quarantineID := flags.String("quarantine-id", "", "deterministic dead-letter quarantine identity")
+	jobID := flags.String("job-id", "", "correlated media processing job identity")
+	operatorID := flags.String("operator-id", "", "authenticated operator identity")
+	if err := flags.Parse(args); err != nil {
+		return outbox.ReplayRequest{}, fmt.Errorf("parsing replay-dead-letter arguments: %w", err)
+	}
+	if flags.NArg() != 0 {
+		return outbox.ReplayRequest{}, fmt.Errorf("replay-dead-letter accepts no positional arguments")
+	}
+
+	expected := lookupEnv(replayTokenEnvironment)
+	presented := lookupEnv(replayAuthorizationEnvironment)
+	if expected == "" || presented == "" || len(expected) != len(presented) ||
+		subtle.ConstantTimeCompare([]byte(expected), []byte(presented)) != 1 {
+		return outbox.ReplayRequest{}, errReplayUnauthorized
+	}
+	return outbox.ReplayRequest{
+		QuarantineID: strings.TrimSpace(*quarantineID),
+		JobID:        strings.TrimSpace(*jobID),
+		Operator:     strings.TrimSpace(*operatorID),
+	}, nil
+}
+
+func runReplayDeadLetter(args []string) error {
+	request, err := parseReplayDeadLetter(args, os.Getenv)
+	if err != nil {
+		return err
+	}
+	db, err := openAssetDB(assetDSNFromEnv())
+	if err != nil {
+		return fmt.Errorf("connecting to asset_db for dead-letter replay: %w", err)
+	}
+	defer func() {
+		if sqlDB, closeErr := db.DB(); closeErr == nil {
+			_ = sqlDB.Close()
+		}
+	}()
+
+	store := repository.NewMediaJobStore(db, domain.MediaLeasePolicy{}, domain.MediaRetryPolicy{})
+	eventID, err := outbox.Replay(context.Background(), store, request)
+	if err != nil {
+		observability.RecordMediaReplay("failure")
+		return err
+	}
+	observability.RecordMediaReplay("success")
+	slog.Info(
+		"media dead-letter replayed",
+		"quarantineId", request.QuarantineID,
+		"jobId", request.JobID,
+		"eventId", eventID.String(),
+		"operatorId", request.Operator,
+	)
+	return nil
 }
 
 func buildRelay(db *gorm.DB, config domain.MediaConfig, workerID string) (*outbox.Relay, *kafka.Producer, error) {
@@ -143,7 +229,13 @@ func buildRelay(db *gorm.DB, config domain.MediaConfig, workerID string) (*outbo
 	return relay, producer, nil
 }
 
-func buildReader(ctx context.Context, db *gorm.DB, config domain.MediaConfig, workerID string) (*kafka.Reader, error) {
+func buildReader(
+	ctx context.Context,
+	db *gorm.DB,
+	config domain.MediaConfig,
+	workerID string,
+	deadLetterPublisher media.DeadLetterPublisher,
+) (*kafka.Reader, error) {
 	jobs := repository.NewMediaJobStore(db, config.Lease, config.Retry)
 	leases := usecase.NewLeaseKeeper(jobs, config.Lease, slog.Default())
 
@@ -161,8 +253,8 @@ func buildReader(ctx context.Context, db *gorm.DB, config domain.MediaConfig, wo
 	)
 
 	consumer := consume.NewConsumer(
-		&notificationEffect{runner: worker, logger: slog.Default()},
-		&loggingQuarantine{logger: slog.Default()},
+		&notificationEffect{runner: worker, verifier: jobs, logger: slog.Default()},
+		media.NewDeadLetter(jobs, deadLetterPublisher, config.Kafka.DeadLetterTopic),
 		consume.ConsumerOptions{
 			MaxValueBytes:  media.MaxRecordBytes,
 			KnownVersions:  []int{media.SchemaVersion},
@@ -172,10 +264,11 @@ func buildReader(ctx context.Context, db *gorm.DB, config domain.MediaConfig, wo
 	)
 
 	reader, err := kafka.NewReader(consumer, kafka.ReaderOptions{
-		Brokers:  config.Kafka.Brokers,
-		Topic:    config.Kafka.Topic,
-		GroupID:  config.Kafka.ConsumerGroup,
-		Security: securityFor(config.Kafka),
+		Brokers:      config.Kafka.Brokers,
+		Topic:        config.Kafka.Topic,
+		GroupID:      config.Kafka.ConsumerGroup,
+		Security:     securityFor(config.Kafka),
+		DrainTimeout: config.Processor.HardDeadline + 5*time.Second,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("building the media Kafka reader: %w", err)
@@ -251,6 +344,20 @@ func buildObjectPurger(ctx context.Context, db *gorm.DB, config domain.MediaConf
 		BatchSize:  config.Processor.SweepBatchSize,
 		Logger:     slog.Default(),
 	}), nil
+}
+
+func buildReconciler(db *gorm.DB, config domain.MediaConfig) (*media.Reconciler, error) {
+	store := repository.NewMediaJobStore(db, config.Lease, config.Retry)
+	reconciler, err := media.NewReconciler(store, media.ReconcilerOptions{
+		Interval:   config.Reconciliation.ScanInterval,
+		BatchSize:  config.Reconciliation.BatchSize,
+		StaleAfter: config.Reconciliation.StaleDispatchAfter,
+		Logger:     slog.Default(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("building the media reconciliation loop: %w", err)
+	}
+	return reconciler, nil
 }
 
 func drainUntilStopped(ctx context.Context, relay *outbox.Relay) {

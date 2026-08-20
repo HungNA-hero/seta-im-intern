@@ -18,8 +18,37 @@ type readerEffect struct {
 	err error
 }
 
+type drainingReaderEffect struct {
+	started chan struct{}
+	release chan struct{}
+}
+
+func (effect *drainingReaderEffect) Apply(ctx context.Context, _ event.Envelope) error {
+	close(effect.started)
+	select {
+	case <-effect.release:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 func (effect readerEffect) Apply(context.Context, event.Envelope) error {
 	return effect.err
+}
+
+type durableReaderEffect struct {
+	calls       int
+	activations int
+}
+
+func (effect *durableReaderEffect) Apply(context.Context, event.Envelope) error {
+	effect.calls++
+	if effect.activations > 0 {
+		return consume.ErrAlreadyApplied
+	}
+	effect.activations++
+	return nil
 }
 
 type readerQuarantine struct{}
@@ -160,6 +189,59 @@ func TestReaderTreatsRunContextCancellationAsGracefulAtEveryBoundary(t *testing.
 	})
 }
 
+func TestReaderShutdownStopsNewPollsButCommitsAnEffectThatFinishesInsideTheDrainBudget(t *testing.T) {
+	effect := &drainingReaderEffect{started: make(chan struct{}), release: make(chan struct{})}
+	consumer := consume.NewConsumer(effect, readerQuarantine{}, consume.ConsumerOptions{
+		KnownVersions:  []int{1},
+		RoutableTypes:  []string{"media.processing.requested"},
+		AggregateField: "jobId",
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	fetches, commits := 0, 0
+	reader := &Reader{
+		reader: &fakeReaderClient{
+			fetch: func(fetchCtx context.Context) (kafkago.Message, error) {
+				fetches++
+				if fetches == 1 {
+					return validKafkaMessage(), nil
+				}
+				<-fetchCtx.Done()
+				return kafkago.Message{}, fetchCtx.Err()
+			},
+			commit: func(commitCtx context.Context, _ ...kafkago.Message) error {
+				if err := commitCtx.Err(); err != nil {
+					t.Fatalf("completed effect received a cancelled commit context: %v", err)
+				}
+				commits++
+				return nil
+			},
+		},
+		consumer: consumer,
+		options: ReaderOptions{
+			MaxDeliveryAttempts: 1,
+			DrainTimeout:        time.Second,
+			Logger:              slog.New(slog.NewTextHandler(io.Discard, nil)),
+		},
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- reader.Run(ctx) }()
+	<-effect.started
+	cancel()
+	close(effect.release)
+
+	if err := <-done; err != nil {
+		t.Fatalf("graceful Run: %v", err)
+	}
+	if commits != 1 {
+		t.Fatalf("commits = %d, want the completed durable effect committed", commits)
+	}
+	if fetches != 1 {
+		t.Fatalf("fetches = %d, want shutdown to prevent a new poll", fetches)
+	}
+}
+
 func TestReaderDoesNotHideAnUnrelatedContextShapedFetchError(t *testing.T) {
 	reader := &Reader{
 		reader: &fakeReaderClient{fetch: func(context.Context) (kafkago.Message, error) {
@@ -172,5 +254,45 @@ func TestReaderDoesNotHideAnUnrelatedContextShapedFetchError(t *testing.T) {
 	err := reader.Run(context.Background())
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("Run error = %v, want the unrelated fetch cancellation propagated", err)
+	}
+}
+
+func TestReaderOffsetCommitFailureRedeliversADurableEffectWithoutASecondActivation(t *testing.T) {
+	effect := &durableReaderEffect{}
+	consumer := consume.NewConsumer(effect, readerQuarantine{}, consume.ConsumerOptions{
+		KnownVersions:  []int{1},
+		RoutableTypes:  []string{"media.processing.requested"},
+		AggregateField: "jobId",
+	})
+	message := validKafkaMessage()
+	commitFailure := errors.New("coordinator unavailable after promotion")
+	reader := &Reader{
+		reader: &fakeReaderClient{
+			fetch: func(context.Context) (kafkago.Message, error) { return message, nil },
+			commit: func(context.Context, ...kafkago.Message) error {
+				return commitFailure
+			},
+		},
+		consumer: consumer,
+		options:  validReaderOptions(),
+	}
+
+	err := reader.Run(context.Background())
+	if !errors.Is(err, commitFailure) {
+		t.Fatalf("Run error = %v, want offset commit failure", err)
+	}
+	if effect.calls != 1 || effect.activations != 1 {
+		t.Fatalf("first delivery = calls %d activations %d, want one durable activation", effect.calls, effect.activations)
+	}
+
+	outcome, err := consumer.Deliver(context.Background(), consume.Record{
+		Topic: message.Topic, Partition: message.Partition, Offset: message.Offset,
+		Key: string(message.Key), Value: message.Value,
+	})
+	if err != nil || outcome != consume.CommitOffset {
+		t.Fatalf("redelivery = outcome %v err %v, want committable duplicate", outcome, err)
+	}
+	if effect.calls != 2 || effect.activations != 1 {
+		t.Fatalf("redelivery = calls %d activations %d, want one activation", effect.calls, effect.activations)
 	}
 }

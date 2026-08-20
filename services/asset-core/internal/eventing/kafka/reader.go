@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"seta-im-intern/go-asset-core/internal/eventing/consume"
 	"strings"
 	"time"
 
 	"github.com/segmentio/kafka-go"
-
-	"seta-im-intern/go-asset-core/internal/eventing/consume"
 )
 
 type ReaderOptions struct {
@@ -22,14 +21,12 @@ type ReaderOptions struct {
 	MaxWait             time.Duration
 	MaxDeliveryAttempts int
 	RetryBackoff        time.Duration
+	DrainTimeout        time.Duration
 	Security            SecurityOptions
 	Logger              *slog.Logger
 	OnOutcome           func(consume.Outcome)
 }
 
-// ErrDeliveryStalled ends the read loop when a record cannot be made
-// committable. Offsets for it and everything after it on its partition stay
-// uncommitted, so a restarted reader resumes from the last committed offset.
 var ErrDeliveryStalled = errors.New("record could not be delivered within its attempt budget")
 
 type Reader struct {
@@ -77,6 +74,9 @@ func NewReader(consumer *consume.Consumer, options ReaderOptions) (*Reader, erro
 	if options.RetryBackoff <= 0 {
 		options.RetryBackoff = 500 * time.Millisecond
 	}
+	if options.DrainTimeout <= 0 {
+		options.DrainTimeout = 95 * time.Second
+	}
 	if options.Logger == nil {
 		options.Logger = slog.Default()
 	}
@@ -109,6 +109,9 @@ func NewReader(consumer *consume.Consumer, options ReaderOptions) (*Reader, erro
 
 func (reader *Reader) Run(ctx context.Context) error {
 	for {
+		if ctx.Err() != nil {
+			return nil
+		}
 		message, err := reader.reader.FetchMessage(ctx)
 		if err != nil {
 			if ctx.Err() != nil {
@@ -117,29 +120,30 @@ func (reader *Reader) Run(ctx context.Context) error {
 			return err
 		}
 
-		if err := reader.deliverUntilCommittable(ctx, message); err != nil {
+		deliveryCtx, cancelDelivery := context.WithTimeout(context.WithoutCancel(ctx), reader.options.DrainTimeout)
+		err = reader.deliverUntilCommittable(deliveryCtx, ctx, message)
+		if err != nil {
+			cancelDelivery()
 			if ctx.Err() != nil {
 				return nil
 			}
 			return err
 		}
 
-		if err := reader.reader.CommitMessages(ctx, message); err != nil {
+		if err := reader.reader.CommitMessages(deliveryCtx, message); err != nil {
+			cancelDelivery()
 			if ctx.Err() != nil {
 				return nil
 			}
 			return fmt.Errorf("committing %s/%d/%d: %w", message.Topic, message.Partition, message.Offset, err)
 		}
+		cancelDelivery()
 	}
 }
 
-// deliverUntilCommittable retries one record in place. A committed offset is a
-// per-partition high-water mark, so skipping a record that asked to stay
-// uncommitted and committing a later one would mark the skipped record consumed
-// and lose it. The loop therefore never advances past an uncommittable record.
-func (reader *Reader) deliverUntilCommittable(ctx context.Context, message kafka.Message) error {
+func (reader *Reader) deliverUntilCommittable(deliveryCtx, stopCtx context.Context, message kafka.Message) error {
 	for attempt := 1; ; attempt++ {
-		outcome, deliverErr := reader.consumer.Deliver(ctx, consume.Record{
+		outcome, deliverErr := reader.consumer.Deliver(deliveryCtx, consume.Record{
 			Topic:     message.Topic,
 			Partition: message.Partition,
 			Offset:    message.Offset,
@@ -151,6 +155,9 @@ func (reader *Reader) deliverUntilCommittable(ctx context.Context, message kafka
 		}
 		if outcome == consume.CommitOffset {
 			return nil
+		}
+		if err := stopCtx.Err(); err != nil {
+			return err
 		}
 
 		if attempt >= reader.options.MaxDeliveryAttempts {
@@ -176,8 +183,10 @@ func (reader *Reader) deliverUntilCommittable(ctx context.Context, message kafka
 		)
 
 		select {
-		case <-ctx.Done():
-			return ctx.Err()
+		case <-deliveryCtx.Done():
+			return deliveryCtx.Err()
+		case <-stopCtx.Done():
+			return stopCtx.Err()
 		case <-time.After(reader.options.RetryBackoff):
 		}
 	}

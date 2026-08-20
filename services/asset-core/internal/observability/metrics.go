@@ -84,7 +84,7 @@ func SetMetricsEnabled(enabled bool) {
 
 func prometheusLabels(values map[string]string) string {
 	labels := make([]string, 0, len(values))
-	for _, key := range []string{"method", "route", "status", "result", "le", "outcome"} {
+	for _, key := range []string{"method", "route", "status", "result", "le", "stage", "outcome", "category", "consumption"} {
 		value, ok := values[key]
 		if !ok {
 			continue
@@ -135,6 +135,7 @@ func RenderPrometheusMetrics() string {
 	fmt.Fprintln(&output, "# TYPE seta_asset_lifecycle_event_publish_total counter")
 	fmt.Fprintf(&output, "seta_asset_lifecycle_event_publish_total%s %d\n", prometheusLabels(map[string]string{"outcome": "success"}), events.PublishSuccessTotal)
 	fmt.Fprintf(&output, "seta_asset_lifecycle_event_publish_total%s %d\n", prometheusLabels(map[string]string{"outcome": "failure"}), events.PublishFailureTotal)
+	output.WriteString(renderMediaPrometheusMetrics())
 
 	return output.String()
 }
@@ -154,6 +155,7 @@ func ResetMetricsForTests() {
 	httpMetrics.Lock()
 	defer httpMetrics.Unlock()
 	httpMetrics.Requests = make(map[httpKey]*httpStats)
+	resetMediaMetricsForTests()
 }
 
 func MetricsHandler(w http.ResponseWriter, _ *http.Request) {

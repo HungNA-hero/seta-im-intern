@@ -15,3 +15,66 @@ groups:
 
       - record: seta_asset_event_dlq_depth
         expr: max(redis_stream_length{job="redis-exporter",db="db0",stream="stream:asset-events:dlq"}) or ((seta_asset_event_stream_observer_up == 1) * 0)
+
+  - name: seta_media_processing
+    rules:
+      - record: seta_asset_media_acceptance_to_terminal_p95_seconds
+        expr: histogram_quantile(0.95, sum by (le) (rate(seta_asset_media_acceptance_to_terminal_seconds_bucket[15m])))
+
+      - record: seta_asset_media_lease_recovery_share
+        expr: sum(rate(seta_asset_media_lease_recoveries_total[15m])) / clamp_min(sum(rate(seta_asset_media_processing_attempts_total{stage="claim"}[15m])), 0.000001)
+
+      - alert: MediaProcessingP95Exceeded
+        expr: seta_asset_media_acceptance_to_terminal_p95_seconds > 120
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: Media processing p95 exceeds the 120-second objective
+
+      - alert: MediaLeaseRecoveryBudgetAtRisk
+        expr: seta_asset_media_lease_recovery_share > 0.05
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: Lease-expiry recoveries consume more than five percent of processing claims
+
+      - alert: MediaQueueOrDeliveryStalled
+        expr: max(seta_asset_media_oldest_queued_age_seconds) > 120 or max(seta_asset_media_outbox_oldest_age_seconds) > 30 or max(seta_asset_media_reconciliation_oldest_age_seconds) > 30
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: Media durable delivery is lagging
+
+      - alert: MediaQuarantineBacklog
+        expr: max(seta_asset_media_quarantine_backlog) > 0 or max(seta_asset_media_quarantine_oldest_age_seconds) > 300
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: Media notifications require operator isolation review
+
+      - alert: MediaReplayFailures
+        expr: increase(seta_asset_media_replays_total{outcome="failure"}[15m]) > 0
+        labels: { severity: warning }
+        annotations:
+          summary: An explicit media dead-letter replay failed
+
+      - alert: MediaStorageFailures
+        expr: increase(seta_asset_media_storage_failures_total[10m]) > 0
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: Media object storage operations are failing
+
+      - alert: MediaCleanupBacklog
+        expr: max(seta_asset_media_cleanup_backlog) > 50
+        for: 30m
+        labels: { severity: warning }
+        annotations:
+          summary: Abandoned media object cleanup is falling behind
+
+      - alert: MediaQuotaHeadroomLow
+        expr: max(seta_asset_media_quota_highest_consumption_ratio) >= 0.9 and max(seta_asset_media_quota_highest_consumption_ratio) < 1
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: At least one organization has less than ten percent media quota headroom

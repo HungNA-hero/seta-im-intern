@@ -2,6 +2,8 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   recordHttpRequest,
+  recordMediaRejection,
+  recordMediaSessionCreation,
   renderPrometheusMetrics,
   resetPrometheusMetricsForTests,
 } from "../observability/prometheus";
@@ -80,5 +82,39 @@ describe("Prometheus metrics", () => {
       'seta_access_http_requests_total{method="OTHER",route="/graphql",status="404",result="denied"} 2',
     );
     expect(rendered).not.toContain("ATTACK-");
+  });
+
+  it("renders the bounded direct-upload and media-route contract without tenant labels", () => {
+    recordMediaSessionCreation("created", 2048);
+    recordMediaSessionCreation("replayed", 4096);
+    for (const reason of ["rate_limited", "checksum", "descriptor", "authorization", "dependency"] as const) {
+      recordMediaRejection(reason);
+    }
+    recordMediaRejection("33333333-3333-4333-8333-333333333333" as never);
+    recordHttpRequest("POST", "/api/v1/assets/:assetId/media/uploads", 201, "success", 125);
+
+    const rendered = renderPrometheusMetrics();
+    expect(rendered).toContain('seta_access_media_sessions_total{outcome="created"} 1');
+    expect(rendered).toContain('seta_access_media_declared_bytes_total{outcome="created"} 2048');
+    expect(rendered).toContain('seta_access_media_rejections_total{reason="rate_limited"} 1');
+    expect(rendered).toContain('seta_access_media_rejections_total{reason="other"} 1');
+    expect(rendered).toContain(
+      'seta_access_media_route_duration_seconds_bucket{method="POST",route="/api/v1/assets/:assetId/media/uploads",status="201",result="success",le="0.25"} 1',
+    );
+    expect(rendered).not.toContain("33333333-3333-4333-8333-333333333333");
+  });
+
+  it("renders one unique media histogram series for each bounded HTTP status", () => {
+    recordHttpRequest("POST", "/api/v1/assets/:assetId/media/uploads", 200, "success", 10);
+    recordHttpRequest("POST", "/api/v1/assets/:assetId/media/uploads", 201, "success", 20);
+
+    const sampleNames = renderPrometheusMetrics()
+      .split("\n")
+      .filter((line) => line.startsWith("seta_access_media_route_duration_seconds_"))
+      .map((line) => line.slice(0, line.lastIndexOf(" ")));
+
+    expect(new Set(sampleNames).size).toBe(sampleNames.length);
+    expect(sampleNames.some((line) => line.includes('status="200"'))).toBe(true);
+    expect(sampleNames.some((line) => line.includes('status="201"'))).toBe(true);
   });
 });

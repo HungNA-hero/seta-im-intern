@@ -7,12 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"seta-im-intern/go-asset-core/internal/eventing/event"
+	"seta-im-intern/go-asset-core/internal/requestcontext"
 	"time"
 
 	"github.com/google/uuid"
-
-	"seta-im-intern/go-asset-core/internal/eventing/event"
-	"seta-im-intern/go-asset-core/internal/requestcontext"
 )
 
 type Record struct {
@@ -87,11 +86,34 @@ func (consumer *Consumer) Deliver(ctx context.Context, record Record) (Outcome, 
 			duplicateTotal.Add(1)
 			return CommitOffset, nil
 		}
+		if reason, poisoned := PoisonReason(err); poisoned {
+			return consumer.isolate(ctx, record, reason, envelope)
+		}
 		transientFailureTotal.Add(1)
 		return LeaveUncommitted, err
 	}
 	appliedTotal.Add(1)
 	return CommitOffset, nil
+}
+
+type poisonError struct {
+	reason string
+}
+
+func (poison poisonError) Error() string {
+	return "poison event: " + poison.reason
+}
+
+func Poison(reason string) error {
+	return poisonError{reason: reason}
+}
+
+func PoisonReason(err error) (string, bool) {
+	var poison poisonError
+	if !errors.As(err, &poison) || poison.reason == "" {
+		return "", false
+	}
+	return poison.reason, true
 }
 
 func (consumer *Consumer) classify(record Record, envelope event.Envelope) (string, bool) {
@@ -124,9 +146,6 @@ func (consumer *Consumer) routable(eventType string) bool {
 	return false
 }
 
-// aggregateID reports the declared aggregate identifier and whether it is a
-// usable UUID. A configured aggregate field that is absent, non-string, or not a
-// UUID is deterministic poison, not something to pass through unchecked.
 func (consumer *Consumer) aggregateID(envelope event.Envelope) (string, bool) {
 	if consumer.options.AggregateField == "" || len(envelope.Raw) == 0 {
 		return "", false
@@ -149,17 +168,11 @@ func (consumer *Consumer) aggregateID(envelope event.Envelope) (string, bool) {
 	return aggregateID, true
 }
 
-// isUUID gates every identifier copied into a dead-letter record. Without it a
-// hostile producer could place arbitrary payload text into fields the
-// dead-letter contract requires to be sanitized and bounded.
 func isUUID(value string) bool {
 	_, err := uuid.Parse(value)
 	return err == nil
 }
 
-// salvageIdentity recovers only the identifiers an operator needs to correlate
-// an unparseable record, and only when each is individually a valid UUID. Any
-// other value is attacker-controlled payload text and is dropped.
 func (consumer *Consumer) salvageIdentity(record Record) event.Envelope {
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(record.Value, &fields); err != nil {

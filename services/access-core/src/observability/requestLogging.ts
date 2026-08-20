@@ -4,6 +4,7 @@ import { recordHttpRequest } from "./prometheus";
 
 export function logRequestCompletion(request: FastifyRequest, reply: FastifyReply, metricsEnabled: boolean): void {
   const correlation = request.correlation;
+  const route = request.routeOptions.url ?? "unmatched";
   const result =
     correlation.errorCode !== undefined
       ? correlation.errorCode === "INTERNAL_ERROR"
@@ -19,14 +20,14 @@ export function logRequestCompletion(request: FastifyRequest, reply: FastifyRepl
       service: ServiceName.ACCESS_CORE,
       traceId: correlation.traceId,
       requestId: correlation.requestId,
-      operation: request.routeOptions.url ?? request.method,
+      operation: route,
       durationMs: Math.max(0, Date.now() - correlation.startedAt),
       result,
       errorCode: correlation.errorCode,
       errorNumber: correlation.errorNumber,
       http: {
         method: request.method,
-        route: request.routeOptions.url ?? request.url.split("?")[0],
+        route,
         status: reply.statusCode,
       },
     },

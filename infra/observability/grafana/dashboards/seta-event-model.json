@@ -234,13 +234,107 @@
       ],
       "title": "Dead-letter stream depth",
       "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Database-authoritative age of queued work and lag in the durable outbox/reconciliation path.",
+      "fieldConfig": { "defaults": { "min": 0, "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "id": 7,
+      "targets": [
+        { "expr": "max(seta_asset_media_oldest_queued_age_seconds)", "legendFormat": "oldest queued", "refId": "A" },
+        { "expr": "max(seta_asset_media_outbox_oldest_age_seconds)", "legendFormat": "outbox", "refId": "B" },
+        { "expr": "max(seta_asset_media_reconciliation_oldest_age_seconds)", "legendFormat": "reconciliation", "refId": "C" }
+      ],
+      "title": "Media queue and delivery lag",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Bounded processing attempt outcomes by stage.",
+      "fieldConfig": { "defaults": { "min": 0, "unit": "ops" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "id": 8,
+      "targets": [
+        { "expr": "sum by (stage, outcome) (rate(seta_asset_media_processing_attempts_total[5m]))", "legendFormat": "{{stage}} / {{outcome}}", "refId": "A" }
+      ],
+      "title": "Media processing attempts",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "SC-013: 95% of durable acceptances should become terminal within 120 seconds.",
+      "fieldConfig": { "defaults": { "min": 0, "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "id": 9,
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(seta_asset_media_acceptance_to_terminal_seconds_bucket[15m])))", "legendFormat": "p95", "refId": "A" },
+        { "expr": "vector(120)", "legendFormat": "120s objective", "refId": "B" }
+      ],
+      "title": "Media acceptance-to-terminal p95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "SC-013 error-budget dependency: share of claims recovered after lease expiry and their recovery latency.",
+      "fieldConfig": { "defaults": { "min": 0 }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "id": 10,
+      "targets": [
+        { "expr": "sum(rate(seta_asset_media_lease_recoveries_total[15m])) / clamp_min(sum(rate(seta_asset_media_processing_attempts_total{stage=\"claim\"}[15m])), 0.000001)", "legendFormat": "recovered claim share", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(seta_asset_media_lease_recovery_latency_seconds_bucket[15m])))", "legendFormat": "recovery latency p95", "refId": "B" }
+      ],
+      "title": "Lease recovery error budget",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Unique database quarantine depth, oldest age, and explicit replay failures.",
+      "fieldConfig": { "defaults": { "min": 0 }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "id": 11,
+      "targets": [
+        { "expr": "max(seta_asset_media_quarantine_backlog)", "legendFormat": "unique quarantined jobs", "refId": "A" },
+        { "expr": "max(seta_asset_media_quarantine_oldest_age_seconds)", "legendFormat": "oldest age", "refId": "B" },
+        { "expr": "sum(rate(seta_asset_media_replays_total{outcome=\"failure\"}[5m]))", "legendFormat": "replay failures", "refId": "C" }
+      ],
+      "title": "Media quarantine and replay",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "MinIO/storage failures and abandoned-object cleanup backlog.",
+      "fieldConfig": { "defaults": { "min": 0 }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "id": 12,
+      "targets": [
+        { "expr": "sum(rate(seta_asset_media_storage_failures_total[5m]))", "legendFormat": "storage failures", "refId": "A" },
+        { "expr": "max(seta_asset_media_cleanup_backlog)", "legendFormat": "cleanup backlog", "refId": "B" }
+      ],
+      "title": "Media storage and cleanup",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Highest quota consumption ratio and public quota rejection rate without organization labels.",
+      "fieldConfig": { "defaults": { "min": 0 }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 48 },
+      "id": 13,
+      "targets": [
+        { "expr": "max(seta_asset_media_quota_highest_consumption_ratio)", "legendFormat": "highest ratio", "refId": "A" },
+        { "expr": "sum(rate(seta_access_media_rejections_total{reason=\"quota\"}[5m]))", "legendFormat": "quota rejections", "refId": "B" },
+        { "expr": "sum(rate(seta_asset_http_requests_total{result=\"denied\",route=~\".*media.*\"}[5m]))", "legendFormat": "media denials", "refId": "C" }
+      ],
+      "title": "Media quota headroom and rejections",
+      "type": "timeseries"
     }
   ],
   "schemaVersion": 39,
   "tags": [
     "seta",
     "event-model",
-    "redis-streams"
+    "redis-streams",
+    "media"
   ],
   "time": {
     "from": "now-1h",

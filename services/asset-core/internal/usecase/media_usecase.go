@@ -27,6 +27,120 @@ type MediaRepository interface {
 	RefreshUploadSession(context.Context, repository.UploadSessionScope, time.Time) (domain.MediaUploadSession, error)
 	CancelUploadSession(context.Context, repository.UploadSessionScope) error
 	CommitUpload(context.Context, domain.CommitUploadRequest, domain.ObjectAttributes, repository.CommitUploadIDs) (domain.CommitAcceptance, bool, error)
+	GetLatestMediaStatus(context.Context, repository.MediaStatusScope) (repository.MediaStatusRecord, error)
+}
+
+const mediaStatusLinkTTL = 15 * time.Minute
+
+func (usecase *MediaUsecase) GetMediaStatus(ctx context.Context, scope repository.MediaStatusScope) (domain.MediaStatusResult, error) {
+	record, err := usecase.repository.GetLatestMediaStatus(ctx, scope)
+	if err != nil {
+		return domain.MediaStatusResult{}, err
+	}
+	result := domain.MediaStatusResult{
+		AssetID:      record.Job.AssetID,
+		UploadID:     record.Version.UploadID,
+		JobID:        record.Job.ID,
+		Status:       record.Job.Status,
+		AttemptCount: record.Job.AttemptCount,
+		Stage:        record.Job.Stage,
+		Original: domain.MediaStatusOriginal{
+			Filename:            record.Session.OriginalFilename,
+			DeclaredContentType: record.Version.DeclaredContentType,
+			DetectedContentType: record.Version.DetectedContentType,
+			SizeBytes:           record.Version.OriginalSizeBytes,
+		},
+		AcceptedAt:  record.Job.QueuedAt,
+		StartedAt:   record.Job.StartedAt,
+		CompletedAt: record.Job.CompletedAt,
+		FailedAt:    record.Job.FailedAt,
+	}
+	if len(record.Version.SHA256) == domain.ChecksumByteLength {
+		digest := fmt.Sprintf("%x", record.Version.SHA256)
+		result.Original.SHA256 = &digest
+	}
+	if result.Status == domain.ProcessingJobFailed {
+		internalCode := ""
+		if record.Job.LastErrorCode != nil {
+			internalCode = *record.Job.LastErrorCode
+		} else if record.Version.FailureCode != nil {
+			internalCode = *record.Version.FailureCode
+		}
+		failure := safeMediaStatusError(internalCode)
+		result.Error = &failure
+	}
+	if result.Status != domain.ProcessingJobCompleted {
+		return result, nil
+	}
+
+	outputs := make(map[domain.MediaOutputKind]domain.MediaOutput, len(record.Outputs))
+	for _, output := range record.Outputs {
+		if output.Kind != domain.MediaOutputThumbnail && output.Kind != domain.MediaOutputWeb {
+			continue
+		}
+		if domain.ObjectKey(output.ObjectKey).IsRaw() {
+			return domain.MediaStatusResult{}, domain.ErrRawKeyNotPresignable
+		}
+		outputs[output.Kind] = output
+	}
+	thumbnail, thumbnailOK := outputs[domain.MediaOutputThumbnail]
+	web, webOK := outputs[domain.MediaOutputWeb]
+	if !thumbnailOK || !webOK || len(outputs) != 2 {
+		return domain.MediaStatusResult{}, repository.ErrIncompleteOutputSet
+	}
+
+	thumbnailLink, err := usecase.storage.PresignGet(ctx, domain.ObjectKey(thumbnail.ObjectKey), mediaStatusLinkTTL)
+	if err != nil {
+		return domain.MediaStatusResult{}, err
+	}
+	webLink, err := usecase.storage.PresignGet(ctx, domain.ObjectKey(web.ObjectKey), mediaStatusLinkTTL)
+	if err != nil {
+		return domain.MediaStatusResult{}, err
+	}
+	expiresAt := thumbnailLink.ExpiresAt
+	if webLink.ExpiresAt.Before(expiresAt) {
+		expiresAt = webLink.ExpiresAt
+	}
+	result.Outputs = &domain.MediaStatusOutputs{
+		Thumbnail: mediaStatusOutput(thumbnail, thumbnailLink.URL),
+		Web:       mediaStatusOutput(web, webLink.URL),
+		ExpiresAt: expiresAt,
+	}
+	return result, nil
+}
+
+func safeMediaStatusError(internalCode string) domain.MediaStatusError {
+	safe := map[string]domain.MediaStatusError{
+		"INVALID_IMAGE": {
+			Code: "INVALID_IMAGE", Message: "File is not a valid image",
+		},
+		"IMAGE_DIMENSIONS_EXCEEDED": {
+			Code: "IMAGE_DIMENSIONS_EXCEEDED", Message: "Image dimensions exceed the maximum allowed",
+		},
+		"PROCESSING_TIMEOUT": {
+			Code: "PROCESSING_TIMEOUT", Message: "Media processing exceeded its time limit",
+		},
+		"MEDIA_PROCESSING_TIMEOUT": {
+			Code: "PROCESSING_TIMEOUT", Message: "Media processing exceeded its time limit",
+		},
+		"MEDIA_STORAGE_UNAVAILABLE": {
+			Code: "MEDIA_STORAGE_UNAVAILABLE", Message: "Media storage is temporarily unavailable",
+		},
+		"MEDIA_PROCESSING_FAILED": {
+			Code: "MEDIA_PROCESSING_FAILED", Message: "Media processing failed",
+		},
+	}
+	if failure, ok := safe[internalCode]; ok {
+		return failure
+	}
+	return domain.MediaStatusError{Code: "MEDIA_PROCESSING_FAILED", Message: "Media processing failed"}
+}
+
+func mediaStatusOutput(output domain.MediaOutput, url string) domain.MediaStatusOutput {
+	return domain.MediaStatusOutput{
+		URL: url, Width: output.Width, Height: output.Height,
+		SizeBytes: output.SizeBytes, ContentType: output.ContentType,
+	}
 }
 
 type MediaUsecase struct {
