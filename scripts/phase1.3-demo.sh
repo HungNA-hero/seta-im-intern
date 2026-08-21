@@ -21,14 +21,11 @@ if [[ "$MODE" != "soft-delete" && "$MODE" != "upload" && "$MODE" != "all" ]] || 
 fi
 
 phase13_initialize_evidence
-exec > >(tee -a "$TRANSCRIPT_LOG") 2>&1
-trap 'code=$?; if (( code != 0 )); then phase13_case_fail; fi; phase13_finish "$code"; exit "$code"' EXIT
+exec > >(tee >(phase13_strip_ansi >>"$TRANSCRIPT_LOG")) 2>&1
+trap 'code=$?; if (( code != 0 )); then phase13_case_fail; phase13_run_summary FAIL; fi; phase13_finish "$code"; exit "$code"' EXIT
 trap 'PHASE13_FAILURE_MESSAGE="Interrupted"; exit 130' INT TERM
 
-phase13_log "Phase 1.3 interactive demo"
-phase13_log "Run ID: $RUN_ID"
-phase13_log "Evidence: $LOG_ROOT"
-phase13_log "Mode: $MODE"
+phase13_run_banner "$MODE"
 
 phase13_pause "Preflight: verify the existing environment without resetting it"
 phase13_preflight
@@ -43,4 +40,4 @@ case "$MODE" in
         ;;
 esac
 
-phase13_log "Demo completed successfully. Evidence remains at $LOG_ROOT"
+phase13_run_summary PASS

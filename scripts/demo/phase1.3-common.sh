@@ -49,15 +49,89 @@ PHASE13_CASE_ID=""
 PHASE13_CASE_TITLE=""
 PHASE13_CASE_AREA=""
 PHASE13_CASE_STARTED_AT=""
+PHASE13_CASE_STARTED_MS=0
 PHASE13_CASE_API_START=1
 PHASE13_CASE_DB_START=1
 PHASE13_CASE_RENDERED=1
 
-phase13_log() { printf '%s\n' "$*"; }
+if [[ -n "${NO_COLOR:-}" ]]; then
+    PHASE13_COLOR_INFO=""
+    PHASE13_COLOR_WARN=""
+    PHASE13_COLOR_ERROR=""
+    PHASE13_COLOR_PASS=""
+    PHASE13_COLOR_TITLE=""
+    PHASE13_COLOR_MUTED=""
+    PHASE13_COLOR_RESET=""
+else
+    PHASE13_COLOR_INFO=$'\033[36m'
+    PHASE13_COLOR_WARN=$'\033[33m'
+    PHASE13_COLOR_ERROR=$'\033[31m'
+    PHASE13_COLOR_PASS=$'\033[32m'
+    PHASE13_COLOR_TITLE=$'\033[35m'
+    PHASE13_COLOR_MUTED=$'\033[2m'
+    PHASE13_COLOR_RESET=$'\033[0m'
+fi
+
+phase13_locale="${LC_ALL:-${LC_CTYPE:-${LANG:-}}}"
+if [[ "${PHASE13_ASCII:-0}" == "1" || ! "$phase13_locale" =~ (UTF-8|utf8) ]]; then
+    PHASE13_TOP="+-"
+    PHASE13_SECTION="+-"
+    PHASE13_BOTTOM="+-"
+    PHASE13_VERTICAL="|"
+    PHASE13_OK="OK"
+else
+    PHASE13_TOP="╭─"
+    PHASE13_SECTION="├─"
+    PHASE13_BOTTOM="╰─"
+    PHASE13_VERTICAL="│"
+    PHASE13_OK="✓"
+fi
+unset phase13_locale
+
+phase13_level_color() {
+    case "$1" in
+        INFO) printf '%s' "$PHASE13_COLOR_INFO" ;;
+        WARN) printf '%s' "$PHASE13_COLOR_WARN" ;;
+        ERROR) printf '%s' "$PHASE13_COLOR_ERROR" ;;
+        *) printf '%s' "$PHASE13_COLOR_MUTED" ;;
+    esac
+}
+
+phase13_message() {
+    local level="$1" message="$2" prefix="" color
+    color="$(phase13_level_color "$level")"
+    message="$(phase13_clip_line "$message")"
+    if [[ -n "$PHASE13_CASE_ID" && "$PHASE13_CASE_RENDERED" == "0" ]]; then
+        prefix="$PHASE13_VERTICAL "
+    fi
+    printf '%s%s%-5s%s %s\n' "$prefix" "$color" "$level" "$PHASE13_COLOR_RESET" "$message"
+}
+
+phase13_log() { phase13_message INFO "$*"; }
+phase13_warn() { phase13_message WARN "$*"; }
 phase13_die() {
     PHASE13_FAILURE_MESSAGE="$*"
-    printf 'ERROR: %s\n' "$*" >&2
+    phase13_message ERROR "$*" >&2
     return 1
+}
+
+phase13_strip_ansi() {
+    sed $'s/\033\\[[0-9;]*m//g'
+}
+
+phase13_run_banner() {
+    local mode="$1"
+    printf '%sPHASE 1.3 · Interactive demo%s\n' "$PHASE13_COLOR_TITLE" "$PHASE13_COLOR_RESET"
+    printf '%-10s %s\n' Run "$RUN_ID"
+    printf '%-10s %s\n' Mode "$mode"
+    printf '%-10s %s\n' Evidence "$LOG_ROOT"
+}
+
+phase13_run_summary() {
+    local result="$1" color="$PHASE13_COLOR_PASS"
+    [[ "$result" == "PASS" ]] || color="$PHASE13_COLOR_ERROR"
+    printf '\n%s%s RUN · Phase 1.3 demo%s\n' "$color" "$result" "$PHASE13_COLOR_RESET"
+    printf '%-10s %s\n' Evidence "$LOG_ROOT"
 }
 
 phase13_require_command() {
@@ -74,10 +148,6 @@ phase13_uuid() {
 
 phase13_pause() {
     local title="$1"
-    printf '\n\033[36m=== %s ===\033[0m\n' "$title"
-    if [[ "${PHASE13_AUTO_CONTINUE:-0}" != "1" ]]; then
-        read -r -p "Press Enter to continue... " _ || true
-    fi
     if [[ "$title" =~ ^([0-9]+\.[0-9]+)[[:space:]]+(.+)$ ]]; then
         PHASE13_CASE_ID="${BASH_REMATCH[1]}"
         PHASE13_CASE_TITLE="${BASH_REMATCH[2]}"
@@ -89,26 +159,87 @@ phase13_pause() {
         PHASE13_CASE_API_START=$(( $(wc -l <"$LOG_ROOT/$PHASE13_CASE_AREA/api-responses.jsonl") + 1 ))
         PHASE13_CASE_DB_START=$(( $(wc -l <"$LOG_ROOT/$PHASE13_CASE_AREA/database-snapshots.jsonl") + 1 ))
         PHASE13_CASE_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%S.%NZ)"
+        PHASE13_CASE_STARTED_MS="$(date -u +%s%3N)"
         PHASE13_CASE_RENDERED=0
+        printf '\n%s%s CASE %s · %s%s\n' "$PHASE13_COLOR_TITLE" "$PHASE13_TOP" \
+          "$PHASE13_CASE_ID" "$PHASE13_CASE_TITLE" "$PHASE13_COLOR_RESET"
+        printf '%s\n' "$PHASE13_VERTICAL"
+    else
+        printf '\n%s── %s%s\n' "$PHASE13_COLOR_TITLE" "$title" "$PHASE13_COLOR_RESET"
+    fi
+    if [[ "${PHASE13_AUTO_CONTINUE:-0}" != "1" ]]; then
+        read -r -p "Press Enter to continue... " _ || true
+    fi
+}
+
+phase13_section_header() {
+    printf '%s%s %s%s\n' "$PHASE13_COLOR_TITLE" "$PHASE13_SECTION" "$1" "$PHASE13_COLOR_RESET"
+}
+
+phase13_clip_line() {
+    local line="$1"
+    if (( ${#line} > 900 )); then
+        line="${line:0:897}..."
+    fi
+    printf '%s' "$line"
+}
+
+phase13_print_json_block() {
+    local json="$1" filter="$2" detail color_flag=-M
+    [[ -n "${NO_COLOR:-}" ]] || color_flag=-C
+    while IFS= read -r detail; do
+        printf '%s   %s\n' "$PHASE13_VERTICAL" "$(phase13_clip_line "$detail")"
+    done < <(jq "$color_flag" "$filter" <<<"$json")
+}
+
+phase13_print_record_details() {
+    local line="$1" kind="$2"
+    if [[ "$kind" == "api" ]]; then
+        phase13_print_json_block "$line" '
+          def noisy_key:
+            test("url|headers|authorization|token|password|secret|cookie|credential"; "i");
+          def scrub:
+            walk(if type == "object" then with_entries(select(.key | noisy_key | not)) else . end);
+          .payload
+          | if has("body") and (.body | type) == "object" then
+              .body
+            else del(.httpStatus, .idempotencyReplayed) end
+          | scrub
+        '
+    else
+        phase13_print_json_block "$line" '
+          .payload
+          | if (.rows | type) == "array" then
+              .rows |= map(. as $raw | try ($raw | fromjson) catch $raw)
+            else . end
+        '
     fi
 }
 
 phase13_print_case_records() {
-    local file="$1" start_line="$2" label="$3" line compact printed=0
+    local file="$1" start_line="$2" label="$3" kind="$4" line step status replayed heading printed=0
     [[ -f "$file" ]] || return 0
     while IFS= read -r line; do
         [[ -n "$line" ]] || continue
-        if ! compact="$(jq -cer '.step + ": " + (.payload | tojson)' <<<"$line" 2>/dev/null)"; then
+        if ! step="$(jq -er '
+          select(type == "object" and (.step | type) == "string" and (.payload | type) == "object")
+          | .step
+        ' <<<"$line" 2>/dev/null)"; then
             phase13_die "Refusing to print malformed $label record"
             return 1
         fi
-        if (( ${#compact} > 900 )); then
-            compact="${compact:0:897}..."
-        fi
         if (( printed == 0 )); then
-            printf '\033[33m%s\033[0m\n' "$label"
+            phase13_section_header "$label"
         fi
-        printf '  %s\n' "$compact"
+        heading="$step"
+        if [[ "$kind" == "api" ]]; then
+            status="$(jq -r '.payload.httpStatus // empty' <<<"$line")"
+            replayed="$(jq -r '.payload.idempotencyReplayed // empty' <<<"$line")"
+            [[ -n "$status" ]] && heading="$heading  HTTP $status"
+            [[ -n "$replayed" ]] && heading="$heading  replayed=$replayed"
+        fi
+        printf '%s %s %s\n' "$PHASE13_VERTICAL" "$PHASE13_OK" "$(phase13_clip_line "$heading")"
+        phase13_print_record_details "$line" "$kind"
         printed=$((printed + 1))
     done < <(tail -n +"$start_line" "$file")
 }
@@ -122,7 +253,7 @@ phase13_case_service_containers() {
 }
 
 phase13_print_case_service_logs() {
-    local container raw_log safe_log line printed_header=0
+    local show="${1:-0}" container raw_log safe_log line printed_header=0
     while IFS= read -r container; do
         [[ -n "$container" ]] || continue
         raw_log="$TEMP_DIR/$PHASE13_CASE_ID-$container.raw.log"
@@ -130,34 +261,45 @@ phase13_print_case_service_logs() {
         docker logs --since "$PHASE13_CASE_STARTED_AT" --tail 30 "$container" >"$raw_log" 2>&1 || true
         phase13_sanitize_text <"$raw_log" >"$safe_log"
         if [[ -s "$safe_log" ]]; then
+            cat "$safe_log" >>"$LOG_ROOT/$PHASE13_CASE_AREA/service-logs/$container.log"
+            [[ "$show" == "1" ]] || continue
             if (( printed_header == 0 )); then
-                printf '\033[33mService logs (new, bounded)\033[0m\n'
+                phase13_section_header "SERVICES · new, bounded"
                 printed_header=1
             fi
-            printf '  [%s]\n' "$container"
+            printf '%s %s%s%s\n' "$PHASE13_VERTICAL" "$PHASE13_COLOR_MUTED" "$container" "$PHASE13_COLOR_RESET"
             while IFS= read -r line; do
-                if (( ${#line} > 900 )); then line="${line:0:897}..."; fi
-                printf '    %s\n' "$line"
+                if jq -e 'type == "object"' >/dev/null 2>&1 <<<"$line"; then
+                    phase13_print_json_block "$line" '.'
+                else
+                    printf '%s   %s\n' "$PHASE13_VERTICAL" "$(phase13_clip_line "$line")"
+                fi
             done < <(tail -n 6 "$safe_log")
-            cat "$safe_log" >>"$LOG_ROOT/$PHASE13_CASE_AREA/service-logs/$container.log"
         fi
     done < <(phase13_case_service_containers)
 }
 
 phase13_show_case_evidence() {
-    local result="${1:-PASS}"
+    local result="${1:-PASS}" now_ms elapsed_ms elapsed show_service_logs=0
     [[ -n "$PHASE13_CASE_ID" && "$PHASE13_CASE_RENDERED" == "0" ]] || return 0
     PHASE13_CASE_RENDERED=1
-    printf '\n\033[35m--- Evidence %s: %s ---\033[0m\n' "$PHASE13_CASE_ID" "$PHASE13_CASE_TITLE"
+    printf '%s\n' "$PHASE13_VERTICAL"
     phase13_print_case_records "$LOG_ROOT/$PHASE13_CASE_AREA/api-responses.jsonl" \
-      "$PHASE13_CASE_API_START" "API evidence"
+      "$PHASE13_CASE_API_START" "API" api
     phase13_print_case_records "$LOG_ROOT/$PHASE13_CASE_AREA/database-snapshots.jsonl" \
-      "$PHASE13_CASE_DB_START" "Database evidence"
-    phase13_print_case_service_logs
+      "$PHASE13_CASE_DB_START" "DATABASE" database
+    [[ "$result" == "PASS" ]] || show_service_logs=1
+    phase13_print_case_service_logs "$show_service_logs"
+    now_ms="$(date -u +%s%3N)"
+    elapsed_ms=$((now_ms - PHASE13_CASE_STARTED_MS))
+    printf -v elapsed '%d.%03ds' "$((elapsed_ms / 1000))" "$((elapsed_ms % 1000))"
     if [[ "$result" == "PASS" ]]; then
-        printf '\033[32mPASS %s\033[0m\n' "$PHASE13_CASE_ID"
+        printf '%s%s PASS %s · %s%s\n' "$PHASE13_COLOR_PASS" "$PHASE13_BOTTOM" \
+          "$PHASE13_CASE_ID" "$elapsed" "$PHASE13_COLOR_RESET"
     else
-        printf '\033[31mFAIL %s: %s\033[0m\n' "$PHASE13_CASE_ID" "${PHASE13_FAILURE_MESSAGE:-case failed}"
+        printf '%s%s FAIL %s · %s · %s%s\n' "$PHASE13_COLOR_ERROR" "$PHASE13_BOTTOM" \
+          "$PHASE13_CASE_ID" "$elapsed" \
+          "${PHASE13_FAILURE_MESSAGE:-case failed}" "$PHASE13_COLOR_RESET"
     fi
 }
 
@@ -186,7 +328,7 @@ phase13_sanitize_json() {
 phase13_sanitize_text() {
     sed -E \
       -e 's#(https?://[^[:space:]"?]+)\?[^[:space:]"}]+#\1?REDACTED#g' \
-      -e 's/((authorization|token|password|secret|cookie)["=: ]+)[^ ,"}]+/\1REDACTED/Ig'
+      -e 's/((authorization|token|password|secret|cookie|credential)["=: ]+)[^ ,"}]+/\1REDACTED/Ig'
 }
 
 phase13_record_json() {
@@ -345,12 +487,14 @@ phase13_wait_container_running() {
 
 phase13_stop_media_worker() {
     if phase13_container_running "$MEDIA_WORKER_CONTAINER"; then
+        phase13_warn "Stopping media worker to exercise recovery behavior. container=$MEDIA_WORKER_CONTAINER"
         docker stop -t 2 "$MEDIA_WORKER_CONTAINER" >/dev/null
         PHASE13_CHANGED_MEDIA_WORKER=1
     fi
 }
 
 phase13_start_media_worker() {
+    phase13_log "Starting media worker. container=$MEDIA_WORKER_CONTAINER"
     docker start "$MEDIA_WORKER_CONTAINER" >/dev/null
     PHASE13_CHANGED_MEDIA_WORKER=1
     phase13_wait_container_running "$MEDIA_WORKER_CONTAINER"
@@ -358,12 +502,14 @@ phase13_start_media_worker() {
 
 phase13_stop_minio() {
     if phase13_container_running "$MINIO_CONTAINER"; then
+        phase13_warn "Stopping object storage to exercise retry behavior. container=$MINIO_CONTAINER"
         docker stop -t 2 "$MINIO_CONTAINER" >/dev/null
         PHASE13_CHANGED_MINIO=1
     fi
 }
 
 phase13_start_minio() {
+    phase13_log "Starting object storage. container=$MINIO_CONTAINER"
     docker start "$MINIO_CONTAINER" >/dev/null
     PHASE13_CHANGED_MINIO=1
     phase13_wait_container_running "$MINIO_CONTAINER"

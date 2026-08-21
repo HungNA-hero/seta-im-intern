@@ -120,7 +120,7 @@ phase13_run_media_upload() {
     phase13_stop_minio
     phase13_start_media_worker
     retry_state="$(phase13_wait_retry_state "$retry_job" 60)"
-    phase13_log "Observed durable retry state: $retry_state"
+    phase13_warn "Observed expected durable retry state. state=$retry_state"
     phase13_record_asset_query upload retry-after-storage-failure \
       "SELECT json_build_object('jobId',j.id,'status',j.status,'attemptCount',j.attempt_count,'nextAttemptAt',j.next_attempt_at,'lastErrorCode',j.last_error_code,'outboxRows',(SELECT count(*) FROM media_job_outbox WHERE job_id=j.id)) FROM media_processing_jobs j WHERE j.id='$retry_job'::uuid;" >/dev/null
     phase13_case_pass
