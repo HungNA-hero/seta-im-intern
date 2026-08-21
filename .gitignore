@@ -30,6 +30,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 logs/
+demo-logs/
 *.log
 
 # Local downloaded metadata caches
