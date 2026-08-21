@@ -554,7 +554,10 @@ func (repository *mediaRepository) CommitUpload(
 			acceptance = domain.CommitAcceptance{
 				VersionID:  version.ID,
 				JobID:      job.ID,
-				Status:     job.Status,
+				// Commit replay returns the original durable acceptance contract,
+				// not the job's later processing state. Current state belongs to
+				// the status endpoint and the public commit schema is QUEUED-only.
+				Status:     domain.ProcessingJobQueued,
 				AcceptedAt: version.CreatedAt.UTC(),
 			}
 			replayed = true

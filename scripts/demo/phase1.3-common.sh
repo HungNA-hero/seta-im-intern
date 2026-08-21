@@ -38,9 +38,13 @@ PHASE13_FAILED=0
 PHASE13_FAILURE_MESSAGE=""
 PHASE13_CHANGED_MEDIA_WORKER=0
 PHASE13_CHANGED_MINIO=0
+PHASE13_EPHEMERAL_ACCESS_USER=""
 PHASE13_FOLDER_ID=""
 PHASE13_LAST_JSON=""
 PHASE13_LAST_STATUS=""
+PHASE13_LAST_IDEMPOTENCY_KEY=""
+PHASE13_LAST_IDEMPOTENCY_REPLAYED=""
+PHASE13_LAST_RESPONSE_HEADERS=""
 PHASE13_CASE_ID=""
 PHASE13_CASE_TITLE=""
 PHASE13_CASE_AREA=""
@@ -213,53 +217,85 @@ phase13_record_asset_query() {
     printf '%s\n' "$rows"
 }
 
-phase13_graphql() {
-    local area="$1" step="$2" query="$3" variables="$4"
+phase13_graphql_request_as() {
+    local user_id="$1" area="$2" step="$3" query="$4" variables="$5"
     local request response
     request="$(jq -cn --arg query "$query" --argjson variables "$variables" '{query:$query,variables:$variables}')" || return 1
     response="$(curl -fsS --max-time 30 -X POST "$ACCESS_URL/graphql" \
-        -H 'Content-Type: application/json' -H "x-user-id: $ADMIN_USER" -H "x-org-id: $ORG_ID" \
+        -H 'Content-Type: application/json' -H "x-user-id: $user_id" -H "x-org-id: $ORG_ID" \
         --data "$request")" || return 1
     jq -e . >/dev/null <<<"$response" || phase13_die "$step returned invalid JSON"
     phase13_record_json "$area" api-responses "$step" "$response"
-    if jq -e '.errors and (.errors | length > 0)' >/dev/null <<<"$response"; then
-        phase13_die "$step failed: $(jq -r '.errors[0].extensions.code // "UNKNOWN"' <<<"$response")"
-    fi
     PHASE13_LAST_JSON="$response"
 }
 
-phase13_http_json() {
-    local area="$1" step="$2" method="$3" url="$4" expected="$5" body="${6:-}"
-    local output="$TEMP_DIR/http-body.json" status
-    local args=(-sS --max-time 65 -o "$output" -w '%{http_code}' -X "$method" "$url"
-        -H 'Content-Type: application/json' -H "x-user-id: $ADMIN_USER" -H "x-org-id: $ORG_ID")
+phase13_graphql_as() {
+    local user_id="$1" area="$2" step="$3" query="$4" variables="$5"
+    phase13_graphql_request_as "$user_id" "$area" "$step" "$query" "$variables"
+    if jq -e '.errors and (.errors | length > 0)' >/dev/null <<<"$PHASE13_LAST_JSON"; then
+        phase13_die "$step failed: $(jq -r '.errors[0].extensions.code // "UNKNOWN"' <<<"$PHASE13_LAST_JSON")"
+    fi
+}
+
+phase13_graphql() {
+    phase13_graphql_as "$ADMIN_USER" "$@"
+}
+
+phase13_graphql_expect_error_as() {
+    local user_id="$1" area="$2" step="$3" expected_code="$4" query="$5" variables="$6" actual_code
+    phase13_graphql_request_as "$user_id" "$area" "$step" "$query" "$variables"
+    actual_code="$(jq -r '.errors[0].extensions.code // empty' <<<"$PHASE13_LAST_JSON")"
+    [[ "$actual_code" == "$expected_code" ]] \
+      || phase13_die "$step returned error ${actual_code:-<none>}, expected $expected_code"
+}
+
+phase13_http_json_as() {
+    local user_id="$1" area="$2" step="$3" method="$4" url="$5" expected="$6" body="${7:-}" idempotency_key="${8:-}"
+    local output="$TEMP_DIR/http-body.json" headers="$TEMP_DIR/http-headers.txt" status replayed
+    local args=(-sS --max-time 65 -D "$headers" -o "$output" -w '%{http_code}' -X "$method" "$url"
+        -H 'Content-Type: application/json' -H "x-user-id: $user_id" -H "x-org-id: $ORG_ID")
+    [[ -n "$idempotency_key" ]] && args+=(-H "Idempotency-Key: $idempotency_key")
     [[ -n "$body" ]] && args+=(--data "$body")
     status="$(curl "${args[@]}")" || return 1
     PHASE13_LAST_JSON="$(<"$output")"
     PHASE13_LAST_STATUS="$status"
+    PHASE13_LAST_RESPONSE_HEADERS="$(tr -d '\r' <"$headers")"
+    replayed="$(awk 'BEGIN{IGNORECASE=1} /^Idempotency-Replayed:/ {print $2}' "$headers" | tr -d '\r' | tail -n 1)"
+    PHASE13_LAST_IDEMPOTENCY_REPLAYED="$replayed"
     jq -e . >/dev/null <<<"$PHASE13_LAST_JSON" || phase13_die "$step returned invalid JSON (HTTP $status)"
     phase13_record_json "$area" api-responses "$step" \
-        "$(jq -cn --arg status "$status" --argjson body "$PHASE13_LAST_JSON" '{httpStatus:($status|tonumber),body:$body}')"
+        "$(jq -cn --arg status "$status" --arg replayed "$replayed" --argjson body "$PHASE13_LAST_JSON" \
+          '{httpStatus:($status|tonumber),idempotencyReplayed:(if $replayed=="" then null else $replayed end),body:$body}')"
     [[ "$status" == "$expected" ]] || phase13_die "$step returned HTTP $status, expected $expected"
+}
+
+phase13_http_json() {
+    phase13_http_json_as "$ADMIN_USER" "$@"
 }
 
 phase13_create_upload_session() {
     local step="$1" asset_id="$2" file="$3" filename="$4"
-    local size checksum key body output="$TEMP_DIR/http-body.json" status
+    local key="${5:-}" expected="${6:-201}" content_type="${7:-image/png}"
+    local size checksum body output="$TEMP_DIR/http-body.json" headers="$TEMP_DIR/http-headers.txt" status replayed
     size="$(wc -c <"$file" | tr -d ' ')"
     checksum="$(openssl dgst -sha256 -binary "$file" | base64 | tr -d '\n')"
-    key="$(phase13_uuid)"
-    body="$(jq -cn --arg filename "$filename" --arg checksum "$checksum" --argjson size "$size" \
-        '{filename:$filename,contentType:"image/png",sizeBytes:$size,checksumSha256:$checksum}')"
-    status="$(curl -sS --max-time 65 -o "$output" -w '%{http_code}' -X POST \
+    [[ -n "$key" ]] || key="$(phase13_uuid)"
+    body="$(jq -cn --arg filename "$filename" --arg contentType "$content_type" --arg checksum "$checksum" --argjson size "$size" \
+        '{filename:$filename,contentType:$contentType,sizeBytes:$size,checksumSha256:$checksum}')"
+    status="$(curl -sS --max-time 65 -D "$headers" -o "$output" -w '%{http_code}' -X POST \
         "$ACCESS_URL/api/v1/assets/$asset_id/media/uploads" -H 'Content-Type: application/json' \
         -H "x-user-id: $ADMIN_USER" -H "x-org-id: $ORG_ID" -H "Idempotency-Key: $key" --data "$body")" || return 1
     PHASE13_LAST_JSON="$(<"$output")"
     PHASE13_LAST_STATUS="$status"
+    PHASE13_LAST_IDEMPOTENCY_KEY="$key"
+    PHASE13_LAST_RESPONSE_HEADERS="$(tr -d '\r' <"$headers")"
+    replayed="$(awk 'BEGIN{IGNORECASE=1} /^Idempotency-Replayed:/ {print $2}' "$headers" | tr -d '\r' | tail -n 1)"
+    PHASE13_LAST_IDEMPOTENCY_REPLAYED="$replayed"
     jq -e . >/dev/null <<<"$PHASE13_LAST_JSON" || phase13_die "$step returned invalid JSON"
     phase13_record_json upload api-responses "$step" \
-        "$(jq -cn --arg status "$status" --argjson body "$PHASE13_LAST_JSON" '{httpStatus:($status|tonumber),body:$body}')"
-    [[ "$status" == "201" ]] || phase13_die "$step returned HTTP $status, expected 201"
+        "$(jq -cn --arg status "$status" --arg replayed "$replayed" --argjson body "$PHASE13_LAST_JSON" \
+          '{httpStatus:($status|tonumber),idempotencyReplayed:(if $replayed=="" then null else $replayed end),body:$body}')"
+    [[ "$status" == "$expected" ]] || phase13_die "$step returned HTTP $status, expected $expected"
 }
 
 phase13_transfer_upload() {
@@ -388,6 +424,14 @@ phase13_restore_services() {
     return "$failed"
 }
 
+phase13_cleanup_ephemeral_access_user() {
+    [[ "$PHASE13_EPHEMERAL_ACCESS_USER" =~ ^[0-9a-f-]{36}$ ]] || return 0
+    phase13_access_psql \
+      "DELETE FROM access.organization_members WHERE org_id='$ORG_ID'::uuid AND user_id='$PHASE13_EPHEMERAL_ACCESS_USER'::uuid; DELETE FROM access.users WHERE id='$PHASE13_EPHEMERAL_ACCESS_USER'::uuid;" \
+      >/dev/null || return 1
+    PHASE13_EPHEMERAL_ACCESS_USER=""
+}
+
 phase13_preflight() {
     local command container
     for command in bash curl docker jq openssl base64 wc; do phase13_require_command "$command"; done
@@ -416,6 +460,7 @@ phase13_initialize_evidence() {
 phase13_finish() {
     local exit_code="$1"
     phase13_restore_services || true
+    phase13_cleanup_ephemeral_access_user || true
     if (( exit_code == 0 )); then
         phase13_write_summary SUCCEEDED "All requested scenarios completed"
     else

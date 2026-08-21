@@ -183,7 +183,7 @@ describe("media upload usecase", () => {
     });
   });
 
-  test("status polling performs a fresh read authorization and maps trusted output metadata", async () => {
+  test("status polling performs a fresh write authorization and maps trusted output metadata", async () => {
     const response = new Response(
       JSON.stringify({
         data: {
@@ -233,7 +233,7 @@ describe("media upload usecase", () => {
     expect(harness.order).toEqual(["authorize", "delegate"]);
     expect(harness.assertAllowed).toHaveBeenCalledWith({
       userId: memberContext.userId,
-      action: "read",
+      action: "write",
       resourceType: "metadata_item",
       resourceId: assetId,
       orgId: memberContext.currentOrgId,

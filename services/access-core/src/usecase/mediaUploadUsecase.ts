@@ -61,12 +61,6 @@ const writeMedia = (assetId: string) => ({
   resourceId: assetId,
 });
 
-const readMedia = (assetId: string) => ({
-  action: "read" as const,
-  resourceType: "metadata_item" as const,
-  resourceId: assetId,
-});
-
 const alreadyAuthorized: AssetAuthorizationPrecondition[] = [];
 
 export function createMediaUploadUsecase({
@@ -209,7 +203,7 @@ export function createMediaUploadUsecase({
 
     async getStatus(ctx, assetId) {
       const response = await request(ctx, assetId, `/internal/api/v1/metadata-items/${assetId}/media/status`, {}, [
-        readMedia(assetId),
+        writeMedia(assetId),
       ]);
       return unwrapEnvelope(
         response,

@@ -71,6 +71,11 @@ func TestMediaReliability_RepeatedCommitReturnsTheSameDurableJob(t *testing.T) {
 	if err != nil || replayed {
 		t.Fatalf("first commit: replayed=%v err=%v", replayed, err)
 	}
+	if err := fixture.db.Model(&domain.MediaProcessingJob{}).
+		Where("id = ?", first.JobID).
+		Update("status", domain.ProcessingJobCompleted).Error; err != nil {
+		t.Fatalf("complete job before replay: %v", err)
+	}
 	second, replayed, err := fixture.repo.CommitUpload(
 		fixture.ctx,
 		commit,
